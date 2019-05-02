@@ -1,0 +1,4 @@
+# Clion specific
+
+cmake-build-*/
+.idea/
