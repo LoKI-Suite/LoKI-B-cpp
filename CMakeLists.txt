@@ -11,10 +11,12 @@ set(dep dependencies)
 
 set(cpp ${src}/main.cpp ${src}/WorkingConditions.cpp
         ${src}/Grid.cpp ${src}/Gas.cpp ${src}/EedfGas.cpp
-        ${src}/Collision.cpp ${src}/State.cpp ${src}/EedfState.cpp)
+        ${src}/Collision.cpp ${src}/State.cpp ${src}/EedfState.cpp
+        ${src}/Setup.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
-        ${h}/Collision.h ${h}/State.h ${h}/EedfState.h)
+        ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
+        ${h}/Setup.h loki-b/headers/Enumerations.h)
 
 add_executable(loki ${headers} ${cpp})
 
