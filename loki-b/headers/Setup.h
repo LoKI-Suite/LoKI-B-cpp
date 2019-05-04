@@ -70,18 +70,16 @@ namespace loki {
      * setup file concerning the specified gasses.
      *
      * Note that its fields are all strings since gas properties are supplied through either
-     * a file, function, or direct value.
+     * a file, function, or direct value. The type of the input data will be deduced when
+     * parsing and the parser will handle accordingly.
      *
      * It is a substructure of the ElectronKineticsSetup class.
      */
 
-    // TODO: How do we want to store the state entries? Since they can have different types
-    //  --> (?) Create a simple base class that stores the type and has methods to access the data
-    //  inherit this class into three subclasses corresponding to a file, function and direct value.
-
     struct StatePropertiesSetup {
-
-
+        std::vector<std::string> energy,
+                                 statisticalWeight,
+                                 population;
     };
 
     /* ------- NUMERICS ------- */
@@ -174,6 +172,21 @@ namespace loki {
         NumericsSetup numerics;
     };
 
+    /* ------- OUTPUT ------- */
+
+    /*
+     * OutputSetup is a setup structure meant to store the parameters that are concerning the
+     * output of the simulation.
+     *
+     * It is a substructure of the Setup class.
+     */
+
+    struct OutputSetup {
+        bool isOn;
+        std::string folder;
+        std::vector<std::string> dataFiles;
+    };
+
     /* ------- SETUP ------- */
 
     /*
@@ -184,6 +197,7 @@ namespace loki {
     struct Setup {
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
+        OutputSetup output;
 
         explicit Setup(const std::string& fileName);
     };
