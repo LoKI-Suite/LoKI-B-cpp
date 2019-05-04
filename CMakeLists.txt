@@ -16,7 +16,7 @@ set(cpp ${src}/main.cpp ${src}/WorkingConditions.cpp
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
-        ${h}/Setup.h loki-b/headers/Enumerations.h)
+        ${h}/Setup.h loki-b/headers/Enumeration.h)
 
 add_executable(loki ${headers} ${cpp})
 
