@@ -10,24 +10,24 @@
 namespace loki {
     namespace Enumeration {
 
-        enum EedfType : uint8_t {
+        enum class EedfType : uint8_t {
             boltzmann,
             prescribed
         };
 
-        enum IonizationOperatorType : uint8_t {
+        enum class IonizationOperatorType : uint8_t {
             conservative,
             oneTakesAll,
             equalSharing,
             sdcs
         };
 
-        enum GrowthModelType : uint8_t {
+        enum class GrowthModelType : uint8_t {
             spatial,
             temporal
         };
 
-        enum StatePropertyType : uint8_t {
+        enum class StatePropertyType : uint8_t {
             direct,
             file,
             function

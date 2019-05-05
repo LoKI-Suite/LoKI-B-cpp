@@ -15,7 +15,7 @@ using namespace loki::Enumeration;
 
 int main (int argc, char ** argv)
 {
-    loki::Setup setup("dummy_file");
+    loki::Setup setup("default_lokib_setup.in");
 
     return 0;
 }

@@ -194,7 +194,10 @@ namespace loki {
      * information from the setup file in a formatted way.
      */
 
-    struct Setup {
+    class Setup {
+        const std::string inputPath{"Input"};
+
+    public:
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
         OutputSetup output;
