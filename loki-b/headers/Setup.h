@@ -203,6 +203,25 @@ namespace loki {
         OutputSetup output;
 
         explicit Setup(const std::string& fileName);
+
+        /*
+         * getSection is a static function that retrieves the contents of a specified section
+         * and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
+         * to indicate whether the operation was successful.
+         *
+         * NOTE: This function does not deal with ambiguous section names. E.g. the "isOn" field
+         * occurs multiple times in the file. The user is advised to only retrieve sections that
+         * are one level above the level of "fileContent". E.g. retrieve "isOn" when "fileContent"
+         * contains the contents of the "electronKinetics" section.
+         */
+        static bool getSection(const std::string &fileContent, const std::string &sectionTitle,
+                std::string &sectionBuffer);
+
+        /*
+         * removeComments is a static function that takes a string as an argument. It strips the
+         * string from comments and returns it.
+         */
+        static std::string removeComments(const std::string &content);
     };
 
 

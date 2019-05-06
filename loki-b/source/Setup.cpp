@@ -10,9 +10,14 @@
 #include "Setup.h"
 
 namespace loki {
-    Setup::Setup(const std::string& fileName) {
-        std::cout << "Parsing setup file: " << inputPath + '/' + fileName << std::endl;
+    // TODO: move the functionality that is now in the constructor into a Setup::parse
+    //  function such that it can return a boolean to specify whether the operation was
+    //  successful.
 
+    // TODO: add "parse" functions for the substructures of the setup structure, such
+    //  that the substructure can be filled by passing a section string.
+
+    Setup::Setup(const std::string& fileName) {
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {
@@ -20,24 +25,71 @@ namespace loki {
             return;
         }
 
+        // Load the contents of the file into a string buffer.
         std::stringstream stringBuffer;
         stringBuffer << file.rdbuf();
 
-        std::string fileContent = stringBuffer.str();
+        // Store the file contents in a string and remove any comments.
+        std::string fileContent = Setup::removeComments(stringBuffer.str());
 
-        // This regular expression matches a specific section in the input file,
-        // e.g. the "electronKinetics" section.
-        std::regex r(R"(electronKinetics:\s*\n([^]*?)((\n+\w)|(\n+$)))");
+        // Object to store the results of the Setup:getSection calls.
+        std::string sectionBuffer;
+
+        if (Setup::getSection(fileContent, "workingConditions", sectionBuffer)) {
+            //parse workingConditions section
+            std::cout << sectionBuffer << std::endl;
+        } else {
+            std::cerr << "The input file does not contain a section to specify the working "
+                         "conditions. Please add this section and try again." << std::endl;
+            return;
+        }
+
+        if (Setup::getSection(fileContent, "electronKinetics", sectionBuffer)) {
+            //parse electronKinetics section
+            std::cout << sectionBuffer << std::endl;
+        } else {
+            this->electronKinetics.isEnabled = false;
+        }
+
+        if (Setup::getSection(fileContent, "output", sectionBuffer)) {
+            //parse output section
+            std::cout << sectionBuffer << std::endl;
+        } else {
+            std::cerr << "The input file does not contain a section to specify the output. "
+                         "Please add this section and try again." << std::endl;
+            return;
+        }
+    }
+
+    bool Setup::getSection(const std::string &fileContent, const std::string &sectionTitle,
+            std::string &sectionBuffer) {
+
+        // This regular expression finds the level of a specific section. In other
+        // words, it finds the number of spaces that precede the section title
+        const std::regex reLevel(R"((?:^|\n)( *))" + sectionTitle);
         std::smatch m;
 
-        if(std::regex_search(fileContent, m, r)) {
+        if (!std::regex_search(fileContent, m, reLevel))
+            return false;
 
-            std::cout << m[1] << std::endl;
+        const std::string levelString = m[1];
 
-        } else {
+        // This regular expression matches a specific section in the input file. More accurately,
+        // it returns the text in between the specified section and the next section on the same
+        // level.
+        const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)\n+(?:(?:)" + levelString + R"(\w)|$))");
 
-            std::cout << "could not match regexp" << std::endl;
+        if (!std::regex_search(fileContent, m, reSection))
+            return false;
 
-        }
+        sectionBuffer = levelString + "  ";
+        sectionBuffer += m[1];
+
+        return true;
+    }
+
+    std::string Setup::removeComments(const std::string &content) {
+        const std::regex reClean(R"(%[^]*?\n)");
+        return std::regex_replace(content, reClean, "\n");
     }
 }
