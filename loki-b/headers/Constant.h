@@ -24,6 +24,7 @@ namespace loki {
         const double atmosphereInTorr = 760;               // Standard atmosphere in Torr (not obtained from NIST database)
 
         const double pi = M_PI;
+        const double e = M_E;
 
         const double kBeV = boltzmann / electronCharge;
         const double plankReduced = plank / (2. * pi);

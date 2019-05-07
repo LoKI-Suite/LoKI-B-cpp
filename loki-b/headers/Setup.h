@@ -7,7 +7,9 @@
 
 #include <string>
 #include <vector>
+
 #include <Enumeration.h>
+#include <Parse.h>
 
 namespace loki {
     /*
@@ -20,6 +22,15 @@ namespace loki {
      * to gain the required information to further parse the data.
      */
 
+    // TODO: Add commenting for the SetupBase struct.
+
+    struct SetupBase {
+        virtual bool parse(const std::string &sectionContent) = 0;
+
+        bool parseSubStructure(const std::string &sectionContent,
+                const std::string &fieldName, SetupBase &subStruct);
+    };
+
     /* ------- WORKING CONDITIONS ------- */
 
     /*
@@ -29,7 +40,7 @@ namespace loki {
      * It is a substructure of the electronKineticsSetup class.
      */
 
-    struct WorkingConditionsSetup {
+    struct WorkingConditionsSetup : public SetupBase {
         std::string reducedField;
         std::string electronTemperature;
         double excitationFrequency = 0.;
@@ -38,6 +49,8 @@ namespace loki {
         double electronDensity = 0.;
         double chamberLength = 0.;
         double chamberRadius = 0.;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- GAS PROPERTIES ------- */
@@ -52,7 +65,7 @@ namespace loki {
      * It is a substructure of the ElectronKineticsSetup class.
      */
 
-    struct GasPropertiesSetup {
+    struct GasPropertiesSetup : public SetupBase {
         std::string mass;
         std::vector<std::string> fraction;
         std::string harmonicFrequency,
@@ -61,6 +74,7 @@ namespace loki {
                     electricQuadrupoleMoment,
                     OPBParameter;
 
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- STATE PROPERTIES ------- */
@@ -69,17 +83,19 @@ namespace loki {
      * StatePropertiesSetup is an auxiliary structure that stores the properties from the
      * setup file concerning the specified gasses.
      *
-     * Note that its fields are all strings since gas properties are supplied through either
-     * a file, function, or direct value. The type of the input data will be deduced when
-     * parsing and the parser will handle accordingly.
+     * Note that its fields are all strings since state properties are supplied through
+     * either a file, function, or direct value. The type of the input data will be deduced
+     * in the second parsing step and the parser will handle accordingly.
      *
      * It is a substructure of the ElectronKineticsSetup class.
      */
 
-    struct StatePropertiesSetup {
+    struct StatePropertiesSetup : public SetupBase {
         std::vector<std::string> energy,
                                  statisticalWeight,
                                  population;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- NUMERICS ------- */
@@ -91,10 +107,12 @@ namespace loki {
      * It is a substructure of the EnergyGrid class.
      */
 
-    struct SmartGridSetup {
+    struct SmartGridSetup : public SetupBase {
         uint32_t minEedfDecay,
                  maxEedfDecay;
         double updateFactor;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /*
@@ -104,10 +122,12 @@ namespace loki {
      * It is a substructure of the NumericsSetup class.
      */
 
-    struct EnergyGridSetup {
+    struct EnergyGridSetup : public SetupBase {
         double maxEnergy;
         uint32_t cellNumber;
         SmartGridSetup smartGrid;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /*
@@ -117,8 +137,10 @@ namespace loki {
      * It is a substructure of the NonLinearRoutinesSetup class.
      */
 
-    struct OdeSetParametersSetup {
+    struct OdeSetParametersSetup : public SetupBase {
         double maxStep;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /*
@@ -128,11 +150,13 @@ namespace loki {
      * It is a substructure of the NumericsSetup class.
      */
 
-    struct NonLinearRoutinesSetup {
+    struct NonLinearRoutinesSetup : public SetupBase {
         std::string algorithm;
         double mixingParameter,
                maxEedfRelError;
         OdeSetParametersSetup odeSetParameters;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /*
@@ -142,9 +166,12 @@ namespace loki {
      * It is a substructure of the ElectronKineticsSetup class.
      */
 
-    struct NumericsSetup {
+    struct NumericsSetup : public SetupBase {
         EnergyGridSetup energyGrid;
+        double maxPowerBalanceRelError = -1.;
         NonLinearRoutinesSetup nonLinearRoutines;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- ELECTRON KINETICS ------- */
@@ -156,20 +183,22 @@ namespace loki {
      * It is a substructure of the Setup class.
      */
 
-    struct ElectronKineticsSetup {
-        bool isEnabled = false;
-        Enumeration::EedfType eedf;
+    struct ElectronKineticsSetup : public SetupBase {
+        bool isOn = false;
+        Enumeration::EedfType eedfType;
         uint8_t shapeParameter = 0;
-        Enumeration::IonizationOperatorType ionizationOperator;
-        Enumeration::GrowthModelType growthModel;
+        Enumeration::IonizationOperatorType ionizationOperatorType;
+        Enumeration::GrowthModelType growthModelType;
         bool includeEECollisions = false;
         std::vector<std::string> LXCatFiles;
-        std::vector<std::string> extraLXCatFiles;
+        std::vector<std::string> LXCatFilesExtra;
         std::vector<std::string> effectiveCrossSectionPopulations;
         std::vector<std::string> CARgases;
         GasPropertiesSetup gasProperties;
         StatePropertiesSetup stateProperties;
         NumericsSetup numerics;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- OUTPUT ------- */
@@ -181,10 +210,12 @@ namespace loki {
      * It is a substructure of the Setup class.
      */
 
-    struct OutputSetup {
+    struct OutputSetup : public SetupBase {
         bool isOn;
         std::string folder;
         std::vector<std::string> dataFiles;
+
+        bool parse(const std::string &sectionContent) override;
     };
 
     /* ------- SETUP ------- */
@@ -194,34 +225,20 @@ namespace loki {
      * information from the setup file in a formatted way.
      */
 
-    class Setup {
+    class Setup : public SetupBase {
         const std::string inputPath{"Input"};
 
+        // The 'parse' function is private since users should call 'parseFile'.
+        bool parse(const std::string &sectionContent) override;
     public:
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
         OutputSetup output;
 
-        explicit Setup(const std::string& fileName);
+        Setup() = default;
+        ~Setup() = default;
 
-        /*
-         * getSection is a static function that retrieves the contents of a specified section
-         * and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
-         * to indicate whether the operation was successful.
-         *
-         * NOTE: This function does not deal with ambiguous section names. E.g. the "isOn" field
-         * occurs multiple times in the file. The user is advised to only retrieve sections that
-         * are one level above the level of "fileContent". E.g. retrieve "isOn" when "fileContent"
-         * contains the contents of the "electronKinetics" section.
-         */
-        static bool getSection(const std::string &fileContent, const std::string &sectionTitle,
-                std::string &sectionBuffer);
-
-        /*
-         * removeComments is a static function that takes a string as an argument. It strips the
-         * string from comments and returns it.
-         */
-        static std::string removeComments(const std::string &content);
+        bool parseFile(const std::string& fileName);
     };
 
 

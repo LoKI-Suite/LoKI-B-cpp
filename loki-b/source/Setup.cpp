@@ -9,20 +9,65 @@
 
 #include "Setup.h"
 
+/*
+ * The SET definition provides a shorthand for setting a member variable of a setup struct.
+ * The user has to pass
+ *
+ * The '#property' yields the passed variable name as a string. Hence, SET requires that the
+ * designated member variable has the same name as the corresponding field in the input file.
+ */
+#define SET(section, property) Parse::setField(section, #property, property)
+
+/*
+ * The R_SET variant will cause a boolean function to return false when the field name is
+ * missing. Use this variant for fields that are required to perform the simulation.
+ */
+#define R_SET(section, property) if (!Parse::setField(section, #property, property)) return false
+
+/*
+ * The SUB_STRUCT definition provides a shorthand for setting a sub structure of a SetupBase
+ * object.
+ */
+#define SUB_STRUCT(section, subStruct) parseSubStructure(section, #subStruct, subStruct)
+
+/*
+ * The R_SUB_STRUCT requires the sub structures to be present and parsed succesfully. Use
+ * this variant for sub structures that are obligatory.
+ */
+#define R_SUB_STRUCT(section, subStruct) if (!parseSubStructure(section, #subStruct, subStruct)) return false
+
 namespace loki {
-    // TODO: move the functionality that is now in the constructor into a Setup::parse
-    //  function such that it can return a boolean to specify whether the operation was
-    //  successful.
 
-    // TODO: add "parse" functions for the substructures of the setup structure, such
-    //  that the substructure can be filled by passing a section string.
+    // TODO: Add commenting for the parseSubStructure function.
 
-    Setup::Setup(const std::string& fileName) {
+    bool SetupBase::parseSubStructure(const std::string &sectionContent, const std::string &fieldName,
+                                      SetupBase &subStruct) {
+        std::string fieldContent;
+
+        if (Parse::getSection(sectionContent, fieldName, fieldContent)) {
+            if (!subStruct.parse(fieldContent)) {
+                std::cerr << "Could not properly parse the " << fieldName << " section. "
+                             "Please check for missing values and improper indentation"
+                          << std::endl;
+                return false;
+            }
+        } else {
+            std::cerr << "The input file does not contain the " << fieldName
+                      << " section." << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    // TODO: Add commenting for the parseFile function;
+
+    bool Setup::parseFile(const std::string &fileName) {
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {
-            std::cerr << "could not open input file" << std::endl;
-            return;
+            std::cerr << "Could not find/open specified file" << std::endl;
+            return false;
         }
 
         // Load the contents of the file into a string buffer.
@@ -30,66 +75,127 @@ namespace loki {
         stringBuffer << file.rdbuf();
 
         // Store the file contents in a string and remove any comments.
-        std::string fileContent = Setup::removeComments(stringBuffer.str());
+        std::string fileContent = Parse::removeComments(stringBuffer.str());
 
-        // Object to store the results of the Setup:getSection calls.
-        std::string sectionBuffer;
-
-        if (Setup::getSection(fileContent, "workingConditions", sectionBuffer)) {
-            //parse workingConditions section
-            std::cout << sectionBuffer << std::endl;
-        } else {
-            std::cerr << "The input file does not contain a section to specify the working "
-                         "conditions. Please add this section and try again." << std::endl;
-            return;
-        }
-
-        if (Setup::getSection(fileContent, "electronKinetics", sectionBuffer)) {
-            //parse electronKinetics section
-            std::cout << sectionBuffer << std::endl;
-        } else {
-            this->electronKinetics.isEnabled = false;
-        }
-
-        if (Setup::getSection(fileContent, "output", sectionBuffer)) {
-            //parse output section
-            std::cout << sectionBuffer << std::endl;
-        } else {
-            std::cerr << "The input file does not contain a section to specify the output. "
-                         "Please add this section and try again." << std::endl;
-            return;
-        }
-    }
-
-    bool Setup::getSection(const std::string &fileContent, const std::string &sectionTitle,
-            std::string &sectionBuffer) {
-
-        // This regular expression finds the level of a specific section. In other
-        // words, it finds the number of spaces that precede the section title
-        const std::regex reLevel(R"((?:^|\n)( *))" + sectionTitle);
-        std::smatch m;
-
-        if (!std::regex_search(fileContent, m, reLevel))
-            return false;
-
-        const std::string levelString = m[1];
-
-        // This regular expression matches a specific section in the input file. More accurately,
-        // it returns the text in between the specified section and the next section on the same
-        // level.
-        const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)\n+(?:(?:)" + levelString + R"(\w)|$))");
-
-        if (!std::regex_search(fileContent, m, reSection))
-            return false;
-
-        sectionBuffer = levelString + "  ";
-        sectionBuffer += m[1];
+        this->parse(fileContent);
 
         return true;
     }
 
-    std::string Setup::removeComments(const std::string &content) {
-        const std::regex reClean(R"(%[^]*?\n)");
-        return std::regex_replace(content, reClean, "\n");
+    // TODO: add general commenting for the parse functions.
+
+    bool Setup::parse(const std::string &sectionContent) {
+
+        R_SUB_STRUCT(sectionContent, workingConditions);
+        R_SUB_STRUCT(sectionContent, electronKinetics);
+        R_SUB_STRUCT(sectionContent, output);
+
+        return true;
+    }
+
+    bool WorkingConditionsSetup::parse(const std::string &sectionContent) {
+        // TODO: Check whether 'reducedField' is present in the case that electronKinetics
+        //  is enabled (and subsequently that 'electronTemperature' is present when it is
+        //  disabled.
+
+        SET(sectionContent, reducedField);
+        SET(sectionContent, electronTemperature);
+        R_SET(sectionContent, excitationFrequency);
+        R_SET(sectionContent, gasPressure);
+        R_SET(sectionContent, gasTemperature);
+        R_SET(sectionContent, electronDensity);
+        R_SET(sectionContent, chamberLength);
+        R_SET(sectionContent, chamberRadius);
+
+        return true;
+    }
+
+    bool ElectronKineticsSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, isOn);
+        R_SET(sectionContent, eedfType);
+        SET(sectionContent, shapeParameter);
+        R_SET(sectionContent, ionizationOperatorType);
+        R_SET(sectionContent, growthModelType);
+        R_SET(sectionContent, includeEECollisions);
+        R_SET(sectionContent, LXCatFiles);
+        SET(sectionContent, LXCatFilesExtra);
+        SET(sectionContent, effectiveCrossSectionPopulations);
+        SET(sectionContent, CARgases);
+
+        R_SUB_STRUCT(sectionContent, gasProperties);
+        R_SUB_STRUCT(sectionContent, stateProperties);
+        R_SUB_STRUCT(sectionContent, numerics);
+
+        return true;
+    }
+
+    bool GasPropertiesSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, mass);
+        R_SET(sectionContent, fraction);
+        R_SET(sectionContent, harmonicFrequency);
+        R_SET(sectionContent, anharmonicFrequency);
+        R_SET(sectionContent, rotationalConstant);
+        R_SET(sectionContent, electricQuadrupoleMoment);
+        R_SET(sectionContent, OPBParameter);
+
+        return true;
+    }
+
+    bool StatePropertiesSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, energy);
+        R_SET(sectionContent, statisticalWeight);
+        R_SET(sectionContent, population);
+
+        return true;
+    }
+
+    bool NumericsSetup::parse(const std::string &sectionContent) {
+        SET(sectionContent, maxPowerBalanceRelError);
+
+        R_SUB_STRUCT(sectionContent, energyGrid);
+        R_SUB_STRUCT(sectionContent, nonLinearRoutines);
+
+        return true;
+    }
+
+    bool EnergyGridSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, maxEnergy);
+        R_SET(sectionContent, cellNumber);
+
+        SUB_STRUCT(sectionContent, smartGrid);
+
+        return true;
+    }
+
+    bool SmartGridSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, minEedfDecay);
+        R_SET(sectionContent, maxEedfDecay);
+        R_SET(sectionContent, updateFactor);
+
+        return true;
+    }
+
+    bool NonLinearRoutinesSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, algorithm);
+        R_SET(sectionContent, mixingParameter);
+        R_SET(sectionContent, maxEedfRelError);
+
+        SUB_STRUCT(sectionContent, odeSetParameters);
+
+        return true;
+    }
+
+    bool OdeSetParametersSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, maxStep);
+
+        return true;
+    }
+
+    bool OutputSetup::parse(const std::string &sectionContent) {
+        R_SET(sectionContent, isOn);
+        R_SET(sectionContent, folder);
+        R_SET(sectionContent, dataFiles);
+
+        return true;
     }
 }
