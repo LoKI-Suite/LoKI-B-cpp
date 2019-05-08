@@ -226,7 +226,7 @@ namespace loki {
      */
 
     class Setup : public SetupBase {
-        const std::string inputPath{"Input"};
+        const std::string inputPath{"../Input"};
 
         // The 'parse' function is private since users should call 'parseFile'.
         bool parse(const std::string &sectionContent) override;

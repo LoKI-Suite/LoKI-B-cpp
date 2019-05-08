@@ -39,3 +39,7 @@ target_link_libraries(lua_test liblua53.a dl)
 
 # -- typedef_test -- #
 add_executable(typedef_test tests/typedef_test/main.cpp)
+
+# -- eigen_test -- #
+add_executable(eigen_test tests/eigen_test/main.cpp)
+target_include_directories(eigen_test PRIVATE include)
