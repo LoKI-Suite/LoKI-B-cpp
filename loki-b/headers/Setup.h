@@ -14,7 +14,7 @@
 namespace loki {
     /*
      * All structures presented in this header file are used to do a first parse
-     * of, and store the different sections in the main setup file.
+     * of, and store the different sections, present in the main setup file.
      *
      * Please note that these specific classes are all defined as structs, such
      * that their member variables are directly available. This is done since
@@ -22,12 +22,19 @@ namespace loki {
      * to gain the required information to further parse the data.
      */
 
-    // TODO: Add commenting for the SetupBase struct.
+    /*
+     * The SetupBase struct provides a base class that all setup structures will
+     * inherit from. It contains a pure virtual 'parse' function, that each class
+     * can override to specify how the information in this class can be obtained
+     * from (a section of) the input file. Furthermore, it defines a
+     * 'parseSubStructure' function that accepts a SetupBase struct by reference,
+     * which is then filled.
+     */
 
     struct SetupBase {
         virtual bool parse(const std::string &sectionContent) = 0;
 
-        bool parseSubStructure(const std::string &sectionContent,
+        bool parseSubStructure(const std::string &content,
                 const std::string &fieldName, SetupBase &subStruct);
     };
 

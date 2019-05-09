@@ -12,8 +12,19 @@
 
 namespace loki {
     struct Parse {
-
-        // TODO: add commenting for the setField function.
+        /*
+         * The setField function extracts a value from a field in the input file,
+         * casts it to the appropriate type and assigns it to the 'value' argument
+         * which is passed by reference. It returns a boolean to give an indication
+         * whether the operation was successful.
+         *
+         * Note that this is a template function, and the type of 'value' is arbitrary,
+         * a standard string can be converted to most basic types using a stringstream.
+         * However, for some basic types (e.g. bool) and custom types, such as enums,
+         * we can specialize this function to alter its behaviour.
+         *
+         * The definitions of these specializations can be found below the Parse struct.
+         */
 
         template <typename T>
         static bool setField(const std::string &sectionContent,
@@ -30,7 +41,19 @@ namespace loki {
             return true;
         }
 
-        // TODO: add commenting for the getFieldValue function.
+        /*
+         * The getFieldValue function will extract the value of a given field name.
+         * From a section in the input file. This function is specifically designed
+         * to extract single line values (thus they are not a section or list). The
+         * string buffer to hold the value is passed by reference and the function
+         * returns a boolean to specify whether the operation was successful.
+         *
+         * NOTE: This function does not deal with ambiguous field names. E.g. the "isOn"
+         * field occurs multiple times in the file. The user is advised to only retrieve
+         * fields that are one level above the level of "sectionContent". E.g. retrieve
+         * "isOn" when "sectionContent" contains the contents of the "electronKinetics"
+         * section.
+         */
 
         static bool getFieldValue(const std::string &sectionContent,
                 const std::string &fieldName, std::string &valueBuffer) {
@@ -46,12 +69,23 @@ namespace loki {
             return true;
         }
 
-        // TODO: add commenting for the getList function.
+        /*
+         * The getList function retrieves all entries in a list type field, e.g.:
+         *
+         * dataFiles:
+         *   - eedf
+         *   - swarmParameters
+         *
+         * and returns them as a vector of strings (thus {"eedf", "swarmParameters"}
+         * in the example). This vector is passed by reference as an argument. and
+         * the function returns a boolean to specify whether the operation was
+         * successful.
+         */
 
         static bool getList(const std::string &sectionContent,
                 const std::string &fieldName, std::vector<std::string> &container) {
 
-            std::regex r(R"(-\s*(.*)\s*\n*)");
+            std::regex r(R"(-\s*(\S+(?: \S+)*)\s*\n*)");
 
             for (auto it = std::sregex_iterator(sectionContent.begin(), sectionContent.end(), r);
                         it != std::sregex_iterator(); ++it) {
@@ -66,11 +100,6 @@ namespace loki {
          * getSection is a static function that retrieves the contents of a specified section
          * and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
          * to indicate whether the operation was successful.
-         *
-         * NOTE: This function does not deal with ambiguous section names. E.g. the "isOn" field
-         * occurs multiple times in the file. The user is advised to only retrieve sections that
-         * are one level above the level of "fileContent". E.g. retrieve "isOn" when "fileContent"
-         * contains the contents of the "electronKinetics" section.
          */
         static bool getSection(const std::string &fileContent, const std::string &sectionTitle,
                                std::string &sectionBuffer) {
@@ -111,10 +140,30 @@ namespace loki {
 
     };
 
-    // TODO: Add commenting for the specialized setField functions.
-
-    // Use "inline" with fully specialized templates to refrain from
-    // breaking the "One Definition Rule".
+    /*
+     * The setField function needs to behave differently when it is
+     * supplied with some specific types. The types for which the
+     * function needs to be specialized are:
+     *
+     * - bool; since these values are supplied through 'true' and
+     *   'false' rather than '1' and '0'.
+     * - std::string; strictly speaking, this is not necessary,
+     *   but in this case we can skip the type cast since the
+     *   desired type is already std::string.
+     * - std::vector<std::string>; in this case the behaviour
+     *   is completely different and the getList function is
+     *   used.
+     * - enums; whenever a new enum is defined that can occur in
+     *   the input file, a new specialization needs to be written.
+     *
+     * Note that we could have defined a different function for every
+     * type (e.g. setBool, setString, ...), however, now we can set
+     * any desired value through a single function.
+     *
+     * Use "inline" with fully specialized templates to refrain from
+     * breaking the "One Definition Rule". An alternative is to add
+     * a Parse.cpp file and specify the specializations there.
+     */
     template <> inline
     bool Parse::setField<std::string>(const std::string &sectionContent,
                                const std::string &fieldName, std::string &value) {

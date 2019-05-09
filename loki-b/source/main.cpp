@@ -16,8 +16,6 @@ using namespace loki::Enumeration;
 int main (int argc, char ** argv)
 {
     // TODO: Allow the user to specify the setup file in the program arguments.
-    // TODO: Add "error" at the start of an error message.
-
     // TODO: measure speed difference between std::vector and dynamically allocated arrays.
 
     loki::Setup setup;

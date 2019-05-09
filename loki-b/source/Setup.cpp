@@ -19,8 +19,8 @@
 #define SET(section, property) Parse::setField(section, #property, property)
 
 /*
- * The R_SET variant will cause a boolean function to return false when the field name is
- * missing. Use this variant for fields that are required to perform the simulation.
+ * The R_SET variant will cause a boolean function to return false when the setField function
+ * is unsuccessful. Use this variant for fields that are required to perform the simulation.
  */
 #define R_SET(section, property) if (!Parse::setField(section, #property, property)) return false
 
@@ -31,42 +31,53 @@
 #define SUB_STRUCT(section, subStruct) parseSubStructure(section, #subStruct, subStruct)
 
 /*
- * The R_SUB_STRUCT requires the sub structures to be present and parsed succesfully. Use
- * this variant for sub structures that are obligatory.
+ * The R_SUB_STRUCT requires the sub structures to be present in the input file, and parsed
+ * successfully. Use this variant for sub structures that are obligatory.
  */
 #define R_SUB_STRUCT(section, subStruct) if (!parseSubStructure(section, #subStruct, subStruct)) return false
 
 namespace loki {
 
-    // TODO: Add commenting for the parseSubStructure function.
+    /*
+     * The parseSubStructure function fills a substructure with the data available in the
+     * supplied (section of the) input file. This substructure is derived from the
+     * SetupBase struct and it is passed by reference. Note that every such derived class
+     * has overridden the 'parse' function to fill its fields and substructures as
+     * desired.
+     */
 
-    bool SetupBase::parseSubStructure(const std::string &sectionContent, const std::string &fieldName,
+    bool SetupBase::parseSubStructure(const std::string &content, const std::string &fieldName,
                                       SetupBase &subStruct) {
-        std::string fieldContent;
+        std::string sectionContent;
 
-        if (Parse::getSection(sectionContent, fieldName, fieldContent)) {
-            if (!subStruct.parse(fieldContent)) {
-                std::cerr << "Could not properly parse the " << fieldName << " section. "
-                             "Please check for missing values and improper indentation"
+        if (Parse::getSection(content, fieldName, sectionContent)) {
+            if (!subStruct.parse(sectionContent)) {
+                std::cerr << "[warning] Could not properly parse the " << fieldName
+                          << " section. Please check for missing values and improper "
+                             "indentation"
                           << std::endl;
                 return false;
             }
         } else {
-            std::cerr << "The input file does not contain the " << fieldName
-                      << " section." << std::endl;
+            std::cerr << "[warning] The input file does not contain the "
+                      << fieldName << " section." << std::endl;
             return false;
         }
 
         return true;
     }
 
-    // TODO: Add commenting for the parseFile function;
+    /*
+     * The parseFile function is only available to the main Setup class. The user
+     * passes the name of the input file. The function will then extract the text
+     * from the input file, remove any comments and pass it to the parse function.
+     */
 
     bool Setup::parseFile(const std::string &fileName) {
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {
-            std::cerr << "Could not find/open specified file" << std::endl;
+            std::cerr << "[error] Could not find/open specified file" << std::endl;
             return false;
         }
 
@@ -77,12 +88,22 @@ namespace loki {
         // Store the file contents in a string and remove any comments.
         std::string fileContent = Parse::removeComments(stringBuffer.str());
 
-        this->parse(fileContent);
-
-        return true;
+        return this->parse(fileContent);
     }
 
-    // TODO: add general commenting for the parse functions.
+    /*
+     * Every derived class of the BaseSetup struct needs to override the parse function.
+     * Inside this function the user should call Parse::setField on all the class member
+     * variables, and SetupBase::parseSubStructure on all its substructures.
+     *
+     * At the top of this file, there are some defines that ease this process. However,
+     * they do require the member variable to have the same name as specified in the
+     * input file.
+     *
+     * Note that due to the lack of reflection/inspection in C++, we cannot reference
+     * members by a string representation or loop through them. Therefore, we have to
+     * call either (R_)SET() or (R_)SUB_STRUCT() for each member individually.
+     */
 
     bool Setup::parse(const std::string &sectionContent) {
 

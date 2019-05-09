@@ -55,9 +55,12 @@ namespace loki {
         }
 
         // This function does not work because of expression templates.
+        // I tried to fix it by defining a 'solve_type' in the trait class that should hold
+        // the resulting expression template, but it does not function correctly.
         // One could make it work by passing the output vector by reference as an argument.
         // However I am curious how to solve this problem in a more elegant way.
         Traits<eigen>::solve_type solve(const Traits<eigen>::c_vec_type &b) override {
+
             return this->matrix->llt().solve(b);
         }
 
