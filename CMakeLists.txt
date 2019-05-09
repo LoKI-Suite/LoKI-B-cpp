@@ -26,6 +26,10 @@ target_link_directories(loki PRIVATE ${dep})
 
 # --- tests --- #
 
+# -- loki_tests -- #
+add_executable(loki_tests tests/loki_tests/main.cpp)
+target_include_directories(loki_tests PRIVATE ${inc} ${h})
+
 # -- regex_test -- #
 add_executable(regex_test tests/regex_test/main.cpp)
 
