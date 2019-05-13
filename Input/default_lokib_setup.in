@@ -3,6 +3,17 @@
 % (subject to change during development) %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% --- configuration of the working conditions ---
+workingConditions:
+  reducedField:  logspace(-4,3,100)           % in Td
+  electronTemperature: linspace(0.03, 5, 300) % in eV
+  excitationFrequency: 0                      % in Hz
+  gasPressure: 133.32                         % in Pa
+  gasTemperature: 300                         % in K
+  electronDensity: 1e19                       % in m-3
+  chamberLength: 1.0                          % in m
+  chamberRadius: 1.0                          % in m
+
 % --- configuration of the electron kinetics ---
 electronKinetics:
   isOn: true                           % true or false (to activate of deactivate the electron kinetics)
@@ -54,17 +65,6 @@ electronKinetics:
       maxEedfRelError: 1e-9            % maximum rel. variation for EEDF between two iterations (stop criterion)
 %	  odeSetParameters:                % optional parameters for the ode solver of the "iterativeSolution" algorithm	           
 %		maxStep: 1e-7
-          
-% --- configuration of the working conditions ---
-workingConditions:
-  reducedField:  logspace(-4,3,100)           % in Td
-  electronTemperature: linspace(0.03, 5, 300) % in eV
-  excitationFrequency: 0                      % in Hz
-  gasPressure: 133.32                         % in Pa
-  gasTemperature: 300                         % in K
-  electronDensity: 1e19                       % in m-3
-  chamberLength: 1.0                          % in m
-  chamberRadius: 1.0                          % in m
 
 % --- configuration of the graphical user interface ---
 gui: 

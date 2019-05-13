@@ -16,13 +16,13 @@
  * The '#property' yields the passed variable name as a string. Hence, SET requires that the
  * designated member variable has the same name as the corresponding field in the input file.
  */
-#define SET(section, property) Parse::setField(section, #property, property)
+#define SET(section, property) if(!Parse::setField(section, #property, property)) std::cerr << "[warning] Could not properly parse the " << #property << " field.\n"
 
 /*
  * The R_SET variant will cause a boolean function to return false when the setField function
  * is unsuccessful. Use this variant for fields that are required to perform the simulation.
  */
-#define R_SET(section, property) if (!Parse::setField(section, #property, property)) return false
+#define R_SET(section, property) if (!Parse::setField(section, #property, property)) {std::cerr << "[error] Could not properly parse the " << #property << " field.\n"; return false;}
 
 /*
  * The SUB_STRUCT definition provides a shorthand for setting a sub structure of a SetupBase
@@ -115,9 +115,8 @@ namespace loki {
     }
 
     bool WorkingConditionsSetup::parse(const std::string &sectionContent) {
-        // TODO: Check whether 'reducedField' is present in the case that electronKinetics
-        //  is enabled (and subsequently that 'electronTemperature' is present when it is
-        //  disabled.
+        // TODO: Check whether 'reducedField' is present in the case that eedfType is boltzmann
+        //  (and subsequently that 'electronTemperature' is present when it is prescribed).
 
         SET(sectionContent, reducedField);
         SET(sectionContent, electronTemperature);
