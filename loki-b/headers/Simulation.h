@@ -9,15 +9,18 @@
 #include <WorkingConditions.h>
 #include <ElectronKinetics.h>
 
+#include <memory>
+
 namespace loki {
     class Simulation {
+    public:
         WorkingConditions workingConditions;
-        ElectronKinetics *electronKinetics;
+        std::unique_ptr<ElectronKinetics> electronKinetics;
         const bool enableKinetics;
 
     public:
         explicit Simulation(const Setup &setup);
-        ~Simulation();
+        ~Simulation() = default;
 
         // Copying this object is not allowed.
         Simulation(const Simulation &other) = delete;

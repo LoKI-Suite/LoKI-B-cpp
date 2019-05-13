@@ -4,16 +4,15 @@
 
 #include "Simulation.h"
 
+// TODO: It might deem necessary to parse the full ElectronKineticsSetup structure
+//  to the WorkingConditions constructor (such that we can also check whether it
+//  is enabled).
+
 loki::Simulation::Simulation(const loki::Setup &setup)
-    : workingConditions(setup.workingConditions),
+    : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
       enableKinetics(setup.electronKinetics.isOn) {
 
     if (enableKinetics) {
-        electronKinetics = new ElectronKinetics(setup.electronKinetics);
+        electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics);
     }
-
-}
-
-loki::Simulation::~Simulation() {
-
 }
