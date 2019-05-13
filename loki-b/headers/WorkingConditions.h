@@ -14,6 +14,7 @@
 
 #include <Event.h>
 #include <Setup.h>
+#include <Enumeration.h>
 
 namespace loki {
     class WorkingConditions {
@@ -22,15 +23,15 @@ namespace loki {
                gasTemperature,
                gasDensity,
                electronDensity,
-               electronTemperature,
+               electronTemperature{0},
                chamberLength,
                chamberRadius,
-               reducedField,
+               reducedField{0},
                reducedFieldSI,
                excitationFrequency,
                reducedExcFreqSI;
 
-        explicit WorkingConditions(const WorkingConditionsSetup &setup);
+        explicit WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType);
         ~WorkingConditions() = default;
 
         // Copying this object is not allowed.
