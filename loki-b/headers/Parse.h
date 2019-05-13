@@ -7,6 +7,7 @@
 
 #include <string>
 #include <regex>
+#include <iostream>
 
 #include "Enumeration.h"
 
@@ -54,11 +55,10 @@ namespace loki {
          * "isOn" when "sectionContent" contains the contents of the "electronKinetics"
          * section.
          */
-
         static bool getFieldValue(const std::string &sectionContent,
                 const std::string &fieldName, std::string &valueBuffer) {
 
-            std::regex r(fieldName + R"(:\s*([^\s\n]*)\s*\n*)");
+            std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
             std::smatch m;
 
             if (!std::regex_search(sectionContent, m, r))
@@ -81,7 +81,6 @@ namespace loki {
          * the function returns a boolean to specify whether the operation was
          * successful.
          */
-
         static bool getList(const std::string &sectionContent,
                 const std::string &fieldName, std::vector<std::string> &container) {
 
@@ -136,6 +135,42 @@ namespace loki {
         static std::string removeComments(const std::string &content) {
             const std::regex reClean(R"(%[^]*?\n)");
             return std::regex_replace(content, reClean, "\n");
+        }
+
+        // TODO: comment getFirstValue
+
+        static bool getFirstValue(const std::string &valueString, double &value) {
+            if (!getValue(valueString, value))
+                return firstValueInRange(valueString, value);
+
+            return true;
+        }
+
+    private:
+        /* -- PARSING RANGES -- */
+
+        // TODO: comment getValue
+        static bool getValue(const std::string &valueString, double &value) {
+            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
+            std::smatch m;
+
+            if (!std::regex_match(valueString, r)) return false;
+
+            std::stringstream ss(valueString);
+
+            return (bool)(ss >> value);
+        }
+
+        // TODO: comment firstValueInRange
+        static bool firstValueInRange(const std::string &rangeString, double &value) {
+            const std::regex r(R"(\s*(?:(?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
+            std::smatch m;
+
+            if (!std::regex_search(rangeString, m, r)) return false;
+
+            std::stringstream ss(m[1]);
+
+            return (bool)(ss >> value);
         }
 
     };
