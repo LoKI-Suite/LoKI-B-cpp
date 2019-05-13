@@ -7,6 +7,7 @@
 #include <Enumeration.h>
 #include <Constant.h>
 #include <Setup.h>
+#include <Simulation.h>
 
 using std::cout;
 using std::endl;
@@ -18,16 +19,24 @@ int main (int argc, char ** argv)
     // TODO: Allow the user to specify the setup file in the program arguments.
     // TODO: measure speed difference between std::vector and dynamically allocated arrays.
 
-    loki::Setup setup;
+    try {
+        loki::Setup setup;
 
-    if (!setup.parseFile("default_lokib_setup.in")) {
-        return 1;
-    }
-
-    if (setup.electronKinetics.isOn) {
-        if (setup.electronKinetics.eedfType == EedfType::boltzmann) {
-            std::cout << "solver routine" << std::endl;
+        if (!setup.parseFile("default_lokib_setup.in")) {
+            return 1;
         }
+
+        loki::Simulation simulation(setup);
+
+        std::cout << "still here though" << std::endl;
+
+        if (setup.electronKinetics.isOn) {
+            if (setup.electronKinetics.eedfType == EedfType::boltzmann) {
+                std::cout << "solver routine" << std::endl;
+            }
+        }
+    } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
     }
 
     // generate output
