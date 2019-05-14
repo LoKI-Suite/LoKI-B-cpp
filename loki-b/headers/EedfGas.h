@@ -6,14 +6,13 @@
 #define LOKI_CPP_EEDFGAS_H
 
 #include "Gas.h"
+#include "EedfState.h"
 
-/*
- *
- */
+#include <vector>
 
 namespace loki {
     class EedfGas : public Gas {
-
+        std::vector<EedfState> states;
     };
 }
 

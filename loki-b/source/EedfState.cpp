@@ -3,6 +3,7 @@
 //
 
 #include "EedfState.h"
+#include "EedfGas.h"
 
 namespace loki {
 

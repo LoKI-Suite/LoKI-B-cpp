@@ -9,23 +9,21 @@
 #include <iostream>
 
 namespace loki {
-    // TODO: parse the electronTemperature and reducedField
-    //  - We can either parse them in the constructor
-    //    (problem is that the job system also needs this information)
-    //  - We can initialize the working conditions after creating the jobs.
-    //  - We can let the variables be initialized by processing the first job.
+    using namespace Enumeration;
+
+    // TODO: Comment on WorkingConditions().
 
     WorkingConditions::WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType) :
         gasPressure(setup.gasPressure), gasTemperature(setup.gasTemperature),
         electronDensity(setup.electronDensity), chamberLength(setup.chamberLength),
         chamberRadius(setup.chamberRadius), excitationFrequency(setup.excitationFrequency) {
 
-        if ((eedfType == Enumeration::EedfType::boltzmann) &&
+        if ((eedfType == EedfType::boltzmann) &&
                 !Parse::getFirstValue(setup.reducedField, reducedField)) {
 
             Log<ParseFieldError>::Error("reducedField");
         }
-        if ((eedfType == Enumeration::EedfType::prescribed) &&
+        if ((eedfType == EedfType::prescribed) &&
                 !Parse::getFirstValue(setup.electronTemperature, electronTemperature)) {
 
             Log<ParseFieldError>::Error("electronTemperature");

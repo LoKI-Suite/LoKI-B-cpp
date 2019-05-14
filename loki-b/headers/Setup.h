@@ -191,12 +191,12 @@ namespace loki {
      */
 
     struct ElectronKineticsSetup : public SetupBase {
-        bool isOn = false;
+        bool isOn{false};
         Enumeration::EedfType eedfType;
-        uint8_t shapeParameter;
+        uint8_t shapeParameter{0};
         Enumeration::IonizationOperatorType ionizationOperatorType;
         Enumeration::GrowthModelType growthModelType;
-        bool includeEECollisions = false;
+        bool includeEECollisions{false};
         std::vector<std::string> LXCatFiles;
         std::vector<std::string> LXCatFilesExtra;
         std::vector<std::string> effectiveCrossSectionPopulations;

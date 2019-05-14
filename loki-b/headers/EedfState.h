@@ -5,11 +5,31 @@
 #ifndef LOKI_CPP_EEDFSTATE_H
 #define LOKI_CPP_EEDFSTATE_H
 
-#include <State.h>
+#include "State.h"
+
+#include <vector>
 
 namespace loki {
-    class EedfState : public State {
+    // Forward declaration of EedfGas
+    class EedfGas;
 
+    class EedfState : public State {
+        bool isTarget{false};
+
+        EedfGas * gas;
+        EedfState * parent;
+
+        std::vector<EedfState *> children;
+
+        //std::vector<Collision *> collisions, extraCollisions;
+
+    public:
+        EedfState() = default;
+        ~EedfState() = default;
+
+        EedfState(const EedfState &other) = delete;
+
+        bool operator==(const EedfState &other);
     };
 }
 

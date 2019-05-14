@@ -33,6 +33,23 @@ namespace loki {
             function
         };
 
+        enum class StateType : uint8_t {
+            ionic,
+            electronic,
+            vibrational,
+            rotational
+        };
+
+        enum class CollisionType : uint8_t {
+            elastic,
+            effective,
+            excitation,
+            vibrational,
+            rotational,
+            ionization,
+            attachment
+        };
+
     }
 }
 

@@ -6,9 +6,17 @@
 #define LOKI_CPP_ELECTRONKINETICS_H
 
 #include <Setup.h>
+#include <GasMixture.h>
 
 namespace loki {
+    using namespace Enumeration;
+
     class ElectronKinetics {
+        EedfType eedfType;
+        uint8_t shapeParameter;
+        IonizationOperatorType ionizationOperatorType;
+        GrowthModelType growthModelType;
+        bool includeEECollisions;
 
     public:
         explicit ElectronKinetics(const ElectronKineticsSetup &setup);
