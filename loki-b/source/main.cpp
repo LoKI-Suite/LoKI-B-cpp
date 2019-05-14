@@ -8,6 +8,8 @@
 #include <Constant.h>
 #include <Setup.h>
 #include <Simulation.h>
+#include <chrono>
+#include <Log.h>
 
 using std::cout;
 using std::endl;
@@ -19,6 +21,8 @@ int main (int argc, char ** argv)
     // TODO: Allow the user to specify the setup file in the program arguments.
     // TODO: measure speed difference between std::vector and dynamically allocated arrays.
 
+    auto begin = std::chrono::high_resolution_clock::now();
+
     try {
         loki::Setup setup;
 
@@ -28,8 +32,6 @@ int main (int argc, char ** argv)
 
         loki::Simulation simulation(setup);
 
-        std::cout << "still here though" << std::endl;
-
         if (setup.electronKinetics.isOn) {
             if (setup.electronKinetics.eedfType == EedfType::boltzmann) {
                 std::cout << "solver routine" << std::endl;
@@ -38,6 +40,9 @@ int main (int argc, char ** argv)
     } catch (const std::exception &e) {
         std::cout << e.what() << std::endl;
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << "mus" << std::endl;
 
     // generate output
 
