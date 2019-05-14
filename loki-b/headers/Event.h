@@ -30,8 +30,8 @@ namespace loki {
         }
 
         template<class C>
-        void addListener(void (C::*f)(T... Args), C &c) {
-            callbacks.emplace_back([&c, f](T... t) -> void { (c.*f)(t...); });
+        void addListener(void (C::*f)(T... Args), C *c) {
+            callbacks.emplace_back([c, f](T... t) -> void { (c->*f)(t...); });
         }
     };
 
