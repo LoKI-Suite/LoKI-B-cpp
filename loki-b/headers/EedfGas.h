@@ -12,7 +12,13 @@
 
 namespace loki {
     class EedfGas : public Gas {
+        double OPBParameter;
         std::vector<EedfState> states;
+
+        // Is this necessary? Since we already have a big array of
+        // std::vector<Collision *> collisions, extraCollisions;
+
+        // TODO: effectivePopulations -> what type?
     };
 }
 

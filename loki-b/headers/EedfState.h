@@ -21,6 +21,7 @@ namespace loki {
 
         std::vector<EedfState *> children;
 
+        // Are these needed?
         //std::vector<Collision *> collisions, extraCollisions;
 
     public:

@@ -8,6 +8,8 @@
 #include <Setup.h>
 #include <GasMixture.h>
 
+// TODO: Fully implement the GasMixtures class.
+
 namespace loki {
     using namespace Enumeration;
 

@@ -5,9 +5,9 @@
 #ifndef LOKI_CPP_GASMIXTURE_H
 #define LOKI_CPP_GASMIXTURE_H
 
-// TODO: Fill Gas, State and Collision structures
-// TODO: Implement LXCat file parsing
-// TODO: Implement Property file / function parsing
+// TODO: Fill the Gas, State and Collision structures.
+// TODO: Implement LXCat file parsing.
+// TODO: Implement Property file / function parsing.
 
 #include <vector>
 
