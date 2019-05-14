@@ -9,20 +9,27 @@
 #include <string>
 #include <iostream>
 
+#define RED     "\e[1;31m"
+#define YELLOW  "\e[1;33m"
+#define NC      "\e[0m"
+
 namespace loki {
+
     template <typename ErrorType>
     class Log {
     public:
         template<typename T> inline
         static void Warning(const T &message) {
-            std::cerr << "[Warning] ";
+            std::cerr << YELLOW << "[Warning] ";
             ErrorType::print(message);
+            std::cerr << NC;
         }
 
         template<typename T> inline
         static void Error(const T &message) {
-            std::cerr << "[Error] ";
+            std::cerr << RED << "[Error] ";
             ErrorType::print(message);
+            std::cerr << NC;
             throw std::runtime_error("Loki Exception");
         }
     };
