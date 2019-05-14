@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 project(loki_cpp)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -9,22 +10,30 @@ set(h   loki-b/headers)
 set(inc include)
 set(dep dependencies)
 
-set(cpp ${src}/main.cpp ${src}/WorkingConditions.cpp
+set(cpp ${src}/WorkingConditions.cpp
         ${src}/Grid.cpp ${src}/Gas.cpp ${src}/EedfGas.cpp
         ${src}/Collision.cpp ${src}/State.cpp ${src}/EedfState.cpp
-        ${src}/Setup.cpp ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp)
+        ${src}/Setup.cpp ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp ${src}/Log.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
-        ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h)
+        ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h ${h}/Log.h)
 
-add_executable(loki ${headers} ${cpp})
+add_executable(loki ${headers} ${cpp} ${src}/main.cpp)
 
 target_include_directories(loki PRIVATE ${h} ${inc})
 target_link_directories(loki PRIVATE ${dep})
 
+# target_compile_options(loki PRIVATE -O3)
 
+# -- library version -- #
+add_library(loki_l ${headers} ${cpp})
+
+target_include_directories(loki_l PRIVATE ${h} ${inc})
+target_link_directories(loki_l PRIVATE ${dep})
+
+# set_target_properties(loki_l PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # --- tests --- #
 
 # -- loki_tests -- #
