@@ -5,6 +5,7 @@
 #include <WorkingConditions.h>
 #include <Constant.h>
 #include <Parse.h>
+#include <Log.h>
 #include <iostream>
 
 namespace loki {
@@ -22,12 +23,12 @@ namespace loki {
         if ((eedfType == Enumeration::EedfType::boltzmann) &&
                 !Parse::getFirstValue(setup.reducedField, reducedField)) {
 
-            std::cerr << "[error] Failed to parse reducedField entry." << std::endl;
+            Log<ParseFieldError>::Error("reducedField");
         }
         if ((eedfType == Enumeration::EedfType::prescribed) &&
                 !Parse::getFirstValue(setup.electronTemperature, electronTemperature)) {
 
-            std::cerr << "[error] Failed to parse electronTemperature entry." << std::endl;
+            Log<ParseFieldError>::Error("electronTemperature");
         }
 
         gasDensity = gasPressure / (Constant::boltzmann * gasTemperature);

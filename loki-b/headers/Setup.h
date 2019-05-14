@@ -34,7 +34,7 @@ namespace loki {
     struct SetupBase {
         virtual bool parse(const std::string &sectionContent) = 0;
 
-        bool parseSubStructure(const std::string &content,
+        static bool parseSubStructure(const std::string &content,
                 const std::string &fieldName, SetupBase &subStruct);
     };
 
@@ -193,7 +193,7 @@ namespace loki {
     struct ElectronKineticsSetup : public SetupBase {
         bool isOn = false;
         Enumeration::EedfType eedfType;
-        uint8_t shapeParameter = 0;
+        uint8_t shapeParameter;
         Enumeration::IonizationOperatorType ionizationOperatorType;
         Enumeration::GrowthModelType growthModelType;
         bool includeEECollisions = false;

@@ -53,7 +53,7 @@ namespace loki {
         static void print(const T &t) {
             std::cerr << "Could not properly parse the " << t
                       << " section. Please check for missing values and improper "
-                         "indentation";
+                         "indentation." << std::endl;
         }
     };
 

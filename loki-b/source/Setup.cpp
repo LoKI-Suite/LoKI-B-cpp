@@ -8,6 +8,13 @@
 #include <regex>
 
 #include "Setup.h"
+#include <Log.h>
+
+// TODO: Think which is desirable:
+//  1. Should fields that are required and cannot be parsed immediately throw an
+//     exception?
+//  2. Should fields that are required and cannot be parsed log a warning such
+//     that their subsection (if required) can throw an exception. (Current implementation)
 
 /*
  * The SET definition provides a shorthand for setting a member variable of a setup struct.
@@ -16,25 +23,25 @@
  * The '#property' yields the passed variable name as a string. Hence, SET requires that the
  * designated member variable has the same name as the corresponding field in the input file.
  */
-#define SET(section, property) if(!Parse::setField(section, #property, property)) std::cerr << "[warning] Could not properly parse the " << #property << " field.\n"
+#define SET(section, property) if(!Parse::setField(section, #property, property)) Log<ParseFieldError>::Warning(#property);
 
 /*
  * The R_SET variant will cause a boolean function to return false when the setField function
  * is unsuccessful. Use this variant for fields that are required to perform the simulation.
  */
-#define R_SET(section, property) if (!Parse::setField(section, #property, property)) {std::cerr << "[error] Could not properly parse the " << #property << " field.\n"; return false;}
+#define R_SET(section, property) if (!Parse::setField(section, #property, property)) {Log<ParseFieldError>::Warning(#property); return false;}
 
 /*
  * The SUB_STRUCT definition provides a shorthand for setting a sub structure of a SetupBase
  * object.
  */
-#define SUB_STRUCT(section, subStruct) parseSubStructure(section, #subStruct, subStruct)
+#define SUB_STRUCT(section, subStruct) parseSubStructure(section, #subStruct, subStruct);
 
 /*
  * The R_SUB_STRUCT requires the sub structures to be present in the input file, and parsed
  * successfully. Use this variant for sub structures that are obligatory.
  */
-#define R_SUB_STRUCT(section, subStruct) if (!parseSubStructure(section, #subStruct, subStruct)) return false
+#define R_SUB_STRUCT(section, subStruct) if (!parseSubStructure(section, #subStruct, subStruct)) return false;
 
 namespace loki {
 
@@ -52,15 +59,11 @@ namespace loki {
 
         if (Parse::getSection(content, fieldName, sectionContent)) {
             if (!subStruct.parse(sectionContent)) {
-                std::cerr << "[warning] Could not properly parse the " << fieldName
-                          << " section. Please check for missing values and improper "
-                             "indentation"
-                          << std::endl;
+                Log<ParseSectionError>::Error(fieldName);
                 return false;
             }
         } else {
-            std::cerr << "[warning] The input file does not contain the "
-                      << fieldName << " section." << std::endl;
+            Log<MissingSectionError>::Warning(fieldName);
             return false;
         }
 
@@ -107,9 +110,9 @@ namespace loki {
 
     bool Setup::parse(const std::string &sectionContent) {
 
-        R_SUB_STRUCT(sectionContent, workingConditions);
-        R_SUB_STRUCT(sectionContent, electronKinetics);
-        R_SUB_STRUCT(sectionContent, output);
+        R_SUB_STRUCT(sectionContent, workingConditions)
+        R_SUB_STRUCT(sectionContent, electronKinetics)
+        R_SUB_STRUCT(sectionContent, output)
 
         return true;
     }
@@ -118,103 +121,103 @@ namespace loki {
         // TODO: Check whether 'reducedField' is present in the case that eedfType is boltzmann
         //  (and subsequently that 'electronTemperature' is present when it is prescribed).
 
-        SET(sectionContent, reducedField);
-        SET(sectionContent, electronTemperature);
-        R_SET(sectionContent, excitationFrequency);
-        R_SET(sectionContent, gasPressure);
-        R_SET(sectionContent, gasTemperature);
-        R_SET(sectionContent, electronDensity);
-        R_SET(sectionContent, chamberLength);
-        R_SET(sectionContent, chamberRadius);
+        SET(sectionContent, reducedField)
+        SET(sectionContent, electronTemperature)
+        R_SET(sectionContent, excitationFrequency)
+        R_SET(sectionContent, gasPressure)
+        R_SET(sectionContent, gasTemperature)
+        R_SET(sectionContent, electronDensity)
+        R_SET(sectionContent, chamberLength)
+        R_SET(sectionContent, chamberRadius)
 
         return true;
     }
 
     bool ElectronKineticsSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, isOn);
-        R_SET(sectionContent, eedfType);
-        SET(sectionContent, shapeParameter);
-        R_SET(sectionContent, ionizationOperatorType);
-        R_SET(sectionContent, growthModelType);
-        R_SET(sectionContent, includeEECollisions);
-        R_SET(sectionContent, LXCatFiles);
-        SET(sectionContent, LXCatFilesExtra);
-        SET(sectionContent, effectiveCrossSectionPopulations);
-        SET(sectionContent, CARgases);
+        R_SET(sectionContent, isOn)
+        R_SET(sectionContent, eedfType)
+        SET(sectionContent, shapeParameter)
+        R_SET(sectionContent, ionizationOperatorType)
+        R_SET(sectionContent, growthModelType)
+        R_SET(sectionContent, includeEECollisions)
+        R_SET(sectionContent, LXCatFiles)
+        SET(sectionContent, LXCatFilesExtra)
+        SET(sectionContent, effectiveCrossSectionPopulations)
+        SET(sectionContent, CARgases)
 
-        R_SUB_STRUCT(sectionContent, gasProperties);
-        R_SUB_STRUCT(sectionContent, stateProperties);
-        R_SUB_STRUCT(sectionContent, numerics);
+        R_SUB_STRUCT(sectionContent, gasProperties)
+        R_SUB_STRUCT(sectionContent, stateProperties)
+        R_SUB_STRUCT(sectionContent, numerics)
 
         return true;
     }
 
     bool GasPropertiesSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, mass);
-        R_SET(sectionContent, fraction);
-        R_SET(sectionContent, harmonicFrequency);
-        R_SET(sectionContent, anharmonicFrequency);
-        R_SET(sectionContent, rotationalConstant);
-        R_SET(sectionContent, electricQuadrupoleMoment);
-        R_SET(sectionContent, OPBParameter);
+        R_SET(sectionContent, mass)
+        R_SET(sectionContent, fraction)
+        R_SET(sectionContent, harmonicFrequency)
+        R_SET(sectionContent, anharmonicFrequency)
+        R_SET(sectionContent, rotationalConstant)
+        R_SET(sectionContent, electricQuadrupoleMoment)
+        R_SET(sectionContent, OPBParameter)
 
         return true;
     }
 
     bool StatePropertiesSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, energy);
-        R_SET(sectionContent, statisticalWeight);
-        R_SET(sectionContent, population);
+        R_SET(sectionContent, energy)
+        R_SET(sectionContent, statisticalWeight)
+        R_SET(sectionContent, population)
 
         return true;
     }
 
     bool NumericsSetup::parse(const std::string &sectionContent) {
-        SET(sectionContent, maxPowerBalanceRelError);
+        SET(sectionContent, maxPowerBalanceRelError)
 
-        R_SUB_STRUCT(sectionContent, energyGrid);
-        R_SUB_STRUCT(sectionContent, nonLinearRoutines);
+        R_SUB_STRUCT(sectionContent, energyGrid)
+        R_SUB_STRUCT(sectionContent, nonLinearRoutines)
 
         return true;
     }
 
     bool EnergyGridSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, maxEnergy);
-        R_SET(sectionContent, cellNumber);
+        R_SET(sectionContent, maxEnergy)
+        R_SET(sectionContent, cellNumber)
 
-        SUB_STRUCT(sectionContent, smartGrid);
+        SUB_STRUCT(sectionContent, smartGrid)
 
         return true;
     }
 
     bool SmartGridSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, minEedfDecay);
-        R_SET(sectionContent, maxEedfDecay);
-        R_SET(sectionContent, updateFactor);
+        R_SET(sectionContent, minEedfDecay)
+        R_SET(sectionContent, maxEedfDecay)
+        R_SET(sectionContent, updateFactor)
 
         return true;
     }
 
     bool NonLinearRoutinesSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, algorithm);
-        R_SET(sectionContent, mixingParameter);
-        R_SET(sectionContent, maxEedfRelError);
+        R_SET(sectionContent, algorithm)
+        R_SET(sectionContent, mixingParameter)
+        R_SET(sectionContent, maxEedfRelError)
 
-        SUB_STRUCT(sectionContent, odeSetParameters);
+        SUB_STRUCT(sectionContent, odeSetParameters)
 
         return true;
     }
 
     bool OdeSetParametersSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, maxStep);
+        R_SET(sectionContent, maxStep)
 
         return true;
     }
 
     bool OutputSetup::parse(const std::string &sectionContent) {
-        R_SET(sectionContent, isOn);
-        R_SET(sectionContent, folder);
-        R_SET(sectionContent, dataFiles);
+        R_SET(sectionContent, isOn)
+        R_SET(sectionContent, folder)
+        R_SET(sectionContent, dataFiles)
 
         return true;
     }

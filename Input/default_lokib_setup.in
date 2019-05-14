@@ -5,7 +5,7 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField:  logspace(-4,3,100)           % in Td
+  reducedField: logspace(-4,3,100)            % in Td
   electronTemperature: linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
