@@ -5,7 +5,5 @@
 #include "ElectronKinetics.h"
 
 namespace loki {
-    ElectronKinetics::ElectronKinetics(const loki::ElectronKineticsSetup &setup) {
-
-    }
+    ElectronKinetics::ElectronKinetics(const loki::ElectronKineticsSetup &setup) : grid(setup.numerics.energyGrid) {}
 }

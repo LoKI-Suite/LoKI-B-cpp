@@ -14,13 +14,13 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/Grid.cpp ${src}/Gas.cpp ${src}/EedfGas.cpp
         ${src}/Collision.cpp ${src}/State.cpp ${src}/EedfState.cpp
         ${src}/Setup.cpp ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
-        ${src}/GasMixture.cpp)
+        ${src}/GasMixture.cpp ${src}/CrossSection.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
-        ${h}/Log.h ${h}/GasMixture.h)
+        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h)
 
 add_executable(loki ${headers} ${cpp} ${src}/main.cpp)
 
@@ -57,7 +57,7 @@ target_link_libraries(lua_test liblua53.a dl)
 add_executable(typedef_test tests/typedef_test/main.cpp)
 
 # -- eigen_test -- #
-add_executable(eigen_test tests/eigen_test/main.cpp)
+add_executable(eigen_test tests/eigen_test/main.cpp loki-b/headers/LinearAlgebra.h)
 target_include_directories(eigen_test PRIVATE include)
 
 # -- event_listener -- #

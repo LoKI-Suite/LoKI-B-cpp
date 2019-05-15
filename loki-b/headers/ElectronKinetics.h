@@ -5,8 +5,9 @@
 #ifndef LOKI_CPP_ELECTRONKINETICS_H
 #define LOKI_CPP_ELECTRONKINETICS_H
 
-#include <Setup.h>
-#include <GasMixture.h>
+#include "Setup.h"
+#include "GasMixture.h"
+#include "Grid.h"
 
 // TODO: Fully implement the GasMixtures class.
 
@@ -19,6 +20,8 @@ namespace loki {
         IonizationOperatorType ionizationOperatorType;
         GrowthModelType growthModelType;
         bool includeEECollisions;
+
+        Grid grid;
 
     public:
         explicit ElectronKinetics(const ElectronKineticsSetup &setup);
