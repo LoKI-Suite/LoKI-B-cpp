@@ -11,6 +11,7 @@
 
 #define RED     "\e[1;31m"
 #define YELLOW  "\e[1;33m"
+#define BOLD    "\e[1;37m"
 #define NC      "\e[0m"
 
 namespace loki {
@@ -18,6 +19,13 @@ namespace loki {
     template <typename ErrorType>
     class Log {
     public:
+        template <typename T> inline
+        static void Notify(const T &message) {
+            std::cerr << BOLD << "[Notice] ";
+            ErrorType::print(message);
+            std::cerr << NC;
+        }
+
         template<typename T> inline
         static void Warning(const T &message) {
             std::cerr << YELLOW << "[Warning] ";
@@ -34,7 +42,7 @@ namespace loki {
         }
     };
 
-    struct GeneralError {
+    struct Message {
         template<typename T> inline
         static void print(const T &t) {
             std::cerr << t << std::endl;

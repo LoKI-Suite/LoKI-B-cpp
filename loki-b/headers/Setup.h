@@ -115,9 +115,9 @@ namespace loki {
      */
 
     struct SmartGridSetup : public SetupBase {
-        uint32_t minEedfDecay,
-                 maxEedfDecay;
-        double updateFactor;
+        uint32_t minEedfDecay = 0,
+                 maxEedfDecay = 0;
+        double updateFactor = 0;
 
         bool parse(const std::string &sectionContent) override;
     };

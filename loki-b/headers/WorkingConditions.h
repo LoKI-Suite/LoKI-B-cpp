@@ -38,13 +38,14 @@ namespace loki {
         WorkingConditions(const WorkingConditions &other) = delete;
 
         /*
-         * We only need one 'updatedGasTemperature' event, since we can control the order
-         * of the listeners.
+         * Technically we only need one 'updatedGasTemperature' event, since we can control
+         * the order of the listeners.
          */
 
         // Events
         event updatedGasPressure,
-              updatedGasTemperature,
+              updatedGasTemperature1,
+              updatedGasTemperature2,
               updatedGasDensity,
               updatedElectronDensity,
               updatedElectronTemperature,
