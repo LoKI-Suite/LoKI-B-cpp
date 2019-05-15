@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 project(loki_cpp)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # --- loki-b --- #
 set(src loki-b/source)
@@ -62,3 +62,6 @@ target_include_directories(eigen_test PRIVATE include)
 
 # -- event_listener -- #
 add_executable(event_listener tests/event_listener/main.cpp)
+
+# -- trait_test -- #
+add_executable(trait_test tests/trait_test/main.cpp)
