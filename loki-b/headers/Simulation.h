@@ -5,9 +5,9 @@
 #ifndef LOKI_CPP_SIMULATION_H
 #define LOKI_CPP_SIMULATION_H
 
-#include <Setup.h>
-#include <WorkingConditions.h>
-#include <ElectronKinetics.h>
+#include "Setup.h"
+#include "WorkingConditions.h"
+#include "ElectronKinetics.h"
 
 #include <memory>
 

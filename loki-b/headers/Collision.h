@@ -8,31 +8,32 @@
 #include "Enumeration.h"
 #include "EedfState.h"
 #include "Grid.h"
+#include "CrossSection.h"
+#include "Traits.h"
 
 #include <vector>
 
 namespace loki {
+    template<typename TraitType>
     class Collision {
         Enumeration::CollisionType type;
 
         // isExtra might not be necessary (since all these
         // collisions will be in another array anyway).
         bool isExtra = false, isReverse = false;
-        double threshold = 0.;
 
-        State * target;
-        std::vector<State *> products;
+        State<typename Trait<TraitType>::State> * target;
+        std::vector<typename Trait<TraitType>::State *> products;
         std::vector<uint16_t> stoiCoeff;
 
         Grid * energyGrid;
 
-        // TODO: decide whether to abstract RawCrossSection and
-        //  CrossSection into separate classes.
+        // The raw cross section data an threshold is stored in
+        // the CrossSection object
 
-        std::vector<std::pair<double, double>> rawCrossSection;
-        std::vector<double> crossSection;
+        CrossSection crossSection;
 
-        // Rate Coefficient variables
+        // Rate Coefficient variables should be here
     };
 }
 

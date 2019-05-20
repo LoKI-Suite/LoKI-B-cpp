@@ -5,7 +5,5 @@
 #include <EedfGas.h>
 
 namespace loki {
-
-
-
+    EedfGas::EedfGas(const std::string &name) : Gas(name) {}
 }

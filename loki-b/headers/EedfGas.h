@@ -7,18 +7,23 @@
 
 #include "Gas.h"
 #include "EedfState.h"
+#include "Collision.h"
 
 #include <vector>
 
 namespace loki {
-    class EedfGas : public Gas {
-        double OPBParameter;
-        std::vector<EedfState> states;
+    class EedfGas : public Gas<Boltzmann> {
+        double OPBParameter = 0.;
+        std::vector<EedfState *> states;
 
-        // Is this necessary? Since we already have a big array of
-        // std::vector<Collision *> collisions, extraCollisions;
+        // We need to store the collisions per Gas since we need to calculate
+        // the mass ratio when evaluating the total and elastic cross-sections.
+        std::vector<Collision<Boltzmann>> collisions, extraCollisions;
 
         // TODO: effectivePopulations -> what type?
+
+    public:
+        explicit EedfGas(const std::string &name);
     };
 }
 

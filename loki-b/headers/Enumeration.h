@@ -33,11 +33,12 @@ namespace loki {
             function
         };
 
-        enum class StateType : uint8_t {
+        enum StateType : uint8_t {
             ionic,
             electronic,
             vibrational,
-            rotational
+            rotational,
+            none
         };
 
         enum class CollisionType : uint8_t {

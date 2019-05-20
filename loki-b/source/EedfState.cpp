@@ -8,5 +8,6 @@
 namespace loki {
 
 
-
+    EedfState::EedfState(const StateEntry &entry, EedfGas *gas, EedfState *parent)
+        : State(entry, gas, parent) {}
 }

@@ -20,7 +20,7 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
-        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h)
+        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h)
 
 add_executable(loki ${headers} ${cpp} ${src}/main.cpp)
 
@@ -65,3 +65,7 @@ add_executable(event_listener tests/event_listener/main.cpp)
 
 # -- trait_test -- #
 add_executable(trait_test tests/trait_test/main.cpp)
+
+# -- trait_test_no_indexing -- #
+add_executable(trait_test_no_indexing tests/trait_test_no_indexing/main.cpp tests/trait_test_no_indexing/Traits.h tests/trait_test_no_indexing/Gas.h tests/trait_test_no_indexing/Basic.h tests/trait_test_no_indexing/State.h tests/trait_test_no_indexing/GasMixture.h tests/trait_test_no_indexing/Working_v1.h)
+target_include_directories(trait_test_no_indexing PRIVATE ${inc})

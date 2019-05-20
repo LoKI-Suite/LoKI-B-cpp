@@ -4,7 +4,7 @@
 
 #include "Simulation.h"
 
-// TODO: It might deem necessary to parse the full ElectronKineticsSetup structure
+// TODO: It might deem necessary to pass the full ElectronKineticsSetup structure
 //  to the WorkingConditions constructor (such that we can also check whether it
 //  is enabled).
 
