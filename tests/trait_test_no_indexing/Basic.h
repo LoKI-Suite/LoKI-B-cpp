@@ -8,12 +8,14 @@
 #include <cstdint>
 #include <string>
 
+// TODO: remove the 'ionic' level and store all the ionic states in a separate tree.
+
 enum StateLevel : uint8_t {
     ionic,
     electronic,
     vibrational,
     rotational,
-    nana
+    none
 };
 
 struct StateEntry {

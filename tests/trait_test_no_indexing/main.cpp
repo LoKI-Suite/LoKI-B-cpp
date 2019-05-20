@@ -9,6 +9,12 @@
 
 //#include "Working_v1.h"
 
+/*
+ * In the implementation in loki all levels of states will be described by strings.
+ * This is due to the fact that also vibrational and rotational states can be described
+ * by characters other than numbers.
+ */
+
 int main(int argc, char **argv) {
     GasMixture<Boltzmann> mixture;
 
@@ -26,9 +32,10 @@ int main(int argc, char **argv) {
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
     std::cout << mixture.gasses[0].states.size() << std::endl;
+    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+
 
 //    StateEntry entry{ionic, "N2", "X", 3, 5, 1};
 //    StateEntry entry2{rotational, "N2", "X", 3, 8, 0};
