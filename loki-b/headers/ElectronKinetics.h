@@ -9,8 +9,6 @@
 #include "EedfGasMixture.h"
 #include "Grid.h"
 
-// TODO: Fully implement the GasMixtures class.
-
 namespace loki {
     using namespace Enumeration;
 

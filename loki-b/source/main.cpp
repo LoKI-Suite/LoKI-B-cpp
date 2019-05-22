@@ -19,7 +19,6 @@ using namespace loki::Enumeration;
 int main (int argc, char ** argv)
 {
     // TODO: Allow the user to specify the setup file in the program arguments.
-    // TODO: measure speed difference between std::vector and dynamically allocated arrays.
 
     auto begin = std::chrono::high_resolution_clock::now();
 
