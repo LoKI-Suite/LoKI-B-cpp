@@ -8,6 +8,8 @@ namespace loki {
     ElectronKinetics::ElectronKinetics(const loki::ElectronKineticsSetup &setup)
         : grid(setup.numerics.energyGrid) {
 
+        mixture.initialize(setup, &grid);
+
         this->eedfType = setup.eedfType;
         this->shapeParameter = setup.shapeParameter;
         this->ionizationOperatorType = setup.ionizationOperatorType;

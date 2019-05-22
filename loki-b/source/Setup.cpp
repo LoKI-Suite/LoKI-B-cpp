@@ -10,7 +10,7 @@
 #include "Setup.h"
 #include <Log.h>
 
-// TODO: Think which is desirable:
+// DONE: Think which is desirable:
 //  1. Should fields that are required and cannot be parsed immediately throw an
 //     exception?
 //  2. Should fields that are required and cannot be parsed log a warning such

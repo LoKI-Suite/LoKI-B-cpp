@@ -13,21 +13,24 @@
 #include <vector>
 
 namespace loki {
-    // TODO: This struct is temporary!
     using namespace Enumeration;
 
+    // TODO: Move this struct
     struct StateEntry {
         StateType level;
-        std::string gasName, e, v, J;
-        int16_t charge;
+        std::string charge, gasName, e, v, J;
+
+        StateEntry(StateType level, std::string &&gasName, std::string &&charge,
+                std::string &&e, std::string &&v, std::string &&J)
+                : level(level), charge(std::move(charge)), gasName(std::move(gasName)),
+                e(std::move(e)), v(std::move(v)), J(std::move(J)) {}
     };
 
     template <typename TraitType>
     class State {
     protected:
         StateType type;
-        std::string e, v, J;
-        int16_t charge;
+        std::string e, v, J, charge;
 
         double energy{0.},
                statisticalWeight{0.},
@@ -37,6 +40,8 @@ namespace loki {
         State(const StateEntry &entry,
                 typename Trait<TraitType>::Gas *gas,
                 typename Trait<TraitType>::State * parent);
+        State(StateType type, typename Trait<TraitType>::Gas *gas,
+                std::string e, std::string v, std::string J, std::string charge);
 
     public:
         typename Trait<TraitType>::State *parent{nullptr};
@@ -50,6 +55,11 @@ namespace loki {
 
         virtual ~State() = default;
     };
+
+    template<typename TraitType>
+    State<TraitType>::State(StateType type, typename Trait<TraitType>::Gas *gas,
+            std::string e, std::string v, std::string J, std::string charge)
+            : type(type), gas(gas), e(std::move(e)), v(std::move(v)), J(std::move(J)), charge(std::move(charge)) {}
 
     template<typename TraitType>
     State<TraitType>::State(const StateEntry &entry,
@@ -66,13 +76,15 @@ namespace loki {
 
     template<typename TraitType>
     void State<TraitType>::print() const {
-        std::cout << "charge = " << charge << " e = " << e;
-        if (type >= StateType::vibrational) std::cout << " v = " << v;
-        if (type >= StateType::rotational) std::cout << " J = " << J;
-        std::cout << std::endl;
+        std::string space = "  ";
+
+        for (uint8_t i = electronic; i < type; ++i) space.append("  ");
 
         for (auto state : children) {
-            if (state != nullptr) state->print();
+            if (state != nullptr) {
+                std::cout << space << *state << std::endl;
+                state->print();
+            }
         }
     }
 

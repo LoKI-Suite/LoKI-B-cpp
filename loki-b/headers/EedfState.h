@@ -15,14 +15,21 @@ namespace loki {
     class EedfState : public State<Boltzmann> {
         bool isTarget{false};
 
-        // Are these needed?
-        //std::vector<Collision *> collisions, extraCollisions;
+        std::vector<EedfCollision *> collisions, extraCollisions;
 
     public:
         EedfState(const StateEntry &entry, EedfGas *gas, EedfState * parent = nullptr);
-        ~EedfState() override = default;
+        EedfState(StateType type, EedfGas *gas, const std::string &e, const std::string &v,
+                const std::string &J, const std::string &charge);
 
         EedfState(const EedfState &other) = delete;
+
+        ~EedfState() override = default;
+
+        bool hasCollision(EedfCollision * collision, bool isExtra);
+        void addCollision(EedfCollision * collision, bool isExtra);
+
+        friend std::ostream &operator<<(std::ostream &os, const EedfState &state);
     };
 }
 

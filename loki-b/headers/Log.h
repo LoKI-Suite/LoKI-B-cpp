@@ -49,10 +49,24 @@ namespace loki {
         }
     };
 
+    struct DoubleCollision {
+        template<typename T>
+        static void print(const T &t) {
+            std::cerr << "Double collision detected: " << t << std::endl;
+        }
+    };
+
+    struct LXCatError {
+        template<typename T>
+        static void print(const T &t) {
+            std::cerr << "Could not properly parse " << t << '.' << std::endl;
+        }
+    };
+
     struct FileError {
         template<typename T> inline
         static void print(const T &t) {
-            std::cerr << t << std::endl;
+            std::cerr << "Could not find/open the " << t << " file." << std::endl;
         }
     };
 

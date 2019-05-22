@@ -6,6 +6,7 @@
 #define LOKI_CPP_GAS_H
 
 #include "Traits.h"
+#include "EedfCollision.h"
 
 #include <iostream>
 #include <string>
@@ -14,7 +15,7 @@
 namespace loki {
     template <typename TraitType>
     class Gas {
-    protected:
+    public:
         const std::string name;
         double mass{0.},
                harmonicFrequency{0.},
@@ -28,6 +29,7 @@ namespace loki {
         std::vector<typename Trait<TraitType>::State *> states;
         std::vector<typename Trait<TraitType>::State *> stateTree;
 
+    protected:
         explicit Gas(std::string name) : name(std::move(name)) {}
 
     public:
@@ -36,8 +38,8 @@ namespace loki {
         }
 
         void print() const {
-            std::cout << "Gas: " << name << std::endl;
             for (uint16_t i = 0; i < stateTree.size(); ++i) {
+                std::cout << *stateTree[i] << std::endl;
                 stateTree[i]->print();
             }
         }

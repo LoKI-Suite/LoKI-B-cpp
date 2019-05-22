@@ -8,8 +8,10 @@
 #include <string>
 #include <regex>
 #include <iostream>
+#include <fstream>
 
 #include "Enumeration.h"
+#include "State.h"
 
 namespace loki {
     struct Parse {
@@ -27,7 +29,7 @@ namespace loki {
          * The definitions of these specializations can be found below the Parse struct.
          */
 
-        template <typename T>
+        template<typename T>
         static bool setField(const std::string &sectionContent,
                              const std::string &fieldName, T &value) {
 
@@ -56,7 +58,7 @@ namespace loki {
          * section.
          */
         static bool getFieldValue(const std::string &sectionContent,
-                const std::string &fieldName, std::string &valueBuffer) {
+                                  const std::string &fieldName, std::string &valueBuffer) {
 
             std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
             std::smatch m;
@@ -82,12 +84,12 @@ namespace loki {
          * successful.
          */
         static bool getList(const std::string &sectionContent,
-                const std::string &fieldName, std::vector<std::string> &container) {
+                            const std::string &fieldName, std::vector<std::string> &container) {
 
             std::regex r(R"(-\s*(\S+(?: \S+)*)\s*\n*)");
 
             for (auto it = std::sregex_iterator(sectionContent.begin(), sectionContent.end(), r);
-                        it != std::sregex_iterator(); ++it) {
+                 it != std::sregex_iterator(); ++it) {
 
                 container.emplace_back(it->str(1));
             }
@@ -116,7 +118,8 @@ namespace loki {
             // This regular expression matches a specific section in the input file. More accurately,
             // it returns the text in between the specified section and the next section on the same
             // level.
-            const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*\s*$)))");
+            const std::regex reSection(
+                    sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*\s*$)))");
 
             if (!std::regex_search(fileContent, m, reSection))
                 return false;
@@ -138,7 +141,6 @@ namespace loki {
         }
 
         // TODO: comment getFirstValue
-
         static bool getFirstValue(const std::string &valueString, double &value) {
             if (!getValue(valueString, value))
                 return firstValueInRange(valueString, value);
@@ -146,7 +148,106 @@ namespace loki {
             return true;
         }
 
+        // TODO: comment entriesFromString
+        static bool entriesFromString(std::string &statesString, std::vector<StateEntry> &entries,
+                                      std::vector<uint16_t> *stoiCoeff = nullptr) {
+            std::regex reState(
+                    R"((\d*)([A-Z0-9]+)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
+
+            std::regex_iterator<std::string::iterator> rit(statesString.begin(),
+                                                           statesString.end(),
+                                                           reState);
+            std::regex_iterator<std::string::iterator> rend;
+
+            if (rit == rend) return false;
+
+            while (rit != rend) {
+                Enumeration::StateType stateType;
+
+                if (rit->str(2).empty() || rit->str(4).empty())
+                    return false;
+
+                if (rit->str(5).empty()) {
+                    stateType = electronic;
+                } else if (rit->str(6).empty()) {
+                    stateType = vibrational;
+                } else {
+                    stateType = rotational;
+                }
+
+                if (stoiCoeff != nullptr) {
+                    if (rit->str(1).empty()) {
+                        stoiCoeff->emplace_back(1);
+                    } else {
+                        std::stringstream ss(rit->str(1));
+                        uint16_t coeff;
+
+                        ss >> coeff;
+                        stoiCoeff->emplace_back(coeff);
+                    }
+                }
+
+                entries.emplace_back(stateType, rit->str(2), rit->str(3),
+                                     rit->str(4), rit->str(5), rit->str(6));
+
+                ++rit;
+            }
+
+            return true;
+        }
+
+        // TODO: comment collisionTypeFromString
+        static Enumeration::CollisionType collisionTypeFromString(const std::string &collisionTypeString) {
+            std::regex rState(R"((Elastic|Effective|Excitation|Vibrational|Rotational|Ionization|Attachment))");
+            std::smatch mState;
+
+            if (!std::regex_search(collisionTypeString, mState, rState))
+                return Enumeration::CollisionType::none;
+
+            char first = mState.str(0)[0],
+                    second = mState.str(0)[1];
+
+            switch (first) {
+                case 'E':
+                    switch (second) {
+                        case 'c':
+                            return Enumeration::CollisionType::elastic;
+                        case 'e':
+                            return Enumeration::CollisionType::effective;
+                        default:
+                            return Enumeration::CollisionType::excitation;
+                    }
+                case 'V':
+                    return Enumeration::CollisionType::vibrational;
+                case 'R':
+                    return Enumeration::CollisionType::rotational;
+                case 'I':
+                    return Enumeration::CollisionType::ionization;
+                default:
+                    return Enumeration::CollisionType::attachment;
+            }
+        }
+
+        // TODO: comment rawCrossSectionFromStream
+        static void
+        rawCrossSectionFromStream(std::vector<std::pair<double, double>> &rawCrossSection, std::ifstream &in) {
+            std::string line;
+
+            while(std::getline(in, line)) {
+                if (line.substr(0, 2) == "--") break;
+            }
+
+            double energy = 0., value = 0.;
+
+            while(std::getline(in, line)) {
+                std::stringstream ss(line);
+                if (!((ss >> energy) && (ss >> value))) break;\
+                rawCrossSection.emplace_back(energy, value);
+            }
+        }
+
     private:
+
         /* -- PARSING RANGES -- */
 
         // TODO: comment getValue
@@ -158,7 +259,7 @@ namespace loki {
 
             std::stringstream ss(valueString);
 
-            return (bool)(ss >> value);
+            return (bool) (ss >> value);
         }
 
         // TODO: comment firstValueInRange
@@ -170,7 +271,7 @@ namespace loki {
 
             std::stringstream ss(m[1]);
 
-            return (bool)(ss >> value);
+            return (bool) (ss >> value);
         }
 
     };
@@ -199,14 +300,16 @@ namespace loki {
      * breaking the "One Definition Rule". An alternative is to add
      * a Parse.cpp file and specify the specializations there.
      */
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<std::string>(const std::string &sectionContent,
-                               const std::string &fieldName, std::string &value) {
+                                      const std::string &fieldName, std::string &value) {
 
         return getFieldValue(sectionContent, fieldName, value);
     }
 
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<bool>(const std::string &sectionContent,
                                const std::string &fieldName, bool &value) {
         std::string valueBuffer;
@@ -220,9 +323,10 @@ namespace loki {
         return true;
     }
 
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<Enumeration::EedfType>(const std::string &sectionContent,
-            const std::string &fieldName, Enumeration::EedfType &value) {
+                                                const std::string &fieldName, Enumeration::EedfType &value) {
 
         std::string valueBuffer;
 
@@ -240,9 +344,11 @@ namespace loki {
         return true;
     }
 
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<Enumeration::IonizationOperatorType>(const std::string &sectionContent,
-            const std::string &fieldName, Enumeration::IonizationOperatorType &value) {
+                                                              const std::string &fieldName,
+                                                              Enumeration::IonizationOperatorType &value) {
 
         std::string valueBuffer;
 
@@ -264,9 +370,11 @@ namespace loki {
         return true;
     }
 
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<Enumeration::GrowthModelType>(const std::string &sectionContent,
-            const std::string &fieldName, Enumeration::GrowthModelType &value) {
+                                                       const std::string &fieldName,
+                                                       Enumeration::GrowthModelType &value) {
 
         std::string valueBuffer;
 
@@ -284,9 +392,10 @@ namespace loki {
         return true;
     }
 
-    template <> inline
+    template<>
+    inline
     bool Parse::setField<std::vector<std::string>>(const std::string &sectionContent,
-            const std::string &fieldName, std::vector<std::string> &value) {
+                                                   const std::string &fieldName, std::vector<std::string> &value) {
 
         std::string fieldContent;
 

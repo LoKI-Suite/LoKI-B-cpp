@@ -3,9 +3,15 @@
 //
 
 #include "CrossSection.h"
+#include "Parse.h"
 
 namespace loki {
 
-    CrossSection::CrossSection(const double threshold) :
-        threshold(threshold) {}
+    CrossSection::CrossSection(const double threshold, Grid *energyGrid) :
+            threshold(threshold), energyGrid(energyGrid) {}
+
+    CrossSection::CrossSection(double threshold, const Grid *energyGrid, std::ifstream &in)
+            : threshold(threshold), energyGrid(energyGrid) {
+        Parse::rawCrossSectionFromStream(rawCrossSection, in);
+    }
 }

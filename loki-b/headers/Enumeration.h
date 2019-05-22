@@ -48,7 +48,8 @@ namespace loki {
             vibrational,
             rotational,
             ionization,
-            attachment
+            attachment,
+            none
         };
 
     }
