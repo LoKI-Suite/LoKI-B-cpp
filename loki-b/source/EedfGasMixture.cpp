@@ -4,7 +4,7 @@
 
 #include "EedfGasMixture.h"
 
-// DONE: stoiCoeff is only for the products
+// DONE: productStoiCoeff is only for the products
 // DONE: when parsing an LXCat Section first look for the PARAM keyword (since elastic collisions will not have
 //  a threshold).
 
@@ -51,7 +51,7 @@ namespace loki {
 
                 CollisionEntry collisionEntry = parseLXCatEntry({mProcess[1], mProcess[2],
                                                                  mProcess[3], mProcess[4],
-                                                                 threshold}, in);
+                                                                 threshold});
 
                 auto *collision = createCollision(collisionEntry);
 
@@ -62,7 +62,7 @@ namespace loki {
         }
     }
 
-    CollisionEntry EedfGasMixture::parseLXCatEntry(RawLXCatEntry entry, std::ifstream &in) {
+    CollisionEntry EedfGasMixture::parseLXCatEntry(RawLXCatEntry &&entry) {
         CollisionEntry collisionEntry{};
 
         if (!Parse::entriesFromString(entry.reactants, collisionEntry.reactants))
@@ -88,7 +88,7 @@ namespace loki {
 
         Log<Message>::Notify(*collision);
 
-        // Check if the collision already exists. If so delete the new entry and return a nullptr.
+        // Check if the collision already exists. If so delete the new entry and return false.
         if (target->hasCollision(collision, isExtra)) {
             Log<DoubleCollision>::Warning(*collision);
             delete collision;

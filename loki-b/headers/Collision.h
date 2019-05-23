@@ -12,25 +12,43 @@
 #include <vector>
 
 namespace loki {
+    /* -- Collision --
+     * This class is a base class to the EedfCollision and future ChemCollision (Reaction) classes.
+     * It is templated to allow the use of trait classes (classes that define types).
+     *
+     * Collision<Boltzmann> stores a pointer to a single EedfState target and a vector of pointers
+     * to EedfState products.
+     * Collision<Chemistry> stores one vector of pointers to EedfStates for the LHS and one for the
+     * RHS.
+     */
+
     template<typename TraitType>
     class Collision {
     protected:
         Enumeration::CollisionType type;
 
-        // isExtra might not be necessary (since all extra
-        // collisions will be in another array anyway).
-        bool isExtra = false, isReverse = false;
+        bool isReverse = false;
 
+        // In the case that TraitType = Boltzmann, this will be a pointer to an EedfState.
+        // When TraitType = Chemistry, this is a vector of pointers to Chemstates.
         typename Trait<TraitType>::Reactants target;
-        std::vector<typename Trait<TraitType>::State *> products;
-        std::vector<uint16_t> stoiCoeff;
 
+        // Vector of pointers to the product states.
+        std::vector<typename Trait<TraitType>::State *> products;
+
+        // Vector of stoichiometric coefficents belonging to the products of the collsion.
+        std::vector<uint16_t> productStoiCoeff;
+
+        /* -- Constructor --
+         * Initializes the members of the Collision class, the vectors are initialized
+         * using move semantics.
+         */
         Collision(Enumeration::CollisionType type,
                 typename Trait<TraitType>::Reactants reactants,
                 std::vector<typename Trait<TraitType>::State *> products,
                 std::vector<uint16_t> &stoiCoeff, bool isReverse)
                 : type(type), target(std::move(reactants)), products(std::move(products)),
-                  stoiCoeff(std::move(stoiCoeff)), isReverse(isReverse) {}
+                  productStoiCoeff(std::move(stoiCoeff)), isReverse(isReverse) {}
     };
 }
 

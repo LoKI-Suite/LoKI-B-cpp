@@ -11,30 +11,41 @@
 namespace loki {
     class EedfGasMixture : public GasMixture<Boltzmann> {
     public:
-        // TODO: Comment initialize
+
+        /* -- initialize --
+         * Initializes the gas mixture by loading the desired collisions from LXCat files.
+         * These files are read from the electron kinetics setup structure. It also
+         * requires a pointer to the energy grid in order to properly initialize the
+         * cross sections of the collisions.
+         */
+
         void initialize(const ElectronKineticsSetup &setup, const Grid *energyGrid);
 
     private:
-        // TODO: Comment loadCollisions
+
+        /* -- loadCollisions --
+         * Loads the collisions from LXCat files, supplied through a vector of strings that hold
+         * the filenames. Furthermore, it needs a pointer to the energy grid and a boolean to
+         * indicate whether the collisions are extra, for correct initialization and storage of
+         * the collisions.
+         */
+
         void loadCollisions(const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
 
         /* -- parseLXCatEntry --
-         * Creates StateEntries and adds them to a CollisionEntry. The Collision is then created
-         * through the CreateCollision function this function will then return a pointer to said
-         * collision.
+         * Parses a RawLXCatEntry into StateEntries which build up a CollisionEntry object. This
+         * object acts as a blueprint for a collision.
          */
 
-        CollisionEntry parseLXCatEntry(RawLXCatEntry entry, std::ifstream &in);
+        CollisionEntry parseLXCatEntry(RawLXCatEntry &&entry);
 
         /* -- linkCollision --
-         * Adds a pointer to the newly created EedfCollision to the correct vectors of the target
-         * gas and states. It also checks whether the collision already exists, if this is the
-         * case then the new collision is deleted.
+         * Accepts a pointer to a newly created EedfCollision to the correct vectors of the
+         * target gas and states. It also checks whether the collision already exists, if
+         * this is the case then the new collision is deleted and the function returns false.
          */
 
         bool linkCollision(EedfCollision *collision, bool isExtra);
-
-
     };
 }
 

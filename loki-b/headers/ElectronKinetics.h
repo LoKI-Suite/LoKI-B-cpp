@@ -19,9 +19,9 @@ namespace loki {
         GrowthModelType growthModelType;
         bool includeEECollisions;
 
-        EedfGasMixture mixture;
-
         Grid grid;
+
+        EedfGasMixture mixture;
 
     public:
         explicit ElectronKinetics(const ElectronKineticsSetup &setup);

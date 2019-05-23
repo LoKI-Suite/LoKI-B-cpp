@@ -43,7 +43,10 @@ namespace loki {
         if (collision.type != CollisionType::attachment) os << " e +";
         if (collision.type == CollisionType::ionization) os << " e +";
 
-        for (const auto *product : collision.products) os << ' ' << *product;
+        for (uint32_t i = 0; i < collision.products.size(); ++i) {
+            os << ' ' << *collision.products[i];
+            if (i < collision.products.size()-1) os << " +";
+        }
 
         return os;
     }

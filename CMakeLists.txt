@@ -22,7 +22,7 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
-        ${h}/EedfGasMixture.h ${h}/EedfCollision.h)
+        ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h)
 
 add_executable(loki ${headers} ${cpp} ${src}/main.cpp)
 

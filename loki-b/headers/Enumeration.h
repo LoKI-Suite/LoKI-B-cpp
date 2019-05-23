@@ -7,8 +7,7 @@
 
 #include <cstdint>
 
-namespace loki {
-    namespace Enumeration {
+namespace loki::Enumeration {
 
         enum class EedfType : uint8_t {
             boltzmann,
@@ -34,7 +33,7 @@ namespace loki {
         };
 
         enum StateType : uint8_t {
-            ionic,
+//            ionic,
             electronic,
             vibrational,
             rotational,
@@ -53,6 +52,5 @@ namespace loki {
         };
 
     }
-}
 
 #endif //LOKI_CPP_ENUMERATION_H

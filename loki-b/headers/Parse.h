@@ -11,7 +11,7 @@
 #include <fstream>
 
 #include "Enumeration.h"
-#include "State.h"
+#include "InputStructures.h"
 
 namespace loki {
     struct Parse {
@@ -140,7 +140,12 @@ namespace loki {
             return std::regex_replace(content, reClean, "\n");
         }
 
-        // TODO: comment getFirstValue
+        /* -- getFirstValue --
+         * Takes a string that can either be a range (linspace/logspace) or a scalar, and
+         * parses it into a double. When the string concerns a range, the first value in
+         * the range is returned.
+         */
+
         static bool getFirstValue(const std::string &valueString, double &value) {
             if (!getValue(valueString, value))
                 return firstValueInRange(valueString, value);
@@ -148,7 +153,14 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment entriesFromString
+        /* -- entriesFromString --
+         * Accepts a string containing the LHS or RHS of a collision equation. The states
+         * in this expression are then parsed into a vector of StateEntry objects, which
+         * is passed by reference. Furthermore, the user can supply a pointer to a vector
+         * in which the stoichiometric coefficients of the states in this collision are
+         * then stored. If a null pointer is passed, these coefficients are not stored.
+         */
+
         static bool entriesFromString(std::string &statesString, std::vector<StateEntry> &entries,
                                       std::vector<uint16_t> *stoiCoeff = nullptr) {
             std::regex reState(
@@ -196,7 +208,11 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment collisionTypeFromString
+        /* -- collisionTypeFromString --
+         * Accepts a string containing a collision type (e.g. Excitation or Attachment) and
+         * returns the corresponding entry in the CollisionType enumeration.
+         */
+
         static Enumeration::CollisionType collisionTypeFromString(const std::string &collisionTypeString) {
             std::regex rState(R"((Elastic|Effective|Excitation|Vibrational|Rotational|Ionization|Attachment))");
             std::smatch mState;
@@ -228,7 +244,14 @@ namespace loki {
             }
         }
 
-        // TODO: comment rawCrossSectionFromStream
+        /* -- rawCrossSectionFromStream --
+         * Accepts a reference to an input file stream of an LXCat file. This stream should be
+         * at a position just after reading a collision description from the LXCat file, since
+         * this function searches for the line containing solely dashes, indicating that a
+         * cross section follows. The raw cross section is then stored as a vector of pairs of
+         * doubles, which the user passes by reference.
+         */
+
         static void
         rawCrossSectionFromStream(std::vector<std::pair<double, double>> &rawCrossSection, std::ifstream &in) {
             std::string line;
@@ -250,19 +273,27 @@ namespace loki {
 
         /* -- PARSING RANGES -- */
 
-        // TODO: comment getValue
-        static bool getValue(const std::string &valueString, double &value) {
-            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
-            std::smatch m;
+        /* -- getValue --
+         * Tries to parse a string into a double, returns a boolean based on its success
+         * to do so.
+         */
 
-            if (!std::regex_match(valueString, r)) return false;
+        static bool getValue(const std::string &valueString, double &value) {
+//            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
+//            std::smatch m;
+//
+//            if (!std::regex_match(valueString, r)) return false;
 
             std::stringstream ss(valueString);
 
             return (bool) (ss >> value);
         }
 
-        // TODO: comment firstValueInRange
+        /* -- firstValueInRange --
+         * Tries to parse the first value in a string defining a range into a double,
+         * returns a boolean based on its success to do so.
+         */
+
         static bool firstValueInRange(const std::string &rangeString, double &value) {
             const std::regex r(R"(\s*(?:(?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
             std::smatch m;

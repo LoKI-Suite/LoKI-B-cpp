@@ -69,7 +69,7 @@ O2 -> O- + O
 SPECIES: e / O2
 PROCESS: E + O2 -> O- + O, Attachment
 PARAM.:  E = 0 eV, complete set
-COMMENT: [e +O2(X) -> O(-,gnd) + O(3P), Attachment] Phelps A V 1985 Technical Report 28 JILA
+COMMENT: [e + O2(X) -> O(-,gnd) + O(3P), Attachment] Phelps A V 1985 Technical Report 28 JILA
 COMMENT: Information Center Report, University of Colorado, Boulder, Colorado, USA extended
 COMMENT: following Biagi v8.9.
 UPDATED: 2018-02-12 18:11:53
