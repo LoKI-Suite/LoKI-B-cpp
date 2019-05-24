@@ -273,7 +273,9 @@ namespace loki {
             }
         }
 
-        // TODO: comment stringBufferFromFile
+        /* -- stringBufferFromFile --
+         * Loads the complete content of a specified file into the given std::string.
+         */
 
         static bool stringBufferFromFile(const std::string &fileName, std::string &buffer) {
             std::ifstream in("../Input/" + fileName);
@@ -288,7 +290,11 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment gasProperty
+        /* -- gasProperty --
+         * Tries to parse the value of a given property for a given gas. The 'content' string
+         * should store the content of the database file corresponding to the passed property
+         * (i.e. mass or anharmonicFrequency).
+         */
 
         static bool gasProperty(const std::string &gasName, double &property, const std::string &content) {
             std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");

@@ -26,13 +26,30 @@
 #include <fstream>
 #include <regex>
 
+/* -- GAS_PROPERTY --
+ * This define accepts the name of a gas property (e.g. mass) and will try load the corresponding database
+ * file. If this fails it will output a warning (but nothing more). If the file is succesfully loaded, it
+ * will then try to set the property for all gasses in the mixture. This version will not throw an error
+ * in any case, and can therefore be used for gas properties that are not mandatory for every gas (e.g.
+ * atomic gasses do not have a harmonicFrequency).
+ *
+ * It assumes that the passed property has the same name in the Gas and GasPropertiesSetup structures.
+ * Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
+ */
+
+#define GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Warning(setup.property); else \
+                               for (auto *gas : gasses) {Parse::gasProperty(gas->name, gas->property, fileBuffer); /*std::cerr << gas->name << ", " #property ": " << gas->property << std::endl;*/}
+
+/* -- R_GAS_PROPERTY --
+ * This define works similar to GAS_PROPERTY. However, this version will throw an error whenever a
+ * database file cannot be loaded or the given property is missing for a gas in the mixture. This
+ * version should therefore be used for properties that are required for every gas (e.g. mass).
+ */
+
 #define R_GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Error(setup.property); \
                                  for (auto *gas : gasses) \
                                      if(!Parse::gasProperty(gas->name, gas->property, fileBuffer)) \
                                          {Log<GasPropertyError>::Error(#property " in gas " + gas->name);}
-
-#define GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Error(setup.property); \
-                               for (auto *gas : gasses) {Parse::gasProperty(gas->name, gas->property, fileBuffer); std::cerr << gas->name << ", " #property ": " << gas->property << std::endl;}
 
 namespace loki {
     /* -- GasMixture --
@@ -183,6 +200,11 @@ namespace loki {
                                                             entry.stoiCoeff, entry.isReverse);
         }
 
+        /* -- loadGasProperties --
+         * Loads the gas properties from the database files specified in the main input
+         * file.
+         */
+
         virtual void loadGasProperties(const GasPropertiesSetup &setup) {
             std::string fileBuffer;
 
@@ -191,6 +213,8 @@ namespace loki {
             GAS_PROPERTY(anharmonicFrequency)
             GAS_PROPERTY(electricQuadrupoleMoment)
             GAS_PROPERTY(rotationalConstant)
+
+            // Parse fractions
 
             const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
             std::smatch m;
@@ -216,6 +240,10 @@ namespace loki {
                 checkGasFractions();
             }
         }
+
+        /* -- checkGasFractions --
+         * Checks whether the sum of the gas fractions is equal to 1.
+         */
 
         void checkGasFractions() {
             double norm = 0;
