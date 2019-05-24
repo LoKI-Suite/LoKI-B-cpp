@@ -10,7 +10,8 @@
 namespace loki {
     class eigen;
 
-    template <typename Library> class Traits;
+    template<typename Library>
+    class Traits;
 
     template<>
     class Traits<eigen> {
@@ -23,7 +24,7 @@ namespace loki {
         typedef const Eigen::Solve<Eigen::LLT<matrix_type>, c_vec_type> solve_type;
     };
 
-    template <typename Library>
+    template<typename Library>
     class T_Matrix {
     protected:
         typename Traits<Library>::matrix_type *matrix{};
@@ -35,7 +36,8 @@ namespace loki {
         virtual void fill() = 0;
 
         T_Matrix() = default;
-        virtual ~T_Matrix() {delete matrix;}
+
+        virtual ~T_Matrix() { delete matrix; }
     };
 
     /*
@@ -79,10 +81,10 @@ namespace loki {
      * probably not desirable.
      */
 
-    template <typename Library>
+    template<typename Library>
     class B_Matrix : public Traits<Library>::matrix_type {
     public:
-        template <typename... Args>
+        template<typename... Args>
         explicit B_Matrix(Args... args) : Traits<Library>::matrix_type(args...) {}
 
         virtual ~B_Matrix() = default;
@@ -95,6 +97,7 @@ namespace loki {
     class Alt_Matrix : public B_Matrix<eigen> {
     public:
         explicit Alt_Matrix(uint32_t dim) : B_Matrix(dim, dim) {}
+
         ~Alt_Matrix() override = default;
 
         Traits<eigen>::solve_type solve(const Traits<eigen>::c_vec_type &b) override {
@@ -110,12 +113,15 @@ namespace loki {
 /*
  * Another method to show that it also does not work when using the auto keyword.
  */
-auto testFunc(const Eigen::MatrixXd &A, const Eigen::VectorXd &b)->decltype( A.llt().solve(b) ) {
+auto testFunc(const Eigen::MatrixXd &A, const Eigen::VectorXd &b) -> decltype(A.llt().solve(b)) {
     return A.llt().solve(b);
 }
 
-int main (int argc, char ** argv)
-{
+auto addFunc(const Eigen::VectorXd &a, const Eigen::VectorXd &b) {
+    return a + b;
+}
+
+int main(int argc, char **argv) {
     Eigen::MatrixXd A(10, 10);
     A.setRandom();
     Eigen::VectorXd b(10);
@@ -132,6 +138,10 @@ int main (int argc, char ** argv)
 //    loki::Alt_Matrix altMatrix(10);
 //    altMatrix.fill();
 //    x = altMatrix.solve(b);
+
+    // However this works:
+    x = addFunc(b, b);
+
 
     std::cout << x << std::endl;
 
