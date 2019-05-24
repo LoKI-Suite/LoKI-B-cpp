@@ -14,6 +14,11 @@ namespace loki {
 
         if (!setup.LXCatFilesExtra.empty())
             loadCollisions(setup.LXCatFilesExtra, energyGrid, true);
+
+        // DONE: Load Gas properties
+        this->loadGasProperties(setup.gasProperties);
+
+        // TODO: Load State properties
     }
 
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
@@ -99,5 +104,12 @@ namespace loki {
         target->gas->addCollision(collision, isExtra);
 
         return true;
+    }
+
+    void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup) {
+        std::string fileBuffer;
+        GAS_PROPERTY(OPBParameter)
+
+        GasMixture::loadGasProperties(setup);
     }
 }

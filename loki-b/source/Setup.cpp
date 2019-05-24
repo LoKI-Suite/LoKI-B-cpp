@@ -80,7 +80,7 @@ namespace loki {
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {
-            std::cerr << "[error] Could not find/open specified file" << std::endl;
+            Log<FileError>::Error(fileName);
             return false;
         }
 

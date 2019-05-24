@@ -46,6 +46,14 @@ namespace loki {
          */
 
         bool linkCollision(EedfCollision *collision, bool isExtra);
+
+        /* -- loadGasProperties --
+         * EedfGas introduces one extra property that has to be set from a file: OPBParameter.
+         * This overload sets this parameter and then calls Gas::loadGasProperties to set the
+         * rest of its properties.
+         */
+
+        void loadGasProperties(const GasPropertiesSetup &setup) override;
     };
 }
 

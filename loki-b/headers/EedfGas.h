@@ -18,10 +18,10 @@ namespace loki {
         // the mass ratio when evaluating the total and elastic cross-sections.
         std::vector<EedfCollision *> collisions, extraCollisions;
 
+    public:
         // TODO: effectivePopulations -> what type?
         double OPBParameter = 0.;
 
-    public:
         explicit EedfGas(const std::string &name);
 
         ~EedfGas();

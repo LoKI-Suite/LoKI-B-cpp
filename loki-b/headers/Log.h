@@ -49,10 +49,17 @@ namespace loki {
         }
     };
 
+    struct GasPropertyError {
+        template<typename T>
+        static void print(const T &t) {
+            std::cerr << "Could not parse gas property: " << t << '.' << std::endl;
+        }
+    };
+
     struct DoubleCollision {
         template<typename T>
         static void print(const T &t) {
-            std::cerr << "Double collision detected: " << t << std::endl;
+            std::cerr << "Double collision detected: " << t << '.' << std::endl;
         }
     };
 

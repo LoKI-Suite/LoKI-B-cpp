@@ -13,6 +13,8 @@
 #include "Enumeration.h"
 #include "InputStructures.h"
 
+// TODO: Centralize input path
+
 namespace loki {
     struct Parse {
         /*
@@ -139,6 +141,8 @@ namespace loki {
             const std::regex reClean(R"(%[^]*?\n)");
             return std::regex_replace(content, reClean, "\n");
         }
+
+        /*  SECOND PARSING PHASE  */
 
         /* -- getFirstValue --
          * Takes a string that can either be a range (linspace/logspace) or a scalar, and
@@ -267,6 +271,34 @@ namespace loki {
                 if (!((ss >> energy) && (ss >> value))) break;\
                 rawCrossSection.emplace_back(energy, value);
             }
+        }
+
+        // TODO: comment stringBufferFromFile
+
+        static bool stringBufferFromFile(const std::string &fileName, std::string &buffer) {
+            std::ifstream in("../Input/" + fileName);
+
+            if (!in.is_open()) return false;
+
+            std::stringstream ss;
+            ss << in.rdbuf();
+
+            buffer = removeComments(ss.str());
+
+            return true;
+        }
+
+        // TODO: comment gasProperty
+
+        static bool gasProperty(const std::string &gasName, double &property, const std::string &content) {
+            std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");
+            std::smatch m;
+
+            if (!std::regex_search(content, m ,r))
+                return false;
+
+            std::stringstream ss(m[1]);
+            return (bool)(ss >> property);
         }
 
     private:

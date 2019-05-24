@@ -26,6 +26,14 @@
 #include <fstream>
 #include <regex>
 
+#define R_GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Error(setup.property); \
+                                 for (auto *gas : gasses) \
+                                     if(!Parse::gasProperty(gas->name, gas->property, fileBuffer)) \
+                                         {Log<GasPropertyError>::Error(#property " in gas " + gas->name);}
+
+#define GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Error(setup.property); \
+                               for (auto *gas : gasses) {Parse::gasProperty(gas->name, gas->property, fileBuffer); std::cerr << gas->name << ", " #property ": " << gas->property << std::endl;}
+
 namespace loki {
     /* -- GasMixture --
      * The GasMixture class acts as a base class to the EedfGasMixture and future
@@ -173,6 +181,51 @@ namespace loki {
 
             return new typename Trait<TraitType>::Collision(entry.type, reactants, products,
                                                             entry.stoiCoeff, entry.isReverse);
+        }
+
+        virtual void loadGasProperties(const GasPropertiesSetup &setup) {
+            std::string fileBuffer;
+
+            R_GAS_PROPERTY(mass)
+            GAS_PROPERTY(harmonicFrequency)
+            GAS_PROPERTY(anharmonicFrequency)
+            GAS_PROPERTY(electricQuadrupoleMoment)
+            GAS_PROPERTY(rotationalConstant)
+
+            const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
+            std::smatch m;
+
+            for (const auto &fractionStr : setup.fraction) {
+                if (!std::regex_search(fractionStr, m, r))
+                    Log<Message>::Error("Could not parse gas fractions.");
+
+                const auto &name = m.str(1);
+
+                auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
+                    return (*gas == name);
+                });
+
+                if (it == gasses.end())
+                    Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
+
+                std::stringstream ss(m.str(2));
+
+                if (!(ss >> (*it)->fraction))
+                    Log<Message>::Error("Could not parse gas fractions.");
+
+                checkGasFractions();
+            }
+        }
+
+        void checkGasFractions() {
+            double norm = 0;
+
+            for (const auto *gas : gasses) {
+                norm += gas->fraction;
+            }
+
+            if (abs(norm - 1.) > 10. * std::numeric_limits<double>::epsilon())
+                Log<Message>::Error("Gas fractions are not properly normalized.");
         }
     };
 }
