@@ -26,6 +26,8 @@ namespace loki {
 
         Grid(const Grid &other) = delete;
 
+        const Vector &getNodes() const;
+
         //Events
         event updatedMaxEnergy1,
               updatedMaxEnergy2;

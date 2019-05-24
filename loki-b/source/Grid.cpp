@@ -31,6 +31,10 @@ namespace loki {
         Log<Message>::Notify(*this);
     }
 
+    const Vector &Grid::getNodes() const {
+        return nodes;
+    }
+
     std::ostream &operator<<(std::ostream &os, const Grid &grid) {
         return os << "Grid has " << grid.nodes.size() << " nodes, " << grid.cells.size()
                   << " cells and step " << grid.step;

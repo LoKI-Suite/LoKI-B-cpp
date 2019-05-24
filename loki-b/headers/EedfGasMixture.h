@@ -19,7 +19,7 @@ namespace loki {
          * cross sections of the collisions.
          */
 
-        void initialize(const ElectronKineticsSetup &setup, const Grid *energyGrid);
+        void initialize(const ElectronKineticsSetup &setup, Grid *energyGrid);
 
     private:
 
@@ -30,7 +30,7 @@ namespace loki {
          * the collisions.
          */
 
-        void loadCollisions(const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
+        void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
 
         /* -- parseLXCatEntry --
          * Parses a RawLXCatEntry into StateEntries which build up a CollisionEntry object. This

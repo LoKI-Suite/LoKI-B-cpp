@@ -9,14 +9,14 @@
 //  a threshold).
 
 namespace loki {
-    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, const Grid *energyGrid) {
+    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, Grid *energyGrid) {
         loadCollisions(setup.LXCatFiles, energyGrid);
 
         if (!setup.LXCatFilesExtra.empty())
             loadCollisions(setup.LXCatFilesExtra, energyGrid, true);
     }
 
-    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra) {
+    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
         const std::string inputPath{"../Input/"};
 
         const std::regex reParam(R"(PARAM\.:)");
