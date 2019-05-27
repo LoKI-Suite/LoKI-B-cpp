@@ -99,7 +99,7 @@ namespace loki {
         for (auto state : children) {
             if (state != nullptr) {
                 std::cout << space << *state << std::endl;
-                state->print();
+                state->printChildren();
             }
         }
     }

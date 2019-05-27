@@ -168,7 +168,7 @@ namespace loki {
         static bool entriesFromString(std::string &statesString, std::vector<StateEntry> &entries,
                                       std::vector<uint16_t> *stoiCoeff = nullptr) {
             std::regex reState(
-                    R"((\d*)([A-Z0-9]+)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
+                    R"((\d*)([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
 
             std::regex_iterator<std::string::iterator> rit(statesString.begin(),
                                                            statesString.end(),
