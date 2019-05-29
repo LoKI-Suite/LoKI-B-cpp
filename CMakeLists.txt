@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 # --- loki-b --- #
 set(src loki-b/source)
 set(h   loki-b/headers)
+set(pf  loki-b/property_functions)
 set(inc include)
 set(dep dependencies)
 
@@ -23,10 +24,11 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h)
+set(property_functions ${pf}/PropertyFunctor.h ${pf}/PropertyFunctions.h)
 
-add_executable(loki ${headers} ${cpp} ${src}/main.cpp)
+add_executable(loki ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
 
-target_include_directories(loki PRIVATE ${h} ${inc})
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc})
 target_link_directories(loki PRIVATE ${dep})
 
 # target_compile_options(loki PRIVATE -O3)

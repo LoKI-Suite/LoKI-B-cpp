@@ -9,7 +9,9 @@
 //  a threshold).
 
 namespace loki {
-    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, Grid *energyGrid) {
+    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, Grid *energyGrid,
+            const WorkingConditions *workingConditions) {
+
         loadCollisions(setup.LXCatFiles, energyGrid);
 
         if (!setup.LXCatFilesExtra.empty())
@@ -19,6 +21,7 @@ namespace loki {
         this->loadGasProperties(setup.gasProperties);
 
         // TODO: Load State properties
+        this->loadStateProperties(setup.stateProperties, workingConditions);
     }
 
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {

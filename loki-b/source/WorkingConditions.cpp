@@ -2,11 +2,11 @@
 // Created by daan on 2-5-19.
 //
 
-#include <WorkingConditions.h>
-#include <Constant.h>
-#include <Parse.h>
-#include <Log.h>
-#include <iostream>
+#include "WorkingConditions.h"
+#include "Constant.h"
+#include "Parse.h"
+#include "Log.h"
+#include "PropertyFunctions.h"
 
 namespace loki {
     using namespace Enumeration;
@@ -32,5 +32,11 @@ namespace loki {
         gasDensity = gasPressure / (Constant::boltzmann * gasTemperature);
         reducedFieldSI = reducedField * 1.e-21;
         reducedExcFreqSI = excitationFrequency * 2 * Constant::pi / gasDensity;
+
+        linkToArgumentMap();
+    }
+
+    void WorkingConditions::linkToArgumentMap() {
+        argumentMap.emplace("gasTemperature", &gasTemperature);
     }
 }

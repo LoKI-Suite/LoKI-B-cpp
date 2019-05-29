@@ -20,6 +20,8 @@
 #include "Setup.h"
 #include "Traits.h"
 #include "Log.h"
+#include "PropertyFunctions.h"
+#include "WorkingConditions.h"
 
 #include <vector>
 #include <set>
@@ -254,6 +256,185 @@ namespace loki {
 
             if (abs(norm - 1.) > 10. * std::numeric_limits<double>::epsilon())
                 Log<Message>::Error("Gas fractions are not properly normalized.");
+        }
+
+        // TODO: comment loadStateProperties;
+
+        virtual void loadStateProperties(const StatePropertiesSetup &setup,
+                                         const WorkingConditions *workingConditions) {
+
+            loadStateProperty(setup.energy, StatePropertyType::energy, workingConditions);
+            loadStateProperty(setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
+            loadStateProperty(setup.population, StatePropertyType::population, workingConditions);
+        }
+
+        // TODO: finish and comment loadStateProperty
+
+        void loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
+                               const WorkingConditions *workingConditions) {
+
+            for (const auto &line : entryVector) {
+                std::string valueString;
+                StatePropertyDataType dataType = Parse::statePropertyType(line, valueString);
+
+                if (dataType != StatePropertyDataType::file) {
+                    StateEntry entry = Parse::propertyStateFromString(line);
+
+                    if (entry.level != none) {
+                        auto *state = findState(entry);
+
+                        if (dataType == StatePropertyDataType::direct) {
+                            double value;
+
+                            if (!Parse::getValue(valueString, value)) {
+                                //TODO: throw error instead of continue
+                                continue;
+                            }
+
+                            if (entry.hasWildCard()) {
+                                PropertyFunctions::constantValue<TraitType>(state->siblings(), value, propertyType);
+                            } else {
+                                std::vector<typename Trait<TraitType>::State *> states{state};
+                                PropertyFunctions::constantValue<TraitType>(states, value, propertyType);
+                            }
+                        } else {
+                            std::vector<double> arguments;
+                            std::string functionName, argumentString;
+
+                            if (!Parse::propertyFunctionAndArguments(valueString, functionName, argumentString)) {
+                                //TODO: throw error instead of continue
+                                continue;
+                            }
+
+                            if (!Parse::argumentsFromString(argumentString, arguments,
+                                                            workingConditions->argumentMap)) {
+                                //TODO: throw error instead of continue
+                                continue;
+                            }
+
+                            if (entry.hasWildCard()) {
+                                PropertyFunctions::callByName<TraitType>(functionName, state->siblings(),
+                                                                         arguments, propertyType);
+                            } else {
+                                std::vector<typename Trait<TraitType>::State *> states{state};
+                                PropertyFunctions::callByName<TraitType>(functionName, states, arguments, propertyType);
+                            }
+                        }
+
+                    }
+                } else {
+                    // TODO: parse file
+                }
+            }
+        }
+
+        // TODO: comment find... functions
+
+        typename Trait<TraitType>::State *findState(const StateEntry &entry) {
+            // Find gas.
+
+            auto *gas = findGas(entry.gasName);
+
+            if (gas == nullptr)
+                return nullptr;
+
+            if (entry.e == "*" && entry.level == electronic) {
+                auto &states = entry.charge.empty() ? gas->stateTree : gas->ionicStates;
+
+                if (states.empty())
+                    return nullptr;
+
+                return states[0];
+            }
+
+            // Find electronic state.
+
+            auto *state = findState(gas, entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == electronic)
+                return state;
+
+            if (entry.v == "*" && entry.level == vibrational) {
+                if (state->children.empty())
+                    return nullptr;
+
+                return state->children[0];
+            }
+
+            // Find vibrational state.
+
+            state = findState(state, entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == vibrational)
+                return state;
+
+            if (entry.J == "*" && entry.level == rotational) {
+                if (state->children.empty())
+                    return nullptr;
+
+                return state->children[0];
+            }
+
+            // Find rotational state
+
+            state = findState(state, entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == rotational)
+                return state;
+
+            return nullptr;
+        }
+
+        typename Trait<TraitType>::Gas *findGas(const std::string &name) {
+            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
+                return (*gas == name);
+            });
+
+            if (it == gasses.end()) {
+                return nullptr;
+            }
+
+            return *it;
+        }
+
+        typename Trait<TraitType>::State *
+        findState(typename Trait<TraitType>::Gas *gas, const StateEntry &entry) {
+            auto &states = (entry.charge.empty() ? gas->stateTree : gas->ionicStates);
+
+            auto it = std::find_if(states.begin(), states.end(),
+                                   [&entry](typename Trait<TraitType>::State *state) {
+                                       return *state >= entry;
+                                   });
+
+            if (it == states.end()) {
+                return nullptr;
+            }
+
+            return *it;
+        }
+
+        typename Trait<TraitType>::State *
+        findState(typename Trait<TraitType>::State *parent, const StateEntry &entry) {
+
+            auto it = std::find_if(parent->children.begin(), parent->children.end(),
+                                   [&entry](typename Trait<TraitType>::State *child) {
+                                       return *child >= entry;
+                                   });
+
+            if (it == parent->children.end()) {
+                return nullptr;
+            }
+
+            return *it;
         }
     };
 }

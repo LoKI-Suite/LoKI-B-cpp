@@ -13,6 +13,6 @@ loki::Simulation::Simulation(const loki::Setup &setup)
       enableKinetics(setup.electronKinetics.isOn) {
 
     if (enableKinetics) {
-        electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics);
+        electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
     }
 }

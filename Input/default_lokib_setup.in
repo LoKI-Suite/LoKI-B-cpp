@@ -25,7 +25,12 @@ electronKinetics:
   LXCatFiles:                          % cross section files
     - Nitrogen/N2_LXCat.txt
     - Nitrogen/N2_rot_LXCat.txt
-    - Oxygen/O2_LXCat.txt
+    %- Oxygen/O2_LXCat.txt
+    %- Oxygen/O2_vib_LXCat.txt
+    %- Oxygen/O2_rot_LXCat.txt
+    %- Oxygen/O_LXCat.txt
+    %- Argon/Ar_LXCat.txt
+    %- Helium/He_LXCat.txt
 %  LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
 %  effectiveCrossSectionPopulations:   % see doc
 %    - N2_effectivePop.txt

@@ -6,6 +6,7 @@
 #define LOKI_CPP_EEDFGASMIXTURE_H
 
 #include "GasMixture.h"
+#include "WorkingConditions.h"
 #include "Traits.h"
 
 namespace loki {
@@ -19,7 +20,8 @@ namespace loki {
          * cross sections of the collisions.
          */
 
-        void initialize(const ElectronKineticsSetup &setup, Grid *energyGrid);
+        void initialize(const ElectronKineticsSetup &setup, Grid *energyGrid,
+                const WorkingConditions *workingConditions);
 
     private:
 

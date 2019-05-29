@@ -9,6 +9,7 @@
 #include <regex>
 #include <iostream>
 #include <fstream>
+#include <map>
 
 #include "Enumeration.h"
 #include "InputStructures.h"
@@ -212,6 +213,100 @@ namespace loki {
             return true;
         }
 
+        // TODO: comment propertyStateFromString
+
+        static StateEntry propertyStateFromString(const std::string &propertyString) {
+            std::regex reState(
+                    R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+            std::smatch m;
+
+            if (!std::regex_search(propertyString, m, reState))
+                return {};
+
+            if (m.str(1).empty() || m.str(3).empty())
+                return {};
+
+            Enumeration::StateType stateType;
+
+            if (m.str(4).empty()) {
+                stateType = electronic;
+            } else if (m.str(5).empty()) {
+                stateType = vibrational;
+            } else {
+                stateType = rotational;
+            }
+
+            return {stateType, m.str(1), m.str(2),
+                    m.str(3), m.str(4), m.str(5)};
+        }
+
+        // TODO: comment statePropertyType
+
+        static StatePropertyDataType statePropertyType(const std::string &propertyString, std::string &buffer) {
+            const std::regex reProperty(R"(.*=\s*(.+?)\s*$)");
+            std::smatch m;
+
+            if (std::regex_search(propertyString, m, reProperty)) { // value or function
+                buffer = m.str(1);
+
+                const std::regex reValue(R"([\.0-9]+)");
+
+                if (std::regex_match(buffer, reValue)) {
+                    return StatePropertyDataType::direct;
+                }
+
+                return StatePropertyDataType::function;
+            }
+
+            buffer = propertyString;
+
+            return StatePropertyDataType::file;
+        }
+
+        // TODO: comment propertyFunctionAndArguments
+
+        static bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
+                                                 std::string &argumentString) {
+            std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
+            std::smatch m;
+
+            if (!std::regex_match(totalString, m, reFuncArgs))
+                return false;
+
+            functionName = m.str(1);
+            argumentString = m.str(2);
+
+            return true;
+        }
+
+        // TODO: comment argumentsFromString
+
+        static bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
+                                        const std::map<std::string, double *> &argumentMap) {
+            std::regex r(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
+
+            for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), r);
+                 it != std::sregex_iterator(); ++it) {
+                std::string current = it->str(1);
+
+                if (isNumerical(current)) {
+                    double value;
+
+                    if (!getValue(current, value))
+                        return false;
+
+                    arguments.emplace_back(value);
+                } else {
+                    if (argumentMap.count(current) == 0)
+                        return false;
+
+                    arguments.emplace_back(*argumentMap.at(current));
+                }
+            }
+
+            return true;
+        }
+
         /* -- collisionTypeFromString --
          * Accepts a string containing a collision type (e.g. Excitation or Attachment) and
          * returns the corresponding entry in the CollisionType enumeration.
@@ -260,15 +355,16 @@ namespace loki {
         rawCrossSectionFromStream(std::vector<std::pair<double, double>> &rawCrossSection, std::ifstream &in) {
             std::string line;
 
-            while(std::getline(in, line)) {
+            while (std::getline(in, line)) {
                 if (line.substr(0, 2) == "--") break;
             }
 
             double energy = 0., value = 0.;
 
-            while(std::getline(in, line)) {
+            while (std::getline(in, line)) {
                 std::stringstream ss(line);
                 if (!((ss >> energy) && (ss >> value))) break;\
+
                 rawCrossSection.emplace_back(energy, value);
             }
         }
@@ -300,16 +396,12 @@ namespace loki {
             std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");
             std::smatch m;
 
-            if (!std::regex_search(content, m ,r))
+            if (!std::regex_search(content, m, r))
                 return false;
 
             std::stringstream ss(m[1]);
-            return (bool)(ss >> property);
+            return (bool) (ss >> property);
         }
-
-    private:
-
-        /* -- PARSING RANGES -- */
 
         /* -- getValue --
          * Tries to parse a string into a double, returns a boolean based on its success
@@ -326,6 +418,16 @@ namespace loki {
 
             return (bool) (ss >> value);
         }
+
+    private:
+
+        static bool isNumerical(const std::string &str) {
+            std::regex reNum(R"(\s*\d*\.?\d+\s*)");
+
+            return std::regex_match(str, reNum);
+        }
+
+        /* -- PARSING RANGES -- */
 
         /* -- firstValueInRange --
          * Tries to parse the first value in a string defining a range into a double,

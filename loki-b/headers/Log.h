@@ -100,7 +100,26 @@ namespace loki {
         }
     };
 
-    // Log<FileError>::Warning();
+    struct NumArgumentsError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Wrong number of input elements in the " << t << " property function." << std::endl;
+        }
+    };
+
+    struct WrongPropertyError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Using " << t << " to set the wrong state property." << std::endl;
+        }
+    };
+
+    struct PropertyFunctionError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Trying to call nonexistent property function: " << t << "." << std::endl;
+        }
+    };
 }
 
 #endif //LOKI_CPP_LOG_H

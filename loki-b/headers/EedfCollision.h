@@ -15,7 +15,8 @@ namespace loki {
         // The raw cross section data and threshold is stored in
         // the CrossSection object
 
-        // TODO: Inelastic and superelastic rate coefficient variables should be here
+        // DONE: Inelastic and superelastic rate coefficient variables should be here
+        double ineRateCoeff{0.}, supRateCoef{0.};
 
     public:
         CrossSection * crossSection{nullptr};

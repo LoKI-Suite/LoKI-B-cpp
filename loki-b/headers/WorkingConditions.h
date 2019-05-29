@@ -12,9 +12,9 @@
  * working conditions to the relevant classes.
  */
 
-#include <Event.h>
-#include <Setup.h>
-#include <Enumeration.h>
+#include "Event.h"
+#include "Setup.h"
+#include "Enumeration.h"
 
 namespace loki {
     class WorkingConditions {
@@ -30,6 +30,8 @@ namespace loki {
                reducedFieldSI,
                excitationFrequency,
                reducedExcFreqSI;
+
+        std::map<std::string, double *> argumentMap;
 
         explicit WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType);
         ~WorkingConditions() = default;
@@ -56,6 +58,9 @@ namespace loki {
         // TODO: add functions (or a single templated function of some sort) to update
         //  any variables that can be a range. E.g. at this moment this is 'electronTemperature'
         //  and 'reducedField'.
+
+    private:
+        void linkToArgumentMap();
     };
 }
 

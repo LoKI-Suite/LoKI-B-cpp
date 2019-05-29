@@ -3,12 +3,13 @@
 //
 
 #include "ElectronKinetics.h"
+#include <chrono>
 
 namespace loki {
-    ElectronKinetics::ElectronKinetics(const loki::ElectronKineticsSetup &setup)
-        : grid(setup.numerics.energyGrid) {
+    ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
+        : workingConditions(workingConditions), grid(setup.numerics.energyGrid) {
 
-        mixture.initialize(setup, &grid);
+        mixture.initialize(setup, &grid, workingConditions);
 
         this->eedfType = setup.eedfType;
         this->shapeParameter = setup.shapeParameter;

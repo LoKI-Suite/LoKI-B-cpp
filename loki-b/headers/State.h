@@ -33,13 +33,6 @@ namespace loki {
     template <typename TraitType>
     class State {
     protected:
-        StateType type;
-        std::string e, v, J, charge;
-
-        double energy{0.},
-               statisticalWeight{0.},
-               population{0.},
-               density{0.};
 
         State(const StateEntry &entry,
                 typename Trait<TraitType>::Gas *gas,
@@ -48,10 +41,21 @@ namespace loki {
                 std::string e, std::string v, std::string J, std::string charge);
 
     public:
+        StateType type;
+        std::string e, v, J, charge;
+
+        double energy{-1.},
+                statisticalWeight{-1.},
+                population{-1.},
+                density{-1.};
+
         typename Trait<TraitType>::State *parent{nullptr};
         typename Trait<TraitType>::Gas *gas{nullptr};
 
         std::vector<typename Trait<TraitType>::State *> children;
+
+        // TODO: comment siblings
+        std::vector<typename Trait<TraitType>::State *> &siblings();
 
         /* -- >= --
          * This operator overload checks whether the current state is equal to
@@ -129,6 +133,16 @@ namespace loki {
 
             return true;
         }
+    }
+
+    template<typename TraitType>
+    std::vector<typename Trait<TraitType>::State *> &
+    State<TraitType>::siblings() {
+        if (type == electronic) {
+            return charge.empty() ? gas->stateTree : gas->ionicStates;
+        }
+
+        return parent->children;
     }
 }
 

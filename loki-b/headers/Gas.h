@@ -34,14 +34,14 @@ namespace loki {
     class Gas {
     public:
         const std::string name;
-        double mass{0.},
-               harmonicFrequency{0.},
-               anharmonicFrequency{0.},
-               rotationalConstant{0.},
-               electricDipoleMoment{0.},
-               electricQuadrupoleMoment{0.},
-               polarizability{0.},
-               fraction{0.};
+        double mass{-1},
+               harmonicFrequency{-1},
+               anharmonicFrequency{-1},
+               rotationalConstant{-1},
+               electricDipoleMoment{-1},
+               electricQuadrupoleMoment{-1},
+               polarizability{-1},
+               fraction{-1};
 
         // TODO: Do we actually need this first vector?
         // Vector that stores pointers to all states in the system.

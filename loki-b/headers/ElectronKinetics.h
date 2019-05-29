@@ -8,6 +8,7 @@
 #include "Setup.h"
 #include "EedfGasMixture.h"
 #include "Grid.h"
+#include "WorkingConditions.h"
 
 namespace loki {
     using namespace Enumeration;
@@ -19,12 +20,14 @@ namespace loki {
         GrowthModelType growthModelType;
         bool includeEECollisions;
 
+        const WorkingConditions *workingConditions;
+
         Grid grid;
 
         EedfGasMixture mixture;
 
     public:
-        explicit ElectronKinetics(const ElectronKineticsSetup &setup);
+        explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
         ~ElectronKinetics() = default;
 
         // Copying this object is not allowed.

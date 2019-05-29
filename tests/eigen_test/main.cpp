@@ -121,12 +121,25 @@ auto addFunc(const Eigen::VectorXd &a, const Eigen::VectorXd &b) {
     return a + b;
 }
 
+template <typename derivedA, typename derivedB>
+const Eigen::Solve<Eigen::LLT<derivedA, 1>, derivedB>
+solve(const Eigen::MatrixBase<derivedA> &A, const Eigen::MatrixBase<derivedB> &b) {
+    return A.llt().solve(b);
+}
+
+template <typename derivedA, typename derivedB>
+void solve(const Eigen::MatrixBase<derivedA> &A, Eigen::MatrixBase<derivedB> &x, const Eigen::MatrixBase<derivedB> &b) {
+    x = A.llt().solve(b);
+}
+
 int main(int argc, char **argv) {
     Eigen::MatrixXd A(10, 10);
-    A.setRandom();
+    A.fill(1);
     Eigen::VectorXd b(10);
-    b.setRandom();
+    b.fill(1);
     Eigen::VectorXd x(10);
+
+    solve(A, x, b);
 
     // All three implementations will cause std::bad_alloc().
 //    x = testFunc(A, b);
@@ -140,7 +153,7 @@ int main(int argc, char **argv) {
 //    x = altMatrix.solve(b);
 
     // However this works:
-    x = addFunc(b, b);
+//    x = addFunc(b, b);
 
 
     std::cout << x << std::endl;
