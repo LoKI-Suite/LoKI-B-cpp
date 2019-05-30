@@ -28,8 +28,6 @@ namespace loki {
 
         bool hasCollision(EedfCollision * collision, bool isExtra);
         void addCollision(EedfCollision * collision, bool isExtra);
-
-        friend std::ostream &operator<<(std::ostream &os, const EedfState &state);
     };
 }
 

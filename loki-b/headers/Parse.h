@@ -307,6 +307,56 @@ namespace loki {
             return true;
         }
 
+        // TODO: comment stateAndValue
+
+        static bool stateAndValue(const std::string &propertyFileLine, std::string &stateString,
+                                  std::string &valueString) {
+            std::regex r(R"((.*?)\s*([\d\.e+-]+)\s*(?:\n|$))");
+            std::smatch m;
+
+            if (!std::regex_search(propertyFileLine, m, r))
+                return false;
+
+            stateString = m.str(1);
+            valueString = m.str(2);
+
+            return true;
+        }
+
+        // TODO: comment statePropertyFile
+
+        static bool statePropertyFile(const std::string &fileName,
+                                      std::vector<std::pair<StateEntry, double>> &entries) {
+            const std::string inputPath = "../Input/";
+
+            std::ifstream in(inputPath + fileName);
+
+            if (!in.is_open())
+                return false;
+
+            std::string line;
+
+            while (std::getline(in, line)) {
+                line = removeComments(line);
+
+                if (line.empty()) continue;
+
+                std::string stateString, valueString;
+
+                if (!Parse::stateAndValue(line, stateString, valueString))
+                    return false;
+
+                double value;
+
+                if (!Parse::getValue(valueString, value))
+                    return false;
+
+                entries.emplace_back(Parse::propertyStateFromString(stateString), value);
+            }
+
+            return true;
+        }
+
         /* -- collisionTypeFromString --
          * Accepts a string containing a collision type (e.g. Excitation or Attachment) and
          * returns the corresponding entry in the CollisionType enumeration.

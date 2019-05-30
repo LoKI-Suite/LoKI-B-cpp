@@ -8,10 +8,13 @@
 #include "InputStructures.h"
 #include "Enumeration.h"
 #include "Traits.h"
+#include "Log.h"
+#include "EedfGas.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace loki {
     using namespace Enumeration;
@@ -46,8 +49,8 @@ namespace loki {
 
         double energy{-1.},
                 statisticalWeight{-1.},
-                population{-1.},
-                density{-1.};
+                population{0.},
+                density{0.};
 
         typename Trait<TraitType>::State *parent{nullptr};
         typename Trait<TraitType>::Gas *gas{nullptr};
@@ -63,6 +66,51 @@ namespace loki {
          */
 
         bool operator>=(const StateEntry &entry);
+
+        template <typename T>
+        friend std::ostream &operator<<(std::ostream &os, const State<T> &state);
+
+        // TODO: comment find
+
+        typename Trait<TraitType>::State *
+        find(const StateEntry &entry) {
+
+            auto it = std::find_if(children.begin(), children.end(),
+                                   [&entry](typename Trait<TraitType>::State *child) {
+                                       return *child >= entry;
+                                   });
+
+            if (it == children.end()) {
+                return nullptr;
+            }
+
+            return *it;
+        }
+
+        // TODO: comment evaluatePopulations
+
+        void evaluatePopulations() {
+            if (children.empty()) return;
+
+            double totalPopulation = 0.;
+
+            for (auto *state : children) {
+                totalPopulation += state->population;
+                state->evaluatePopulations();
+            }
+
+            if (population == 0) {
+                if (totalPopulation != 0)
+                    Log<ChildrenPopulationError>::Error(*this);
+            } else {
+                if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+                    Log<ChildrenPopulationError>::Error(*this);
+            }
+        }
+
+        // TODO: comment evaluateDensity
+
+        void evaluateDensity();
 
         void printChildren() const;
 
@@ -143,6 +191,34 @@ namespace loki {
         }
 
         return parent->children;
+    }
+
+    template<typename TraitType>
+    void State<TraitType>::evaluateDensity() {
+        if (type == electronic)
+            density = population * gas->fraction;
+        else
+            density = population * parent->density;
+
+        for (auto *state : children)
+            state->evaluateDensity();
+    }
+
+    template <typename TraitType>
+    std::ostream &operator<<(std::ostream &os, const State<TraitType> & state) {
+        os << state.gas->name << '(';
+
+        if (!state.charge.empty()) os << state.charge << ',';
+
+        os << state.e;
+
+        if (state.type >= vibrational) os << ",v=" << state.v;
+
+        if (state.type == rotational) os << ",J=" << state.J;
+
+        os << ')';
+
+        return os;
     }
 }
 

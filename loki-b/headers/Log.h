@@ -120,6 +120,13 @@ namespace loki {
             std::cerr << "Trying to call nonexistent property function: " << t << "." << std::endl;
         }
     };
+
+    struct ChildrenPopulationError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Populations of children do not add up to one for: " << t << "." << std::endl;
+        }
+    };
 }
 
 #endif //LOKI_CPP_LOG_H

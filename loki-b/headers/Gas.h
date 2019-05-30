@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace loki {
     /* -- Gas --
@@ -50,6 +51,50 @@ namespace loki {
         // The stateTree vector stores pointers to the electronic non-ionic states.
         // The ionicStates vector stores pointers to the electronic ionic states.
         std::vector<typename Trait<TraitType>::State *> stateTree, ionicStates;
+
+        // TODO: comment evaluateStateDensities
+
+        void evaluateStateDensities() {
+            for (auto *state : stateTree)
+                state->evaluateDensity();
+
+            for (auto *state : ionicStates)
+                state->evaluateDensity();
+        }
+
+        // TODO: comment find
+
+        typename Trait<TraitType>::State *
+        find(const StateEntry &entry) {
+            auto &childStates = (entry.charge.empty() ? stateTree : ionicStates);
+
+            auto it = std::find_if(childStates.begin(), childStates.end(),
+                                   [&entry](typename Trait<TraitType>::State *state) {
+                                       return *state >= entry;
+                                   });
+
+            if (it == childStates.end()) {
+                return nullptr;
+            }
+
+            return *it;
+        }
+
+        void checkPopulations() {
+            double totalPopulation = 0.;
+
+            for (auto *state : stateTree) {
+                totalPopulation += state->population;
+                state->evaluatePopulations();
+            }
+            for (auto *state : ionicStates) {
+                totalPopulation += state->population;
+                state->evaluatePopulations();
+            }
+
+            if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+                Log<ChildrenPopulationError>::Error(name);
+        }
 
     protected:
         explicit Gas(std::string name) : name(std::move(name)) {}

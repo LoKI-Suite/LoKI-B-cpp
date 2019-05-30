@@ -53,6 +53,8 @@
                                      if(!Parse::gasProperty(gas->name, gas->property, fileBuffer)) \
                                          {Log<GasPropertyError>::Error(#property " in gas " + gas->name);}
 
+// TODO: find matlab function that checks populations
+
 namespace loki {
     /* -- GasMixture --
      * The GasMixture class acts as a base class to the EedfGasMixture and future
@@ -84,8 +86,87 @@ namespace loki {
         }
 
     protected:
-
         GasMixture() = default;
+
+        // TODO: comment find... functions
+
+        typename Trait<TraitType>::Gas *
+        findGas(const std::string &name) {
+            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
+                return (*gas == name);
+            });
+
+            if (it == gasses.end()) {
+                return nullptr;
+            }
+
+            return *it;
+        }
+
+        typename Trait<TraitType>::State *
+        findState(const StateEntry &entry) {
+            // Find gas.
+
+            auto *gas = findGas(entry.gasName);
+
+            if (gas == nullptr)
+                return nullptr;
+
+            if (entry.e == "*" && entry.level == electronic) {
+                auto &states = entry.charge.empty() ? gas->stateTree : gas->ionicStates;
+
+                if (states.empty())
+                    return nullptr;
+
+                return states[0];
+            }
+
+            // Find electronic state.
+
+            auto *state = gas->find(entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == electronic)
+                return state;
+
+            if (entry.v == "*" && entry.level == vibrational) {
+                if (state->children.empty())
+                    return nullptr;
+
+                return state->children[0];
+            }
+
+            // Find vibrational state.
+
+            state = state->find(entry);// findState(state, entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == vibrational)
+                return state;
+
+            if (entry.J == "*" && entry.level == rotational) {
+                if (state->children.empty())
+                    return nullptr;
+
+                return state->children[0];
+            }
+
+            // Find rotational state
+
+            state = state->find(entry);//findState(state, entry);
+
+            if (state == nullptr)
+                return nullptr;
+
+            if (entry.level == rotational)
+                return state;
+
+            return nullptr;
+        }
 
         /* -- addGas --
          * Tries to add a new gas based on a given name and returns a pointer to it. If a
@@ -94,15 +175,22 @@ namespace loki {
 
         typename Trait<TraitType>::Gas *
         addGas(const std::string &name) {
-            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-                return (*gas == name);
-            });
+            auto *gas = findGas(name);
 
-            if (it == gasses.end()) {
+            if (gas == nullptr)
                 return gasses.emplace_back(new typename Trait<TraitType>::Gas(name));
-            }
 
-            return *it;
+            return gas;
+
+//            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
+//                return (*gas == name);
+//            });
+//
+//            if (it == gasses.end()) {
+//                return gasses.emplace_back(new typename Trait<TraitType>::Gas(name));
+//            }
+//
+//            return *it;
         }
 
         /* -- addState --
@@ -126,55 +214,6 @@ namespace loki {
             return state;
         }
 
-        /* -- addState --
-         * This overload accepts a pointer to a gas. It will check if the electronic
-         * ancestor of the state described by the given StateEntry already exists.
-         * If it does, a pointer is returned to this state, and if it does not, the
-         * ancestor is added its pointer returned.
-         */
-
-        typename Trait<TraitType>::State *
-        addState(typename Trait<TraitType>::Gas *gas, const StateEntry &entry) {
-            auto &states = (entry.charge.empty() ? gas->stateTree : gas->ionicStates);
-
-            auto it = std::find_if(states.begin(), states.end(),
-                                   [&entry](typename Trait<TraitType>::State *state) {
-                                       return *state >= entry;
-                                   });
-
-            if (it == states.end()) {
-                auto *state = gas->states.emplace_back(new typename Trait<TraitType>::State(entry, gas));
-                return states.emplace_back(state);
-            }
-
-            return *it;
-        }
-
-        /* -- addState --
-         * This overload accepts a pointer to a state. It will check if one of the
-         * current children of this state is an ancestor of (or equal to) the state
-         * described by the given StateEntry. If such a child exists, its pointer is
-         * returned, if it does not exist then the appropriate state is created and
-         * its pointer returned.
-         */
-
-        typename Trait<TraitType>::State *
-        addState(typename Trait<TraitType>::State *parent, const StateEntry &entry) {
-
-            auto it = std::find_if(parent->children.begin(), parent->children.end(),
-                                   [&entry](typename Trait<TraitType>::State *child) {
-                                       return *child >= entry;
-                                   });
-
-            if (it == parent->children.end()) {
-                auto *state = parent->gas->states.emplace_back(
-                        new typename Trait<TraitType>::State(entry, parent->gas, parent));
-                return parent->children.emplace_back(state);
-            }
-
-            return *it;
-        }
-
         /* -- createCollision --
          * Creates a collision based on a provided CollisionEntry object. The
          * gasses and states involved in the collision are first created and
@@ -182,7 +221,8 @@ namespace loki {
          * pointer is returned.
          */
 
-        typename Trait<TraitType>::Collision *createCollision(CollisionEntry &entry) {
+        typename Trait<TraitType>::Collision *
+        createCollision(CollisionEntry &entry) {
             std::vector<typename Trait<TraitType>::State *> reactants, products;
             std::set<typename Trait<TraitType>::Gas *> targetGasses;
 
@@ -204,7 +244,9 @@ namespace loki {
 
         /* -- loadGasProperties --
          * Loads the gas properties from the database files specified in the main input
-         * file.
+         * file. It is declared virtual such that inherited classes can override it to
+         * declare any extra properties that they might introduce. They can then call
+         * the base class version to load the properties declared in the base class.
          */
 
         virtual void loadGasProperties(const GasPropertiesSetup &setup) {
@@ -254,8 +296,13 @@ namespace loki {
                 norm += gas->fraction;
             }
 
-            if (abs(norm - 1.) > 10. * std::numeric_limits<double>::epsilon())
+            if (std::abs(norm - 1.) > 10. * std::numeric_limits<double>::epsilon())
                 Log<Message>::Error("Gas fractions are not properly normalized.");
+        }
+
+        void checkPopulations() {
+            for (auto *gas : gasses)
+                gas->checkPopulations();
         }
 
         // TODO: comment loadStateProperties;
@@ -266,6 +313,8 @@ namespace loki {
             loadStateProperty(setup.energy, StatePropertyType::energy, workingConditions);
             loadStateProperty(setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
             loadStateProperty(setup.population, StatePropertyType::population, workingConditions);
+
+            checkPopulations();
         }
 
         // TODO: finish and comment loadStateProperty
@@ -323,118 +372,75 @@ namespace loki {
 
                     }
                 } else {
-                    // TODO: parse file
+                    std::vector<std::pair<StateEntry, double>> entries;
+
+                    if (!Parse::statePropertyFile(valueString, entries))
+                        Log<FileError>::Error(valueString);
+
+                    for (const auto &entry : entries) {
+                        auto *state = findState(entry.first);
+
+                        if (state == nullptr) {
+                            // TODO: throw error instead of continue
+                            continue;
+                        }
+
+                        PropertyFunctions::setStateProperty<TraitType>(state, entry.second, propertyType);
+                    }
                 }
             }
         }
 
-        // TODO: comment find... functions
+        // TODO: comment evaluateStateDensities
 
-        typename Trait<TraitType>::State *findState(const StateEntry &entry) {
-            // Find gas.
-
-            auto *gas = findGas(entry.gasName);
-
-            if (gas == nullptr)
-                return nullptr;
-
-            if (entry.e == "*" && entry.level == electronic) {
-                auto &states = entry.charge.empty() ? gas->stateTree : gas->ionicStates;
-
-                if (states.empty())
-                    return nullptr;
-
-                return states[0];
-            }
-
-            // Find electronic state.
-
-            auto *state = findState(gas, entry);
-
-            if (state == nullptr)
-                return nullptr;
-
-            if (entry.level == electronic)
-                return state;
-
-            if (entry.v == "*" && entry.level == vibrational) {
-                if (state->children.empty())
-                    return nullptr;
-
-                return state->children[0];
-            }
-
-            // Find vibrational state.
-
-            state = findState(state, entry);
-
-            if (state == nullptr)
-                return nullptr;
-
-            if (entry.level == vibrational)
-                return state;
-
-            if (entry.J == "*" && entry.level == rotational) {
-                if (state->children.empty())
-                    return nullptr;
-
-                return state->children[0];
-            }
-
-            // Find rotational state
-
-            state = findState(state, entry);
-
-            if (state == nullptr)
-                return nullptr;
-
-            if (entry.level == rotational)
-                return state;
-
-            return nullptr;
+        void evaluateStateDensities() {
+            for (auto *gas : gasses)
+                gas->evaluateStateDensities();
         }
 
-        typename Trait<TraitType>::Gas *findGas(const std::string &name) {
-            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-                return (*gas == name);
-            });
+    private:
 
-            if (it == gasses.end()) {
-                return nullptr;
-            }
-
-            return *it;
-        }
+        /* -- addState --
+         * This overload accepts a pointer to a gas. It will check if the electronic
+         * ancestor of the state described by the given StateEntry already exists.
+         * If it does, a pointer is returned to this state, and if it does not, the
+         * ancestor is added its pointer returned.
+         */
 
         typename Trait<TraitType>::State *
-        findState(typename Trait<TraitType>::Gas *gas, const StateEntry &entry) {
+        addState(typename Trait<TraitType>::Gas *gas, const StateEntry &entry) {
             auto &states = (entry.charge.empty() ? gas->stateTree : gas->ionicStates);
 
-            auto it = std::find_if(states.begin(), states.end(),
-                                   [&entry](typename Trait<TraitType>::State *state) {
-                                       return *state >= entry;
-                                   });
+            auto *state = gas->find(entry);
 
-            if (it == states.end()) {
-                return nullptr;
+            if (state == nullptr) {
+                state = gas->states.emplace_back(new typename Trait<TraitType>::State(entry, gas));
+                return states.emplace_back(state);
             }
 
-            return *it;
+            return state;
         }
 
+        /* -- addState --
+         * This overload accepts a pointer to a state. It will check if one of the
+         * current children of this state is an ancestor of (or equal to) the state
+         * described by the given StateEntry. If such a child exists, its pointer is
+         * returned, if it does not exist then the appropriate state is created and
+         * its pointer returned.
+         */
+
         typename Trait<TraitType>::State *
-        findState(typename Trait<TraitType>::State *parent, const StateEntry &entry) {
+        addState(typename Trait<TraitType>::State *parent, const StateEntry &entry) {
 
-            auto it = std::find_if(parent->children.begin(), parent->children.end(),
-                                   [&entry](typename Trait<TraitType>::State *child) {
-                                       return *child >= entry;
-                                   });
+            auto *state = parent->find(entry);
 
-            if (it == parent->children.end()) {
-                return nullptr;
+            if (state == nullptr) {
+                state = parent->gas->states.emplace_back(
+                        new typename Trait<TraitType>::State(entry, parent->gas, parent));
+                return parent->children.emplace_back(state);
             }
 
-            return *it;
+            return state;
         }
     };
 }

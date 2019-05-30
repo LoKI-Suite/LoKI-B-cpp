@@ -20,8 +20,10 @@ namespace loki {
         // DONE: Load Gas properties
         this->loadGasProperties(setup.gasProperties);
 
-        // TODO: Load State properties
+        // DONE: Load State properties
         this->loadStateProperties(setup.stateProperties, workingConditions);
+
+        this->evaluateStateDensities();
     }
 
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
