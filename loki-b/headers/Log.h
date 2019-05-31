@@ -121,10 +121,38 @@ namespace loki {
         }
     };
 
+    struct PropertyFunctionParseError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Could not parse function name and argument list: " << t << "." << std::endl;
+        }
+    };
+
+    struct PropertyValueParseError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Could not parse property state value: " << t << "." << std::endl;
+        }
+    };
+
+    struct PropertyArgumentsError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Cannot extract property function arguments from input file: " << t << "." << std::endl;
+        }
+    };
+
+    struct PropertyStateError {
+        template <typename T> inline
+        static void print(const T &t) {
+            std::cerr << "Trying to assign property to nonexistent state: " << t << "." << std::endl;
+        }
+    };
+
     struct ChildrenPopulationError {
         template <typename T> inline
         static void print(const T &t) {
-            std::cerr << "Populations of children do not add up to one for: " << t << "." << std::endl;
+            std::cerr << "Populations of children do not add up to 1 for: " << t << "." << std::endl;
         }
     };
 }

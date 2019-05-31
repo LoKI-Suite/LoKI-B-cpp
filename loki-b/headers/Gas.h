@@ -52,7 +52,9 @@ namespace loki {
         // The ionicStates vector stores pointers to the electronic ionic states.
         std::vector<typename Trait<TraitType>::State *> stateTree, ionicStates;
 
-        // TODO: comment evaluateStateDensities
+        /* -- evaluateStateDensities --
+         * Calls evaluateDensity on all electronic states for this gas.
+         */
 
         void evaluateStateDensities() {
             for (auto *state : stateTree)
@@ -62,7 +64,12 @@ namespace loki {
                 state->evaluateDensity();
         }
 
-        // TODO: comment find
+        /* -- find --
+         * Allows to search the electronic states in order to find a state that
+         * is equal to or an ancestor of the state as described by the passed
+         * StateEntry object. If this state is present, it will be returned,
+         * otherwise a null pointer is returned.
+         */
 
         typename Trait<TraitType>::State *
         find(const StateEntry &entry) {
@@ -80,16 +87,22 @@ namespace loki {
             return *it;
         }
 
+        /* -- checkPopulations --
+         * Verifies that the populations of all electronic states adds up to 1. It also
+         * calls the checkPopulation function on all these states to recursively check
+         * populations.
+         */
+
         void checkPopulations() {
             double totalPopulation = 0.;
 
             for (auto *state : stateTree) {
                 totalPopulation += state->population;
-                state->evaluatePopulations();
+                state->checkPopulations();
             }
             for (auto *state : ionicStates) {
                 totalPopulation += state->population;
-                state->evaluatePopulations();
+                state->checkPopulations();
             }
 
             if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())

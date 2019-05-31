@@ -12,10 +12,32 @@
 
 #include <cmath>
 
-// TODO: comment loki::PropertyFunctions
+/* -- PropertyFunctions --
+ * In this namespace the user can define all their property functions. Each property function has the same
+ * structure.
+ *
+ * The arguments are as follows.
+ *
+ *  1. A vector of pointers to the states (typename Trait<TraitType>::State) of which to set the property.
+ *  2. A vector of doubles representing the arguments to be used by the property function. E.g. in the
+ *     case of boltzmannPopulation this vector contains a single argument, the temperature.
+ *  3. A StatePropertyType indicating whether the function is supposed to set either the energy, population
+ *     or statistical weight of the states.
+ *
+ * The user is responsible to provide any checks on the number of arguments provided, the validity of the
+ * passed StateProperty etc. Furthermore, when adding a function, the user should also add it to the
+ * callByName function, which links the function to a string containing its name. When this is done, it is
+ * possible to address the function in a setup file to set state properties.
+ */
 
 namespace loki::PropertyFunctions {
     using namespace Constant;
+
+    /* -- setStateProperty --
+     * Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
+     * StatePropertyType, it will assign the value to either the population, statisticalWeight or
+     * population member variables of the supplied state object.
+     */
 
     template<typename TraitType>
     static void
@@ -23,10 +45,13 @@ namespace loki::PropertyFunctions {
         switch (type) {
             case StatePropertyType::energy:
                 state->energy = value;
+                break;
             case StatePropertyType::statisticalWeight:
                 state->statisticalWeight = value;
+                break;
             case StatePropertyType::population:
                 state->population = value;
+                break;
         }
     }
 

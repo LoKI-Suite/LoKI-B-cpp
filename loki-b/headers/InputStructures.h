@@ -5,6 +5,7 @@
 #ifndef LOKI_CPP_INPUTSTRUCTURES_H
 #define LOKI_CPP_INPUTSTRUCTURES_H
 
+#include <ostream>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -46,6 +47,16 @@ namespace loki {
             }
 
             return false;
+        }
+
+        friend std::ostream &operator<<(std::ostream &os, const StateEntry &entry) {
+            os << entry.gasName << '(';
+
+            if (!entry.charge.empty()) os << entry.charge << ',';
+
+            os << entry.e << ",v=" << entry.v << ",J=" << entry.J << ')';
+
+            return os;
         }
     };
 

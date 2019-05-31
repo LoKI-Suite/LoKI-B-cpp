@@ -57,7 +57,12 @@ namespace loki {
 
         std::vector<typename Trait<TraitType>::State *> children;
 
-        // TODO: comment siblings
+        /* -- siblings --
+         * Returns a vector containing the sibling states of the this state.
+         * In case this state is electronic, this vector is obtained via the
+         * gas, otherwise it is obtained via the parent.
+         */
+
         std::vector<typename Trait<TraitType>::State *> &siblings();
 
         /* -- >= --
@@ -70,7 +75,12 @@ namespace loki {
         template <typename T>
         friend std::ostream &operator<<(std::ostream &os, const State<T> &state);
 
-        // TODO: comment find
+        /* -- find --
+         * Allows to search the children in order to find a state that is equal
+         * to or an ancestor of the state as described by the passed StateEntry
+         * object. If this state is present, it will be returned, otherwise a
+         * null pointer is returned.
+         */
 
         typename Trait<TraitType>::State *
         find(const StateEntry &entry) {
@@ -87,16 +97,20 @@ namespace loki {
             return *it;
         }
 
-        // TODO: comment evaluatePopulations
+        /* -- checkPopulations --
+         * Verifies that the populations of all child states add up to 1. It also
+         * calls the checkPopulation function on all these states to recursively check
+         * populations.
+         */
 
-        void evaluatePopulations() {
+        void checkPopulations() {
             if (children.empty()) return;
 
             double totalPopulation = 0.;
 
             for (auto *state : children) {
                 totalPopulation += state->population;
-                state->evaluatePopulations();
+                state->checkPopulations();
             }
 
             if (population == 0) {
@@ -108,7 +122,11 @@ namespace loki {
             }
         }
 
-        // TODO: comment evaluateDensity
+        /* -- evaluateDensity --
+         * Calculates the density based on the gas fraction, the states population and populations
+         * of any parent states. Then it calls evaluateDensity on all child states to recursively
+         * evaluate all densities in the state tree.
+         */
 
         void evaluateDensity();
 
@@ -217,6 +235,8 @@ namespace loki {
         if (state.type == rotational) os << ",J=" << state.J;
 
         os << ')';
+
+//        os << "\tpopulation: " << state.population << "\tdensity: " << state.density;
 
         return os;
     }

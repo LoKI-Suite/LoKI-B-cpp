@@ -36,7 +36,7 @@ namespace loki {
     }
 
     std::ostream &operator<<(std::ostream &os, const Grid &grid) {
-        return os << "Grid has " << grid.nodes.size() << " nodes, " << grid.cells.size()
+        return os << "Grid with " << grid.nodes.size() << " nodes, " << grid.cells.size()
                   << " cells and step " << grid.step;
     }
 }

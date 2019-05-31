@@ -139,7 +139,7 @@ namespace loki {
          * string from comments and returns it.
          */
         static std::string removeComments(const std::string &content) {
-            const std::regex reClean(R"(%[^]*?\n)");
+            const std::regex reClean(R"(%[^]*?(?:\n|$))");
             return std::regex_replace(content, reClean, "\n");
         }
 
@@ -213,7 +213,11 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment propertyStateFromString
+        /* -- propertyStateFromString --
+         * Extracts a StateEntry object from a given string and returns it. Note that this function
+         * is specifically used when loading state properties, since then the states can contain
+         * wild card characters.
+         */
 
         static StateEntry propertyStateFromString(const std::string &propertyString) {
             std::regex reState(
@@ -240,9 +244,13 @@ namespace loki {
                     m.str(3), m.str(4), m.str(5)};
         }
 
-        // TODO: comment statePropertyType
+        /* -- statePropertyDataType --
+         * Deduces whether an entry in the stateProperties section describes loading
+         * of state properties by direct value, file or function. The result is
+         * returned as a StatePropertyDataType enumeration type.
+         */
 
-        static StatePropertyDataType statePropertyType(const std::string &propertyString, std::string &buffer) {
+        static StatePropertyDataType statePropertyDataType(const std::string &propertyString, std::string &buffer) {
             const std::regex reProperty(R"(.*=\s*(.+?)\s*$)");
             std::smatch m;
 
@@ -263,7 +271,10 @@ namespace loki {
             return StatePropertyDataType::file;
         }
 
-        // TODO: comment propertyFunctionAndArguments
+        /* -- propertyFunctionAndArguments --
+         * Extracts the property function name and arguments from a given string and
+         * stores them in two separate strings.
+         */
 
         static bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
                                                  std::string &argumentString) {
@@ -279,7 +290,13 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment argumentsFromString
+        /* -- argumentsFromString --
+         * Extracts the separate arguments from a string containing the arguments, finds
+         * their corresponding double values and pushes them into the arguments vector. E.g.
+         * "[gasTemperature, 1000]" first yields "gasTemperature" which is looked up in
+         * the argumentMap to obtain its value, and then yields "1000" which is converted
+         * into a double and pushed into the arguments vector.
+         */
 
         static bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
                                         const std::map<std::string, double *> &argumentMap) {
@@ -307,7 +324,11 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment stateAndValue
+        /* -- stateAndValue --
+         * Extracts the state and the corresponding value from a line as provided in a
+         * property file. They are both stored in their own string variables which are
+         * passed by reference.
+         */
 
         static bool stateAndValue(const std::string &propertyFileLine, std::string &stateString,
                                   std::string &valueString) {
@@ -323,7 +344,10 @@ namespace loki {
             return true;
         }
 
-        // TODO: comment statePropertyFile
+        /* -- statePropertyFile --
+         * Parses a state property file into a vector of StateEntry, double pairs. This vector
+         * is passed by reference.
+         */
 
         static bool statePropertyFile(const std::string &fileName,
                                       std::vector<std::pair<StateEntry, double>> &entries) {
@@ -339,7 +363,7 @@ namespace loki {
             while (std::getline(in, line)) {
                 line = removeComments(line);
 
-                if (line.empty()) continue;
+                if (line.size() < 3) continue;
 
                 std::string stateString, valueString;
 

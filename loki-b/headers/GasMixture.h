@@ -11,7 +11,7 @@
 //  auxiliary structure like StateEntry or can we immediately create the state?
 //  If not then alter the GasMixture class (replace StateEntry by State).
 // DONE: Implement LXCat file parsing.
-// TODO: Implement Property file / function / value parsing.
+// DONE: Implement Property file / function / value parsing.
 
 #include "EedfGas.h"
 #include "EedfState.h"
@@ -53,8 +53,6 @@
                                      if(!Parse::gasProperty(gas->name, gas->property, fileBuffer)) \
                                          {Log<GasPropertyError>::Error(#property " in gas " + gas->name);}
 
-// TODO: find matlab function that checks populations
-
 namespace loki {
     /* -- GasMixture --
      * The GasMixture class acts as a base class to the EedfGasMixture and future
@@ -88,7 +86,11 @@ namespace loki {
     protected:
         GasMixture() = default;
 
-        // TODO: comment find... functions
+        /* -- findGas --
+         * Tries to find a gas in the gas mixture specified by a supplied name. If the
+         * gas is present, a pointer to this gas is returned, otherwise a nullptr is
+         * returned.
+         */
 
         typename Trait<TraitType>::Gas *
         findGas(const std::string &name) {
@@ -102,6 +104,15 @@ namespace loki {
 
             return *it;
         }
+
+        /* -- findState --
+         * Tries to find a state in the gas mixture specified by a supplied name. If the
+         * state is present, a pointer to this state is returned, otherwise a nullptr is
+         * returned.
+         *
+         * Note that when entry describes a series of states (thus it contains a wildcard
+         * character) then a pointer to the first sibling is returned.
+         */
 
         typename Trait<TraitType>::State *
         findState(const StateEntry &entry) {
@@ -305,7 +316,10 @@ namespace loki {
                 gas->checkPopulations();
         }
 
-        // TODO: comment loadStateProperties;
+        /* -- loadStateProperties --
+         * Loads the state properties as specified in the input file. It also calls
+         * checkPopulations.
+         */
 
         virtual void loadStateProperties(const StatePropertiesSetup &setup,
                                          const WorkingConditions *workingConditions) {
@@ -317,14 +331,22 @@ namespace loki {
             checkPopulations();
         }
 
-        // TODO: finish and comment loadStateProperty
+        /* -- loadStateProperty --
+         * Loads the data concerning a single property of the states (energy, statistical
+         * weight, or population) from a vector of entries as supplied by the setup object.
+         * First it determines whether the current entry requires loading by direct value,
+         * file or function, then it acts accordingly. The property that needs to be set
+         * is defined by the propertyType variable. Furthermore, it also needs a pointer
+         * to the WorkingConditions structure to access the argument map (which maps its
+         * member variables to names by which they are addressed in the input files).
+         */
 
         void loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
                                const WorkingConditions *workingConditions) {
 
             for (const auto &line : entryVector) {
                 std::string valueString;
-                StatePropertyDataType dataType = Parse::statePropertyType(line, valueString);
+                StatePropertyDataType dataType = Parse::statePropertyDataType(line, valueString);
 
                 if (dataType != StatePropertyDataType::file) {
                     StateEntry entry = Parse::propertyStateFromString(line);
@@ -332,13 +354,15 @@ namespace loki {
                     if (entry.level != none) {
                         auto *state = findState(entry);
 
+                        if (state == nullptr) {
+                            Log<PropertyStateError>::Error(entry);
+                        }
+
                         if (dataType == StatePropertyDataType::direct) {
                             double value;
 
-                            if (!Parse::getValue(valueString, value)) {
-                                //TODO: throw error instead of continue
-                                continue;
-                            }
+                            if (!Parse::getValue(valueString, value))
+                                Log<PropertyValueParseError>::Error(valueString);
 
                             if (entry.hasWildCard()) {
                                 PropertyFunctions::constantValue<TraitType>(state->siblings(), value, propertyType);
@@ -350,16 +374,11 @@ namespace loki {
                             std::vector<double> arguments;
                             std::string functionName, argumentString;
 
-                            if (!Parse::propertyFunctionAndArguments(valueString, functionName, argumentString)) {
-                                //TODO: throw error instead of continue
-                                continue;
-                            }
+                            if (!Parse::propertyFunctionAndArguments(valueString, functionName, argumentString))
+                                Log<PropertyFunctionParseError>::Error(valueString);
 
-                            if (!Parse::argumentsFromString(argumentString, arguments,
-                                                            workingConditions->argumentMap)) {
-                                //TODO: throw error instead of continue
-                                continue;
-                            }
+                            if (!Parse::argumentsFromString(argumentString, arguments, workingConditions->argumentMap))
+                                Log<PropertyArgumentsError>::Error(argumentString);
 
                             if (entry.hasWildCard()) {
                                 PropertyFunctions::callByName<TraitType>(functionName, state->siblings(),
@@ -377,21 +396,25 @@ namespace loki {
                     if (!Parse::statePropertyFile(valueString, entries))
                         Log<FileError>::Error(valueString);
 
-                    for (const auto &entry : entries) {
+                    for (auto &entry : entries) {
                         auto *state = findState(entry.first);
 
-                        if (state == nullptr) {
-                            // TODO: throw error instead of continue
-                            continue;
-                        }
+                        if (state == nullptr)
+                            Log<PropertyStateError>::Error(entry.first);
 
-                        PropertyFunctions::setStateProperty<TraitType>(state, entry.second, propertyType);
+                        if (entry.first.hasWildCard()) {
+                            PropertyFunctions::constantValue<TraitType>(state->siblings(), entry.second, propertyType);
+                        } else {
+                            PropertyFunctions::setStateProperty<TraitType>(state, entry.second, propertyType);
+                        }
                     }
                 }
             }
         }
 
-        // TODO: comment evaluateStateDensities
+        /* -- evaluateStateDensities --
+         * Evaluates the densities of all states in the state tree.
+         */
 
         void evaluateStateDensities() {
             for (auto *gas : gasses)
