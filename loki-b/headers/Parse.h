@@ -399,9 +399,9 @@ namespace loki {
             switch (first) {
                 case 'E':
                     switch (second) {
-                        case 'c':
+                        case 'l':
                             return Enumeration::CollisionType::elastic;
-                        case 'e':
+                        case 'f':
                             return Enumeration::CollisionType::effective;
                         default:
                             return Enumeration::CollisionType::excitation;
