@@ -115,7 +115,7 @@ namespace loki::PropertyFunctions {
         if (states.at(0)->type != rotational)
             Log<Message>::Error("Trying to assign rigid rotor energy to non-rotational state.");
 
-        if (states.at(0)->gas->harmonicFrequency < 0)
+        if (states.at(0)->gas->rotationalConstant < 0)
             Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas->name +
                                 " to evaluate state energies.");
 
@@ -154,6 +154,29 @@ namespace loki::PropertyFunctions {
     }
 
     template<typename TraitType>
+    void rotationalDegeneracy(std::vector<typename Trait<TraitType>::State *> &states,
+                                 const std::vector<double> &arguments, StatePropertyType type) {
+        if (type != StatePropertyType::statisticalWeight)
+            Log<WrongPropertyError>::Error("rotationalDegeneracy");
+
+        if (!arguments.empty())
+            Log<NumArgumentsError>::Error("rotationalDegeneracy");
+
+        if (states.at(0)->type != rotational)
+            Log<Message>::Error("Trying to assign rotational degeneracy to non-rotational state.");
+
+        for (auto *state : states) {
+            double J;
+
+            if (!Parse::getValue(state->J, J))
+                Log<Message>::Error("Non numerical rot level (" + state->J +
+                                    ") when trying to assign rigid rotor energy.");
+
+            state->statisticalWeight = 2 * J + 1;
+        }
+    }
+
+    template<typename TraitType>
     void constantValue(std::vector<typename Trait<TraitType>::State *> &states,
                        double value, StatePropertyType type) {
 
@@ -179,6 +202,8 @@ namespace loki::PropertyFunctions {
             rigidRotorEnergy<TraitType>(states, arguments, type);
         else if (name == "rotationalDegeneracy_N2")
             rotationalDegeneracy_N2<TraitType>(states, arguments, type);
+        else if (name == "rotationalDegeneracy")
+            rotationalDegeneracy<TraitType>(states, arguments, type);
         else
             Log<PropertyFunctionError>::Error(name);
     }

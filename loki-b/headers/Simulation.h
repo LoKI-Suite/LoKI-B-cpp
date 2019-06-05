@@ -13,7 +13,6 @@
 
 namespace loki {
     class Simulation {
-    public:
         WorkingConditions workingConditions;
         std::unique_ptr<ElectronKinetics> electronKinetics;
         const bool enableKinetics;

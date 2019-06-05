@@ -10,7 +10,7 @@
 #include "CrossSection.h"
 
 namespace loki {
-    class EedfCollision : Collision<Boltzmann> {
+    class EedfCollision : public Collision<Boltzmann> {
 
         // The raw cross section data and threshold is stored in
         // the CrossSection object
@@ -29,6 +29,8 @@ namespace loki {
         ~EedfCollision();
 
         EedfState *getTarget();
+
+        void superElastic(const Vector &energyData, Vector &result) const;
 
         bool operator==(const EedfCollision &other);
 

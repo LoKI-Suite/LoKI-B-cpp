@@ -24,9 +24,8 @@ namespace loki {
 
     template<typename TraitType>
     class Collision {
-    protected:
+    public:
         Enumeration::CollisionType type;
-
         bool isReverse = false;
 
         // In the case that TraitType = Boltzmann, this will be a pointer to an EedfState.
@@ -38,6 +37,8 @@ namespace loki {
 
         // Vector of stoichiometric coefficents belonging to the products of the collsion.
         std::vector<uint16_t> productStoiCoeff;
+
+    protected:
 
         /* -- Constructor --
          * Initializes the members of the Collision class, the vectors are initialized

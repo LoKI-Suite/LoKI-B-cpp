@@ -15,9 +15,9 @@ namespace loki {
     class EedfState : public State<Boltzmann> {
         bool isTarget{false};
 
+    public:
         std::vector<EedfCollision *> collisions, extraCollisions;
 
-    public:
         EedfState(const StateEntry &entry, EedfGas *gas, EedfState * parent = nullptr);
         EedfState(StateType type, EedfGas *gas, const std::string &e, const std::string &v,
                 const std::string &J, const std::string &charge);

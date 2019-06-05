@@ -426,7 +426,8 @@ namespace loki {
          */
 
         static void
-        rawCrossSectionFromStream(std::vector<std::pair<double, double>> &rawCrossSection, std::ifstream &in) {
+        rawCrossSectionFromStream(std::vector<double> &rawEnergyData, std::vector<double> &rawCrossSection,
+                                  std::ifstream &in) {
             std::string line;
 
             while (std::getline(in, line)) {
@@ -439,7 +440,8 @@ namespace loki {
                 std::stringstream ss(line);
                 if (!((ss >> energy) && (ss >> value))) break;\
 
-                rawCrossSection.emplace_back(energy, value);
+                rawEnergyData.emplace_back(energy);
+                rawCrossSection.emplace_back(value);
             }
         }
 

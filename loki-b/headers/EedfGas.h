@@ -8,18 +8,20 @@
 #include "Gas.h"
 #include "EedfState.h"
 #include "EedfCollision.h"
+#include "CrossSection.h"
+#include "Grid.h"
 
 #include <vector>
+#include <map>
 
 namespace loki {
     class EedfGas : public Gas<Boltzmann> {
+    public:
 
         // We need to store the collisions per Gas since we need to calculate
         // the mass ratio when evaluating the total and elastic cross-sections.
-        std::vector<EedfCollision *> collisions, extraCollisions;
-
-    public:
-        // TODO: effectivePopulations -> what type?
+        std::vector<std::vector<EedfCollision *>> collisions, extraCollisions;
+        std::map<EedfState *, double> effectivePopulations;
         double OPBParameter = 0.;
 
         explicit EedfGas(const std::string &name);
@@ -27,6 +29,16 @@ namespace loki {
         ~EedfGas();
 
         void addCollision(EedfCollision * collision, bool isExtra);
+
+        void checkElasticCollisions(Grid *energyGrid);
+
+        bool isDummy();
+
+    private:
+
+        CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
+
+        void setDefaultEffPop(EedfState *ground);
     };
 }
 

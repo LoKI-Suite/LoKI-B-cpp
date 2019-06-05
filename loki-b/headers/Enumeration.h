@@ -46,13 +46,14 @@ namespace loki::Enumeration {
     };
 
     enum class CollisionType : uint8_t {
-        elastic,
         effective,
+        elastic,
         excitation,
         vibrational,
         rotational,
         ionization,
         attachment,
+        size,
         none
     };
 

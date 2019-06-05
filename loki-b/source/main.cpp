@@ -33,11 +33,11 @@ int main (int argc, char ** argv)
 
         if (setup.electronKinetics.isOn) {
             if (setup.electronKinetics.eedfType == EedfType::boltzmann) {
-                std::cout << "solver routine" << std::endl;
+                std::cerr << "solver routine" << std::endl;
             }
         }
     } catch (const std::exception &e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
     }
 
     auto end = std::chrono::high_resolution_clock::now();

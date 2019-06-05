@@ -13,7 +13,6 @@ namespace loki {
     class Grid {
         Vector cells, nodes;
         double step;
-        uint32_t cellNumber;
 
         // Smart grid
         bool isSmart = false;
@@ -21,6 +20,8 @@ namespace loki {
         double updateFactor;
 
     public:
+        uint32_t cellNumber;
+
         explicit Grid(const EnergyGridSetup &gridSetup);
         ~Grid() = default;
 

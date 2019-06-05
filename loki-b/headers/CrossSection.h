@@ -13,17 +13,24 @@
 
 namespace loki {
     class CrossSection : public Vector {
-        std::vector<std::pair<double, double>> rawCrossSection;
+//        std::vector<std::pair<double, double>> rawCrossSection;
+        Vector rawEnergyData, rawCrossSection;
         Grid *energyGrid;
 
     public:
         const double threshold;
 
         CrossSection(double threshold, Grid *energyGrid, std::ifstream &in);
+        CrossSection(double threshold, Grid *energyGrid, Vector rawEnergyData, Vector rawCrossSection);
 
         void interpolate();
+        void interpolate(const Vector &energies, Vector &result);
 
-        explicit CrossSection(double threshold, Grid *energyGrid);
+        Vector &raw();
+
+        Vector &energies();
+
+        CrossSection(double threshold, Grid *energyGrid);
 
     };
 }

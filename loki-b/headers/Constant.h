@@ -28,7 +28,7 @@ namespace loki {
 
         const double kBeV = boltzmann / electronCharge;
         const double plankReduced = plank / (2. * pi);
-        const double plankReducedInEv = plankReduced / electronCharge;
+        const double plankReducedInEv = plank / (2. * pi * electronCharge);
     }
 }
 

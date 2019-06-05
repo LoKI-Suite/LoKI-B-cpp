@@ -2,6 +2,7 @@
 // Created by daan on 20-5-19.
 //
 
+#include <iomanip>
 #include "EedfGasMixture.h"
 
 // DONE: productStoiCoeff is only for the products
@@ -9,13 +10,16 @@
 //  a threshold).
 
 namespace loki {
-    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, Grid *energyGrid,
-            const WorkingConditions *workingConditions) {
+    using namespace Enumeration;
 
-        loadCollisions(setup.LXCatFiles, energyGrid);
+    EedfGasMixture::EedfGasMixture(Grid *grid) : grid(grid) {}
+
+    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions) {
+
+        loadCollisions(setup.LXCatFiles, grid);
 
         if (!setup.LXCatFilesExtra.empty())
-            loadCollisions(setup.LXCatFilesExtra, energyGrid, true);
+            loadCollisions(setup.LXCatFilesExtra, grid, true);
 
         // DONE: Load Gas properties
         this->loadGasProperties(setup.gasProperties);
@@ -24,6 +28,13 @@ namespace loki {
         this->loadStateProperties(setup.stateProperties, workingConditions);
 
         this->evaluateStateDensities();
+
+        for (auto *gas : gasses) {
+            if (!gas->isDummy())
+                gas->checkElasticCollisions(grid);
+        }
+
+        this->evaluateTotalAndElasticCS();
     }
 
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
@@ -116,5 +127,35 @@ namespace loki {
         GAS_PROPERTY(OPBParameter)
 
         GasMixture::loadGasProperties(setup);
+    }
+
+    void EedfGasMixture::evaluateTotalAndElasticCS() {
+        elasticCrossSection.resize(grid->cellNumber + 1);
+        elasticCrossSection.setZero();
+        totalCrossSection.resize(grid->cellNumber + 1);
+        totalCrossSection.setZero();
+
+        for (auto *gas : gasses) {
+            if (gas->isDummy()) continue;
+
+            double massRatio = Constant::electronMass / gas->mass;
+
+            for (auto *collision : gas->collisions[(uint8_t) CollisionType::elastic]) {
+                elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
+            }
+
+            for (auto i = (uint8_t) CollisionType::elastic; i < gas->collisions.size(); ++i) {
+                for (auto *collision : gas->collisions[i]) {
+                    totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+
+                    if (collision->isReverse) {
+                        Vector superElastic;
+                        collision->superElastic(grid->getNodes(), superElastic);
+
+                        totalCrossSection += superElastic * collision->products[0]->density;
+                    }
+                }
+            }
+        }
     }
 }

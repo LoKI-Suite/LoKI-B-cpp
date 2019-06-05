@@ -141,6 +141,8 @@ int main(int argc, char **argv) {
 
     solve(A, x, b);
 
+    std::cout << std::numeric_limits<double>::epsilon();
+
     // All three implementations will cause std::bad_alloc().
 //    x = testFunc(A, b);
 
@@ -156,7 +158,7 @@ int main(int argc, char **argv) {
 //    x = addFunc(b, b);
 
 
-    std::cout << x << std::endl;
+//    std::cout << x << std::endl;
 
     return 0;
 }

@@ -13,6 +13,12 @@ namespace loki {
     class EedfGasMixture : public GasMixture<Boltzmann> {
     public:
 
+        Vector elasticCrossSection, totalCrossSection;
+
+        Grid *grid{nullptr};
+
+        explicit EedfGasMixture(Grid *grid);
+
         /* -- initialize --
          * Initializes the gas mixture by loading the desired collisions from LXCat files.
          * These files are read from the electron kinetics setup structure. It also
@@ -20,8 +26,7 @@ namespace loki {
          * cross sections of the collisions.
          */
 
-        void initialize(const ElectronKineticsSetup &setup, Grid *energyGrid,
-                const WorkingConditions *workingConditions);
+        void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
 
     private:
 
@@ -56,6 +61,10 @@ namespace loki {
          */
 
         void loadGasProperties(const GasPropertiesSetup &setup) override;
+
+        // TODO: comment evaluateTotalAndElasticCS
+
+        void evaluateTotalAndElasticCS();
     };
 }
 

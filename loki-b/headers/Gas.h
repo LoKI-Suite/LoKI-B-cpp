@@ -42,7 +42,7 @@ namespace loki {
                electricDipoleMoment{-1},
                electricQuadrupoleMoment{-1},
                polarizability{-1},
-               fraction{-1};
+               fraction{0.};
 
         // TODO: Do we actually need this first vector?
         // Vector that stores pointers to all states in the system.
@@ -105,8 +105,12 @@ namespace loki {
                 state->checkPopulations();
             }
 
-            if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+            if (fraction == 0) {
+                if (totalPopulation != 0)
+                    Log<ZeroFractionPopulationError>::Error(name);
+            } else if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon()) {
                 Log<ChildrenPopulationError>::Error(name);
+            }
         }
 
     protected:
