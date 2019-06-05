@@ -58,12 +58,12 @@ electronKinetics:
       - Nitrogen/N2_vibpop.txt
       - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
       - O2(X) = 1.0
-      - O2(X,v=*) = treanorPopulation@gasTemperature,4000
+      - O2(X,v=0) = 1.0
       - O2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 1
-      cellNumber: 1000
+      maxEnergy: 10
+      cellNumber: 10000
       smartGrid:                       % configuration of the smart grid
         minEedfDecay: 20               % minimum number of decade-fall for the EEDF
         maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
