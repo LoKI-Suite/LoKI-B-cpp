@@ -103,13 +103,9 @@ namespace loki {
         }
     }
 
-    void EedfGas::checkElasticCollisions(Grid *energyGrid) {
-        if (collisions.empty())
-            return;
-
-        std::vector<EedfState *> statesToUpdate;
-
-        for (auto *eleState : stateTree) {
+    void EedfGas::findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
+                                     std::vector<EedfState *> &statesToUpdate) {
+        for (auto *eleState : stateStructure) {
             if (eleState->population > 0) {
                 auto it = find_if(eleState->collisions.begin(), eleState->collisions.end(),
                                   [](EedfCollision *collision) {
@@ -120,6 +116,15 @@ namespace loki {
                     statesToUpdate.emplace_back(eleState);
             }
         }
+    }
+
+    void EedfGas::checkElasticCollisions(Grid *energyGrid) {
+        if (isDummy()) return;
+
+        std::vector<EedfState *> statesToUpdate;
+
+        findStatesToUpdate(stateTree, statesToUpdate);
+        findStatesToUpdate(ionicStates, statesToUpdate);
 
         if (!statesToUpdate.empty()) {
             CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);

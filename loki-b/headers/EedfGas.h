@@ -14,6 +14,8 @@
 #include <vector>
 #include <map>
 
+// TODO: Allow loading of effective populations from a file.
+
 namespace loki {
     class EedfGas : public Gas<Boltzmann> {
     public:
@@ -28,13 +30,16 @@ namespace loki {
 
         ~EedfGas();
 
-        void addCollision(EedfCollision * collision, bool isExtra);
+        void addCollision(EedfCollision *collision, bool isExtra);
 
         void checkElasticCollisions(Grid *energyGrid);
 
         bool isDummy();
 
     private:
+
+        void findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
+                                std::vector<EedfState *> &statesToUpdate);
 
         CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
 
