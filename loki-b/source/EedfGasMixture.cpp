@@ -34,7 +34,9 @@ namespace loki {
                 gas->checkElasticCollisions(grid);
         }
 
-        this->evaluateTotalAndElasticCS();
+        this->addCARGasses(setup.CARgases);
+
+//        this->evaluateTotalAndElasticCS();
     }
 
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
@@ -156,6 +158,21 @@ namespace loki {
                     }
                 }
             }
+        }
+    }
+
+    void EedfGasMixture::addCARGasses(const std::vector<std::string> &CARVector) {
+        for (const auto &gasName : CARVector) {
+            EedfGas * gas = this->findGas(gasName);
+
+            if (gas == nullptr) {
+                Log<CARForNonExistent>::Warning(gasName);
+                continue;
+            }
+
+            gas->checkCARConditions();
+
+            CARGasses.emplace_back(gas);
         }
     }
 }

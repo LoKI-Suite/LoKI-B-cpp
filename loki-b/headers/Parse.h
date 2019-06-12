@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <cmath>
 
 #include "Enumeration.h"
 #include "InputStructures.h"
@@ -511,12 +512,25 @@ namespace loki {
          */
 
         static bool firstValueInRange(const std::string &rangeString, double &value) {
-            const std::regex r(R"(\s*(?:(?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
+            const std::regex r(R"(\s*((?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
             std::smatch m;
 
             if (!std::regex_search(rangeString, m, r)) return false;
 
-            std::stringstream ss(m[1]);
+            std::stringstream ss(m[2]);
+
+            const std::string function = m.str(1);
+
+            if (function[1] == 'o') {
+                double power;
+                bool success = (bool)(ss >> power);
+
+                if (function.back() == '-') power = -power;
+
+                value = std::pow(10., power);
+
+                return success;
+            }
 
             return (bool) (ss >> value);
         }

@@ -9,6 +9,8 @@
 #include "WorkingConditions.h"
 #include "Traits.h"
 
+#include <vector>
+
 namespace loki {
     class EedfGasMixture : public GasMixture<Boltzmann> {
     public:
@@ -16,6 +18,8 @@ namespace loki {
         Vector elasticCrossSection, totalCrossSection;
 
         Grid *grid{nullptr};
+
+        std::vector<EedfGas *> CARGasses;
 
         explicit EedfGasMixture(Grid *grid);
 
@@ -27,6 +31,10 @@ namespace loki {
          */
 
         void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+
+        // TODO: comment evaluateTotalAndElasticCS
+
+        void evaluateTotalAndElasticCS();
 
     private:
 
@@ -62,9 +70,9 @@ namespace loki {
 
         void loadGasProperties(const GasPropertiesSetup &setup) override;
 
-        // TODO: comment evaluateTotalAndElasticCS
+        // TODO: comment addCARGasses
 
-        void evaluateTotalAndElasticCS();
+        void addCARGasses(const std::vector<std::string> &CARVector);
     };
 }
 

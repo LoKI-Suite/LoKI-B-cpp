@@ -7,6 +7,8 @@
 #ifndef LOKI_CPP_LINEARALGEBRA_H
 #define LOKI_CPP_LINEARALGEBRA_H
 
+#define EIGEN_USE_MKL_ALL
+
 #include "Eigen/Dense"
 
 namespace loki {

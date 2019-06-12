@@ -3,16 +3,23 @@
 //
 
 #include "Simulation.h"
+#include <chrono>
 
 // TODO: It might deem necessary to pass the full ElectronKineticsSetup structure
 //  to the WorkingConditions constructor (such that we can also check whether it
 //  is enabled).
 
 loki::Simulation::Simulation(const loki::Setup &setup)
-    : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
-      enableKinetics(setup.electronKinetics.isOn) {
+        : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
+          enableKinetics(setup.electronKinetics.isOn) {
 
     if (enableKinetics) {
         electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
+    }
+}
+
+void loki::Simulation::run() {
+    if (enableKinetics) {
+        electronKinetics->solve();
     }
 }

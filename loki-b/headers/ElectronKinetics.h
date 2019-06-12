@@ -11,6 +11,8 @@
 #include "WorkingConditions.h"
 #include "LinearAlgebra.h"
 
+// TODO: comment ElectronKinetics class
+
 namespace loki {
     using namespace Enumeration;
 
@@ -27,15 +29,15 @@ namespace loki {
 
         EedfGasMixture mixture;
 
-        Vector g_c;
-
         Matrix elasticMatrix,
-                continuousMatrix;
+                fieldMatrix,
+                CARMatrix,
+                continuousMatrix,
+                inelasticMatrix;
+
+        Vector g_c, g_E, g_CAR;
 
         Vector eedf;
-
-        void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-                  const Vector &x, const Vector &y);
 
     public:
         explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
@@ -44,6 +46,23 @@ namespace loki {
 
         // Copying this object is not allowed.
         ElectronKinetics(const ElectronKinetics &other) = delete;
+
+        void solve();
+
+    private:
+
+        void evaluateMatrix();
+
+        void evaluateElasticOperator();
+
+        void evaluateFieldOperator();
+
+        void evaluateCAROperator();
+
+        void evaluateInelasticOperators();
+
+        void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
+                  const Vector &x, const Vector &y);
     };
 }
 

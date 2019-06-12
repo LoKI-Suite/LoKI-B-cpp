@@ -24,6 +24,10 @@ namespace loki {
         // Copying this object is not allowed.
         Simulation(const Simulation &other) = delete;
 
+        // TODO: comment run
+
+        void run();
+
     };
 }
 

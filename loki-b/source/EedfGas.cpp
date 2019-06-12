@@ -143,6 +143,17 @@ namespace loki {
         }
     }
 
+    void EedfGas::checkCARConditions() {
+        if (electricQuadrupoleMoment < 0)
+            Log<NoElectricQuadMoment>::Error(name);
+
+        if (rotationalConstant < 0)
+            Log<NoRotationalConstant>::Error(name);
+
+        if (!collisions[(uint8_t)CollisionType::rotational].empty())
+            Log<RotCollisionInCARGas>::Error(name);
+    }
+
     bool EedfGas::isDummy() {
         for (const auto &vec : collisions)
             if (!vec.empty()) return false;

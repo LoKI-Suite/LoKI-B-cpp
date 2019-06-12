@@ -15,6 +15,7 @@
 #include <map>
 
 // TODO: Allow loading of effective populations from a file.
+// TODO: comment EedfGas class
 
 namespace loki {
     class EedfGas : public Gas<Boltzmann> {
@@ -33,6 +34,8 @@ namespace loki {
         void addCollision(EedfCollision *collision, bool isExtra);
 
         void checkElasticCollisions(Grid *energyGrid);
+
+        void checkCARConditions();
 
         bool isDummy();
 

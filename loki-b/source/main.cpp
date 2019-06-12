@@ -31,11 +31,8 @@ int main (int argc, char ** argv)
 
         loki::Simulation simulation(setup);
 
-        if (setup.electronKinetics.isOn) {
-            if (setup.electronKinetics.eedfType == EedfType::boltzmann) {
-                std::cerr << "solver routine" << std::endl;
-            }
-        }
+        simulation.run();
+
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }

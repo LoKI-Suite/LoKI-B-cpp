@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 project(loki_cpp)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -mavx2 -mfma -DNDEBUG")
 set(CMAKE_CXX_STANDARD 17)
 
 # --- loki-b --- #
@@ -10,6 +11,7 @@ set(h   loki-b/headers)
 set(pf  loki-b/property_functions)
 set(inc include)
 set(dep dependencies)
+set(mkl /home/daan/intel/compilers_and_libraries/linux/mkl)
 
 set(cpp ${src}/WorkingConditions.cpp
         ${src}/Grid.cpp ${src}/EedfGas.cpp
@@ -28,8 +30,9 @@ set(property_functions ${pf}/PropertyFunctions.h)
 
 add_executable(loki ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
 
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc})
-target_link_directories(loki PRIVATE ${dep})
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
+target_link_directories(loki PRIVATE ${dep} ${mkl}/lib/intel64)
+target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
 
 # target_compile_options(loki PRIVATE -O3)
 
@@ -73,3 +76,6 @@ add_executable(trait_test tests/trait_test/main.cpp)
 # -- trait_test_no_indexing -- #
 add_executable(trait_test_no_indexing tests/trait_test_no_indexing/main.cpp tests/trait_test_no_indexing/Traits.h tests/trait_test_no_indexing/Gas.h tests/trait_test_no_indexing/Basic.h tests/trait_test_no_indexing/State.h tests/trait_test_no_indexing/GasMixture.h tests/trait_test_no_indexing/Working_v1.h)
 target_include_directories(trait_test_no_indexing PRIVATE ${inc})
+
+# -- lu_test -- #
+add_executable(lu_test tests/lu_test/main.cpp)

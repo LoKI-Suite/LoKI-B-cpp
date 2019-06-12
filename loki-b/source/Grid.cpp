@@ -35,6 +35,10 @@ namespace loki {
         return nodes;
     }
 
+    const Vector &Grid::getCells() const {
+        return cells;
+    }
+
     std::ostream &operator<<(std::ostream &os, const Grid &grid) {
         return os << "Grid with " << grid.nodes.size() << " nodes, " << grid.cells.size()
                   << " cells and step " << grid.step;
