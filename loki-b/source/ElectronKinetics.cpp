@@ -34,7 +34,7 @@ namespace loki {
     }
 
     void ElectronKinetics::solve() {
-        Matrix boltzmannMatrix = (elasticMatrix + fieldMatrix + inelasticMatrix).array() * 1.e20;
+        Matrix boltzmannMatrix = (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix).array() * 1.e20;
         Vector b = Vector::Zero(grid.cellNumber);
 
         // Induce normalization condition
@@ -55,7 +55,7 @@ namespace loki {
 //            printf("%.16e\n", eedf[i]);
 //        }
 
-//        this->plot("Eedf due to elastic collisions", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+        this->plot("Eedf due to elastic collisions", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     }
 
     void ElectronKinetics::evaluateMatrix() {
