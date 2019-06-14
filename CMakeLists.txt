@@ -34,13 +34,12 @@ target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
 target_link_directories(loki PRIVATE ${dep} ${mkl}/lib/intel64)
 target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
 
-# target_compile_options(loki PRIVATE -O3)
-
 # -- library version -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
 
-target_include_directories(loki_l PRIVATE ${h} ${inc})
-target_link_directories(loki_l PRIVATE ${dep})
+target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
+target_link_directories(loki_l PRIVATE ${dep} ${mkl}/lib/intel64)
+target_link_libraries(loki_l PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
 
 # set_target_properties(loki_l PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # --- tests --- #
