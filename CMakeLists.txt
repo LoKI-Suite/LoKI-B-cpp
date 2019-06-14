@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.13)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 project(loki_cpp)
 
@@ -37,7 +37,7 @@ target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
 # target_compile_options(loki PRIVATE -O3)
 
 # -- library version -- #
-add_library(loki_l ${headers} ${cpp})
+add_library(loki_l ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
 
 target_include_directories(loki_l PRIVATE ${h} ${inc})
 target_link_directories(loki_l PRIVATE ${dep})
