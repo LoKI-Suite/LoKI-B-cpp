@@ -31,6 +31,10 @@ namespace loki {
 
         const Vector &getCells() const;
 
+        const double getNode(uint32_t index) const;
+
+        const double getCell(uint32_t index) const;
+
         //Events
         event updatedMaxEnergy1,
               updatedMaxEnergy2;

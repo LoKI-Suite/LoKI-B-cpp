@@ -13,58 +13,77 @@
 
 // TODO: comment ElectronKinetics class
 
-namespace loki {
-    using namespace Enumeration;
+namespace loki
+{
+using namespace Enumeration;
 
-    class ElectronKinetics {
-        EedfType eedfType;
-        uint8_t shapeParameter;
-        IonizationOperatorType ionizationOperatorType;
-        GrowthModelType growthModelType;
-        bool includeEECollisions;
+class ElectronKinetics
+{
+    EedfType eedfType;
+    uint8_t shapeParameter;
+    double mixingParameter;
+    double maxEedfRelError;
+    IonizationOperatorType ionizationOperatorType;
+    GrowthModelType growthModelType;
+    bool includeEECollisions,
+        includeNonConservativeIonization{false};
 
-        const WorkingConditions *workingConditions;
+    const WorkingConditions *workingConditions;
 
-        Grid grid;
+    Grid grid;
 
-        EedfGasMixture mixture;
+    EedfGasMixture mixture;
 
-        Matrix elasticMatrix,
-                fieldMatrix,
-                CARMatrix,
-                continuousMatrix,
-                inelasticMatrix;
+    Matrix elasticMatrix,
+        fieldMatrix,
+        CARMatrix,
+        continuousMatrix,
+        inelasticMatrix,
+        ionConservativeMatrix,
+        ionizationMatrix,
+        ionSpatialGrowthD,
+        ionSpatialGrowthU,
+        attachmentMatrix,
+        fieldMatrixSpatGrowth;
 
-        Vector g_c, g_E, g_CAR;
+    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth;
 
-        Vector eedf;
+    Vector eedf;
 
-    public:
-        explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+public:
+    explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
 
-        ~ElectronKinetics() = default;
+    ~ElectronKinetics() = default;
 
-        // Copying this object is not allowed.
-        ElectronKinetics(const ElectronKinetics &other) = delete;
+    // Copying this object is not allowed.
+    ElectronKinetics(const ElectronKinetics &other) = delete;
 
-        void solve();
+    void solve();
 
-    private:
+private:
+    void evaluateMatrix();
 
-        void evaluateMatrix();
+    void invertLinearMatrix();
 
-        void evaluateElasticOperator();
+    void invertMatrix(Matrix &matrix);
 
-        void evaluateFieldOperator();
+    void evaluateElasticOperator();
 
-        void evaluateCAROperator();
+    void evaluateFieldOperator();
 
-        void evaluateInelasticOperators();
+    void evaluateCAROperator();
 
-        void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-                  const Vector &x, const Vector &y);
-    };
-}
+    void evaluateInelasticOperators();
 
+    void evaluateIonizationOperator();
+
+    void mixingDirectSolutions();
+
+    void solveSpatialGrowthMatrix();
+
+    void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
+              const Vector &x, const Vector &y);
+};
+} // namespace loki
 
 #endif //LOKI_CPP_ELECTRONKINETICS_H

@@ -16,6 +16,7 @@ namespace loki {
 #ifdef EIGEN
 
     typedef Eigen::MatrixXd Matrix;
+    // typedef Eigen::internal::BandMatrix<double, Eigen::Dynamic, 1, 1> TridiagonalMatrix;
     typedef Eigen::VectorXd Vector;
 
 #endif

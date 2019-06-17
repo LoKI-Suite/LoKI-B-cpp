@@ -39,6 +39,14 @@ namespace loki {
         return cells;
     }
 
+    const double Grid::getNode(uint32_t index) const {
+        return nodes[index];
+    }
+
+    const double Grid::getCell(uint32_t index) const {
+        return cells[index];
+    }
+
     std::ostream &operator<<(std::ostream &os, const Grid &grid) {
         return os << "Grid with " << grid.nodes.size() << " nodes, " << grid.cells.size()
                   << " cells and step " << grid.step;
