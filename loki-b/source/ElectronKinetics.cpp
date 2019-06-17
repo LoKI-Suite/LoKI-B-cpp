@@ -55,33 +55,28 @@ void ElectronKinetics::solve()
         this->invertLinearMatrix();
     }
 
-    // for (uint32_t i = 0; i < eedf.size(); ++i)
-    // {
-    //     printf("%.16e\n", eedf[i]);
-    // }
+    for (uint32_t i = 0; i < eedf.size(); ++i)
+    {
+        printf("%.16e\n", eedf[i]);
+    }
 
     // this->plot("Eedf due to elastic collisions", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
 }
 
 void ElectronKinetics::invertLinearMatrix()
 {
-    Matrix boltzmannMatrix = (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix).array() * 1.e20;
+    Matrix boltzmannMatrix; // = (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix).array() * 1.e20;
+
+    if (!mixture.CARGasses.empty())
+    {
+        boltzmannMatrix = (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix).array() * 1.e20;
+    }
+    else
+    {
+        boltzmannMatrix = (elasticMatrix + fieldMatrix + inelasticMatrix + ionConservativeMatrix).array() * 1.e20;
+    }
 
     invertMatrix(boltzmannMatrix);
-    // Vector b = Vector::Zero(grid.cellNumber);
-
-    // // Induce normalization condition
-    // boltzmannMatrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
-    // b[0] = 1;
-
-    // auto begin = std::chrono::high_resolution_clock::now();
-
-    // eedf = boltzmannMatrix.partialPivLu().solve(b);
-
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
-
-    // eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
 }
 
 void ElectronKinetics::invertMatrix(Matrix &matrix)
@@ -418,11 +413,19 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     for (uint32_t i = 0; i < grid.cellNumber; ++i)
         cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection[i] + mixture.totalCrossSection[i + 1]);
 
-    Matrix baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix);
+    Matrix baseMatrix;
 
+    if (!mixture.CARGasses.empty())
+    {
+        baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix);
+    }
+    else
+    {
+        baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix);
+    }
     // TODO: add ee collision term here
 
-    Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix).rowwise().sum();
+    Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix).colwise().sum();
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3;
 
@@ -517,21 +520,19 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
         // TODO: check whether proper normalization has to be restored
         invertMatrix(boltzmannMatrix);
 
-        double diffDotProd = D0.dot(eedf);
-
         CIEffOld = CIEffNew;
-        CIEffNew = diffDotProd;
+        CIEffNew = eedf.dot(integrandCI);
 
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        ND = sqrt(2 * e / m) * grid.step * diffDotProd;
+        ND = sqrt(2 * e / m) * grid.step * D0.dot(eedf);
         muE = -sqrt(2 * e / m) * grid.step * U0.dot(eedf);
 
         const double discriminant = muE * muE - 4 * CIEffNew * ND;
 
         const double alphaRedEffOld = alphaRedEffNew;
         alphaRedEffNew = (discriminant < 0) ? CIEffNew / muE
-                                            : sqrt(discriminant) / (2 * ND);
+                                            : (muE - sqrt(discriminant)) / (2 * ND);
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
@@ -546,6 +547,8 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
         ++iter;
     }
+
+    std::cerr << "Number of iterations to convergence: " << iter << ".\n";
 }
 
 void ElectronKinetics::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
