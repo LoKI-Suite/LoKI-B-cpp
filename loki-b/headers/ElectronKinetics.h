@@ -26,7 +26,8 @@ class ElectronKinetics
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
     bool includeEECollisions,
-        includeNonConservativeIonization{false};
+        includeNonConservativeIonization{false},
+        includeNonConservativeAttachment{false};
 
     const WorkingConditions *workingConditions;
 
@@ -44,6 +45,7 @@ class ElectronKinetics
         ionSpatialGrowthD,
         ionSpatialGrowthU,
         attachmentMatrix,
+        attachmentConservativeMatrix,
         fieldMatrixSpatGrowth;
 
     Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth;
@@ -76,6 +78,8 @@ private:
     void evaluateInelasticOperators();
 
     void evaluateIonizationOperator();
+
+    void evaluateAttachmentOperator();
 
     void mixingDirectSolutions();
 
