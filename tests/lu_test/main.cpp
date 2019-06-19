@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-void LUDecomposition(double *A, double *L, double *U, const uint32_t dim);
+void LUDecomposition(const double *A, double *L, double *U, const uint32_t dim);
 
 int main (int argc, char ** argv)
 {
