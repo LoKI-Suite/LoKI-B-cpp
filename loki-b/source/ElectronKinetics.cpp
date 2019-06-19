@@ -206,40 +206,46 @@ namespace loki {
                     if (threshold < grid.step || threshold > grid.getNodes()[grid.cellNumber])
                         continue;
 
-                    const uint32_t numThreshold = std::floor(threshold / grid.step);
-
-                    Vector cellCrossSection(cellNumber);
-
                     const double targetDensity = collision->target->density;
 
-                    for (uint32_t i = 0; i < cellNumber; ++i)
-                        cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+                    if (targetDensity != 0) {
+                        const uint32_t numThreshold = std::floor(threshold / grid.step);
 
-                    for (uint32_t k = 0; k < cellNumber; ++k) {
-                        if (k < cellNumber - numThreshold)
-                            inelasticMatrix(k, k + numThreshold) +=
-                                    targetDensity * grid.getCells()[k + numThreshold] *
-                                    cellCrossSection[k + numThreshold];
+                        Vector cellCrossSection(cellNumber);
 
-                        inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
-                    }
-
-                    if (collision->isReverse) {
-                        hasSuperelastics = true;
-
-                        const double swRatio = collision->target->statisticalWeight /
-                                               collision->products[0]->statisticalWeight;
-                        const double productDensity = collision->products[0]->density;
+                        for (uint32_t i = 0; i < cellNumber; ++i)
+                            cellCrossSection[i] =
+                                    0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
                         for (uint32_t k = 0; k < cellNumber; ++k) {
-                            if (k >= numThreshold)
-                                inelasticMatrix(k, k - numThreshold) +=
-                                        swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
-
                             if (k < cellNumber - numThreshold)
-                                inelasticMatrix(k, k) -= swRatio * productDensity *
-                                                         grid.getCells()[k + numThreshold] *
-                                                         cellCrossSection[k + numThreshold];
+                                inelasticMatrix(k, k + numThreshold) +=
+                                        targetDensity * grid.getCells()[k + numThreshold] *
+                                        cellCrossSection[k + numThreshold];
+
+                            inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                        }
+                        
+                        if (collision->isReverse) {
+                            const double swRatio = collision->target->statisticalWeight /
+                                                   collision->products[0]->statisticalWeight;
+                            const double productDensity = collision->products[0]->density;
+
+                            if (productDensity == 0)
+                                continue;
+
+                            hasSuperelastics = true;
+
+                            for (uint32_t k = 0; k < cellNumber; ++k) {
+                                if (k >= numThreshold)
+                                    inelasticMatrix(k, k - numThreshold) +=
+                                            swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
+
+                                if (k < cellNumber - numThreshold)
+                                    inelasticMatrix(k, k) -= swRatio * productDensity *
+                                                             grid.getCells()[k + numThreshold] *
+                                                             cellCrossSection[k + numThreshold];
+                            }
                         }
                     }
                 }
