@@ -25,9 +25,10 @@ class ElectronKinetics
     double maxEedfRelError;
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
-    bool includeEECollisions,
+    bool includeEECollisions{false},
         includeNonConservativeIonization{false},
-        includeNonConservativeAttachment{false};
+        includeNonConservativeAttachment{false},
+        hasSuperelastics{false};
 
     const WorkingConditions *workingConditions;
 

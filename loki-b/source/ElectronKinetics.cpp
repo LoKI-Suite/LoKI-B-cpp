@@ -73,15 +73,23 @@ namespace loki {
     }
 
     void ElectronKinetics::invertMatrix(Matrix &matrix) {
-        Vector b = Vector::Zero(grid.cellNumber);
 
         // Induce normalization condition
         matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
-        b[0] = 1;
 
         auto begin = std::chrono::high_resolution_clock::now();
 
-        eedf = matrix.partialPivLu().solve(b);
+        if (!hasSuperelastics && !includeEECollisions) {
+            eedf.setZero();
+            eedf[0] = 1.;
+
+            LinAlg::hessenberg(matrix.data(), eedf.data(), grid.cellNumber);
+        } else {
+            Vector b = Vector::Zero(grid.cellNumber);
+            b[0] = 1;
+
+            eedf = matrix.partialPivLu().solve(b);
+        }
 
         auto end = std::chrono::high_resolution_clock::now();
         std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
@@ -217,6 +225,8 @@ namespace loki {
                     }
 
                     if (collision->isReverse) {
+                        hasSuperelastics = true;
+
                         const double swRatio = collision->target->statisticalWeight /
                                                collision->products[0]->statisticalWeight;
                         const double productDensity = collision->products[0]->density;
