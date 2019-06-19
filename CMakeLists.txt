@@ -78,3 +78,6 @@ target_include_directories(trait_test_no_indexing PRIVATE ${inc})
 
 # -- lu_test -- #
 add_executable(lu_test tests/lu_test/main.cpp)
+
+# -- hess_solver -- #
+add_executable(hess_solver tests/hess_solver/main.cpp)
