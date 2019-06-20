@@ -54,7 +54,7 @@ namespace loki {
             printf("%.16e\n", eedf[i]);
         }
 
-        // this->plot("Eedf due to elastic collisions", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     }
 
     void ElectronKinetics::invertLinearMatrix() {
@@ -225,7 +225,7 @@ namespace loki {
 
                             inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
                         }
-                        
+
                         if (collision->isReverse) {
                             const double swRatio = collision->target->statisticalWeight /
                                                    collision->products[0]->statisticalWeight;
@@ -444,6 +444,18 @@ namespace loki {
         }
         // TODO: add ee collision term here
 
+        Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
+
+        for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+            baseDiag[k] = baseMatrix(k, k);
+
+            if (k > 0)
+                baseSubDiag[k] = baseMatrix(k, k - 1);
+
+            if (k < grid.cellNumber - 1)
+                baseSupDiag[k] = baseMatrix(k, k + 1);
+        }
+
         Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix).colwise().sum();
 
         double CIEffNew = eedf.dot(integrandCI);
@@ -518,25 +530,31 @@ namespace loki {
                     ionSpatialGrowthU(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
             }
 
-            Matrix boltzmannMatrix = baseMatrix;
+//            Matrix boltzmannMatrix = baseMatrix;
 
             // TODO: add ee-col in following calculation
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                boltzmannMatrix(k, k) += 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
+                baseMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
+//                boltzmannMatrix(k, k) += 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
 
                 if (k > 0)
-                    boltzmannMatrix(k, k - 1) +=
-                            1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
+                    baseMatrix(k, k - 1) =
+                            baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
+//                    boltzmannMatrix(k, k - 1) +=
+//                            1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
 
                 if (k < grid.cellNumber - 1)
-                    boltzmannMatrix(k, k + 1) +=
-                            1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1));
+                    baseMatrix(k, k + 1) =
+                            baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k +  1));
+//                    boltzmannMatrix(k, k + 1) +=
+//                            1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1));
             }
 
             Vector eedfNew = eedf;
 
-            invertMatrix(boltzmannMatrix);
+//            invertMatrix(boltzmannMatrix);
+            invertMatrix(baseMatrix);
 
 //            if (iter == 16) {
 //                for (uint32_t i = 0; i < grid.cellNumber; ++i) {

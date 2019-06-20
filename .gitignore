@@ -7,3 +7,7 @@ cmake-build-*/
 
 build/
 .vscode/
+
+# profiler
+
+profiler/
