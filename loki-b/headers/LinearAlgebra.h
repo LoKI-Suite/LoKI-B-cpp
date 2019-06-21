@@ -62,6 +62,10 @@ namespace loki {
 
             x[n - 1] = t1;
 
+            delete[] c;
+            delete[] s;
+            delete[] v;
+
             return x;
         }
     };
