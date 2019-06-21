@@ -47,9 +47,11 @@ class ElectronKinetics
         ionSpatialGrowthU,
         attachmentMatrix,
         attachmentConservativeMatrix,
-        fieldMatrixSpatGrowth;
+        fieldMatrixSpatGrowth,
+        fieldMatrixTempGrowth,
+        ionTemporalGrowth;
 
-    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth;
+    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth;
 
     Vector eedf;
 
@@ -85,6 +87,8 @@ private:
     void mixingDirectSolutions();
 
     void solveSpatialGrowthMatrix();
+
+    void solveTemporalGrowthMatrix();
 
     void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
               const Vector &x, const Vector &y);

@@ -6,6 +6,11 @@
 #include <chrono>
 #include <cmath>
 
+// TODO: With the introduction of the job system, the only matrix that we have to be able
+//  to update separately is the fieldMatrix. Therefore we can simply store the other matrices
+//  as one matrix. This saves a large amount of memory, and, in the case of large matrices,
+//  also quite a bit of running time.
+
 namespace loki {
     ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
             : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid),
@@ -50,11 +55,11 @@ namespace loki {
             this->invertLinearMatrix();
         }
 
-        for (uint32_t i = 0; i < eedf.size(); ++i) {
-            printf("%.16e\n", eedf[i]);
-        }
+//        for (uint32_t i = 0; i < eedf.size(); ++i) {
+//            printf("%.16e\n", eedf[i]);
+//        }
 
-//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     }
 
     void ElectronKinetics::invertLinearMatrix() {
@@ -234,7 +239,7 @@ namespace loki {
                             if (productDensity == 0)
                                 continue;
 
-                            hasSuperelastics = true;
+                            if (numThreshold != 1) hasSuperelastics = true;
 
                             for (uint32_t k = 0; k < cellNumber; ++k) {
                                 if (k >= numThreshold)
@@ -419,7 +424,10 @@ namespace loki {
                 break;
 
             case GrowthModelType::temporal:
-                Log<Message>::Error("Temporal growth is not yet supported.");
+                ionTemporalGrowth.setZero(numCells, numCells);
+                fieldMatrixTempGrowth.setZero(numCells, numCells);
+
+                solveTemporalGrowthMatrix();
                 break;
         }
     }
@@ -456,7 +464,7 @@ namespace loki {
                 baseSupDiag[k] = baseMatrix(k, k + 1);
         }
 
-        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix).colwise().sum();
+        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
 
         double CIEffNew = eedf.dot(integrandCI);
         double CIEffOld = CIEffNew / 3;
@@ -464,6 +472,7 @@ namespace loki {
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         // diffusion and mobility components of the spatial growth terms
+        // can be removed since this is already done in the directMixing function
         ionSpatialGrowthD.setZero();
         ionSpatialGrowthU.setZero();
 
@@ -497,9 +506,6 @@ namespace loki {
             alphaRedEffNew = (muE - sqrt(muE * muE - 4 * CIEffNew * ND)) / (2 * ND);
         }
 
-//        printf("CIEffNew = %.16e\n", CIEffNew);
-//        printf("alphaRedEffNew = %.16e\n", alphaRedEffNew);
-
         uint32_t iter = 0;
         bool hasConverged = false;
 
@@ -530,51 +536,23 @@ namespace loki {
                     ionSpatialGrowthU(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
             }
 
-//            Matrix boltzmannMatrix = baseMatrix;
-
             // TODO: add ee-col in following calculation
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                 baseMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
-//                boltzmannMatrix(k, k) += 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
 
                 if (k > 0)
                     baseMatrix(k, k - 1) =
                             baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
-//                    boltzmannMatrix(k, k - 1) +=
-//                            1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
 
                 if (k < grid.cellNumber - 1)
                     baseMatrix(k, k + 1) =
-                            baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k +  1));
-//                    boltzmannMatrix(k, k + 1) +=
-//                            1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1));
+                            baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1));
             }
 
             Vector eedfNew = eedf;
 
-//            invertMatrix(boltzmannMatrix);
             invertMatrix(baseMatrix);
-
-//            if (iter == 16) {
-//                for (uint32_t i = 0; i < grid.cellNumber; ++i) {
-//                    printf("%.16e\n", eedf[i]);
-//                }
-//            }
-
-//            if (iter == 16) {
-//                for (uint32_t i = 0; i < grid.cellNumber; ++i) {
-//                    for (uint32_t j = 0; j < grid.cellNumber; ++j) {
-//                        printf("%.16e", boltzmannMatrix(i, j));
-//
-//                        if (j != grid.cellNumber - 1)
-//                            std::cout << '\t';
-//                    }
-//
-//                    std::cout << '\n';
-//                }
-//            }
-//            return;
 
             CIEffOld = CIEffNew;
             CIEffNew = eedf.dot(integrandCI);
@@ -592,15 +570,114 @@ namespace loki {
 
             alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
-//            printf("CIEffNew = %.16e\n", CIEffNew);
-//            printf("alphaRedEffNew = %.16e\n", alphaRedEffNew);
-
             if ((alphaRedEffNew == 0 || abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
                 (((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError || iter > 150)) {
                 hasConverged = true;
 
                 if (iter > 150 && !includeEECollisions)
                     Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
+            }
+
+            ++iter;
+        }
+
+        std::cerr << "Number of iterations to convergence: " << iter << ".\n";
+    }
+
+    void ElectronKinetics::solveTemporalGrowthMatrix() {
+        const double e = Constant::electronCharge,
+                m = Constant::electronMass,
+                EoN = workingConditions->reducedFieldSI,
+                WoN = workingConditions->reducedExcFreqSI;
+
+        Matrix baseMatrix;
+
+        if (!mixture.CARGasses.empty()) {
+            baseMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        } else {
+            baseMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        }
+
+        Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
+
+        for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+            baseDiag[k] = baseMatrix(k, k);
+
+            if (k > 0)
+                baseSubDiag[k] = baseMatrix(k, k - 1);
+
+            if (k < grid.cellNumber - 1)
+                baseSupDiag[k] = baseMatrix(k, k + 1);
+        }
+
+        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
+
+        double CIEffNew = eedf.dot(integrandCI);
+        double CIEffOld = CIEffNew / 3.;
+
+        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
+
+        Vector totalCSI(grid.cellNumber + 1),
+                eedfNew(grid.cellNumber);
+
+        bool hasConverged = false;
+        uint32_t iter = 0;
+
+        while (!hasConverged) {
+
+            totalCSI[0] = mixture.totalCrossSection[0];
+
+            const long double growthFactor = CIEffNew * sqrt(m / (2 * e));
+
+            for (uint32_t i = 1; i <= grid.cellNumber; ++i) {
+                totalCSI[i] = mixture.totalCrossSection[i] + growthFactor / sqrt(i * grid.step);
+            }
+
+            g_fieldTemporalGrowth = ((EoN * EoN / 3) * grid.getNodes()).array() / (totalCSI.array() +
+                                                                                   (m * WoN * WoN / (2 * e)) /
+                                                                                   (grid.getNodes().cwiseProduct(
+                                                                                           totalCSI)).array());
+            g_fieldTemporalGrowth[0] = 0.;
+            g_fieldTemporalGrowth[grid.cellNumber] = 0.;
+
+            const double sqrStep = grid.step * grid.step;
+
+            for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+                fieldMatrixTempGrowth(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
+
+                if (k > 0)
+                    fieldMatrixTempGrowth(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
+
+                if (k < grid.cellNumber - 1)
+                    fieldMatrixTempGrowth(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
+
+                ionTemporalGrowth(k, k) = -growthFactor * sqrt(grid.getCell(k));
+            }
+
+            for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+                baseMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k) + ionTemporalGrowth(k, k));
+
+                if (k > 0)
+                    baseMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * fieldMatrixTempGrowth(k, k - 1);
+
+                if (k < grid.cellNumber - 1)
+                    baseMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * fieldMatrixTempGrowth(k, k + 1);
+            }
+
+            eedfNew = eedf;
+
+            invertMatrix(baseMatrix);
+
+            CIEffOld = CIEffNew;
+            CIEffNew = eedf.dot(integrandCI);
+            CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
+
+            if ((CIEffNew == 0 || abs(CIEffNew - CIEffOld) / CIEffOld < 1.e10) &&
+                (((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError || iter > 150)) {
+                hasConverged = true;
+
+                if (iter > 150 && !includeEECollisions)
+                    Log<Message>::Warning("Iterative temporal growth scheme did not converge.");
             }
 
             ++iter;
@@ -626,18 +703,5 @@ namespace loki {
 } // namespace loki
 
 /*
-Vector totalCSI(grid.cellNumber + 1);
 
-    while (!hasConverged)
-    {
-
-        totalCSI[0] = mixture.totalCrossSection[0];
-
-        const double factor = CIEffNew * sqrt(m / (2 * e * grid.step));
-
-        for (uint32_t i = 1; i <= grid.cellNumber; ++i)
-        {
-            totalCSI[i] = mixture.totalCrossSection[i] * (factor / sqrt(i));
-        }
-    } 
     */
