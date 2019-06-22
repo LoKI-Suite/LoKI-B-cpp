@@ -10,6 +10,12 @@
 //  to update separately is the fieldMatrix. Therefore we can simply store the other matrices
 //  as one matrix. This saves a large amount of memory, and, in the case of large matrices,
 //  also quite a bit of running time.
+//  This is not completely true however, since we need a different combination of matrices
+//  in different parts of the simulation.
+//  A better solution might be to write a tridiagonal matrix class that stores the elements
+//  in three separate vectors. It would be best to do this in an Eigen compliant way, such
+//  that these matrices can simply be added to dense matrices (the + and [] operators are 
+//  the only operators to overload).
 
 namespace loki {
     ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
@@ -59,7 +65,7 @@ namespace loki {
 //            printf("%.16e\n", eedf[i]);
 //        }
 
-        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     }
 
     void ElectronKinetics::invertLinearMatrix() {
@@ -414,6 +420,9 @@ namespace loki {
 
         const uint32_t numCells = grid.cellNumber;
 
+        solveEEColl();
+        return;
+
         switch (growthModelType) {
             case GrowthModelType::spatial:
                 ionSpatialGrowthD.setZero(numCells, numCells);
@@ -684,6 +693,72 @@ namespace loki {
         }
 
         std::cerr << "Number of iterations to convergence: " << iter << ".\n";
+    }
+
+    void ElectronKinetics::solveEEColl() {
+        const double e = Constant::electronCharge,
+                e0 = Constant::vacuumPermittivity,
+                ne = workingConditions->electronDensity,
+                n0 = workingConditions->gasDensity,
+                EoN = workingConditions->reducedField;
+
+        Matrix Mee = Matrix::Zero(grid.cellNumber, grid.cellNumber);
+
+        Matrix baseMatrix;
+
+        if (includeNonConservativeIonization || includeNonConservativeAttachment) {
+            if (growthModelType == GrowthModelType::spatial) {
+                if (mixture.CARGasses.empty()) {
+                    baseMatrix = ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                                 fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
+                } else {
+                    baseMatrix = ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
+                                 fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
+                }
+            } else if (growthModelType == GrowthModelType::temporal) {
+                if (mixture.CARGasses.empty()) {
+                    baseMatrix = ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                                 fieldMatrix + ionTemporalGrowth + fieldMatrixTempGrowth;
+                } else {
+                    baseMatrix = ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
+                                 fieldMatrix + ionTemporalGrowth + fieldMatrixTempGrowth;
+                }
+            }
+        } else {
+            if (mixture.CARGasses.empty()) {
+                baseMatrix = ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix + inelasticMatrix +
+                             fieldMatrix;
+            } else {
+                baseMatrix = ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix + inelasticMatrix +
+                             fieldMatrix + CARMatrix;
+            }
+        }
+
+        Bee.setZero(grid.cellNumber, grid.cellNumber);
+
+        const Vector energyArray = -(grid.step / 2.) * grid.getCells().cwiseSqrt() +
+                                   (2. / 3.) * grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+
+        for (uint32_t j = 0; j < grid.cellNumber - 1; ++j) {
+
+            for (uint32_t i = 1; i <= j; ++i)
+                Bee(i, j) = energyArray[i];
+
+            const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
+
+            for (uint32_t i = j + 1; i < grid.cellNumber; ++i)
+                Bee(i, j) = value;
+        }
+
+        // detailed balance condition
+
+        for (uint32_t j = 0; j < grid.cellNumber - 1; ++j) {
+            for (uint32_t i = 1; i < grid.cellNumber; ++i) {
+                Bee(i, j) = sqrt(Bee(i, j) * Bee(j + 1, i - 1));
+            }
+        }
+
+        Aee = Bee.transpose();
     }
 
     void ElectronKinetics::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,

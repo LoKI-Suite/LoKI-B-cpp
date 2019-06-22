@@ -49,7 +49,9 @@ class ElectronKinetics
         attachmentConservativeMatrix,
         fieldMatrixSpatGrowth,
         fieldMatrixTempGrowth,
-        ionTemporalGrowth;
+        ionTemporalGrowth,
+        Aee,
+        Bee;
 
     Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth;
 
@@ -89,6 +91,8 @@ private:
     void solveSpatialGrowthMatrix();
 
     void solveTemporalGrowthMatrix();
+
+    void solveEEColl();
 
     void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
               const Vector &x, const Vector &y);
