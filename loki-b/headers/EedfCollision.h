@@ -8,6 +8,7 @@
 #include "Collision.h"
 #include "Enumeration.h"
 #include "CrossSection.h"
+#include "Power.h"
 
 namespace loki {
     class EedfCollision : public Collision<Boltzmann> {
@@ -19,12 +20,12 @@ namespace loki {
         double ineRateCoeff{0.}, supRateCoef{0.};
 
     public:
-        CrossSection * crossSection{nullptr};
+        CrossSection *crossSection{nullptr};
 
         // TODO: Find out the most effective way to pass vectors to this constructor and then to the base class.
         //  Should we use r-value references and move semantics?
         EedfCollision(Enumeration::CollisionType type, std::vector<EedfState *> &reactants,
-                std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse);
+                      std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse);
 
         ~EedfCollision();
 
@@ -34,7 +35,12 @@ namespace loki {
 
         bool operator==(const EedfCollision &other);
 
-        friend std::ostream &operator<<(std::ostream& os, const EedfCollision &collision);
+        friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
+
+        CollPower evaluateConservativePower(const Vector &eedf);
+
+        CollPower evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
+                                               const double OPBParameter);
     };
 }
 

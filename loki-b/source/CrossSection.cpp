@@ -85,4 +85,8 @@ namespace loki {
     Vector &CrossSection::energies() {
         return rawEnergyData;
     }
+
+    const Grid *CrossSection::getGrid() {
+        return energyGrid;
+    }
 }

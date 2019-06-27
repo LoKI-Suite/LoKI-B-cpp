@@ -10,6 +10,7 @@
 #include "Grid.h"
 #include "WorkingConditions.h"
 #include "LinearAlgebra.h"
+#include "Power.h"
 
 // TODO: comment ElectronKinetics class
 
@@ -23,12 +24,15 @@ class ElectronKinetics
     uint8_t shapeParameter;
     double mixingParameter;
     double maxEedfRelError;
+    double maxPowerBalanceRelError;
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
     bool includeEECollisions{false},
         includeNonConservativeIonization{false},
         includeNonConservativeAttachment{false},
         hasSuperelastics{false};
+
+    double CIEff{0.}, alphaRedEff{0.};
 
     const WorkingConditions *workingConditions;
 
@@ -56,6 +60,10 @@ class ElectronKinetics
     Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth;
 
     Vector eedf;
+
+    Power power;
+
+    std::vector<uint32_t> superElasticThresholds;
 
 public:
     explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
@@ -93,6 +101,8 @@ private:
     void solveTemporalGrowthMatrix();
 
     void solveEEColl();
+
+    void evaluatePower(bool isFinalSolution);
 
     void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
               const Vector &x, const Vector &y);

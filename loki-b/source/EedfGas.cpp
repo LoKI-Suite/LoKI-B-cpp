@@ -150,7 +150,7 @@ namespace loki {
         if (rotationalConstant < 0)
             Log<NoRotationalConstant>::Error(name);
 
-        if (!collisions[(uint8_t)CollisionType::rotational].empty())
+        if (!collisions[(uint8_t) CollisionType::rotational].empty())
             Log<RotCollisionInCARGas>::Error(name);
     }
 
@@ -159,5 +159,62 @@ namespace loki {
             if (!vec.empty()) return false;
 
         return true;
+    }
+
+    const GasPower &EedfGas::getPower() {
+        return power;
+    }
+
+    void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) {
+
+        CollPower collisionPower;
+
+        auto *powerPtr = (double *) &power;
+
+        for (auto i = (uint8_t) CollisionType::excitation; i <= (uint8_t) CollisionType::attachment; ++i) {
+
+            if (i >= (uint8_t) CollisionType::ionization) {
+                if (ionType == IonizationOperatorType::conservative) {
+                    collisionPower = evaluateConservativePower(collisions[i], eedf);
+                } else {
+                    collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
+                }
+
+                uint8_t index = 10 - ((uint8_t) CollisionType::attachment - i);
+
+                powerPtr[index] = collisionPower.ine;
+            } else {
+                collisionPower = evaluateConservativePower(collisions[i], eedf);
+
+                uint8_t baseIndex = (i - (uint8_t) CollisionType::excitation) * 3;
+
+                powerPtr[baseIndex] = collisionPower.ine;
+                powerPtr[baseIndex + 1] = collisionPower.sup;
+                powerPtr[baseIndex + 2] = collisionPower.ine + collisionPower.sup;
+            }
+
+
+        }
+    }
+
+    CollPower EedfGas::evaluateConservativePower(std::vector<EedfCollision *> &collisionVector, const Vector &eedf) {
+        CollPower collPower;
+
+        for (auto *collision : collisionVector) {
+            collPower += collision->evaluateConservativePower(eedf);
+        }
+
+        return collPower;
+    }
+
+    CollPower EedfGas::evaluateNonConservativePower(std::vector<EedfCollision *> &collisionVector,
+                                                    const IonizationOperatorType ionType, const Vector &eedf) {
+        CollPower collPower;
+
+        for (auto *collision : collisionVector) {
+            collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);
+        }
+
+        return collPower;
     }
 }

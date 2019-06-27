@@ -30,6 +30,8 @@ namespace loki {
 
         Vector &energies();
 
+        const Grid *getGrid();
+
         CrossSection(double threshold, Grid *energyGrid);
 
     };

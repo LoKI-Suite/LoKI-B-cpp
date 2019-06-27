@@ -3,6 +3,7 @@
 //
 
 #include "EedfCollision.h"
+#include "Constant.h"
 #include "Log.h"
 
 namespace loki {
@@ -77,5 +78,125 @@ namespace loki {
         }
 
         if (energyData[0] == 0) result[0] = 0;
+    }
+
+    CollPower EedfCollision::evaluateConservativePower(const Vector &eedf) {
+        CollPower collPower;
+
+        uint32_t n = crossSection->size();
+        const Grid *grid = crossSection->getGrid();
+
+        Vector cellCrossSection(n);
+
+        for (uint32_t i = 0; i < n; ++i) {
+            cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+        }
+
+        auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+
+        const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
+
+        double ineSum = 0;
+
+        for (uint32_t i = lmin; i < n; ++i) {
+            ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
+        }
+
+        collPower.ine -= factor * target->density * grid->step * grid->getNode(lmin) * ineSum;
+
+        if (isReverse) {
+            const double statWeightRatio = target->statisticalWeight / products[0]->statisticalWeight;
+
+            double supSum = 0;
+
+            for (uint32_t i = lmin; i < n; ++i) {
+                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
+            }
+
+            collPower.sup +=
+                    factor * statWeightRatio * products[0]->density * grid->step * grid->getNode(lmin) * supSum;
+        }
+
+        return collPower;
+    }
+
+    CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
+                                                          const IonizationOperatorType ionizationOperatorType,
+                                                          const double OPBParameter) {
+        CollPower collPower;
+
+        uint32_t n = crossSection->size();
+        const Grid *grid = crossSection->getGrid();
+
+        const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
+
+        Vector cellCrossSection(n);
+
+        for (uint32_t i = 0; i < n; ++i) {
+            cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+        }
+
+        auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+
+        if (type == CollisionType::ionization) {
+
+            if (ionizationOperatorType == IonizationOperatorType::equalSharing) {
+                double sumOne = 0., sumTwo = 0., sumThree = 0.;
+
+                for (uint32_t i = lmin - 1; i < n; ++i) {
+                    sumOne += grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * eedf[i];
+                }
+
+                for (uint32_t i = 1 + lmin; i < n; i += 2) {
+                    const double term = grid->getCell(i) * cellCrossSection[i] * eedf[i];
+
+                    sumTwo += term;
+                    sumThree += grid->getCell(i) * term;
+                }
+
+                collPower.ine = -factor * target->density * grid->step *
+                                (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+
+            } else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll) {
+                double sum = 0.;
+
+                for (uint32_t i = lmin - 1; i < n; ++i) {
+                    sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
+                }
+
+                collPower.ine = -factor * target->density * grid->step * grid->getCell(lmin - 1) * sum;
+            } else if (ionizationOperatorType == IonizationOperatorType::sdcs) {
+                double w = OPBParameter;
+
+                if (w == 0) w = crossSection->threshold;
+
+                Vector TICS = Vector::Zero(grid->cellNumber);
+                Vector auxVec = 1. / (grid->getCells().cwiseAbs2().array() / (w * w));
+
+                for (uint32_t k = 1; k < n; ++k) {
+                    auxVec[k] = auxVec[k] - auxVec[k - 1];
+                    int64_t kmax = (k - lmin) / 2;
+
+                    if (kmax > 0)
+                        TICS[k] += cellCrossSection[k] * auxVec[k] /
+                                   (w * atan((grid->getCell(k) - crossSection->threshold) / (2 * w)));
+                }
+
+                collPower.ine = -factor * target->density * grid->getCell(lmin) * grid->step *
+                                eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->step * TICS)).sum();
+            }
+        } else if (type == CollisionType::attachment) {
+            double sum = 0.;
+
+            for (uint32_t i = lmin; i < n; ++i) {
+                sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
+            }
+
+            collPower.ine = -factor * target->density * grid->step * sum;
+        }// else {
+//             error
+//        }
+
+        return collPower;
     }
 }

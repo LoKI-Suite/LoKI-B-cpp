@@ -10,6 +10,7 @@
 #include "EedfCollision.h"
 #include "CrossSection.h"
 #include "Grid.h"
+#include "Power.h"
 
 #include <vector>
 #include <map>
@@ -39,7 +40,12 @@ namespace loki {
 
         bool isDummy();
 
+        const GasPower &getPower();
+
+        void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
+
     private:
+        GasPower power;
 
         void findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
                                 std::vector<EedfState *> &statesToUpdate);
@@ -47,6 +53,11 @@ namespace loki {
         CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
 
         void setDefaultEffPop(EedfState *ground);
+
+        CollPower evaluateConservativePower(std::vector<EedfCollision *> &collisionVector, const Vector &eedf);
+
+        CollPower evaluateNonConservativePower(std::vector<EedfCollision *> &collisionVector,
+                                               const IonizationOperatorType ionType, const Vector &eedf);
     };
 }
 

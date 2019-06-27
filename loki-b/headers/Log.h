@@ -281,6 +281,16 @@ namespace loki {
                     << t << "." << std::endl;
         }
     };
+
+    struct PowerBalanceError {
+        template<typename T>
+        inline
+        static void print(const T &t) {
+            std::cerr
+                    << "Relative power balance error larger than "
+                    << t << ". Results might be incorrect." << std::endl;
+        }
+    };
 }
 
 #endif //LOKI_CPP_LOG_H
