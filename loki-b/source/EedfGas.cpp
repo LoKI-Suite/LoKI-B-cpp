@@ -173,16 +173,20 @@ namespace loki {
 
         for (auto i = (uint8_t) CollisionType::excitation; i <= (uint8_t) CollisionType::attachment; ++i) {
 
-            if (i >= (uint8_t) CollisionType::ionization) {
+            if (i == (uint8_t) CollisionType::ionization) {
                 if (ionType == IonizationOperatorType::conservative) {
                     collisionPower = evaluateConservativePower(collisions[i], eedf);
                 } else {
                     collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
                 }
 
-                uint8_t index = 10 - ((uint8_t) CollisionType::attachment - i);
+                uint8_t index = 9;
 
                 powerPtr[index] = collisionPower.ine;
+            } else if (i == (uint8_t) CollisionType::attachment) {
+                collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
+
+                powerPtr[10] = collisionPower.ine;
             } else {
                 collisionPower = evaluateConservativePower(collisions[i], eedf);
 
@@ -192,8 +196,6 @@ namespace loki {
                 powerPtr[baseIndex + 1] = collisionPower.sup;
                 powerPtr[baseIndex + 2] = collisionPower.ine + collisionPower.sup;
             }
-
-
         }
     }
 
@@ -217,4 +219,5 @@ namespace loki {
 
         return collPower;
     }
+
 }

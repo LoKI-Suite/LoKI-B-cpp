@@ -6,13 +6,7 @@
 #include <chrono>
 #include <cmath>
 
-// TODO: With the introduction of the job system, the only matrix that we have to be able
-//  to update separately is the fieldMatrix. Therefore we can simply store the other matrices
-//  as one matrix. This saves a large amount of memory, and, in the case of large matrices,
-//  also quite a bit of running time.
-//  This is not completely true however, since we need a different combination of matrices
-//  in different parts of the simulation.
-//  A better solution might be to write a tridiagonal matrix class that stores the elements
+// TODO [FUTURE]: Write a tridiagonal matrix class that stores the elements
 //  in three separate vectors. It would be best to do this in an Eigen compliant way, such
 //  that these matrices can simply be added to dense matrices (the + and [] operators are 
 //  the only operators to overload).
@@ -52,12 +46,14 @@ namespace loki {
 
         attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
+        A.setZero(grid.cellNumber);
+        B.setZero(grid.cellNumber);
+
         this->evaluateMatrix();
     }
 
     void ElectronKinetics::solve() {
-        // TODO: add attachment
-        if (includeNonConservativeIonization) {
+        if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions) {
             this->mixingDirectSolutions();
         } else {
             this->invertLinearMatrix();
@@ -103,44 +99,31 @@ namespace loki {
         } else {
             // TODO: Find a way to distinguish when to use LU and when to use Hessenberg reduction.
 
-            // normal reduction wont work when vector contains first subdiagonal (if you want to use that
-            // remove the first subdiagonal in evaluateMatrix().
-//            LinAlg::hessenbergReductionOptimal(matrix.data(), &superElasticThresholds[0], grid.cellNumber,
-//                                               superElasticThresholds.size());
-
-//            Log<Message>::Notify("Is upper Hessenberg?");
-//            Log<Message>::Notify(LinAlg::isUpperHessenberg(matrix.data(), grid.cellNumber));
-
+            // HESSENBERG WITH PARTIAL PIVOTING
+//            auto *p = new uint32_t[grid.cellNumber];
+//
+//            for (uint32_t i = 0; i < grid.cellNumber; ++i)
+//                p[i] = i;
+//
+//            LinAlg::hessenbergReductionPartialPiv(matrix.data(), &superElasticThresholds[0], p, grid.cellNumber,
+//                                                  superElasticThresholds.size());
+//
 //            eedf.setZero();
 //            eedf[0] = 1.;
-
+//
 //            matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
+//
+//            LinAlg::hessenberg(matrix.data(), eedf.data(), p, grid.cellNumber);
+//
+//            delete[] p;
 
-//            LinAlg::hessenberg(matrix.data(), eedf.data(), grid.cellNumber);
-
-            auto *p = new uint32_t[grid.cellNumber];
-
-            for (uint32_t i = 0; i < grid.cellNumber; ++i)
-                p[i] = i;
-
-            LinAlg::hessenbergReductionPartialPiv(matrix.data(), &superElasticThresholds[0], p, grid.cellNumber,
-                                                  superElasticThresholds.size());
-
-            eedf.setZero();
-            eedf[0] = 1.;
+            // LU DECOMPOSITION
+            Vector b = Vector::Zero(grid.cellNumber);
+            b[0] = 1;
 
             matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
 
-            LinAlg::hessenberg(matrix.data(), eedf.data(), p, grid.cellNumber);
-
-            delete[] p;
-
-//            Vector b = Vector::Zero(grid.cellNumber);
-//            b[0] = 1;
-//
-//            matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
-//
-//            eedf = matrix.partialPivLu().solve(b);
+            eedf = matrix.partialPivLu().solve(b);
         }
 
         auto end = std::chrono::high_resolution_clock::now();
@@ -480,21 +463,63 @@ namespace loki {
 //        solveEEColl();
 //        return;
 
-        switch (growthModelType) {
-            case GrowthModelType::spatial:
-                ionSpatialGrowthD.setZero(numCells, numCells);
-                ionSpatialGrowthU.setZero(numCells, numCells);
-                fieldMatrixSpatGrowth.setZero(numCells, numCells);
+        // Declare function pointer
+        void (ElectronKinetics::*growthFunc)() = nullptr;
 
-                solveSpatialGrowthMatrix();
-                break;
+        const bool includeGrowthModel = includeNonConservativeAttachment ||
+                                        includeNonConservativeIonization;
 
-            case GrowthModelType::temporal:
-                ionTemporalGrowth.setZero(numCells, numCells);
-                fieldMatrixTempGrowth.setZero(numCells, numCells);
+        if (includeGrowthModel) {
+            switch (growthModelType) {
+                case GrowthModelType::spatial:
+                    ionSpatialGrowthD.setZero(numCells, numCells);
+                    ionSpatialGrowthU.setZero(numCells, numCells);
+                    fieldMatrixSpatGrowth.setZero(numCells, numCells);
 
-                solveTemporalGrowthMatrix();
-                break;
+                    growthFunc = &ElectronKinetics::solveSpatialGrowthMatrix;
+                    break;
+
+                case GrowthModelType::temporal:
+                    ionTemporalGrowth.setZero(numCells, numCells);
+                    fieldMatrixTempGrowth.setZero(numCells, numCells);
+
+                    growthFunc = &ElectronKinetics::solveTemporalGrowthMatrix;
+                    break;
+            }
+        }
+
+        if (includeEECollisions) {
+            alphaEE = 0.;
+            BAee.setZero(numCells, numCells);
+            A.setZero(numCells);
+            B.setZero(numCells);
+
+            if (!includeGrowthModel) {
+                Log<Message>::Notify("Starting e-e collision routine.");
+                solveEEColl();
+            } else {
+                uint32_t globalIter = 0;
+                const uint32_t maxGlobalIter = 20;
+
+                Vector eedfOld;
+
+                while (globalIter < maxGlobalIter) {
+                    (this->*growthFunc)();
+                    eedfOld = eedf;
+
+                    solveEEColl();
+
+                    if (((eedfOld - eedf).cwiseAbs().array() / eedfOld.array()).maxCoeff() < maxEedfRelError)
+                        break;
+
+                    ++globalIter;
+
+                    if (globalIter == maxGlobalIter)
+                        Log<GlobalIterError>::Warning(globalIter);
+                }
+            }
+        } else {
+            (this->*growthFunc)();
         }
     }
 
@@ -516,7 +541,6 @@ namespace loki {
         } else {
             baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
         }
-        // TODO: add ee collision term here
 
         Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
 
@@ -528,6 +552,17 @@ namespace loki {
 
             if (k < grid.cellNumber - 1)
                 baseSupDiag[k] = baseMatrix(k, k + 1);
+        }
+
+        Vector MeeDiag, MeeSubDiag, MeeSupDiag;
+
+        if (includeEECollisions) {
+            MeeDiag.setZero(grid.cellNumber);
+            MeeSubDiag.setZero(grid.cellNumber);
+            MeeSupDiag.setZero(grid.cellNumber);
+
+            A = alphaEE / grid.step * (BAee.transpose() * eedf);
+            B = alphaEE / grid.step * (BAee * eedf);
         }
 
         Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
@@ -602,18 +637,19 @@ namespace loki {
                     ionSpatialGrowthU(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
             }
 
-            // TODO: add ee-col in following calculation
-
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                baseMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k));
+                baseMatrix(k, k) =
+                        baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k) - (A[k] + B[k]));
 
                 if (k > 0)
                     baseMatrix(k, k - 1) =
-                            baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1));
+                            baseSubDiag[k] +
+                            1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1) + A[k - 1]);
 
                 if (k < grid.cellNumber - 1)
                     baseMatrix(k, k + 1) =
-                            baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1));
+                            baseSupDiag[k] +
+                            1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1) + B[k + 1]);
             }
 
             Vector eedfNew = eedf;
@@ -679,6 +715,17 @@ namespace loki {
                 baseSupDiag[k] = baseMatrix(k, k + 1);
         }
 
+        Vector MeeDiag, MeeSubDiag, MeeSupDiag;
+
+        if (includeEECollisions) {
+            MeeDiag.setZero(grid.cellNumber);
+            MeeSubDiag.setZero(grid.cellNumber);
+            MeeSupDiag.setZero(grid.cellNumber);
+
+            A = alphaEE / grid.step * (BAee.transpose() * eedf);
+            B = alphaEE / grid.step * (BAee * eedf);
+        }
+
         Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
 
         double CIEffNew = eedf.dot(integrandCI);
@@ -724,13 +771,14 @@ namespace loki {
             }
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                baseMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k) + ionTemporalGrowth(k, k));
+                baseMatrix(k, k) =
+                        baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k) + ionTemporalGrowth(k, k) - (A[k] + B[k]));
 
                 if (k > 0)
-                    baseMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * fieldMatrixTempGrowth(k, k - 1);
+                    baseMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k - 1) + A[k - 1]);
 
                 if (k < grid.cellNumber - 1)
-                    baseMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * fieldMatrixTempGrowth(k, k + 1);
+                    baseMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k + 1) + B[k + 1]);
             }
 
             eedfNew = eedf;
@@ -761,8 +809,7 @@ namespace loki {
         const double e = Constant::electronCharge,
                 e0 = Constant::vacuumPermittivity,
                 ne = workingConditions->electronDensity,
-                n0 = workingConditions->gasDensity,
-                EoN = workingConditions->reducedField;
+                n0 = workingConditions->gasDensity;
 
         Matrix Mee = Matrix::Zero(grid.cellNumber, grid.cellNumber);
 
@@ -783,11 +830,11 @@ namespace loki {
             } else if (growthModelType == GrowthModelType::temporal) {
                 if (mixture.CARGasses.empty()) {
                     baseMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
-                                          fieldMatrix + ionTemporalGrowth + fieldMatrixTempGrowth);
+                                          ionTemporalGrowth + fieldMatrixTempGrowth);
                 } else {
                     baseMatrix =
                             1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
-                                     fieldMatrix + ionTemporalGrowth + fieldMatrixTempGrowth);
+                                     ionTemporalGrowth + fieldMatrixTempGrowth);
                 }
             }
         } else {
@@ -816,7 +863,7 @@ namespace loki {
                 baseSupDiag[k] = baseMatrix(k, k + 1);
         }
 
-        Bee.setZero(grid.cellNumber, grid.cellNumber);
+        BAee.setZero(grid.cellNumber, grid.cellNumber);
 
         const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt()),
                 energyArray = -(grid.step / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
@@ -824,23 +871,21 @@ namespace loki {
         for (uint32_t j = 0; j < grid.cellNumber - 1; ++j) {
 
             for (uint32_t i = 1; i <= j; ++i)
-                Bee(i, j) = energyArray[i];
+                BAee(i, j) = energyArray[i];
 
             const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
 
             for (uint32_t i = j + 1; i < grid.cellNumber; ++i)
-                Bee(i, j) = value;
+                BAee(i, j) = value;
         }
 
         // detailed balance condition
 
         for (uint32_t j = 0; j < grid.cellNumber - 1; ++j) {
             for (uint32_t i = 1; i < grid.cellNumber; ++i) {
-                Bee(i, j) = sqrt(Bee(i, j) * Bee(j + 1, i - 1));
+                BAee(i, j) = sqrt(BAee(i, j) * BAee(j + 1, i - 1));
             }
         }
-
-        Aee = Bee.transpose();
 
         double meanEnergy = grid.step * cellsThreeOverTwo.dot(eedf),
                 Te = 2. / 3. * meanEnergy,
@@ -858,8 +903,8 @@ namespace loki {
         // In this implementation we completely skip the Mee matrix, saving both memory and time.
 
         while (!hasConverged) {
-            Vector A = (alpha / grid.step) * (Aee * eedf),
-                    B = (alpha / grid.step) * (Bee * eedf);
+            A = (alpha / grid.step) * (BAee.transpose() * eedf);
+            B = (alpha / grid.step) * (BAee * eedf);
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                 baseMatrix(k, k) = baseDiag[k] - 1.e20 * (A[k] + B[k]);
@@ -881,8 +926,7 @@ namespace loki {
                 if (std::abs(ratio) < 1.e-9) {
                     hasConverged = true;
                 } else if (std::abs(ratio) > 1.e-9 && iter > 200) {
-                    // TODO: give proper warnings
-                    std::cerr << "error in ee-col convergence" << std::endl;
+                    Log<PowerRatioError>::Warning(std::abs(ratio));
                     hasConverged = true;
                 }
             } else if (iter == 300 && !(includeNonConservativeAttachment || includeNonConservativeIonization)) {
@@ -890,22 +934,17 @@ namespace loki {
                 Log<Message>::Warning("Electron-electron iterative scheme did not converge.");
             }
 
-            if (iter > 0 && hasConverged) {
+            if (iter > 0 && !hasConverged) {
                 double ratioOld = ratioNew;
                 ratioNew = ratio;
 
                 Vector eedfOld = eedfNew;
                 eedfNew = eedf;
 
-                const double norm = eedf.dot(grid.getCells().cwiseSqrt()) * grid.step;
-
                 eedf = eedfNew - (ratioNew / (ratioNew - ratioOld)) * (eedfNew - eedfOld);
 
                 for (uint32_t i = 0; i < grid.cellNumber; ++i) {
-                    if (std::abs(norm * eedf[i]) < std::numeric_limits<double>::epsilon())
-                        eedf[i] = std::abs(eedf[i]);
-                        // TODO: ask if this is correct (might be an error in Matlab)
-                    else if (eedf[i] < 0)
+                    if (eedf[i] < 0)
                         eedf[i] = abs(eedf[i]);
                 }
             }
@@ -918,7 +957,8 @@ namespace loki {
             iter++;
         }
 
-        // TODO: save alpha
+        // TODO: optionally use alphaEE in calculations
+        alphaEE = alpha;
     }
 
     void ElectronKinetics::evaluatePower(bool isFinalSolution) {
@@ -999,7 +1039,7 @@ namespace loki {
         }
 
         if (includeEECollisions) {
-            power.electronElectron = (-factor * grid.step * grid.step) * ((Aee - Bee) * eedf).sum();
+            power.electronElectron = (-factor * grid.step * grid.step) * (A - B).dot(eedf);
         }
 
         // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
@@ -1014,7 +1054,7 @@ namespace loki {
 
         double totalGain = 0., totalLoss = 0.;
 
-        // Loop over the first 23 double member variables of the power struct.
+        // Loop over the first 22 double member variables of the power struct.
         for (uint32_t i = 0; i < 22; ++i) {
             if (powerPtr[i] > 0)
                 totalGain += powerPtr[i];

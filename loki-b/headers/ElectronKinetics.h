@@ -32,7 +32,7 @@ class ElectronKinetics
         includeNonConservativeAttachment{false},
         hasSuperelastics{false};
 
-    double CIEff{0.}, alphaRedEff{0.};
+    double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
 
     const WorkingConditions *workingConditions;
 
@@ -54,10 +54,9 @@ class ElectronKinetics
         fieldMatrixSpatGrowth,
         fieldMatrixTempGrowth,
         ionTemporalGrowth,
-        Aee,
-        Bee;
+        BAee;
 
-    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth;
+    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
 
     Vector eedf;
 

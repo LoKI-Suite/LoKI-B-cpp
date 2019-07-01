@@ -282,6 +282,16 @@ namespace loki {
         }
     };
 
+    struct PowerRatioError {
+        template<typename T>
+        inline
+        static void print(const T &t) {
+            std::cerr
+                    << "EEDF in e-e collision routine has converged, but abs(Pee/Pref) = "
+                    << t << " > 1e-9." << std::endl;
+        }
+    };
+
     struct PowerBalanceError {
         template<typename T>
         inline
@@ -289,6 +299,16 @@ namespace loki {
             std::cerr
                     << "Relative power balance error larger than "
                     << t << ". Results might be incorrect." << std::endl;
+        }
+    };
+
+    struct GlobalIterError {
+        template<typename T>
+        inline
+        static void print(const T &t) {
+            std::cerr
+                    << "Eedf in global cycle, invoked while mixing solutions, did not converge after "
+                    << t << " iterations." << std::endl;
         }
     };
 }

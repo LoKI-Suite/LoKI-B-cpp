@@ -234,15 +234,15 @@ namespace loki {
             }
         }
 
-        static void swapRows (uint32_t *p, const uint32_t one, const uint32_t two) {
+        static void swapRows(uint32_t *p, const uint32_t one, const uint32_t two) {
             uint32_t temp = p[one];
 
             p[one] = p[two];
             p[two] = temp;
         }
 
-        static void reduceRowToHess(double *A, uint32_t * p, const uint32_t a, const uint32_t b, const uint32_t start,
-                             const uint32_t n) {
+        static void reduceRowToHess(double *A, uint32_t *p, const uint32_t a, const uint32_t b, const uint32_t start,
+                                    const uint32_t n) {
             // a is the row at with the first element at the subdiagonal
             // b is the row that we want to reduce\
     // thus row a is used to reduce row b
@@ -359,16 +359,16 @@ namespace loki {
 
                 // TODO: this can be optimized.
 
-//                double normSum = 0, normSumOld = 0;
-//                for (uint32_t i = 0; i < n; ++i) {
-//                    normSumOld += xOld[i] * norm[i];
-//                    normSum += x[i] * norm[i];
-//                }
+    //                double normSum = 0, normSumOld = 0;
+    //                for (uint32_t i = 0; i < n; ++i) {
+    //                    normSumOld += xOld[i] * norm[i];
+    //                    normSum += x[i] * norm[i];
+    //                }
 
 
                 for (uint32_t i = 0; i < n; ++i) {
-//                    xOld[i] /= normSumOld;
-//                    x[i] /= normSum;
+    //                    xOld[i] /= normSumOld;
+    //                    x[i] /= normSum;
                     residual = std::abs(x[i] - xOld[i]) / std::max(x[i], xOld[i]);
 
                     if (residual > maxResidual)
@@ -384,7 +384,6 @@ namespace loki {
             delete[] xOld;
         }*/
     };
-
 }
 
 #endif //LOKI_CPP_LINEARALGEBRA_H
