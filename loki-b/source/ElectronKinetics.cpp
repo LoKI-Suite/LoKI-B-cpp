@@ -7,8 +7,8 @@
 #include <cmath>
 
 // TODO [FUTURE]: Write a tridiagonal matrix class that stores the elements
-//  in three separate vectors. It would be best to do this in an Eigen compliant way, such
-//  that these matrices can simply be added to dense matrices (the + and [] operators are 
+//  in three separate vectors. It is desirable to do this in an Eigen compliant way, such
+//  that these matrices can simply be added to dense matrices (the + and () operators are
 //  the only operators to overload).
 
 namespace loki {
@@ -41,8 +41,12 @@ namespace loki {
 
         ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        if (ionizationOperatorType != IonizationOperatorType::conservative)
-            ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+        // TODO: Optimize this by checking whether these need to be created
+        //  (by checking the corresponding flags). Whenever matrices are
+        //  added together there needs to be a distinction whether to add
+        //  these based on flags (as is already present for e.g. CAR).
+//        if (ionizationOperatorType != IonizationOperatorType::conservative)
+        ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
         attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
@@ -82,7 +86,6 @@ namespace loki {
     }
 
     void ElectronKinetics::invertMatrix(Matrix &matrix) {
-
         // Induce normalization condition
 //        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
 //        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMatrix = matrix;
@@ -148,14 +151,12 @@ namespace loki {
 
         evaluateAttachmentOperator();
 
-        // Add the first subdiagonal to the vector.
-//        superElasticThresholds.emplace_back(1);
-
         // Sort and erase duplicates.
         std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
         superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                      superElasticThresholds.end());
 
+        // TODO: remove this
         Log<Message>::Notify("Superelastic thresholds:");
         for (const auto entry : superElasticThresholds) {
             std::cerr << entry << std::endl;
@@ -328,7 +329,6 @@ namespace loki {
                     case IonizationOperatorType::conservative:
                         break;
 
-                        // TODO: check this
                     case IonizationOperatorType::oneTakesAll:
                         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                             if (k < grid.cellNumber - numThreshold)
@@ -338,19 +338,19 @@ namespace loki {
                             const double term = density * grid.getCell(k) * cellCrossSection(k);
 
                             ionizationMatrix(k, k) -= term;
-                            ionizationMatrix(1, k) -= term;
+                            ionizationMatrix(0, k) += term;
                         }
                         break;
 
-                        // TODO: check this
                     case IonizationOperatorType::equalSharing:
                         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                             ionizationMatrix(k, k) -= density * grid.getCell(k) * cellCrossSection[k];
 
-                            if (k < (grid.cellNumber - numThreshold) / 2)
-                                ionizationMatrix(k, 2 * k + numThreshold) +=
-                                        4 * density * grid.getCell(2 * k + numThreshold) *
-                                        cellCrossSection(2 * k + numThreshold);
+                            if (k < (grid.cellNumber - numThreshold) / 2) {
+                                const uint32_t i = 2 * (k + 1) + numThreshold - 1;
+
+                                ionizationMatrix(k, i) += 4 * density * grid.getCell(i) * cellCrossSection(i);
+                            }
                         }
                         break;
                     case IonizationOperatorType::sdcs:
@@ -440,16 +440,16 @@ namespace loki {
                     cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
                 for (uint32_t k = 0; k < cellNumber; ++k)
-                    attachmentMatrix(k, k) += targetDensity * grid.getCell(k) * cellCrossSection[k];
+                    attachmentMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
                 if (numThreshold == 0) continue;
 
                 for (uint32_t k = 0; k < cellNumber; ++k) {
                     if (k < cellNumber - numThreshold)
-                        attachmentConservativeMatrix(k, k + numThreshold) =
+                        attachmentConservativeMatrix(k, k + numThreshold) +=
                                 targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                    attachmentConservativeMatrix(k, k) = targetDensity * grid.getCell(k) * cellCrossSection[k];
+                    attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                 }
             }
         }

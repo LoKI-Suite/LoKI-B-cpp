@@ -5,7 +5,7 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField:  logspace(-4,3,100)           % in Td
+  reducedField:  10%logspace(-4,3,100)           % in Td
   electronTemperature: linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
@@ -53,11 +53,11 @@ electronKinetics:
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
       maxEnergy: 20
-      cellNumber: 10000
-      smartGrid:                       % configuration of the smart grid
-        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
-        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
-        updateFactor: 0.05             % factor used to increase or decrease the maximum value of the energy grid
+      cellNumber: 2000
+%      smartGrid:                       % configuration of the smart grid
+%        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
+%        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
+%        updateFactor: 0.05             % factor used to increase or decrease the maximum value of the energy grid
     maxPowerBalanceRelError: 1e-9      % threshold for the relative power balance warning message
     nonLinearRoutines:
       algorithm: mixingDirectSolutions % mixingDirectSolutions or iterativeSolution
@@ -68,7 +68,7 @@ electronKinetics:
           
 % --- configuration of the graphical user interface ---
 gui: 
-  isOn: true
+  isOn: false
   refreshFrequency: 1
 
 % ---  configuration of the output files ---

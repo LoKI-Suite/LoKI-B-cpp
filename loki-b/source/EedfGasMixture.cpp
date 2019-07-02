@@ -132,10 +132,8 @@ namespace loki {
     }
 
     void EedfGasMixture::evaluateTotalAndElasticCS() {
-        elasticCrossSection.resize(grid->cellNumber + 1);
-        elasticCrossSection.setZero();
-        totalCrossSection.resize(grid->cellNumber + 1);
-        totalCrossSection.setZero();
+        elasticCrossSection.setZero(grid->cellNumber + 1);
+        totalCrossSection.setZero(grid->cellNumber + 1);
 
         for (auto *gas : gasses) {
             if (gas->isDummy()) continue;
