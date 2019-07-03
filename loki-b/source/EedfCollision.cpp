@@ -81,10 +81,10 @@ namespace loki {
     }
 
     CollPower EedfCollision::evaluateConservativePower(const Vector &eedf) {
-        CollPower collPower;
-
-        uint32_t n = crossSection->size();
         const Grid *grid = crossSection->getGrid();
+        const uint32_t n = grid->cellNumber;
+
+        CollPower collPower;
 
         Vector cellCrossSection(n);
 
@@ -102,7 +102,7 @@ namespace loki {
             ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.ine -= factor * target->density * grid->step * grid->getNode(lmin) * ineSum;
+        collPower.ine = -factor * target->density * grid->step * grid->getNode(lmin) * ineSum;
 
         if (isReverse) {
             const double statWeightRatio = target->statisticalWeight / products[0]->statisticalWeight;
@@ -123,10 +123,10 @@ namespace loki {
     CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                           const IonizationOperatorType ionizationOperatorType,
                                                           const double OPBParameter) {
-        CollPower collPower;
-
-        uint32_t n = crossSection->size();
         const Grid *grid = crossSection->getGrid();
+        const uint32_t n = grid->cellNumber;
+
+        CollPower collPower;
 
         const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
@@ -171,14 +171,14 @@ namespace loki {
                 if (w == 0) w = crossSection->threshold;
 
                 Vector TICS = Vector::Zero(grid->cellNumber);
-                Vector auxVec = 1. / (grid->getCells().cwiseAbs2().array() / (w * w));
+                Vector auxVec = 1. / (1. + (grid->getCells().cwiseAbs2().array() / (w * w)));
 
-                for (uint32_t k = 1; k < n; ++k) {
-                    auxVec[k] = auxVec[k] - auxVec[k - 1];
-                    int64_t kmax = (k - lmin) / 2;
+                for (int64_t k = 1; k < n; ++k) {
+                    auxVec[k] = auxVec[k] + auxVec[k - 1];
+                    int64_t kmax = (k + 1 - lmin) / 2;
 
                     if (kmax > 0)
-                        TICS[k] += cellCrossSection[k] * auxVec[k] /
+                        TICS[k] += cellCrossSection[k] * auxVec[kmax-1] /
                                    (w * atan((grid->getCell(k) - crossSection->threshold) / (2 * w)));
                 }
 
@@ -198,5 +198,36 @@ namespace loki {
 //        }
 
         return collPower;
+    }
+
+    RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf) {
+        const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
+        const Grid *grid = crossSection->getGrid();
+
+        const uint32_t nNodes = grid->cellNumber + 1,
+                nCells = grid->cellNumber;
+
+        const auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+
+        Vector cellCrossSection =
+                .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
+
+        ineRateCoeff = factor * grid->step * cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(
+                eedf.tail(nCells - lmin));
+
+        if (isReverse) {
+            const double tStatWeight = target->statisticalWeight,
+                    pStatWeight = products[0]->statisticalWeight;
+
+            //TODO: check if one of the two is zero
+
+            const double statWeightRatio = tStatWeight / pStatWeight;
+
+            supRateCoeff = factor * statWeightRatio * grid->step *
+                          cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(
+                                  eedf.head(nCells - lmin));
+        }
+
+        return {this, ineRateCoeff, supRateCoeff};
     }
 }

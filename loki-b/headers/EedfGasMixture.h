@@ -7,6 +7,7 @@
 
 #include "GasMixture.h"
 #include "WorkingConditions.h"
+#include "MacroscopicQuantities.h"
 #include "Traits.h"
 
 #include <vector>
@@ -20,6 +21,8 @@ namespace loki {
         Grid *grid{nullptr};
 
         std::vector<EedfGas *> CARGasses;
+
+        std::vector<RateCoefficient> rateCoefficients, rateCoefficientsExtra;
 
         explicit EedfGasMixture(Grid *grid);
 
@@ -35,6 +38,8 @@ namespace loki {
         // TODO: comment evaluateTotalAndElasticCS
 
         void evaluateTotalAndElasticCS();
+
+        void evaluateRateCoefficients(const Vector &eedf);
 
     private:
 

@@ -2,7 +2,6 @@
 // Created by daan on 20-5-19.
 //
 
-#include <iomanip>
 #include "EedfGasMixture.h"
 
 // DONE: productStoiCoeff is only for the products
@@ -111,6 +110,8 @@ namespace loki {
 
         Log<Message>::Notify(*collision);
 
+        // TODO: threshold <= umax check should probably be performed here.
+
         // Check if the collision already exists. If so delete the new entry and return false.
         if (target->hasCollision(collision, isExtra)) {
             Log<DoubleCollision>::Warning(*collision);
@@ -171,6 +172,30 @@ namespace loki {
             gas->checkCARConditions();
 
             CARGasses.emplace_back(gas);
+        }
+    }
+
+    void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf) {
+        for (auto *gas : gasses) {
+            for (auto &collVec : gas->collisions) {
+                for (auto *collision : collVec) {
+
+                    if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                        continue;
+
+                    rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
+                }
+            }
+
+            for (auto &collVec : gas->extraCollisions) {
+                for (auto *collision : collVec) {
+
+                    if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                        continue;
+
+                    rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
+                }
+            }
         }
     }
 }

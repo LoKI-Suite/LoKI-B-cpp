@@ -25,7 +25,7 @@ namespace loki {
 
 #endif
 
-    // TODO: Implement an optimized version of the LU decomposition algorithm (taking into account
+    // TODO [FUTURE]: Implement an optimized version of the LU decomposition algorithm (taking into account
     //  the positions of the superelastic bands).
 
     class LinAlg {
@@ -194,7 +194,7 @@ namespace loki {
                         // In other words, if j + optSavesPerRow (the position of the element that we
                         // have eliminated + the number of substractions that we can skip) is smaller
                         // than the index of the element on the first subdiagonal (c[i]-1) then the
-                        // row is not yet upper Hessenberg and we need to reduce it further (in a top
+                        // row is not yet upper Hessenberg and we need to reduce it further (in a
                         // top-down approach).
                         if (optSavesPerRow < c[i] - 1) {
 //                            std::cerr << "hess reduce after smart reduce" << std::endl;

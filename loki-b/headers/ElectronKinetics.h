@@ -11,6 +11,7 @@
 #include "WorkingConditions.h"
 #include "LinearAlgebra.h"
 #include "Power.h"
+#include "MacroscopicQuantities.h"
 
 // TODO: comment ElectronKinetics class
 
@@ -62,6 +63,8 @@ class ElectronKinetics
 
     Power power;
 
+    SwarmParameters swarmParameters;
+
     std::vector<uint32_t> superElasticThresholds;
 
 public:
@@ -102,6 +105,8 @@ private:
     void solveEEColl();
 
     void evaluatePower(bool isFinalSolution);
+
+    void evaluateSwarmParameters();
 
     void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
               const Vector &x, const Vector &y);

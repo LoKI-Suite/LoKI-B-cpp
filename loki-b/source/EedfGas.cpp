@@ -203,6 +203,11 @@ namespace loki {
         CollPower collPower;
 
         for (auto *collision : collisionVector) {
+            const Grid *grid = collision->crossSection->getGrid();
+
+            if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                continue;
+
             collPower += collision->evaluateConservativePower(eedf);
         }
 
@@ -214,6 +219,11 @@ namespace loki {
         CollPower collPower;
 
         for (auto *collision : collisionVector) {
+            const Grid *grid = collision->crossSection->getGrid();
+
+            if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                continue;
+
             collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);
         }
 

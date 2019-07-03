@@ -19,6 +19,8 @@ using namespace loki::Enumeration;
 // TODO: Cleanup
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
 //  [DONE] 2. Check attachment (with oxygen)
+//  3. Switch from for loops to vector expressions
+//  4. Fix bad_alloc when collisions have thresholds above umax (check before adding the collision).
 
 // TODO: Steps to finishing the project:
 //  1. Write functions to compute swarm parameters and rate coefficients
@@ -36,7 +38,7 @@ int main (int argc, char ** argv)
     try {
         loki::Setup setup;
 
-        if (!setup.parseFile("lokib_setup_oxygen.in"/*default_lokib_setup.in*/)) {
+        if (!setup.parseFile("default_lokib_setup.in")) {
             return 1;
         }
 

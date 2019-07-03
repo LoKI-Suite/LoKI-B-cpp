@@ -5,7 +5,7 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField:  10%logspace(-4,3,100)           % in Td
+  reducedField:  40%logspace(-4,3,100)           % in Td
   electronTemperature: linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
@@ -21,7 +21,7 @@ electronKinetics:
 %   shapeParameter: 1                  % prescribedEedf shape parameter from 1 (Maxwellian) to 2 (Druyvesteyn)
   ionizationOperatorType: usingSDCS    % conservative, oneTakesAll, equalSharing or usingSDCS
   growthModelType: spatial             % temporal or spatial
-  includeEECollisions: false           % true or false (to include / remove e-e collisions)
+  includeEECollisions: true           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
     - Oxygen/O2_LXCat.txt
     - Oxygen/O2_rot_LXCat.txt
@@ -52,8 +52,8 @@ electronKinetics:
       - O2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 20
-      cellNumber: 2000
+      maxEnergy: 10
+      cellNumber: 500
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF

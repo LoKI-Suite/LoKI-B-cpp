@@ -3,6 +3,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 project(loki_cpp)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 -mfma -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
 set(CMAKE_CXX_STANDARD 17)
 
 # --- loki-b --- #
@@ -25,7 +26,8 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
-        ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h ${h}/Power.h)
+        ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
+        ${h}/Power.h ${h}/MacroscopicQuantities.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
 add_executable(loki ${headers} ${cpp} ${property_functions} ${src}/main.cpp)

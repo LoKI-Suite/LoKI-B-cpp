@@ -4,6 +4,7 @@
 
 #include "ElectronKinetics.h"
 #include <chrono>
+#include <iomanip>
 #include <cmath>
 
 // TODO [FUTURE]: Write a tridiagonal matrix class that stores the elements
@@ -67,6 +68,32 @@ namespace loki {
             printf("%.16e\n", eedf[i]);
         }
 
+        evaluatePower(true);
+
+//        auto *powerPtr = (double *) &power;
+//
+//        for (uint32_t i = 0; i < 25; ++i) {
+//            std::cerr << std::setprecision(16) << powerPtr[i] << std::endl;
+//        }
+
+        mixture.evaluateRateCoefficients(eedf);
+
+//        for (const RateCoefficient &rateCoeff : mixture.rateCoefficients) {
+//            Log<Message>::Notify(*rateCoeff.collision);
+//            std::cerr << "Inelastic:  \t" << std::setprecision(16) << rateCoeff.inelastic <<
+//                      "\nSuperelastic:\t" << rateCoeff.superelastic << std::endl;
+//        }
+
+        evaluateSwarmParameters();
+
+        auto *swarmPtr = (double *)&swarmParameters;
+
+        for (uint32_t i = 0; i < 8; ++i) {
+            std::cerr << std::setprecision(16) << swarmPtr[i] << std::endl;
+        }
+
+        // TODO: evaluate first anisotropy.
+
 //        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     }
 
@@ -92,7 +119,7 @@ namespace loki {
 
         auto begin = std::chrono::high_resolution_clock::now();
 
-        if (!hasSuperelastics && !includeEECollisions) {
+        if (!hasSuperelastics) {
             eedf.setZero();
             eedf[0] = 1.;
 
@@ -554,13 +581,7 @@ namespace loki {
                 baseSupDiag[k] = baseMatrix(k, k + 1);
         }
 
-        Vector MeeDiag, MeeSubDiag, MeeSupDiag;
-
         if (includeEECollisions) {
-            MeeDiag.setZero(grid.cellNumber);
-            MeeSubDiag.setZero(grid.cellNumber);
-            MeeSupDiag.setZero(grid.cellNumber);
-
             A = alphaEE / grid.step * (BAee.transpose() * eedf);
             B = alphaEE / grid.step * (BAee * eedf);
         }
@@ -683,7 +704,7 @@ namespace loki {
             ++iter;
         }
 
-        std::cerr << "Number of iterations to convergence: " << iter << ".\n";
+        std::cerr << "Spatial growth routine converged in: " << iter << " iterations.\n";
 
         alphaRedEff = alphaRedEffOld;
         CIEff = CIEffOld;
@@ -715,13 +736,7 @@ namespace loki {
                 baseSupDiag[k] = baseMatrix(k, k + 1);
         }
 
-        Vector MeeDiag, MeeSubDiag, MeeSupDiag;
-
         if (includeEECollisions) {
-            MeeDiag.setZero(grid.cellNumber);
-            MeeSubDiag.setZero(grid.cellNumber);
-            MeeSupDiag.setZero(grid.cellNumber);
-
             A = alphaEE / grid.step * (BAee.transpose() * eedf);
             B = alphaEE / grid.step * (BAee * eedf);
         }
@@ -800,7 +815,7 @@ namespace loki {
             ++iter;
         }
 
-        std::cerr << "Number of iterations to convergence: " << iter << ".\n";
+        std::cerr << "Temporal growth routine converged in: " << iter << " iterations.\n";
 
         CIEff = CIEffOld;
     }
@@ -810,8 +825,6 @@ namespace loki {
                 e0 = Constant::vacuumPermittivity,
                 ne = workingConditions->electronDensity,
                 n0 = workingConditions->gasDensity;
-
-        Matrix Mee = Matrix::Zero(grid.cellNumber, grid.cellNumber);
 
         Matrix baseMatrix;
 
@@ -898,7 +911,7 @@ namespace loki {
         bool hasConverged = false;
         uint32_t iter = 0;
 
-        Vector MeeDiag(grid.cellNumber), MeeSub(grid.cellNumber), MeeSup(grid.cellNumber);
+//        Vector MeeDiag(grid.cellNumber), MeeSub(grid.cellNumber), MeeSup(grid.cellNumber);
 
         // In this implementation we completely skip the Mee matrix, saving both memory and time.
 
@@ -959,18 +972,22 @@ namespace loki {
 
         // TODO: optionally use alphaEE in calculations
         alphaEE = alpha;
+
+        std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
     }
 
     void ElectronKinetics::evaluatePower(bool isFinalSolution) {
         const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass),
                 kTg = Constant::kBeV * workingConditions->gasTemperature,
-                auxHigh = kTg + grid.step * .5,
-                auxLow = kTg + grid.step * .5;
+                auxHigh = kTg + grid.step * .5, // aux1
+                auxLow = kTg - grid.step * .5; // aux2
+
+        power = Power();
 
         double elasticNet = 0., elasticGain = 0.;
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxLow);
+            elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxHigh);
             elasticGain += eedf[k] * (g_c[k + 1] - g_c[k]);
         }
 
@@ -995,27 +1012,26 @@ namespace loki {
             if (growthModelType == GrowthModelType::temporal) {
                 double field = 0., growthModel = 0.;
 
-                for (uint32_t k = 0; k < grid.cellNumber - 1; ++k) {
+                for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                     field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
                     growthModel += eedf[k] * grid.getCell(k) * sqrt(grid.getCell(k));
                 }
 
                 power.field = factor * field;
-                power.eDensGrowth = CIEff * grid.step * growthModel;
+                power.eDensGrowth = -CIEff * grid.step * growthModel;
             } else if (growthModelType == GrowthModelType::spatial) {
                 double field = 0., correction = 0., powerDiffusion = 0., powerMobility = 0.;
                 Vector cellCrossSection(grid.cellNumber);
 
-                for (uint32_t k = 0; k < grid.cellNumber - 1; ++k) {
+                for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                     field += eedf[k] * (g_E[k + 1] - g_E[k]);
-                    correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] * auxLow -
-                                             g_fieldSpatialGrowth[k] * auxLow);
+                    correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
                     // Diffusion and Mobility contributions
                     cellCrossSection[k] = .5 * (mixture.totalCrossSection[k] + mixture.totalCrossSection[k + 1]);
                     powerDiffusion += grid.getCell(k) * grid.getCell(k) * eedf[k] / cellCrossSection[k];
 
-                    if (k > 0) {
+                    if (k > 0 && k < grid.cellNumber - 1) {
                         powerMobility +=
                                 grid.getCell(k) * grid.getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
                     }
@@ -1031,7 +1047,7 @@ namespace loki {
         } else {
             double field = 0;
 
-            for (uint32_t k = 0; k < grid.cellNumber - 1; ++k) {
+            for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                 field += eedf[k] * (g_E[k + 1] - g_E[k]);
             }
 
@@ -1048,18 +1064,23 @@ namespace loki {
             power += gas->getPower();
         }
 
-        // TODO: The power per gas is not stored in the main power structure for now.
+        power.inelastic = power.excitationIne + power.vibrationalIne + power.rotationalIne + power.ionizationIne +
+                          power.attachmentIne;
+        power.superelastic = power.excitationSup + power.vibrationalSup + power.rotationalSup;
 
-        auto *powerPtr = (double *) &power;
+        // TODO: The power per gas is not stored in the main power structure for now.
 
         double totalGain = 0., totalLoss = 0.;
 
-        // Loop over the first 22 double member variables of the power struct.
-        for (uint32_t i = 0; i < 22; ++i) {
-            if (powerPtr[i] > 0)
-                totalGain += powerPtr[i];
+        double powerValues[13]{power.field, power.elasticGain, power.elasticLoss, power.carGain, power.carLoss,
+                               power.excitationSup, power.excitationIne, power.vibrationalSup, power.vibrationalIne,
+                               power.rotationalSup, power.rotationalIne, power.eDensGrowth, power.electronElectron};
+
+        for (double value : powerValues) {
+            if (value > 0)
+                totalGain += value;
             else
-                totalLoss += powerPtr[i];
+                totalLoss += value;
         }
 
         power.balance = power.field + power.elasticNet + power.carNet + power.inelastic + power.superelastic +
@@ -1069,6 +1090,62 @@ namespace loki {
 
         if (isFinalSolution && power.relativeBalance > maxPowerBalanceRelError)
             Log<PowerBalanceError>::Warning(maxPowerBalanceRelError);
+    }
+
+    void ElectronKinetics::evaluateSwarmParameters() {
+        const double me = Constant::electronMass,
+                e = Constant::electronCharge;
+
+        const uint32_t n = grid.cellNumber;
+
+        const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
+
+        Vector tCS(mixture.totalCrossSection);
+
+        if (growthModelType == GrowthModelType::temporal && nonConservative) {
+
+            tCS.tail(grid.cellNumber).array() +=
+                    CIEff * std::sqrt(me / (2 * e)) / grid.getNodes().tail(n).cwiseSqrt().array();
+        }
+
+        swarmParameters.redDiffCoeff = 2. / 3. * std::sqrt(2. * e / me) * grid.step *
+                                       grid.getCells().cwiseProduct(eedf).cwiseQuotient(
+                                               tCS.head(n) + tCS.tail(n)).sum();
+
+        swarmParameters.redMobCoeff = -std::sqrt(2. * e / me) / 3. *
+                                      grid.getNodes().segment(1, n - 1).cwiseProduct(
+                                              eedf.tail(n - 1) - eedf.head(n - 1)).cwiseQuotient(
+                                              tCS.segment(1, n - 1)).sum();
+
+        if (growthModelType == GrowthModelType::spatial && nonConservative) {
+            swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
+                                            swarmParameters.redMobCoeff * workingConditions->reducedFieldSI;
+        } else {
+            swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI;
+        }
+
+        double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
+
+        for (const auto *gas : mixture.gasses) {
+            for (const auto *collision : gas->collisions[(uint8_t) CollisionType::ionization]) {
+                totalIonRateCoeff += collision->target->density * collision->ineRateCoeff;
+            }
+
+            for (const auto *collision : gas->collisions[(uint8_t) CollisionType::attachment]) {
+                totalAttRateCoeff += collision->target->density * collision->ineRateCoeff;
+            }
+        }
+
+        swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
+        swarmParameters.redAttcoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
+
+        swarmParameters.meanEnergy = grid.step * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
+
+        swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
+
+        swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
+
+        // TODO: update Electron Temperature in workingConditions structure
     }
 
     void ElectronKinetics::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
