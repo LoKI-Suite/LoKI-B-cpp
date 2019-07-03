@@ -59,7 +59,7 @@ class ElectronKinetics
 
     Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
 
-    Vector eedf;
+    Vector eedf, firstAnisotropy;
 
     Power power;
 
@@ -107,6 +107,8 @@ private:
     void evaluatePower(bool isFinalSolution);
 
     void evaluateSwarmParameters();
+
+    void evaluateFirstAnisotropy();
 
     void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
               const Vector &x, const Vector &y);

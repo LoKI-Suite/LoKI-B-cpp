@@ -64,9 +64,9 @@ namespace loki {
             this->invertLinearMatrix();
         }
 
-        for (uint32_t i = 0; i < eedf.size(); ++i) {
-            printf("%.16e\n", eedf[i]);
-        }
+//        for (uint32_t i = 0; i < eedf.size(); ++i) {
+//            printf("%.16e\n", eedf[i]);
+//        }
 
         evaluatePower(true);
 
@@ -86,15 +86,20 @@ namespace loki {
 
         evaluateSwarmParameters();
 
-        auto *swarmPtr = (double *)&swarmParameters;
+//        auto *swarmPtr = (double *)&swarmParameters;
+//
+//        for (uint32_t i = 0; i < 8; ++i) {
+//            std::cerr << std::setprecision(16) << swarmPtr[i] << std::endl;
+//        }
 
-        for (uint32_t i = 0; i < 8; ++i) {
-            std::cerr << std::setprecision(16) << swarmPtr[i] << std::endl;
-        }
+        evaluateFirstAnisotropy();
 
-        // TODO: evaluate first anisotropy.
+//        for (uint32_t i = 0; i < grid.cellNumber; ++i) {
+//            printf("%.16e\n", firstAnisotropy[i]);
+//        }
 
-//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+//        this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
     }
 
     void ElectronKinetics::invertLinearMatrix() {
@@ -1146,6 +1151,50 @@ namespace loki {
         swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
 
         // TODO: update Electron Temperature in workingConditions structure
+    }
+
+    void ElectronKinetics::evaluateFirstAnisotropy() {
+        firstAnisotropy.setZero(grid.cellNumber);
+
+        const double e = Constant::electronCharge,
+                me = Constant::electronMass,
+                EoN = workingConditions->reducedFieldSI,
+                WoN = workingConditions->reducedExcFreqSI;
+
+        const uint32_t n = grid.cellNumber;
+
+        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid.step;
+        firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid.step;
+
+        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid.step);
+
+        Vector cellCrossSection =
+                (mixture.totalCrossSection.segment(0, n) + mixture.totalCrossSection.segment(1, n)) / 2.;
+
+        if (includeNonConservativeIonization || includeNonConservativeAttachment) {
+            if (growthModelType == GrowthModelType::temporal) {
+                cellCrossSection = cellCrossSection.array() +
+                                   CIEff / (std::sqrt(e * e / me) * grid.getCells().cwiseSqrt()).array();
+
+                if (WoN == 0) {
+                    firstAnisotropy = -EoN * firstAnisotropy.cwiseQuotient(cellCrossSection);
+                } else {
+                    firstAnisotropy = -EoN * sqrt(2.) * firstAnisotropy.array() / (cellCrossSection.array() +
+                                                                                   WoN * WoN * me /
+                                                                                   (2. * e * grid.getCells().array() *
+                                                                                    cellCrossSection.array()));
+                }
+            } else if (growthModelType == GrowthModelType::spatial) {
+                firstAnisotropy = -(alphaRedEff * eedf + EoN * firstAnisotropy).cwiseQuotient(cellCrossSection);
+            }
+        } else if (WoN == 0) {
+            firstAnisotropy = -EoN * firstAnisotropy.cwiseQuotient(cellCrossSection);
+        } else {
+            firstAnisotropy = -EoN * sqrt(2.) * firstAnisotropy.array() / (cellCrossSection.array() +
+                                                                           WoN * WoN * me /
+                                                                           (2. * e * grid.getCells().array() *
+                                                                            cellCrossSection.array()));
+        }
     }
 
     void ElectronKinetics::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
