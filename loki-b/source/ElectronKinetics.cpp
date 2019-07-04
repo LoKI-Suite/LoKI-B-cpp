@@ -334,7 +334,7 @@ namespace loki {
                 hasValidCollisions = true;
 
                 const double density = collision->target->density;
-                const auto numThreshold = (uint32_t) (threshold / grid.step);
+                const auto numThreshold = (uint32_t) std::floor(threshold / grid.step);
 
                 Vector cellCrossSection(grid.cellNumber);
 

@@ -68,6 +68,8 @@ namespace loki {
 
         crossSection->interpolate(superElasticEnergies, result);
 
+        // TODO: give errors
+
         const double swRatio = target->statisticalWeight / products[0]->statisticalWeight;
 
         uint32_t minIndex = 0;

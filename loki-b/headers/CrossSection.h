@@ -17,13 +17,18 @@ namespace loki {
         Vector rawEnergyData, rawCrossSection;
         Grid *energyGrid;
 
+        const bool isElasticOrEffective;
+
     public:
         const double threshold;
 
-        CrossSection(double threshold, Grid *energyGrid, std::ifstream &in);
-        CrossSection(double threshold, Grid *energyGrid, Vector rawEnergyData, Vector rawCrossSection);
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in);
+
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
+                     Vector rawCrossSection);
 
         void interpolate();
+
         void interpolate(const Vector &energies, Vector &result);
 
         Vector &raw();
@@ -32,7 +37,7 @@ namespace loki {
 
         const Grid *getGrid();
 
-        CrossSection(double threshold, Grid *energyGrid);
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
 
     };
 }

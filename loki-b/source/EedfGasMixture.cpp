@@ -77,8 +77,12 @@ namespace loki {
 
                 auto *collision = createCollision(collisionEntry);
 
+                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                                   collision->type == CollisionType::elastic);
+
                 if (linkCollision(collision, isExtra)) {
-                    collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid, in);
+                    collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
+                                                               isElasticOrEffective, in);
                 }
             }
         }
@@ -162,7 +166,7 @@ namespace loki {
 
     void EedfGasMixture::addCARGasses(const std::vector<std::string> &CARVector) {
         for (const auto &gasName : CARVector) {
-            EedfGas * gas = this->findGas(gasName);
+            EedfGas *gas = this->findGas(gasName);
 
             if (gas == nullptr) {
                 Log<CARForNonExistent>::Warning(gasName);

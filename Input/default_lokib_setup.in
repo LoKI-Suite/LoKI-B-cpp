@@ -59,7 +59,7 @@ electronKinetics:
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
       maxEnergy: 20
-      cellNumber: 1000
+      cellNumber: 2000
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF

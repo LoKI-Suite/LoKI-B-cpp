@@ -70,7 +70,7 @@ namespace loki {
 
         if (warn) Log<NegativeElastic>::Warning(name);
 
-        return new CrossSection(0., energyGrid, rawEnergies, rawEl);
+        return new CrossSection(0., energyGrid, true, rawEnergies, rawEl);
     }
 
     void EedfGas::setDefaultEffPop(EedfState *ground) {

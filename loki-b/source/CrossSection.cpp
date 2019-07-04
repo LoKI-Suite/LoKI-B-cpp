@@ -10,11 +10,11 @@
 
 namespace loki {
 
-    CrossSection::CrossSection(const double threshold, Grid *energyGrid)
-            : threshold(threshold), energyGrid(energyGrid) {}
+    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
-    CrossSection::CrossSection(double threshold, Grid *energyGrid, std::ifstream &in)
-            : threshold(threshold), energyGrid(energyGrid) {
+    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in)
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {
         std::vector<double> rawEnergyVector, rawCrossSectionVector;
 
         Parse::rawCrossSectionFromStream(rawEnergyVector, rawCrossSectionVector, in);
@@ -26,9 +26,10 @@ namespace loki {
         this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
     }
 
-    CrossSection::CrossSection(double threshold, Grid *energyGrid, Vector rawEnergyData, Vector rawCrossSection)
-            : threshold(threshold), energyGrid(energyGrid), rawEnergyData(std::move(rawEnergyData)),
-              rawCrossSection(std::move(rawCrossSection)) {
+    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
+                               Vector rawCrossSection)
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective),
+              rawEnergyData(std::move(rawEnergyData)), rawCrossSection(std::move(rawCrossSection)) {
 
         this->interpolate();
         this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
@@ -44,13 +45,25 @@ namespace loki {
         const uint32_t &gridSize = energies.size();
 
         result.resize(gridSize);
+        result.setZero(gridSize);
 
-        uint32_t csIndex = 0;
+        uint32_t csIndex = 0, gridIndex = 0;
 
-        for (uint32_t gridIndex = 0; gridIndex < gridSize; ++gridIndex) {
+        if (!isElasticOrEffective) {
+            for (uint32_t i = 0; i < gridSize; ++i) {
+                if (energies[i] > threshold) {
+                    gridIndex = i;
+                    break;
+                }
+            }
+        }
+
+        for (; gridIndex < gridSize; ++gridIndex) {
             while (csIndex < rawCrossSection.size()
-                   && rawEnergyData[csIndex] < energies[gridIndex])
+                   && rawEnergyData[csIndex] < energies[gridIndex]) {
+
                 ++csIndex;
+            }
 
             if (csIndex >= rawCrossSection.size()) {
 //                (*this)[gridIndex] = rawCrossSection.back().second;
