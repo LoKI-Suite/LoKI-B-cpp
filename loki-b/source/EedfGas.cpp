@@ -161,7 +161,7 @@ namespace loki {
         return true;
     }
 
-    const GasPower &EedfGas::getPower() {
+    const GasPower &EedfGas::getPower() const {
         return power;
     }
 

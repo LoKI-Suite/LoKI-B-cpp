@@ -52,6 +52,8 @@ namespace loki {
             if (i < collision.products.size() - 1) os << " +";
         }
 
+        os << ", " << collision.typeAsString();
+
         return os;
     }
 
@@ -229,5 +231,26 @@ namespace loki {
         }
 
         return {this, ineRateCoeff, supRateCoeff};
+    }
+
+    std::string EedfCollision::typeAsString() const {
+        switch(type) {
+            case CollisionType::effective:
+                return "Effective";
+            case CollisionType::elastic:
+                return "Elastic";
+            case CollisionType::excitation:
+                return "Excitation";
+            case CollisionType::vibrational:
+                return "Vibrational";
+            case CollisionType::rotational:
+                return "Rotational";
+            case CollisionType::ionization:
+                return "Ionization";
+            case CollisionType::attachment:
+                return "Attachment";
+            default:
+                return "";
+        }
     }
 }

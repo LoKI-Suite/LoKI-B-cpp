@@ -5,7 +5,7 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField:  40%logspace(-4,3,100)           % in Td
+  reducedField:  50%logspace(-4,3,100)           % in Td
   electronTemperature: linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
@@ -52,8 +52,8 @@ electronKinetics:
       - O2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 10
-      cellNumber: 500
+      maxEnergy: 40
+      cellNumber: 2000
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
@@ -73,7 +73,7 @@ gui:
 
 % ---  configuration of the output files ---
 output: 
-  isOn: false
+  isOn: true
   folder: simulation1
   dataFiles:
     - eedf

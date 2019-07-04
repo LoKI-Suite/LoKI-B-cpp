@@ -40,7 +40,7 @@ namespace loki {
 
         bool isDummy();
 
-        const GasPower &getPower();
+        const GasPower &getPower() const;
 
         void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
 

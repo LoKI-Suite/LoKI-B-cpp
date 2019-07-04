@@ -20,10 +20,10 @@ using namespace loki::Enumeration;
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
 //  [DONE] 2. Check attachment (with oxygen)
 //  3. Switch from for loops to vector expressions
-//  4. Fix bad_alloc when collisions have thresholds above umax (check before adding the collision).
+//  [DONE] 4. Fix bad_alloc when collisions have thresholds above umax (check before adding the collision).
 
 // TODO: Steps to finishing the project:
-//  1. Write functions to compute swarm parameters and rate coefficients
+//  1. [DONE] Write functions to compute swarm parameters and rate coefficients
 //  2. Write a class to write the output to file
 //  3. Implement the smart grid
 //  4. Implement a simple version of the jobs

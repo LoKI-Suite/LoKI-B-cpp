@@ -8,7 +8,7 @@
 namespace loki {
     struct SwarmParameters {
         double redDiffCoeff{0.}, redMobCoeff{0.}, redTownsendCoeff{0.},
-                redAttcoeff{0.}, meanEnergy{0.}, characEnergy{0.},
+                redAttCoeff{0.}, meanEnergy{0.}, characEnergy{0.},
                 Te{0.}, driftVelocity{0.};
     };
 

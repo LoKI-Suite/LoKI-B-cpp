@@ -12,107 +12,108 @@
 #include "LinearAlgebra.h"
 #include "Power.h"
 #include "MacroscopicQuantities.h"
+#include "Event.h"
 
 // TODO: comment ElectronKinetics class
 
-namespace loki
-{
-using namespace Enumeration;
+namespace loki {
+    using namespace Enumeration;
 
-class ElectronKinetics
-{
-    EedfType eedfType;
-    uint8_t shapeParameter;
-    double mixingParameter;
-    double maxEedfRelError;
-    double maxPowerBalanceRelError;
-    IonizationOperatorType ionizationOperatorType;
-    GrowthModelType growthModelType;
-    bool includeEECollisions{false},
-        includeNonConservativeIonization{false},
-        includeNonConservativeAttachment{false},
-        hasSuperelastics{false};
+    class ElectronKinetics {
+        EedfType eedfType;
+        uint8_t shapeParameter;
+        double mixingParameter;
+        double maxEedfRelError;
+        double maxPowerBalanceRelError;
+        IonizationOperatorType ionizationOperatorType;
+        GrowthModelType growthModelType;
+        bool includeEECollisions{false},
+                includeNonConservativeIonization{false},
+                includeNonConservativeAttachment{false},
+                hasSuperelastics{false};
 
-    double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
+        double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
 
-    const WorkingConditions *workingConditions;
+        const WorkingConditions *workingConditions;
 
-    Grid grid;
+        Grid grid;
 
-    EedfGasMixture mixture;
+        EedfGasMixture mixture;
 
-    Matrix elasticMatrix,
-        fieldMatrix,
-        CARMatrix,
-        continuousMatrix,
-        inelasticMatrix,
-        ionConservativeMatrix,
-        ionizationMatrix,
-        ionSpatialGrowthD,
-        ionSpatialGrowthU,
-        attachmentMatrix,
-        attachmentConservativeMatrix,
-        fieldMatrixSpatGrowth,
-        fieldMatrixTempGrowth,
-        ionTemporalGrowth,
-        BAee;
+        Matrix elasticMatrix,
+                fieldMatrix,
+                CARMatrix,
+                continuousMatrix,
+                inelasticMatrix,
+                ionConservativeMatrix,
+                ionizationMatrix,
+                ionSpatialGrowthD,
+                ionSpatialGrowthU,
+                attachmentMatrix,
+                attachmentConservativeMatrix,
+                fieldMatrixSpatGrowth,
+                fieldMatrixTempGrowth,
+                ionTemporalGrowth,
+                BAee;
 
-    Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
+        Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
 
-    Vector eedf, firstAnisotropy;
+        Vector eedf, firstAnisotropy;
 
-    Power power;
+        Power power;
 
-    SwarmParameters swarmParameters;
+        SwarmParameters swarmParameters;
 
-    std::vector<uint32_t> superElasticThresholds;
+        std::vector<uint32_t> superElasticThresholds;
 
-public:
-    explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+    public:
+        explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
 
-    ~ElectronKinetics() = default;
+        Event<const Vector, const Power, const std::vector<EedfGas *>, const SwarmParameters,
+                const std::vector<RateCoefficient>, const std::vector<RateCoefficient>, const Vector> obtainedNewEedf;
 
-    // Copying this object is not allowed.
-    ElectronKinetics(const ElectronKinetics &other) = delete;
+        ~ElectronKinetics() = default;
 
-    void solve();
+        // Copying this object is not allowed.
+        ElectronKinetics(const ElectronKinetics &other) = delete;
 
-private:
-    void evaluateMatrix();
+        void solve();
 
-    void invertLinearMatrix();
+        const Grid *getGrid();
 
-    void invertMatrix(Matrix &matrix);
+    private:
+        void evaluateMatrix();
 
-    void evaluateElasticOperator();
+        void invertLinearMatrix();
 
-    void evaluateFieldOperator();
+        void invertMatrix(Matrix &matrix);
 
-    void evaluateCAROperator();
+        void evaluateElasticOperator();
 
-    void evaluateInelasticOperators();
+        void evaluateFieldOperator();
 
-    void evaluateIonizationOperator();
+        void evaluateCAROperator();
 
-    void evaluateAttachmentOperator();
+        void evaluateInelasticOperators();
 
-    void mixingDirectSolutions();
+        void evaluateIonizationOperator();
 
-    void solveSpatialGrowthMatrix();
+        void evaluateAttachmentOperator();
 
-    void solveTemporalGrowthMatrix();
+        void mixingDirectSolutions();
 
-    void solveEEColl();
+        void solveSpatialGrowthMatrix();
 
-    void evaluatePower(bool isFinalSolution);
+        void solveTemporalGrowthMatrix();
 
-    void evaluateSwarmParameters();
+        void solveEEColl();
 
-    void evaluateFirstAnisotropy();
+        void evaluatePower(bool isFinalSolution);
 
-    void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-              const Vector &x, const Vector &y);
-};
+        void evaluateSwarmParameters();
+
+        void evaluateFirstAnisotropy();
+    };
 } // namespace loki
 
 #endif //LOKI_CPP_ELECTRONKINETICS_H

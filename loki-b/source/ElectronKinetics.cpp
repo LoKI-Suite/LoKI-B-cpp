@@ -42,6 +42,8 @@ namespace loki {
 
         ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
+        attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+
         // TODO: Optimize this by checking whether these need to be created
         //  (by checking the corresponding flags). Whenever matrices are
         //  added together there needs to be a distinction whether to add
@@ -70,36 +72,18 @@ namespace loki {
 
         evaluatePower(true);
 
-//        auto *powerPtr = (double *) &power;
-//
-//        for (uint32_t i = 0; i < 25; ++i) {
-//            std::cerr << std::setprecision(16) << powerPtr[i] << std::endl;
-//        }
-
         mixture.evaluateRateCoefficients(eedf);
-
-//        for (const RateCoefficient &rateCoeff : mixture.rateCoefficients) {
-//            Log<Message>::Notify(*rateCoeff.collision);
-//            std::cerr << "Inelastic:  \t" << std::setprecision(16) << rateCoeff.inelastic <<
-//                      "\nSuperelastic:\t" << rateCoeff.superelastic << std::endl;
-//        }
 
         evaluateSwarmParameters();
 
-//        auto *swarmPtr = (double *)&swarmParameters;
-//
-//        for (uint32_t i = 0; i < 8; ++i) {
-//            std::cerr << std::setprecision(16) << swarmPtr[i] << std::endl;
-//        }
-
         evaluateFirstAnisotropy();
 
-//        for (uint32_t i = 0; i < grid.cellNumber; ++i) {
-//            printf("%.16e\n", firstAnisotropy[i]);
-//        }
+        obtainedNewEedf.emit(eedf, power, mixture.gasses, swarmParameters, mixture.rateCoefficients,
+                             mixture.rateCoefficientsExtra, firstAnisotropy);
+    }
 
-        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
-//        this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
+    const Grid *ElectronKinetics::getGrid() {
+        return &grid;
     }
 
     void ElectronKinetics::invertLinearMatrix() {
@@ -698,8 +682,8 @@ namespace loki {
 
             alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
-            if ((alphaRedEffNew == 0 || abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
-                (((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError || iter > 150)) {
+            if (((alphaRedEffNew == 0 || abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
+                 ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) || iter > 150) {
                 hasConverged = true;
 
                 if (iter > 150 && !includeEECollisions)
@@ -1142,7 +1126,7 @@ namespace loki {
         }
 
         swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
-        swarmParameters.redAttcoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
+        swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
         swarmParameters.meanEnergy = grid.step * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
 
@@ -1195,21 +1179,6 @@ namespace loki {
                                                                            (2. * e * grid.getCells().array() *
                                                                             cellCrossSection.array()));
         }
-    }
-
-    void ElectronKinetics::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-                                const Vector &x, const Vector &y) {
-        std::cout << "unset key" << std::endl;
-        std::cout << "set xlabel \"" << xlabel << "\"" << std::endl;
-        std::cout << "set ylabel \"" << ylabel << "\"" << std::endl;
-        std::cout << "set title \"" << title << "\"" << std::endl;
-        std::cout << "set xrange [" << x[0] << ":" << x[x.size() - 1] << "]" << std::endl;
-        // std::cout << "set logscale y" << std::endl;
-        std::cout << "plot '-' w l" << std::endl;
-        for (uint32_t i = 0; i < x.size(); ++i) {
-            std::cout << x[i] << "\t" << y[i] << '\n';
-        }
-        std::cout << "e" << std::endl;
     }
 } // namespace loki
 

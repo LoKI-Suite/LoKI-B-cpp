@@ -19,7 +19,7 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/EedfState.cpp  ${src}/Setup.cpp
         ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
         ${src}/CrossSection.cpp ${src}/EedfGasMixture.cpp
-        ${src}/EedfCollision.cpp ${src}/Power.cpp)
+        ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
@@ -27,14 +27,14 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
-        ${h}/Power.h ${h}/MacroscopicQuantities.h)
+        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/StandardPaths.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
 add_executable(loki ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
 
 target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
 target_link_directories(loki PRIVATE ${dep} ${mkl}/lib/intel64)
-target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
+target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
 
 # -- library version -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions} ${src}/main.cpp)

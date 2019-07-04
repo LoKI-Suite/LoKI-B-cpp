@@ -6,6 +6,7 @@
 #define LOKI_CPP_ENUMERATION_H
 
 #include <cstdint>
+#include <string>
 
 namespace loki::Enumeration {
 
@@ -57,6 +58,8 @@ namespace loki::Enumeration {
         none
     };
 
+    static const std::string collisionTypeName[7]{"Effective", "Elastic", "Excitation", "Vibrational", "Rotational",
+                                                  "Ionization", "Attachment"};
 }
 
 #endif //LOKI_CPP_ENUMERATION_H

@@ -59,7 +59,7 @@ electronKinetics:
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
       maxEnergy: 20
-      cellNumber: 2000
+      cellNumber: 1000
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
@@ -79,8 +79,8 @@ gui:
 
 % ---  configuration of the output files ---
 output:
-  isOn: false
-  folder: simulation1
+  isOn: true
+  folder: simulation
   dataFiles:
     - eedf
     - swarmParameters

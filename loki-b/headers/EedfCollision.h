@@ -44,6 +44,8 @@ namespace loki {
                                                const double OPBParameter);
 
         RateCoefficient evaluateRateCoefficient(const Vector &eedf);
+
+        std::string typeAsString() const;
     };
 }
 
