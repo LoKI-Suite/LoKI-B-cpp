@@ -10,8 +10,8 @@
 
 namespace loki {
 
-    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
-            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
+//    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
+//            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
     CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in)
             : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {

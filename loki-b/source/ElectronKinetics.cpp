@@ -21,6 +21,8 @@ namespace loki {
 
         mixture.initialize(setup, workingConditions);
 
+        grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
+
         this->eedfType = setup.eedfType;
         this->shapeParameter = setup.shapeParameter;
         this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
@@ -64,6 +66,34 @@ namespace loki {
             this->mixingDirectSolutions();
         } else {
             this->invertLinearMatrix();
+        }
+
+        if (grid.isSmart) {
+            double decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+
+            while (decades < grid.minEedfDecay) {
+                grid.updateMaxEnergy(grid.lastNode() * (1 + grid.updateFactor));
+
+                if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions) {
+                    this->mixingDirectSolutions();
+                } else {
+                    this->invertLinearMatrix();
+                }
+
+                decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+            }
+
+            while (decades > grid.maxEedfDecay) {
+                grid.updateMaxEnergy(grid.lastNode() / (1 + grid.updateFactor));
+
+                if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions) {
+                    this->mixingDirectSolutions();
+                } else {
+                    this->invertLinearMatrix();
+                }
+
+                decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+            }
         }
 
 //        for (uint32_t i = 0; i < eedf.size(); ++i) {
@@ -132,7 +162,7 @@ namespace loki {
 //
 //            matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
 //
-//            LinAlg::hessenberg(matrix.data(), eedf.data(), p, grid.cellNumber);
+//            LinAlg::hessenberg(matrix.data(), eedf.data(), grid.cellNumber);
 //
 //            delete[] p;
 
@@ -141,12 +171,11 @@ namespace loki {
             b[0] = 1;
 
             matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
-
             eedf = matrix.partialPivLu().solve(b);
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+//        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
         eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
     }
@@ -173,10 +202,10 @@ namespace loki {
                                      superElasticThresholds.end());
 
         // TODO: remove this
-        Log<Message>::Notify("Superelastic thresholds:");
-        for (const auto entry : superElasticThresholds) {
-            std::cerr << entry << std::endl;
-        }
+//        Log<Message>::Notify("Superelastic thresholds:");
+//        for (const auto entry : superElasticThresholds) {
+//            std::cerr << entry << std::endl;
+//        }
     }
 
     void ElectronKinetics::evaluateElasticOperator() {
@@ -261,6 +290,8 @@ namespace loki {
     void ElectronKinetics::evaluateInelasticOperators() {
         const uint32_t cellNumber = grid.cellNumber;
 
+        inelasticMatrix.setZero();
+
         for (auto *gas : mixture.gasses) {
             for (auto vecIndex = (uint8_t) CollisionType::excitation;
                  vecIndex <= (uint8_t) CollisionType::rotational; ++vecIndex) {
@@ -323,6 +354,9 @@ namespace loki {
 
     void ElectronKinetics::evaluateIonizationOperator() {
         bool hasValidCollisions = false;
+
+        ionizationMatrix.setZero();
+        ionConservativeMatrix.setZero();
 
         for (const auto *gas : mixture.gasses) {
             for (const auto *collision : gas->collisions[(uint8_t) CollisionType::ionization]) {
@@ -794,7 +828,7 @@ namespace loki {
             CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
             if (((CIEffNew == 0 || abs(CIEffNew - CIEffOld) / CIEffOld < 1.e10) &&
-                ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) || iter > 150) {
+                 ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) || iter > 150) {
                 hasConverged = true;
 
                 if (iter > 150 && !includeEECollisions)

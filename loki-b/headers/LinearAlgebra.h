@@ -248,7 +248,8 @@ namespace loki {
     // thus row a is used to reduce row b
 
             for (uint32_t i = a; i < b; ++i) {
-                // Before we reduce a row, we have to find the row with the same starting element (underneath the sub diagonal)
+                // Before we reduce a row, we find the row starting that has the highest value starting element
+                // (thus the row needs to have its first element at position 'col', underneath the sub diagonal)
                 // and place this row such that its first element is on the sub diagonal
                 const uint32_t col = start + i - a;
 

@@ -37,7 +37,7 @@ namespace loki {
 
         const Grid *getGrid();
 
-        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
+//        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
 
     };
 }

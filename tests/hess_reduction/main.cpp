@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
 
     print(A, n);
 
-    hessRedOther(A, c, n, 3);
+    hessenbergReduction(A, c, 6, 3);
 
     std::cout << "\nAfter reduction\n";
 

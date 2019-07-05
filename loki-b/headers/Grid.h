@@ -13,12 +13,12 @@ namespace loki {
     class Grid {
         Vector cells, nodes;
 
-        // Smart grid
-        bool isSmart = false;
-        uint16_t minEedfDecay, maxEedfDecay;
-        double updateFactor;
-
     public:
+        // Smart grid
+        const uint16_t minEedfDecay, maxEedfDecay;
+        const double updateFactor;
+        const bool isSmart;
+
         uint32_t cellNumber;
         double step;
 
@@ -33,7 +33,13 @@ namespace loki {
 
         const double getNode(uint32_t index) const;
 
+        const double lastNode() const;
+
         const double getCell(uint32_t index) const;
+
+        const double lastCell() const;
+
+        void updateMaxEnergy(double value);
 
         //Events
         event updatedMaxEnergy1,
