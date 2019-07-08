@@ -41,6 +41,8 @@ namespace loki {
 
         void updateReducedField(double value);
 
+        void updateElectronTemperature(double value);
+
         /*
          * Technically we only need one 'updatedGasTemperature' event, since we can control
          * the order of the listeners.
@@ -56,10 +58,6 @@ namespace loki {
               updatedChamberLength,
               updatedReducedField,
               updatedExcitationFrequency;
-
-        // TODO: add functions (or a single templated function of some sort) to update
-        //  any variables that can be a range. E.g. at this moment this is 'electronTemperature'
-        //  and 'reducedField'.
 
     private:
         void linkToArgumentMap();

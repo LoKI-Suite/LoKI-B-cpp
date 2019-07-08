@@ -68,7 +68,8 @@ namespace loki {
 
         crossSection->interpolate(superElasticEnergies, result);
 
-        // TODO: give errors
+        if (target->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*target);
+        if (products[0]->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
 
         const double swRatio = target->statisticalWeight / products[0]->statisticalWeight;
 
@@ -223,7 +224,8 @@ namespace loki {
             const double tStatWeight = target->statisticalWeight,
                     pStatWeight = products[0]->statisticalWeight;
 
-            //TODO: check if one of the two is zero
+            if (tStatWeight <= 0.) Log<NoStatWeight>::Error(*target);
+            if (pStatWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
 
             const double statWeightRatio = tStatWeight / pStatWeight;
 

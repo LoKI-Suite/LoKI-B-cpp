@@ -83,6 +83,8 @@ namespace loki {
                 if (linkCollision(collision, isExtra)) {
                     collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
                                                                isElasticOrEffective, in);
+
+                    hasCollisions[(uint8_t)collision->type] = true;
                 }
             }
         }
@@ -113,8 +115,6 @@ namespace loki {
         auto *target = collision->getTarget();
 
         Log<Message>::Notify(*collision);
-
-        // TODO: threshold <= umax check should probably be performed here.
 
         // Check if the collision already exists. If so delete the new entry and return false.
         if (target->hasCollision(collision, isExtra)) {

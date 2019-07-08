@@ -331,59 +331,6 @@ namespace loki {
 
             return x;
         }
-
-        /*static void gaussSeidel(const double *A, double *x, const double *b, const double *norm, const uint32_t n) {
-            double maxResidual = 0., residual = 0.;
-            uint32_t iter = 0;
-
-            auto *xOld = new double[n];
-
-            // TODO: Solve for non-normalized arrays, but calculate residuals on normalized?
-
-            do {
-                maxResidual = 0.;
-                std::swap(xOld, x);
-                iter++;
-
-                for (uint32_t i = 0; i < n; ++i) {
-                    double sum = 0.;
-
-                    for (uint32_t j = 0; j < i; ++j) {
-                        sum += A[j * n + i] * x[j];
-                    }
-                    for (uint32_t j = i + 1; j < n; ++j) {
-                        sum += A[j * n + i] * xOld[j];
-                    }
-
-                    x[i] = (b[i] - sum) / A[i * n + i];
-                }
-
-                // TODO: this can be optimized.
-
-    //                double normSum = 0, normSumOld = 0;
-    //                for (uint32_t i = 0; i < n; ++i) {
-    //                    normSumOld += xOld[i] * norm[i];
-    //                    normSum += x[i] * norm[i];
-    //                }
-
-
-                for (uint32_t i = 0; i < n; ++i) {
-    //                    xOld[i] /= normSumOld;
-    //                    x[i] /= normSum;
-                    residual = std::abs(x[i] - xOld[i]) / std::max(x[i], xOld[i]);
-
-                    if (residual > maxResidual)
-                        maxResidual = residual;
-                }
-
-                std::cerr << maxResidual << std::endl;
-            } while (maxResidual > 1.e-5);
-
-            if (iter % 2 == 1)
-                std::swap(xOld, x);
-
-            delete[] xOld;
-        }*/
     };
 }
 

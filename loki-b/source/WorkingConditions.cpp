@@ -45,6 +45,12 @@ namespace loki {
         updatedReducedField.emit();
     }
 
+    void WorkingConditions::updateElectronTemperature(double value) {
+        electronTemperature = value;
+
+        updatedElectronTemperature.emit();
+    }
+
     void WorkingConditions::linkToArgumentMap() {
         argumentMap.emplace("gasTemperature", &gasTemperature);
     }

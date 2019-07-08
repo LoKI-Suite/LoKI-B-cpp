@@ -260,8 +260,6 @@ namespace loki {
          * the base class version to load the properties declared in the base class.
          */
 
-        // TODO: fix loading of gas fractions (does not work correctly when there are multiple gasses involved).
-
         virtual void loadGasProperties(const GasPropertiesSetup &setup) {
             std::string fileBuffer;
 

@@ -48,17 +48,17 @@ namespace loki {
 
         attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        // TODO: Optimize this by checking whether these need to be created
-        //  (by checking the corresponding flags). Whenever matrices are
-        //  added together there needs to be a distinction whether to add
-        //  these based on flags (as is already present for e.g. CAR).
-//        if (ionizationOperatorType != IonizationOperatorType::conservative)
-        ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+        if (ionizationOperatorType != IonizationOperatorType::conservative &&
+            mixture.hasCollisions[(uint8_t) CollisionType::ionization])
+            ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
+        if (mixture.hasCollisions[(uint8_t) CollisionType::attachment])
+            attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        A.setZero(grid.cellNumber);
-        B.setZero(grid.cellNumber);
+        if (includeEECollisions) {
+            A.setZero(grid.cellNumber);
+            B.setZero(grid.cellNumber);
+        }
 
         this->evaluateMatrix();
     }
@@ -194,20 +194,16 @@ namespace loki {
 
         evaluateInelasticOperators();
 
-        evaluateIonizationOperator();
+        if (mixture.hasCollisions[(uint8_t) CollisionType::ionization])
+            evaluateIonizationOperator();
 
-        evaluateAttachmentOperator();
+        if (mixture.hasCollisions[(uint8_t) CollisionType::attachment])
+            evaluateAttachmentOperator();
 
         // Sort and erase duplicates.
         std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
         superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                      superElasticThresholds.end());
-
-        // TODO: remove this
-//        Log<Message>::Notify("Superelastic thresholds:");
-//        for (const auto entry : superElasticThresholds) {
-//            std::cerr << entry << std::endl;
-//        }
     }
 
     void ElectronKinetics::evaluateElasticOperator() {
@@ -357,8 +353,10 @@ namespace loki {
     void ElectronKinetics::evaluateIonizationOperator() {
         bool hasValidCollisions = false;
 
-        ionizationMatrix.setZero();
         ionConservativeMatrix.setZero();
+
+        if (ionizationOperatorType != IonizationOperatorType::conservative)
+            ionizationMatrix.setZero();
 
         for (const auto *gas : mixture.gasses) {
             for (const auto *collision : gas->collisions[(uint8_t) CollisionType::ionization]) {
@@ -995,7 +993,6 @@ namespace loki {
             iter++;
         }
 
-        // TODO: optionally use alphaEE in calculations
         alphaEE = alpha;
 
         std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
@@ -1093,8 +1090,6 @@ namespace loki {
                           power.attachmentIne;
         power.superelastic = power.excitationSup + power.vibrationalSup + power.rotationalSup;
 
-        // TODO: The power per gas is not stored in the main power structure for now.
-
         double totalGain = 0., totalLoss = 0.;
 
         double powerValues[13]{power.field, power.elasticGain, power.elasticLoss, power.carGain, power.carLoss,
@@ -1170,7 +1165,8 @@ namespace loki {
 
         swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
 
-        // TODO: update Electron Temperature in workingConditions structure
+        // TODO: is this correct? (simulations after the first will have a different value for Te).
+        workingConditions->updateElectronTemperature(swarmParameters.Te);
     }
 
     void ElectronKinetics::evaluateFirstAnisotropy() {

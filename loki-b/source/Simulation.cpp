@@ -5,14 +5,6 @@
 #include "Simulation.h"
 #include <chrono>
 
-// TODO: It might deem necessary to pass the full ElectronKineticsSetup structure
-//  to the WorkingConditions constructor (such that we can also check whether it
-//  is enabled).
-// TODO [FUTURE]: We might want to extend the range behaviour of the reduced field to other settings
-//  in the working conditions. In this case one can link a function to update the corresponding member variable
-//  to a range and let a 'manager' class handle the next value to update (such that all combinations of values
-//  appear once).
-
 namespace loki {
     Simulation::Simulation(const loki::Setup &setup)
             : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
@@ -38,7 +30,7 @@ namespace loki {
             if (multipleSimulations) {
                 do {
                     // DONE: update working conditions with the next value in the range.
-                    // TODO: update the output class so it creates subfolders.
+                    // DONE: update the output class so it creates subfolders.
                     electronKinetics->solve();
                 } while (jobManager.nextJob());
             } else {
