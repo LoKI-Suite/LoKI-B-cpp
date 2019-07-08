@@ -36,6 +36,15 @@ namespace loki {
         linkToArgumentMap();
     }
 
+    void WorkingConditions::updateReducedField(double value) {
+        reducedField = value;
+        reducedFieldSI = reducedField * 1.e-21;
+
+        Log<Message>::Notify(value);
+
+        updatedReducedField.emit();
+    }
+
     void WorkingConditions::linkToArgumentMap() {
         argumentMap.emplace("gasTemperature", &gasTemperature);
     }

@@ -34,7 +34,7 @@ namespace loki {
 
         double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
 
-        const WorkingConditions *workingConditions;
+        WorkingConditions *workingConditions;
 
         Grid grid;
 
@@ -67,7 +67,7 @@ namespace loki {
         std::vector<uint32_t> superElasticThresholds;
 
     public:
-        explicit ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+        explicit ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
 
         Event<const Vector, const Power, const std::vector<EedfGas *>, const SwarmParameters,
                 const std::vector<RateCoefficient>, const std::vector<RateCoefficient>, const Vector> obtainedNewEedf;

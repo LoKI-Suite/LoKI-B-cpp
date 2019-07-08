@@ -39,6 +39,8 @@ namespace loki {
         // Copying this object is not allowed.
         WorkingConditions(const WorkingConditions &other) = delete;
 
+        void updateReducedField(double value);
+
         /*
          * Technically we only need one 'updatedGasTemperature' event, since we can control
          * the order of the listeners.

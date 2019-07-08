@@ -21,7 +21,9 @@ namespace loki {
         const Grid *grid;
         const WorkingConditions *workingConditions;
 
-        std::string folder;
+        std::string folder, subFolder;
+
+        const JobManager *jobManager;
 
         bool saveEedf{false}, savePower{false}, saveSwarm{false}, saveRates{false}, saveTable{false};
 
@@ -30,7 +32,8 @@ namespace loki {
         event simPathExists;
 
     public:
-        explicit Output(const OutputSetup &setup, const Grid *grid, const WorkingConditions *workingConditions);
+        explicit Output(const OutputSetup &setup, const Grid *grid, const WorkingConditions *workingConditions,
+                        const JobManager *jobManager);
 
         void saveCycle(const Vector &eedf, const Power &power, const std::vector<EedfGas *> &gasses,
                        const SwarmParameters &swarmParameters,

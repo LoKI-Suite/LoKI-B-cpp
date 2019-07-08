@@ -14,8 +14,8 @@
 
 #include "Enumeration.h"
 #include "InputStructures.h"
-
-// TODO: Centralize input path
+#include "JobSystem.h"
+#include "StandardPaths.h"
 
 namespace loki {
     struct Parse {
@@ -352,7 +352,7 @@ namespace loki {
 
         static bool statePropertyFile(const std::string &fileName,
                                       std::vector<std::pair<StateEntry, double>> &entries) {
-            const std::string inputPath = "../Input/";
+            const std::string inputPath = INPUT "/";
 
             std::ifstream in(inputPath + fileName);
 
@@ -451,7 +451,7 @@ namespace loki {
          */
 
         static bool stringBufferFromFile(const std::string &fileName, std::string &buffer) {
-            std::ifstream in("../Input/" + fileName);
+            std::ifstream in(INPUT "/" + fileName);
 
             if (!in.is_open()) return false;
 
@@ -496,13 +496,46 @@ namespace loki {
             return (bool) (ss >> value);
         }
 
-    private:
-
         static bool isNumerical(const std::string &str) {
             std::regex reNum(R"(\s*\d*\.?\d+\s*)");
 
             return std::regex_match(str, reNum);
         }
+
+        static Range getRange(const std::string &rangeString, bool &success) {
+            const std::regex r(
+                    R"(\s*((?:logspace\()|(?:linspace\())\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
+            std::smatch m;
+
+            // No checking since this has already been performed once this function is called.
+            if (!std::regex_search(rangeString, m, r)) {
+                success = false;
+                return Range(0., 0., 0, false);
+            }
+
+            std::stringstream ss;
+
+
+            const std::string function = m.str(1);
+
+            double start, stop;
+            uint32_t steps;
+
+            ss << m[2];
+            ss >> start;
+            ss.clear();
+            ss << m[3];
+            ss >> stop;
+            ss.clear();
+            ss << m[4];
+            ss >> steps;
+
+            success = true;
+
+            return Range(start, stop, steps, function[1] == 'o');
+        }
+
+    private:
 
         /* -- PARSING RANGES -- */
 
@@ -523,7 +556,7 @@ namespace loki {
 
             if (function[1] == 'o') {
                 double power;
-                bool success = (bool)(ss >> power);
+                bool success = (bool) (ss >> power);
 
                 if (function.back() == '-') power = -power;
 

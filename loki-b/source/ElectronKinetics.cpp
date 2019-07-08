@@ -13,7 +13,7 @@
 //  the only operators to overload).
 
 namespace loki {
-    ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
+    ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
             : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid),
               g_c(grid.cellNumber), eedf(grid.cellNumber), elasticMatrix(grid.cellNumber, grid.cellNumber),
               continuousMatrix(grid.cellNumber, grid.cellNumber), attachmentMatrix(grid.cellNumber, grid.cellNumber),
@@ -22,6 +22,8 @@ namespace loki {
         mixture.initialize(setup, workingConditions);
 
         grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
+
+        workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
         this->eedfType = setup.eedfType;
         this->shapeParameter = setup.shapeParameter;

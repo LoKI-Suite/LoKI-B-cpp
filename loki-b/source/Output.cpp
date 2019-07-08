@@ -12,8 +12,9 @@
 namespace loki {
     namespace fs = std::filesystem;
 
-    Output::Output(const OutputSetup &s, const Grid *grid, const WorkingConditions *workingConditions)
-            : folder(OUTPUT "/" + s.folder), grid(grid), workingConditions(workingConditions) {
+    Output::Output(const OutputSetup &s, const Grid *grid, const WorkingConditions *workingConditions,
+                   const JobManager *jobManager)
+            : folder(OUTPUT "/" + s.folder), grid(grid), workingConditions(workingConditions), jobManager(jobManager) {
 
         for (const auto &entry : s.dataFiles) {
             if (entry == "eedf") {
@@ -43,18 +44,23 @@ namespace loki {
                            const std::vector<RateCoefficient> &rateCoefficients,
                            const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy) {
 
+        subFolder = jobManager->getCurrentJobFolder();
+
+        fs::path subPath(folder + '/' + subFolder);
+        fs::create_directory(subPath);
+
         if (saveEedf) writeEedf(eedf, firstAnisotropy, grid->getCells());
         if (saveSwarm) writeSwarm(swarmParameters);
         if (savePower) writePower(power, gasses);
         if (saveRates) writeRateCoefficients(rateCoefficients, extraRateCoefficients);
         if (saveTable) writeLookuptable(power, swarmParameters);
 
-        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid->getCells(), eedf);
+//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid->getCells(), eedf);
 //        this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
     }
 
     void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) {
-        auto *file = std::fopen((folder + "/eedf.txt").c_str(), "w");
+        auto *file = std::fopen((folder + "/" + subFolder + "/eedf.txt").c_str(), "w");
 
         fprintf(file, "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy\n");
 
@@ -66,7 +72,7 @@ namespace loki {
     }
 
     void Output::writeSwarm(const SwarmParameters &swarmParameters) {
-        auto *file = std::fopen((folder + "/swarm_parameters.txt").c_str(), "w");
+        auto *file = std::fopen((folder + "/" + subFolder + "/swarm_parameters.txt").c_str(), "w");
 
         fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField);
         fprintf(file, "  Reduced diffusion coefficient = %#.14e (1/(ms))\n", swarmParameters.redDiffCoeff);
@@ -82,7 +88,7 @@ namespace loki {
     }
 
     void Output::writePower(const Power &power, const std::vector<EedfGas *> &gasses) {
-        auto *file = std::fopen((folder + "/power_balance.txt").c_str(), "w");
+        auto *file = std::fopen((folder + "/" + subFolder + "/power_balance.txt").c_str(), "w");
 
         fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
         fprintf(file, "           Elastic collisions (gain) = %#+.14e (eVm3/s)\n", power.elasticGain);
@@ -161,7 +167,7 @@ namespace loki {
 
     void Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                        const std::vector<RateCoefficient> &extraRateCoefficients) {
-        auto *file = std::fopen((folder + "/rate_coefficients.txt").c_str(), "w");
+        auto *file = std::fopen((folder + "/" + subFolder + "/rate_coefficients.txt").c_str(), "w");
 
         fprintf(file, "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description\n");
 

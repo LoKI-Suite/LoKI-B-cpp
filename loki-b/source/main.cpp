@@ -25,7 +25,7 @@ using namespace loki::Enumeration;
 // TODO: Steps to finishing the project:
 //  1. [DONE] Write functions to compute swarm parameters and rate coefficients
 //  2. [DONE] Write a class to write the output to file
-//  3. Implement the smart grid
+//  3. [DONE] Implement the smart grid
 //  4. Implement a simple version of the jobs
 //  5. Separate backend and front end
 
