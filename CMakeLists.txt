@@ -32,20 +32,20 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/StandardPaths.h ${h}/JobSystem.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
-add_executable(loki ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
-
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
-target_link_directories(loki PRIVATE ${dep} ${mkl}/lib/intel64)
-target_link_libraries(loki PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
-
-# -- library version -- #
-add_library(loki_l ${headers} ${cpp} ${property_functions} ${src}/main.cpp)
+# -- loki library -- #
+add_library(loki_l ${headers} ${cpp} ${property_functions})
 
 target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
 target_link_directories(loki_l PRIVATE ${dep} ${mkl}/lib/intel64)
-target_link_libraries(loki_l PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
+target_link_libraries(loki_l PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
 
-# set_target_properties(loki_l PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+# -- loki default front end -- #
+add_executable(loki ${src}/main.cpp)
+
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
+target_link_directories(loki PRIVATE build ${mkl}/lib/intel64)
+target_link_libraries(loki PRIVATE loki_l mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
+
 # --- tests --- #
 
 # -- loki_tests -- #

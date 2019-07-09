@@ -26,6 +26,9 @@ namespace loki {
         JobManager jobManager;
 
     public:
+        ResultEvent obtainedResults;
+        Event<std::string> outputPathExists;
+    public:
         explicit Simulation(const Setup &setup);
 
         ~Simulation();

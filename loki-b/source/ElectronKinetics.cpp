@@ -55,10 +55,8 @@ namespace loki {
         if (mixture.hasCollisions[(uint8_t) CollisionType::attachment])
             attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        if (includeEECollisions) {
-            A.setZero(grid.cellNumber);
-            B.setZero(grid.cellNumber);
-        }
+        A.setZero(grid.cellNumber);
+        B.setZero(grid.cellNumber);
 
         this->evaluateMatrix();
     }
@@ -110,7 +108,7 @@ namespace loki {
 
         evaluateFirstAnisotropy();
 
-        obtainedNewEedf.emit(eedf, power, mixture.gasses, swarmParameters, mixture.rateCoefficients,
+        obtainedNewEedf.emit(grid, eedf, power, mixture.gasses, swarmParameters, mixture.rateCoefficients,
                              mixture.rateCoefficientsExtra, firstAnisotropy);
     }
 

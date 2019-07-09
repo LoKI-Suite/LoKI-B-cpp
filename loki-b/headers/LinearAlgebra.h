@@ -13,7 +13,7 @@
 #define EIGEN_USE_MKL_ALL
 #define USE_OPENMP
 
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 
 namespace loki {
 

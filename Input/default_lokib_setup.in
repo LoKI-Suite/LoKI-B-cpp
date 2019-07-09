@@ -58,12 +58,12 @@ electronKinetics:
       - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 10
+      maxEnergy: 40
       cellNumber: 1000
-      smartGrid:                       % configuration of the smart grid
-        minEedfDecay: 10               % minimum number of decade-fall for the EEDF
-        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
-        updateFactor: 0.05             % factor used to increase or decrease the maximum value of the energy grid
+%      smartGrid:                       % configuration of the smart grid
+%        minEedfDecay: 10               % minimum number of decade-fall for the EEDF
+%        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
+%        updateFactor: 0.05             % factor used to increase or decrease the maximum value of the energy grid
     maxPowerBalanceRelError: 1e-9      % threshold for the relative power balance warning message
     nonLinearRoutines:
       algorithm: mixingDirectSolutions % mixingDirectSolutions or iterativeSolution

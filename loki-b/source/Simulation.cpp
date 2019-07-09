@@ -12,25 +12,27 @@ namespace loki {
               jobManager(&workingConditions) {
 
         if (enableKinetics) {
-//            initializeFieldRange(setup.workingConditions);
             initializeJobs(setup.workingConditions);
 
             electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
+            electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
 
             if (enableOutput) {
-                output = new Output(setup.output, electronKinetics->getGrid(), &workingConditions, &jobManager);
+                output = new Output(setup.output, &workingConditions, &jobManager);
 
                 electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
+                output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
     }
 
     void Simulation::run() {
         if (enableKinetics) {
+            if (enableOutput) {
+                output->createPath();
+            }
             if (multipleSimulations) {
                 do {
-                    // DONE: update working conditions with the next value in the range.
-                    // DONE: update the output class so it creates subfolders.
                     electronKinetics->solve();
                 } while (jobManager.nextJob());
             } else {

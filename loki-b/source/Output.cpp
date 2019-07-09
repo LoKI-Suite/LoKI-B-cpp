@@ -12,9 +12,9 @@
 namespace loki {
     namespace fs = std::filesystem;
 
-    Output::Output(const OutputSetup &s, const Grid *grid, const WorkingConditions *workingConditions,
+    Output::Output(const OutputSetup &s, const WorkingConditions *workingConditions,
                    const JobManager *jobManager)
-            : folder(OUTPUT "/" + s.folder), grid(grid), workingConditions(workingConditions), jobManager(jobManager) {
+            : folder(OUTPUT "/" + s.folder), workingConditions(workingConditions), jobManager(jobManager) {
 
         for (const auto &entry : s.dataFiles) {
             if (entry == "eedf") {
@@ -29,17 +29,30 @@ namespace loki {
                 saveTable = true;
             }
         }
+    }
 
+    void Output::createPath() {
         fs::path path(folder);
 
         if (fs::exists(path)) {
-            simPathExists.emit();
+            Log<Message>::Warning("The output folder \"" + folder + "\" already exists, results might be overriden.");
+
+            std::string newFolder;
+
+            simPathExists.emit(newFolder);
+
+            if (!newFolder.empty()) {
+                folder = OUTPUT "/" + newFolder;
+                path = fs::path(folder);
+
+                fs::create_directories(path);
+            }
         } else {
             fs::create_directories(path);
         }
     }
 
-    void Output::saveCycle(const Vector &eedf, const Power &power, const std::vector<EedfGas *> &gasses,
+    void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Power &power, const std::vector<EedfGas *> &gasses,
                            const SwarmParameters &swarmParameters,
                            const std::vector<RateCoefficient> &rateCoefficients,
                            const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy) {
@@ -49,14 +62,11 @@ namespace loki {
         fs::path subPath(folder + '/' + subFolder);
         fs::create_directory(subPath);
 
-        if (saveEedf) writeEedf(eedf, firstAnisotropy, grid->getCells());
+        if (saveEedf) writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
         if (saveSwarm) writeSwarm(swarmParameters);
         if (savePower) writePower(power, gasses);
         if (saveRates) writeRateCoefficients(rateCoefficients, extraRateCoefficients);
         if (saveTable) writeLookuptable(power, swarmParameters);
-
-//        this->plot("Eedf", "Energy (eV)", "Eedf (Au)", grid->getCells(), eedf);
-//        this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
     }
 
     void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) {
@@ -64,7 +74,7 @@ namespace loki {
 
         fprintf(file, "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy\n");
 
-        for (uint32_t i = 0; i < grid->cellNumber; ++i) {
+        for (uint32_t i = 0; i < energies.size(); ++i) {
             fprintf(file, "%.14e %.14e %.14e\n", energies[i], eedf[i], firstAnisotropy[i]);
         }
 
@@ -221,22 +231,6 @@ namespace loki {
                 power.relativeBalance * 100);
 
         fclose(file);
+
     }
-
-    void Output::plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-                      const Vector &x, const Vector &y) {
-        std::cout << "unset key" << std::endl;
-        std::cout << "set xlabel \"" << xlabel << "\"" << std::endl;
-        std::cout << "set ylabel \"" << ylabel << "\"" << std::endl;
-        std::cout << "set title \"" << title << "\"" << std::endl;
-        std::cout << "set xrange [" << x[0] << ":" << x[x.size() - 1] << "]" << std::endl;
-        std::cout << "set logscale y" << std::endl;
-        std::cout << "plot '-' w l" << std::endl;
-        for (uint32_t i = 0; i < x.size(); ++i) {
-            std::cout << x[i] << "\t" << y[i] << '\n';
-        }
-        std::cout << "e" << std::endl;
-    }
-
-
 }

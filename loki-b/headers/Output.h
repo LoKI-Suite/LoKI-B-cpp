@@ -18,7 +18,6 @@
 
 namespace loki {
     class Output {
-        const Grid *grid;
         const WorkingConditions *workingConditions;
 
         std::string folder, subFolder;
@@ -29,19 +28,18 @@ namespace loki {
 
         bool initTable{true};
     public:
-        event simPathExists;
+        Event<std::string> simPathExists;
 
     public:
-        explicit Output(const OutputSetup &setup, const Grid *grid, const WorkingConditions *workingConditions,
+        explicit Output(const OutputSetup &setup, const WorkingConditions *workingConditions,
                         const JobManager *jobManager);
 
-        void saveCycle(const Vector &eedf, const Power &power, const std::vector<EedfGas *> &gasses,
-                       const SwarmParameters &swarmParameters,
+        void createPath();
+
+        void saveCycle(const Grid &energyGrid, const Vector &eedf, const Power &power,
+                       const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
                        const std::vector<RateCoefficient> &rateCoefficients,
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
-
-        void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-                  const Vector &x, const Vector &y);
 
     private:
         void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies);
