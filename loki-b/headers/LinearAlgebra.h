@@ -14,6 +14,7 @@
 #define USE_OPENMP
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 namespace loki {
 
@@ -21,6 +22,7 @@ namespace loki {
 
     typedef Eigen::MatrixXd Matrix;
     // typedef Eigen::internal::BandMatrix<double, Eigen::Dynamic, 1, 1> TridiagonalMatrix;
+    typedef Eigen::SparseMatrix<double> SparseMatrix;
     typedef Eigen::VectorXd Vector;
 
 #endif

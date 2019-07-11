@@ -16,8 +16,12 @@ namespace loki {
     ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
             : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid),
               g_c(grid.cellNumber), eedf(grid.cellNumber), elasticMatrix(grid.cellNumber, grid.cellNumber),
-              continuousMatrix(grid.cellNumber, grid.cellNumber), attachmentMatrix(grid.cellNumber, grid.cellNumber),
-              attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber) {
+              fieldMatrix(grid.cellNumber, grid.cellNumber), attachmentMatrix(grid.cellNumber, grid.cellNumber),
+              attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
+              ionSpatialGrowthD(grid.cellNumber, grid.cellNumber), ionSpatialGrowthU(grid.cellNumber, grid.cellNumber),
+              fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber),
+              fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber),
+              ionTemporalGrowth(grid.cellNumber, grid.cellNumber), boltzmannMatrix(grid.cellNumber, grid.cellNumber) {
 
         mixture.initialize(setup, workingConditions);
 
@@ -37,12 +41,7 @@ namespace loki {
         // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
         // mixture.grid->getNodes(), mixture.totalCrossSection);
 
-        elasticMatrix.setZero(grid.cellNumber, grid.cellNumber);
-        fieldMatrix.setZero(grid.cellNumber, grid.cellNumber);
         inelasticMatrix.setZero(grid.cellNumber, grid.cellNumber);
-
-        if (!mixture.CARGasses.empty())
-            CARMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
         ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
@@ -52,11 +51,49 @@ namespace loki {
             mixture.hasCollisions[(uint8_t) CollisionType::ionization])
             ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
-        if (mixture.hasCollisions[(uint8_t) CollisionType::attachment])
-            attachmentMatrix.setZero(grid.cellNumber, grid.cellNumber);
-
         A.setZero(grid.cellNumber);
         B.setZero(grid.cellNumber);
+
+        boltzmannMatrix.setZero();
+
+        // SPARSE INITIALIZATION
+        std::vector<Eigen::Triplet<double> > tridiagPattern;
+        tridiagPattern.reserve(3 * grid.cellNumber - 2);
+
+        for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+            if (k > 0)
+                tridiagPattern.emplace_back(k - 1, k, 0.);
+
+            tridiagPattern.emplace_back(k, k, 0.);
+
+            if (k < grid.cellNumber - 1)
+                tridiagPattern.emplace_back(k + 1, k, 0.);
+        }
+
+        elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+        fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+
+        if (!mixture.CARGasses.empty())
+            CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+
+        std::vector<Eigen::Triplet<double> > diagPattern;
+        diagPattern.reserve(grid.cellNumber);
+
+        for (uint32_t k = 0; k < grid.cellNumber; ++k) {
+            diagPattern.emplace_back(k, k, 0.);
+        }
+
+        if (mixture.hasCollisions[(uint8_t) CollisionType::attachment])
+            attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+
+        if (growthModelType == GrowthModelType::spatial) {
+            ionSpatialGrowthD.setFromTriplets(diagPattern.begin(), diagPattern.end());
+            ionSpatialGrowthU.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+            fieldMatrixSpatGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+        } else if (growthModelType == GrowthModelType::temporal) {
+            ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
+            fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+        }
 
         this->evaluateMatrix();
     }
@@ -117,15 +154,13 @@ namespace loki {
     }
 
     void ElectronKinetics::invertLinearMatrix() {
-        Matrix boltzmannMatrix; // = (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix).array() * 1.e20;
-
         if (!mixture.CARGasses.empty()) {
             boltzmannMatrix =
-                    (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
-                     attachmentConservativeMatrix).array() * 1.e20;
+                    1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
+                             attachmentConservativeMatrix);
         } else {
-            boltzmannMatrix = (elasticMatrix + fieldMatrix + inelasticMatrix + ionConservativeMatrix +
-                               attachmentConservativeMatrix).array() * 1.e20;
+            boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionConservativeMatrix +
+                                       attachmentConservativeMatrix);
         }
 
         invertMatrix(boltzmannMatrix);
@@ -175,7 +210,7 @@ namespace loki {
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-//        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
         eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
     }
@@ -216,13 +251,13 @@ namespace loki {
         g_c[g_c.size() - 1] = 0.;
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            elasticMatrix(k, k) = -(g_c[k] * factor1 + g_c[k + 1] * factor2);
+            elasticMatrix.coeffRef(k, k) = -(g_c[k] * factor1 + g_c[k + 1] * factor2);
 
             if (k > 0)
-                elasticMatrix(k, k - 1) = g_c[k] * factor2;
+                elasticMatrix.coeffRef(k, k - 1) = g_c[k] * factor2;
 
             if (k < grid.cellNumber - 1)
-                elasticMatrix(k, k + 1) = g_c[k + 1] * factor1;
+                elasticMatrix.coeffRef(k, k + 1) = g_c[k + 1] * factor1;
         }
     }
 
@@ -243,13 +278,13 @@ namespace loki {
         const double sqStep = grid.step * grid.step;
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            fieldMatrix(k, k) = -(g_E[k] + g_E[k + 1]) / sqStep;
+            fieldMatrix.coeffRef(k, k) = -(g_E[k] + g_E[k + 1]) / sqStep;
 
             if (k > 0)
-                fieldMatrix(k, k - 1) = g_E[k] / sqStep;
+                fieldMatrix.coeffRef(k, k - 1) = g_E[k] / sqStep;
 
             if (k < grid.cellNumber - 1)
-                fieldMatrix(k, k + 1) = g_E[k + 1] / sqStep;
+                fieldMatrix.coeffRef(k, k + 1) = g_E[k + 1] / sqStep;
         }
     }
 
@@ -273,13 +308,13 @@ namespace loki {
         g_CAR[grid.cellNumber] = 0.;
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            CARMatrix(k, k) = -(g_CAR[k] * factor1 + g_CAR[k + 1] * factor2);
+            CARMatrix.coeffRef(k, k) = -(g_CAR[k] * factor1 + g_CAR[k + 1] * factor2);
 
             if (k > 0)
-                CARMatrix(k, k - 1) = g_CAR[k] * factor2;
+                CARMatrix.coeffRef(k, k - 1) = g_CAR[k] * factor2;
 
             if (k < grid.cellNumber - 1)
-                CARMatrix(k, k + 1) = g_CAR[k + 1] * factor1;
+                CARMatrix.coeffRef(k, k + 1) = g_CAR[k + 1] * factor1;
         }
     }
 
@@ -488,7 +523,7 @@ namespace loki {
                     cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
                 for (uint32_t k = 0; k < cellNumber; ++k)
-                    attachmentMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                    attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
                 if (numThreshold == 0) continue;
 
@@ -520,16 +555,16 @@ namespace loki {
         if (includeGrowthModel) {
             switch (growthModelType) {
                 case GrowthModelType::spatial:
-                    ionSpatialGrowthD.setZero(numCells, numCells);
-                    ionSpatialGrowthU.setZero(numCells, numCells);
-                    fieldMatrixSpatGrowth.setZero(numCells, numCells);
+                    ionSpatialGrowthD.setZero();
+                    ionSpatialGrowthU.setZero();
+                    fieldMatrixSpatGrowth.setZero();
 
                     growthFunc = &ElectronKinetics::solveSpatialGrowthMatrix;
                     break;
 
                 case GrowthModelType::temporal:
-                    ionTemporalGrowth.setZero(numCells, numCells);
-                    fieldMatrixTempGrowth.setZero(numCells, numCells);
+                    ionTemporalGrowth.setZero();
+                    fieldMatrixTempGrowth.setZero();
 
                     growthFunc = &ElectronKinetics::solveTemporalGrowthMatrix;
                     break;
@@ -539,8 +574,8 @@ namespace loki {
         if (includeEECollisions) {
             alphaEE = 0.;
             BAee.setZero(numCells, numCells);
-            A.setZero(numCells);
-            B.setZero(numCells);
+            A.setZero();
+            B.setZero();
 
             if (!includeGrowthModel) {
                 Log<Message>::Notify("Starting e-e collision routine.");
@@ -581,25 +616,24 @@ namespace loki {
         for (uint32_t i = 0; i < grid.cellNumber; ++i)
             cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection[i] + mixture.totalCrossSection[i + 1]);
 
-        Matrix baseMatrix;
-
         if (!mixture.CARGasses.empty()) {
-            baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix +
-                                  attachmentMatrix);
+            boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix +
+                                       attachmentMatrix);
         } else {
-            baseMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+            boltzmannMatrix =
+                    1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
         }
 
         Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            baseDiag[k] = baseMatrix(k, k);
+            baseDiag[k] = boltzmannMatrix(k, k);
 
             if (k > 0)
-                baseSubDiag[k] = baseMatrix(k, k - 1);
+                baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
             if (k < grid.cellNumber - 1)
-                baseSupDiag[k] = baseMatrix(k, k + 1);
+                baseSupDiag[k] = boltzmannMatrix(k, k + 1);
         }
 
         if (includeEECollisions) {
@@ -607,7 +641,8 @@ namespace loki {
             B = alphaEE / grid.step * (BAee * eedf);
         }
 
-        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
+        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * Vector::Ones(grid.cellNumber).transpose() *
+                             (ionizationMatrix + attachmentMatrix);
 
         double CIEffNew = eedf.dot(integrandCI);
         double CIEffOld = CIEffNew / 3;
@@ -660,43 +695,47 @@ namespace loki {
             g_fieldSpatialGrowth[grid.cellNumber] = 0.;
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                fieldMatrixSpatGrowth(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid.step;
+                fieldMatrixSpatGrowth.coeffRef(k, k) =
+                        (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid.step;
 
                 if (k > 0)
-                    fieldMatrixSpatGrowth(k, k - 1) = -g_fieldSpatialGrowth[k] / grid.step;
+                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid.step;
 
                 if (k < grid.cellNumber - 1)
-                    fieldMatrixSpatGrowth(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid.step;
+                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid.step;
             }
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                ionSpatialGrowthD(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
+                ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
 
                 if (k > 0)
-                    ionSpatialGrowthU(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
 
                 if (k < grid.cellNumber - 1)
-                    ionSpatialGrowthU(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
             }
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                baseMatrix(k, k) =
-                        baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth(k, k) + ionSpatialGrowthD(k, k) - (A[k] + B[k]));
+                boltzmannMatrix(k, k) =
+                        baseDiag[k] +
+                        1.e20 * (fieldMatrixSpatGrowth.coeff(k, k) + ionSpatialGrowthD.coeff(k, k) - (A[k] + B[k]));
 
                 if (k > 0)
-                    baseMatrix(k, k - 1) =
+                    boltzmannMatrix(k, k - 1) =
                             baseSubDiag[k] +
-                            1.e20 * (fieldMatrixSpatGrowth(k, k - 1) + ionSpatialGrowthU(k, k - 1) + A[k - 1]);
+                            1.e20 *
+                            (fieldMatrixSpatGrowth.coeff(k, k - 1) + ionSpatialGrowthU.coeff(k, k - 1) + A[k - 1]);
 
                 if (k < grid.cellNumber - 1)
-                    baseMatrix(k, k + 1) =
+                    boltzmannMatrix(k, k + 1) =
                             baseSupDiag[k] +
-                            1.e20 * (fieldMatrixSpatGrowth(k, k + 1) + ionSpatialGrowthU(k, k + 1) + B[k + 1]);
+                            1.e20 *
+                            (fieldMatrixSpatGrowth.coeff(k, k + 1) + ionSpatialGrowthU.coeff(k, k + 1) + B[k + 1]);
             }
 
             Vector eedfNew = eedf;
 
-            invertMatrix(baseMatrix);
+            invertMatrix(boltzmannMatrix);
 
             CIEffOld = CIEffNew;
             CIEffNew = eedf.dot(integrandCI);
@@ -737,24 +776,23 @@ namespace loki {
                 EoN = workingConditions->reducedFieldSI,
                 WoN = workingConditions->reducedExcFreqSI;
 
-        Matrix baseMatrix;
-
         if (!mixture.CARGasses.empty()) {
-            baseMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+            boltzmannMatrix =
+                    1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
         } else {
-            baseMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+            boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
         }
 
         Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            baseDiag[k] = baseMatrix(k, k);
+            baseDiag[k] = boltzmannMatrix(k, k);
 
             if (k > 0)
-                baseSubDiag[k] = baseMatrix(k, k - 1);
+                baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
             if (k < grid.cellNumber - 1)
-                baseSupDiag[k] = baseMatrix(k, k + 1);
+                baseSupDiag[k] = boltzmannMatrix(k, k + 1);
         }
 
         if (includeEECollisions) {
@@ -762,7 +800,8 @@ namespace loki {
             B = alphaEE / grid.step * (BAee * eedf);
         }
 
-        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * (ionizationMatrix + attachmentMatrix).colwise().sum();
+        Vector integrandCI = (sqrt(2. * e / m) * grid.step) * Vector::Ones(grid.cellNumber).transpose() *
+                             (ionizationMatrix + attachmentMatrix);;
 
         double CIEffNew = eedf.dot(integrandCI);
         double CIEffOld = CIEffNew / 3.;
@@ -795,31 +834,31 @@ namespace loki {
             const double sqrStep = grid.step * grid.step;
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                fieldMatrixTempGrowth(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
+                fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
 
                 if (k > 0)
-                    fieldMatrixTempGrowth(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
+                    fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
 
                 if (k < grid.cellNumber - 1)
-                    fieldMatrixTempGrowth(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
+                    fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
 
-                ionTemporalGrowth(k, k) = -growthFactor * sqrt(grid.getCell(k));
+                ionTemporalGrowth.coeffRef(k, k) = -growthFactor * sqrt(grid.getCell(k));
             }
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                baseMatrix(k, k) =
-                        baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k) + ionTemporalGrowth(k, k) - (A[k] + B[k]));
+                boltzmannMatrix(k, k) =
+                        baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k) + ionTemporalGrowth.coeff(k, k) - (A[k] + B[k]));
 
                 if (k > 0)
-                    baseMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k - 1) + A[k - 1]);
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + A[k - 1]);
 
                 if (k < grid.cellNumber - 1)
-                    baseMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth(k, k + 1) + B[k + 1]);
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + B[k + 1]);
             }
 
             eedfNew = eedf;
 
-            invertMatrix(baseMatrix);
+            invertMatrix(boltzmannMatrix);
 
             CIEffOld = CIEffNew;
             CIEffNew = eedf.dot(integrandCI);
@@ -847,37 +886,36 @@ namespace loki {
                 ne = workingConditions->electronDensity,
                 n0 = workingConditions->gasDensity;
 
-        Matrix baseMatrix;
-
         // Splitting all possible options for the best performance.
 
         if (includeNonConservativeIonization || includeNonConservativeAttachment) {
             if (growthModelType == GrowthModelType::spatial) {
                 if (mixture.CARGasses.empty()) {
-                    baseMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
-                                          fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
+                    boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                                               fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU +
+                                               fieldMatrixSpatGrowth);
                 } else {
-                    baseMatrix =
+                    boltzmannMatrix =
                             1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
                                      fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
                 }
             } else if (growthModelType == GrowthModelType::temporal) {
                 if (mixture.CARGasses.empty()) {
-                    baseMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
-                                          ionTemporalGrowth + fieldMatrixTempGrowth);
+                    boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                                               ionTemporalGrowth + fieldMatrixTempGrowth);
                 } else {
-                    baseMatrix =
+                    boltzmannMatrix =
                             1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
                                      ionTemporalGrowth + fieldMatrixTempGrowth);
                 }
             }
         } else {
             if (mixture.CARGasses.empty()) {
-                baseMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
-                                      inelasticMatrix + fieldMatrix);
+                boltzmannMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
+                                           inelasticMatrix + fieldMatrix);
             } else {
-                baseMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
-                                      inelasticMatrix + fieldMatrix + CARMatrix);
+                boltzmannMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
+                                           inelasticMatrix + fieldMatrix + CARMatrix);
             }
         }
 
@@ -888,13 +926,13 @@ namespace loki {
         Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
 
         for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-            baseDiag[k] = baseMatrix(k, k);
+            baseDiag[k] = boltzmannMatrix(k, k);
 
             if (k > 0)
-                baseSubDiag[k] = baseMatrix(k, k - 1);
+                baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
             if (k < grid.cellNumber - 1)
-                baseSupDiag[k] = baseMatrix(k, k + 1);
+                baseSupDiag[k] = boltzmannMatrix(k, k + 1);
         }
 
         BAee.setZero(grid.cellNumber, grid.cellNumber);
@@ -941,16 +979,16 @@ namespace loki {
             B = (alpha / grid.step) * (BAee * eedf);
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                baseMatrix(k, k) = baseDiag[k] - 1.e20 * (A[k] + B[k]);
+                boltzmannMatrix(k, k) = baseDiag[k] - 1.e20 * (A[k] + B[k]);
 
                 if (k > 0)
-                    baseMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * A[k - 1];
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * A[k - 1];
 
                 if (k < grid.cellNumber - 1)
-                    baseMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * B[k + 1];
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * B[k + 1];
             }
 
-            invertMatrix(baseMatrix);
+            invertMatrix(boltzmannMatrix);
 
             evaluatePower(false);
 

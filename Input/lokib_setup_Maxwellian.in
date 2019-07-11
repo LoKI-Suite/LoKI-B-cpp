@@ -5,7 +5,7 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField: 50%linspace(10, 50, 5)           % in Td
+  reducedField: 10           % in Td
   electronTemperature: 0.03%linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
@@ -19,18 +19,12 @@ electronKinetics:
   isOn: true                           % true or false (to activate of deactivate the electron kinetics)
   eedfType: boltzmann                  % boltzmann or prescribedEedf (generalized expression Maxwellian/Druyvesteyn)
 %   shapeParameter: 1                  % prescribedEedf shape parameter from 1 (Maxwellian) to 2 (Druyvesteyn)
-  ionizationOperatorType: usingSDCS    % conservative, oneTakesAll, equalSharing or usingSDCS
-  growthModelType: temporal             % temporal or spatial
+  ionizationOperatorType: conservative % conservative, oneTakesAll, equalSharing or usingSDCS
+  growthModelType: spatial             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
-    - Nitrogen/N2_LXCat.txt
-    - Nitrogen/N2_rot_LXCat.txt
-    %- Oxygen/O2_LXCat.txt
-    %- Oxygen/O2_vib_LXCat.txt
-    %- Oxygen/O2_rot_LXCat.txt
-    %- Oxygen/O_LXCat.txt
-    %- Argon/Ar_LXCat.txt
-    %- Helium/He_LXCat.txt
+    - Model/Constant_Elastic.txt
+    - Model/Delta_Inelastic.txt
 %  LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
 %  effectiveCrossSectionPopulations:   % see doc
 %    - N2_effectivePop.txt
@@ -39,7 +33,7 @@ electronKinetics:
   gasProperties:                       % properties of the gases (S.I. Units)
     mass: Databases/masses.txt
     fraction:
-      - N2 = 1
+      - A = 1
     harmonicFrequency: Databases/harmonicFrequencies.txt
     anharmonicFrequency: Databases/anharmonicFrequencies.txt
     rotationalConstant: Databases/rotationalConstants.txt
@@ -47,19 +41,15 @@ electronKinetics:
     OPBParameter: Databases/OPBParameter.txt
   stateProperties:                     % properties of the states (S.I. Units except for the energy [eV])
     energy:
-      - N2(X,v=*) = harmonicOscillatorEnergy
-      - N2(X,v=0,J=*) = rigidRotorEnergy
+      - A(gnd) = 1.0
     statisticalWeight:
-      - N2(X,v=*) = 1.0
-      - N2(X,v=0,J=*) = rotationalDegeneracy_N2
+      - A(gnd) = 1.0
     population:
-      - N2(X) = 1.0
-      - Nitrogen/N2_vibpop.txt
-      - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
+      - A(gnd) = 1.0
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 20
-      cellNumber: 2000
+      maxEnergy: 30
+      cellNumber: 2999
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 10               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
@@ -80,7 +70,7 @@ gui:
 % ---  configuration of the output files ---
 output:
   isOn: true
-  folder: simulation
+  folder: model
   dataFiles:
     - eedf
     - swarmParameters

@@ -16,7 +16,6 @@ namespace loki {
 
         this->step = gridSetup.maxEnergy / cellNumber;
 
-        // TODO: Vector::LinSpaced is EIGEN specific.
         this->nodes = Vector::LinSpaced(cellNumber + 1, 0, gridSetup.maxEnergy);
         this->cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
 
