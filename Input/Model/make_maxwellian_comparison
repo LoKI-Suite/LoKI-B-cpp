@@ -1,0 +1,17 @@
+% --- DATA FOR THE TESTS ---
+k0 = 1e-12;                   % elastic momentum transfer constant rate coefficient
+Tg = 300;                     % gas temperature to be considered in the calculations
+Muam = 40;                    % mass of the heavy species to be considered in the calculations (in UAM)
+decades = 15;                 % decades of decay considered for the eedf
+reducedField = (0:1:50);      % range of reduced electric fields to be considered in the calculations
+
+% --- CONSTANTS USED IN THE TESTS ---
+kb = 1.38064852e-23;
+me = 9.10938356e-31;
+e = 1.6021766208e-19;
+uam = 1.660539040e-27;
+
+% --- THEORETICAL CALCULATIONS ---
+M = Muam*uam;
+Te = kb*Tg/e+M/(3*me^2*e)*(e*reducedField*1e-21/k0).^2;
+TeSimulation = zeros(size(Te));

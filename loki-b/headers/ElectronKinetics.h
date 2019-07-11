@@ -43,21 +43,31 @@ namespace loki {
 
         EedfGasMixture mixture;
 
-        Matrix elasticMatrix,
-                fieldMatrix,
-                CARMatrix,
-                continuousMatrix,
+        Matrix //elasticMatrix,
+//                fieldMatrix,
+//                CARMatrix,
                 inelasticMatrix,
                 ionConservativeMatrix,
                 ionizationMatrix,
+//                ionSpatialGrowthD,
+//                ionSpatialGrowthU,
+//                attachmentMatrix,
+                attachmentConservativeMatrix,
+//                fieldMatrixSpatGrowth,
+//                fieldMatrixTempGrowth,
+//                ionTemporalGrowth,
+                BAee,
+                boltzmannMatrix;
+
+        SparseMatrix elasticMatrix,
+                fieldMatrix,
+                CARMatrix,
+                attachmentMatrix,
                 ionSpatialGrowthD,
                 ionSpatialGrowthU,
-                attachmentMatrix,
-                attachmentConservativeMatrix,
                 fieldMatrixSpatGrowth,
                 fieldMatrixTempGrowth,
-                ionTemporalGrowth,
-                BAee;
+                ionTemporalGrowth;
 
         Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
 
