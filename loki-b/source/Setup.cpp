@@ -89,7 +89,7 @@ namespace loki {
         stringBuffer << file.rdbuf();
 
         // Store the file contents in a string and remove any comments.
-        std::string fileContent = Parse::removeComments(stringBuffer.str());
+        fileContent = Parse::removeComments(stringBuffer.str());
 
         return this->parse(fileContent);
     }

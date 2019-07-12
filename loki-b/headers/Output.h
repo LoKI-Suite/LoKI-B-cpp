@@ -27,21 +27,24 @@ namespace loki {
         bool saveEedf{false}, savePower{false}, saveSwarm{false}, saveRates{false}, saveTable{false};
 
         bool initTable{true};
+
+        std::string inputFile;
     public:
-        Event<std::string> simPathExists;
+        Event <std::string> simPathExists;
 
     public:
-        explicit Output(const OutputSetup &setup, const WorkingConditions *workingConditions,
-                        const JobManager *jobManager);
+        explicit Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
 
         void createPath();
 
-        void saveCycle(const Grid &energyGrid, const Vector &eedf, const Power &power,
+        void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                        const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
                        const std::vector<RateCoefficient> &rateCoefficients,
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
 
     private:
+        void writeInputFile();
+
         void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies);
 
         void writeSwarm(const SwarmParameters &swarmParameters);

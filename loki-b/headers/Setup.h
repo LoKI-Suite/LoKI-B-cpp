@@ -242,6 +242,8 @@ namespace loki {
         ElectronKineticsSetup electronKinetics;
         OutputSetup output;
 
+        std::string fileContent;
+
         Setup() = default;
         ~Setup() = default;
 
