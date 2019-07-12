@@ -19,8 +19,9 @@
 namespace loki {
     using namespace Enumeration;
 
-    typedef Event<const Grid, const Vector, const Power, const std::vector<EedfGas *>, const SwarmParameters,
-            const std::vector<RateCoefficient>, const std::vector<RateCoefficient>, const Vector> ResultEvent;
+    typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas *>,
+            const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>,
+            const Vector> ResultEvent;
 
     class ElectronKinetics {
         EedfType eedfType;

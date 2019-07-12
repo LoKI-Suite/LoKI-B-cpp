@@ -18,7 +18,7 @@ namespace loki {
             electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
 
             if (enableOutput) {
-                output = new Output(setup.output, &workingConditions, &jobManager);
+                output = new Output(setup, &workingConditions, &jobManager);
 
                 electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);

@@ -12,11 +12,12 @@
 namespace loki {
     namespace fs = std::filesystem;
 
-    Output::Output(const OutputSetup &s, const WorkingConditions *workingConditions,
+    Output::Output(const Setup &s, const WorkingConditions *workingConditions,
                    const JobManager *jobManager)
-            : folder(OUTPUT "/" + s.folder), workingConditions(workingConditions), jobManager(jobManager) {
+            : folder(OUTPUT "/" + s.output.folder), workingConditions(workingConditions), jobManager(jobManager),
+              inputFile(s.fileContent) {
 
-        for (const auto &entry : s.dataFiles) {
+        for (const auto &entry : s.output.dataFiles) {
             if (entry == "eedf") {
                 saveEedf = true;
             } else if (entry == "swarmParameters") {
@@ -50,10 +51,12 @@ namespace loki {
         } else {
             fs::create_directories(path);
         }
+
+        writeInputFile();
     }
 
-    void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Power &power, const std::vector<EedfGas *> &gasses,
-                           const SwarmParameters &swarmParameters,
+    void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
+                           const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
                            const std::vector<RateCoefficient> &rateCoefficients,
                            const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy) {
 
@@ -67,6 +70,17 @@ namespace loki {
         if (savePower) writePower(power, gasses);
         if (saveRates) writeRateCoefficients(rateCoefficients, extraRateCoefficients);
         if (saveTable) writeLookuptable(power, swarmParameters);
+    }
+
+    void Output::writeInputFile() {
+        auto *file = std::fopen((folder + "/setup.in").c_str(), "w");
+
+        fprintf(file, "%s", inputFile.c_str());
+
+        fclose(file);
+
+        // erase input file buffer since it only needs to be saved once.
+        inputFile.clear();
     }
 
     void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) {

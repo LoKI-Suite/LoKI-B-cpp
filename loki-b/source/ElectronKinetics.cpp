@@ -145,8 +145,8 @@ namespace loki {
 
         evaluateFirstAnisotropy();
 
-        obtainedNewEedf.emit(grid, eedf, power, mixture.gasses, swarmParameters, mixture.rateCoefficients,
-                             mixture.rateCoefficientsExtra, firstAnisotropy);
+        obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gasses, swarmParameters,
+                             mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
     }
 
     const Grid *ElectronKinetics::getGrid() {
@@ -834,7 +834,8 @@ namespace loki {
             const double sqrStep = grid.step * grid.step;
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
-                fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
+                fieldMatrixTempGrowth.coeffRef(k, k) =
+                        -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
 
                 if (k > 0)
                     fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
@@ -847,13 +848,16 @@ namespace loki {
 
             for (uint32_t k = 0; k < grid.cellNumber; ++k) {
                 boltzmannMatrix(k, k) =
-                        baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k) + ionTemporalGrowth.coeff(k, k) - (A[k] + B[k]));
+                        baseDiag[k] +
+                        1.e20 * (fieldMatrixTempGrowth.coeff(k, k) + ionTemporalGrowth.coeff(k, k) - (A[k] + B[k]));
 
                 if (k > 0)
-                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + A[k - 1]);
+                    boltzmannMatrix(k, k - 1) =
+                            baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + A[k - 1]);
 
                 if (k < grid.cellNumber - 1)
-                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + B[k + 1]);
+                    boltzmannMatrix(k, k + 1) =
+                            baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + B[k + 1]);
             }
 
             eedfNew = eedf;
