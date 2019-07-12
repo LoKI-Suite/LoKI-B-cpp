@@ -5,7 +5,7 @@ cmake-build-*/
 
 # VS Code specific
 
-build/
+# build/
 .vscode/
 
 # profiler
