@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -DNDEBUG -O3 -fopenmp -mavx2 -mfma -DNDEBUG   CMakeFiles/trait_test.dir/tests/trait_test/main.cpp.o  -o trait_test 
