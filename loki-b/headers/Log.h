@@ -19,37 +19,37 @@ namespace loki {
     template<typename ErrorType>
     class Log {
     public:
-        template<typename T>
+        template<typename ...T>
         inline
-        static void Notify(const T &message) {
+        static void Notify(const T &...message) {
             std::cerr << BOLD << "[Notice] ";
-            ErrorType::print(message);
+            ErrorType::print(message...);
             std::cerr << NC;
         }
 
-        template<typename T>
+        template<typename ...T>
         inline
-        static void Warning(const T &message) {
+        static void Warning(const T &...message) {
             std::cerr << YELLOW << "[Warning] ";
-            ErrorType::print(message);
+            ErrorType::print(message...);
             std::cerr << NC;
         }
 
-        template<typename T>
+        template<typename ...T>
         inline
-        static void Error(const T &message) {
+        static void Error(const T &...message) {
             std::cerr << RED << "[Error] ";
-            ErrorType::print(message);
+            ErrorType::print(message...);
             std::cerr << NC;
             throw std::runtime_error("Loki Exception");
         }
     };
 
     struct Message {
-        template<typename T>
+        template<typename ...T>
         inline
-        static void print(const T &t) {
-            std::cerr << t << std::endl;
+        static void print(const T &...t) {
+            (std::cerr << ... << t) << std::endl;
         }
     };
 
