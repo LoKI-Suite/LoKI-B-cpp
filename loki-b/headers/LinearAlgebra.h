@@ -1,3 +1,6 @@
+#ifndef LOKI_CPP_LINEARALGEBRA_H
+#define LOKI_CPP_LINEARALGEBRA_H
+
 //
 // Created by daan on 15-5-19.
 //
@@ -6,9 +9,6 @@
 #include "Log.h"
 
 #define EIGEN
-
-#ifndef LOKI_CPP_LINEARALGEBRA_H
-#define LOKI_CPP_LINEARALGEBRA_H
 
 #define EIGEN_USE_MKL_ALL
 #define USE_OPENMP
@@ -220,6 +220,8 @@ namespace loki {
             for (uint32_t i = lastRow; i < n; ++i) {
                 reduceRowToHess(A, i - lastRow + 1, i, i - lastRow, n);
             }
+
+            delete[] g;
         }
 
         static void hessenbergReduction(double *A, const uint32_t *c, uint32_t n, uint32_t cn) {
@@ -330,6 +332,10 @@ namespace loki {
             }
 
             x[n - 1] = t1;
+
+            delete[] c;
+            delete[] s;
+            delete[] v;
 
             return x;
         }
