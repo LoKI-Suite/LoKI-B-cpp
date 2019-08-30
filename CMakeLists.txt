@@ -67,7 +67,7 @@ target_link_libraries(lua_test liblua53.a dl)
 add_executable(typedef_test tests/typedef_test/main.cpp)
 
 # -- eigen_test -- #
-add_executable(eigen_test tests/eigen_test/main.cpp loki-b/headers/LinearAlgebra.h)
+add_executable(eigen_test tests/eigen_test/main.cpp tests/eigen_test/backend_abstraction.h loki-b/headers/LinearAlgebra.h)
 target_include_directories(eigen_test PRIVATE include)
 
 # -- event_listener -- #
