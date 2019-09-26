@@ -1,3 +1,9 @@
+
+
+
+
+
+
 workingConditions:
   reducedField: 10           
   electronTemperature: 0.03
@@ -7,6 +13,7 @@ workingConditions:
   electronDensity: 1e19                       
   chamberLength: 1.0                          
   chamberRadius: 1.0                          
+
 
 electronKinetics:
   isOn: true                           
@@ -18,6 +25,11 @@ electronKinetics:
   LXCatFiles:                          
     - Model/Constant_Elastic.txt
     - Model/Delta_Inelastic.txt
+
+
+
+
+
   gasProperties:                       
     mass: Databases/masses.txt
     fraction:
@@ -38,15 +50,23 @@ electronKinetics:
     energyGrid:                        
       maxEnergy: 30
       cellNumber: 3000
+
+
+
+
     maxPowerBalanceRelError: 1e-9      
     nonLinearRoutines:
       algorithm: mixingDirectSolutions 
       mixingParameter: 0.7             
       maxEedfRelError: 1e-9            
 
+
+
+
 gui: 
   isOn: false
   refreshFrequency: 1
+
 
 output:
   isOn: true

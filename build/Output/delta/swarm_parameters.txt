@@ -3,7 +3,7 @@
    Reduced mobility coefficient = 1.37662018417906e+24 (1/(msV))
    Reduced Townsend coefficient = 0.00000000000000e+00 (m2)
  Reduced attachment coefficient = 0.00000000000000e+00 (m2)
-                    Mean energy = 3.62944051330428e+00 (eV)
+                    Mean energy = 3.62944051330429e+00 (eV)
           Characteristic energy = 2.57070571027494e+00 (eV)
            Electron temperature = 2.41962700886952e+00 (eV)
                  Drift velocity = 1.37662018417906e+04 (m/s)
