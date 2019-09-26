@@ -1,0 +1,137 @@
+[
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/tiled_lu.dir/tests/tiled_lu_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/tiled_lu_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/tiled_lu_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/hess_reduction.dir/tests/hess_reduction/main.cpp.o -c /home/daan/github/luxurious-loki/tests/hess_reduction/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/hess_reduction/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/regex_test.dir/tests/regex_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/regex_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/regex_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/tests/lua_test/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/lua_test.dir/tests/lua_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/lua_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/lua_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/WorkingConditions.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/WorkingConditions.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/WorkingConditions.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/Grid.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/Grid.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/Grid.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/EedfGas.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/EedfGas.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/EedfGas.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/EedfState.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/EedfState.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/EedfState.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/Setup.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/Setup.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/Setup.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/Simulation.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/Simulation.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/Simulation.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/ElectronKinetics.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/ElectronKinetics.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/ElectronKinetics.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/CrossSection.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/CrossSection.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/CrossSection.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/EedfGasMixture.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/EedfGasMixture.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/EedfGasMixture.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/EedfCollision.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/EedfCollision.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/EedfCollision.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/Power.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/Power.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/Power.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/Output.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/Output.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/Output.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_l.dir/loki-b/source/JobSystem.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/JobSystem.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/JobSystem.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/loki-b/headers -I/home/daan/github/luxurious-loki/loki-b/property_functions -I/home/daan/github/luxurious-loki/include -I/home/daan/intel/compilers_and_libraries/linux/mkl/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki.dir/loki-b/source/main.cpp.o -c /home/daan/github/luxurious-loki/loki-b/source/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/loki-b/source/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/trait_test_no_indexing.dir/tests/trait_test_no_indexing/main.cpp.o -c /home/daan/github/luxurious-loki/tests/trait_test_no_indexing/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/trait_test_no_indexing/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/lu_test.dir/tests/lu_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/lu_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/lu_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/reflection.dir/tests/reflection_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/reflection_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/reflection_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/include -I/home/daan/github/luxurious-loki/loki-b/headers  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/loki_tests.dir/tests/loki_tests/main.cpp.o -c /home/daan/github/luxurious-loki/tests/loki_tests/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/loki_tests/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/typedef_test.dir/tests/typedef_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/typedef_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/typedef_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/hess_solver.dir/tests/hess_solver/main.cpp.o -c /home/daan/github/luxurious-loki/tests/hess_solver/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/hess_solver/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/trait_test.dir/tests/trait_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/trait_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/trait_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8   -I/home/daan/github/luxurious-loki/include  -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/eigen_test.dir/tests/eigen_test/main.cpp.o -c /home/daan/github/luxurious-loki/tests/eigen_test/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/eigen_test/main.cpp"
+},
+{
+  "directory": "/home/daan/github/luxurious-loki/build",
+  "command": "/usr/bin/g++-8    -O3 -DNDEBUG -O3 -march=native -fopenmp -DNDEBUG   -std=gnu++17 -o CMakeFiles/event_listener.dir/tests/event_listener/main.cpp.o -c /home/daan/github/luxurious-loki/tests/event_listener/main.cpp",
+  "file": "/home/daan/github/luxurious-loki/tests/event_listener/main.cpp"
+}
+]

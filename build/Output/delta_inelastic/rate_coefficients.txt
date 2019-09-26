@@ -1,0 +1,8 @@
+Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description
+1.50914285826769e-13 0.00000000000000e+00 e + A(gnd) -> e + A(gnd), Elastic
+9.45512098558502e+04 0.00000000000000e+00 e + A(gnd) -> e + A(exc), Excitation
+
+---------------------------
+* Extra Rate Coefficients *
+---------------------------
+
