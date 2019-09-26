@@ -43,7 +43,7 @@ target_link_libraries(loki_l PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core stdc
 add_executable(loki ${src}/main.cpp)
 
 target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
-target_link_directories(loki PRIVATE build ${mkl}/lib/intel64)
+target_link_directories(loki PRIVATE build ${dep} ${mkl}/lib/intel64)
 target_link_libraries(loki PRIVATE loki_l mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
 
 # --- tests --- #
