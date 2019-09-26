@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG -O3 -fopenmp -mavx2 -mfma -DNDEBUG   CMakeFiles/lua_test.dir/tests/lua_test/main.cpp.o  -o lua_test  -L/home/daan/github/luxurious-loki/tests/lua_test/dependencies/lua -Wl,-rpath,/home/daan/github/luxurious-loki/tests/lua_test/dependencies/lua -Wl,-Bstatic -llua53 -Wl,-Bdynamic -ldl 

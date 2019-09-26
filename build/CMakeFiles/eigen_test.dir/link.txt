@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG -O3 -fopenmp -mavx2 -mfma -DNDEBUG   CMakeFiles/eigen_test.dir/tests/eigen_test/main.cpp.o  -o eigen_test 

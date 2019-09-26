@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG -O3 -fopenmp -mavx2 -mfma -DNDEBUG   CMakeFiles/trait_test_no_indexing.dir/tests/trait_test_no_indexing/main.cpp.o  -o trait_test_no_indexing 

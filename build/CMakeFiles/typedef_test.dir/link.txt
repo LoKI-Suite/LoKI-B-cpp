@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG -O3 -fopenmp -mavx2 -mfma -DNDEBUG   CMakeFiles/typedef_test.dir/tests/typedef_test/main.cpp.o  -o typedef_test 

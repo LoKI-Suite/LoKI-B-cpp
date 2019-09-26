@@ -1,8 +1,0 @@
-Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description
-9.90184403511571e-13 0.00000000000000e+00 e + M(X) -> e + M(X), Effective
-9.90184403511571e-13 0.00000000000000e+00 e + M(X) -> e + M(X), Elastic
-
----------------------------
-* Extra Rate Coefficients *
----------------------------
-
