@@ -91,3 +91,9 @@ add_executable(hess_reduction tests/hess_reduction/main.cpp)
 
 # -- reflection_test -- #
 add_executable(reflection tests/reflection_test/main.cpp)
+
+# -- tiled_lu_test -- #
+add_executable(tiled_lu tests/tiled_lu_test/main.cpp tests/tiled_lu_test/LinearAlgebra.h tests/tiled_lu_test/TiledMatrix.h)
+target_include_directories(tiled_lu PRIVATE ${inc} ${mkl}/include)
+target_link_directories(tiled_lu PRIVATE ${mkl}/lib/intel64)
+target_link_libraries(tiled_lu PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
