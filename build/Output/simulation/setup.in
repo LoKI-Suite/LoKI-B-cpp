@@ -5,8 +5,8 @@
 
 
 workingConditions:
-  reducedField:  40
-  electronTemperature: linspace(0.03, 5, 300) 
+  reducedField: 50
+  electronTemperature: 0.03
   excitationFrequency: 0                      
   gasPressure: 133.32                         
   gasTemperature: 300                         
@@ -20,11 +20,17 @@ electronKinetics:
   eedfType: boltzmann                  
 
   ionizationOperatorType: usingSDCS    
-  growthModelType: spatial             
+  growthModelType: temporal             
   includeEECollisions: false           
   LXCatFiles:                          
-    - Oxygen/O2_LXCat.txt
-    - Oxygen/O2_rot_LXCat.txt
+    - Nitrogen/N2_LXCat.txt
+    - Nitrogen/N2_rot_LXCat.txt
+    
+    
+    
+    
+    
+    
 
 
 
@@ -33,7 +39,7 @@ electronKinetics:
   gasProperties:                       
     mass: Databases/masses.txt
     fraction:
-      - O2 = 1
+      - N2 = 1
     harmonicFrequency: Databases/harmonicFrequencies.txt
     anharmonicFrequency: Databases/anharmonicFrequencies.txt
     rotationalConstant: Databases/rotationalConstants.txt
@@ -41,18 +47,18 @@ electronKinetics:
     OPBParameter: Databases/OPBParameter.txt
   stateProperties:                     
     energy:
-      - O2(X,v=*) = harmonicOscillatorEnergy
-      - O2(X,v=0,J=*) = rigidRotorEnergy  
+      - N2(X,v=*) = harmonicOscillatorEnergy
+      - N2(X,v=0,J=*) = rigidRotorEnergy
     statisticalWeight:
-      - O2(X,v=*) = 1.0
-      - O2(X,v=0,J=*) = rotationalDegeneracy
+      - N2(X,v=*) = 1.0
+      - N2(X,v=0,J=*) = rotationalDegeneracy_N2
     population:
-      - O2(X) = 1.0
-      - O2(X,v=0) = 1.0
-      - O2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
+      - N2(X) = 1.0
+      - Nitrogen/N2_vibpop.txt
+      - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            
     energyGrid:                        
-      maxEnergy: 40
+      maxEnergy: 20
       cellNumber: 2000
 
 
@@ -65,20 +71,19 @@ electronKinetics:
       maxEedfRelError: 1e-9            
 
 
-          
+
 
 gui: 
   isOn: false
   refreshFrequency: 1
 
 
-output: 
+output:
   isOn: true
-  folder: simulation1
+  folder: simulation
   dataFiles:
     - eedf
     - swarmParameters
     - rateCoefficients
     - powerBalance
     - lookUpTable
-
