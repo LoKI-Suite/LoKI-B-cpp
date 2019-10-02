@@ -11,7 +11,7 @@
 #define EIGEN
 
 // #define EIGEN_USE_MKL_ALL
-#define EIGEN_USE_LAPACKE
+// #define EIGEN_USE_LAPACKE
 #define USE_OPENMP
 
 #include <Eigen/Dense>

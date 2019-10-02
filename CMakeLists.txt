@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(loki_cpp)
 
-# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 -mfma -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -fopenmp -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp")
 set(CMAKE_CXX_STANDARD 17)
@@ -12,7 +11,35 @@ set(h   loki-b/headers)
 set(pf  loki-b/property_functions)
 set(inc include)
 set(dep dependencies)
-set(mkl /home/daan/intel/compilers_and_libraries/linux/mkl)
+
+# Specify the libraries to link for different backends.
+set(mkl mkl_intel_lp64 mkl_gnu_thread mkl_core)
+set(ob  openblas)
+
+# Specify the linear algebra backend to use.
+option(USE_MKL "Use Intel MKL" OFF)
+option(USE_OPENBLAS "Use OpenBLAS" OFF)
+
+if (USE_MKL AND USE_OPENBLAS)
+  message(SEND_ERROR "Multiple backends defined, please just select one.")
+endif()
+
+if(USE_MKL)
+  message(STATUS "Using Intel MKL")
+  add_definitions(-DEIGEN_USE_MKL_ALL)
+  set(backend ${mkl})
+  set(inc ${inc} include/MKL)
+  unset(USE_MKL CACHE)
+elseif(USE_OPENBLAS)
+  message(STATUS "Using OpenBLAS")
+  add_definitions(-DEIGEN_USE_LAPACKE)
+  set(backend ${ob})
+  set(inc ${inc} include/OpenBLAS)
+  unset(USE_OPENBLAS CACHE)
+else()
+  message(STATUS "Using Eigen internal expressions")
+  set(backend )
+endif()
 
 set(cpp ${src}/WorkingConditions.cpp
         ${src}/Grid.cpp ${src}/EedfGas.cpp
@@ -35,16 +62,18 @@ set(property_functions ${pf}/PropertyFunctions.h)
 # -- loki library -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions})
 
-target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
-target_link_directories(loki_l PRIVATE ${dep} ${mkl}/lib/intel64)
-target_link_libraries(loki_l PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
+target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc})
+target_link_directories(loki_l PRIVATE ${dep})
+target_link_libraries(loki_l PRIVATE ${backend} stdc++fs)
+target_link_options(loki_l PRIVATE -fopenmp)
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
 
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl}/include)
-target_link_directories(loki PRIVATE build ${dep} ${mkl}/lib/intel64)
-target_link_libraries(loki PRIVATE loki_l mkl_intel_lp64 mkl_gnu_thread mkl_core stdc++fs)
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc})
+target_link_directories(loki PRIVATE build ${dep})
+target_link_libraries(loki PRIVATE loki_l ${backend} stdc++fs)
+target_link_options(loki PRIVATE -fopenmp)
 
 # --- tests --- #
 
@@ -94,6 +123,13 @@ add_executable(reflection tests/reflection_test/main.cpp)
 
 # -- tiled_lu_test -- #
 add_executable(tiled_lu tests/tiled_lu_test/main.cpp tests/tiled_lu_test/LinearAlgebra.h tests/tiled_lu_test/TiledMatrix.h)
-target_include_directories(tiled_lu PRIVATE ${inc} ${mkl}/include)
-target_link_directories(tiled_lu PRIVATE ${mkl}/lib/intel64)
-target_link_libraries(tiled_lu PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
+
+# OpenBLAS
+target_include_directories(tiled_lu PRIVATE ${inc})
+target_link_directories(tiled_lu PRIVATE ${dep})
+target_link_libraries(tiled_lu PRIVATE openblas)
+
+# Intel MKL
+# target_include_directories(tiled_lu PRIVATE ${inc} ${mkl}/include)
+# target_link_directories(tiled_lu PRIVATE ${mkl}/lib/intel64)
+# target_link_libraries(tiled_lu PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
