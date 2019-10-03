@@ -16,7 +16,7 @@ set(dep dependencies)
 set(mkl mkl_intel_lp64 mkl_gnu_thread mkl_core)
 set(ob  openblas)
 
-# Specify the linear algebra backend to use.
+# Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_OPENBLAS "Use OpenBLAS" OFF)
 
@@ -32,7 +32,7 @@ if(USE_MKL)
   unset(USE_MKL CACHE)
 elseif(USE_OPENBLAS)
   message(STATUS "Using OpenBLAS")
-  add_definitions(-DEIGEN_USE_LAPACKE)
+  add_definitions(-DEIGEN_USE_LAPACKE -DEIGEN_USE_BLAS)
   set(backend ${ob})
   set(inc ${inc} include/OpenBLAS)
   unset(USE_OPENBLAS CACHE)
@@ -124,12 +124,8 @@ add_executable(reflection tests/reflection_test/main.cpp)
 # -- tiled_lu_test -- #
 add_executable(tiled_lu tests/tiled_lu_test/main.cpp tests/tiled_lu_test/LinearAlgebra.h tests/tiled_lu_test/TiledMatrix.h)
 
-# OpenBLAS
+# tiled_lu can also be configured to build with either MKL/OpenBLAS or without
 target_include_directories(tiled_lu PRIVATE ${inc})
 target_link_directories(tiled_lu PRIVATE ${dep})
-target_link_libraries(tiled_lu PRIVATE openblas)
-
-# Intel MKL
-# target_include_directories(tiled_lu PRIVATE ${inc} ${mkl}/include)
-# target_link_directories(tiled_lu PRIVATE ${mkl}/lib/intel64)
-# target_link_libraries(tiled_lu PRIVATE mkl_intel_lp64 mkl_gnu_thread mkl_core)
+target_link_libraries(tiled_lu PRIVATE ${backend})
+target_link_options(tiled_lu PRIVATE -fopenmp)
