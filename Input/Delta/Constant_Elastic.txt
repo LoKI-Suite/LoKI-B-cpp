@@ -1,6 +1,6 @@
 SPECIES: e / M
 PROCESS: E + M -> E + M, Elastic
-PARAM.:  m/M = 0.0000195921, complete set
+PARAM.:  m/M = 0.000025, complete set
 COMMENT: [e + A(gnd) -> e + A(gnd), Elastic]
 UPDATED: 2017-11-14 10:24:49
 COLUMNS: Energy (eV) | Cross section (m2)
