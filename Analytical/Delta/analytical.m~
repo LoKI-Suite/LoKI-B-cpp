@@ -5,7 +5,7 @@ Td = 1e-21;
 
 % initialize parameters according to section 3.5
 moM = 2.5e-5;
-sigma0 = 1e-20;
+sigma0 = 1e-21;
 Q = 1e-19;
 T = 300;
 EoN = 10 * Td;
@@ -13,7 +13,7 @@ U0 = 10.00 * eV;
 
 % definitions related to grid
 uMax = 30 * eV;
-n = 6000;
+n = 12000;
 
 step = uMax / n;
 W = e / sqrt(moM * 6) * EoN / Q;
@@ -48,15 +48,34 @@ f0 = f0 / (dot(f0, sqrt(u)) * step);
 % plot g
 % figure;
 % plot(u/eV, g);
-
-eedf = importdata('eedf_matlab_2_6000.txt');
+num2str(n)
+eedf = importdata(['eedf_' num2str(n) '.txt']);
 eedf = eedf.data;
 
+bol = importdata('eedf_bolsig.txt');
+
+
 % log-plot the result
-figure;
-subplot(1,2,1); semilogy(u / eV, f0 * eV^(3/2));
+figure(1);
+subplot(3,1,1); semilogy(u / eV, f0 * eV^(3/2));
 hold on;
 semilogy(u / eV, eedf(:,2));
+semilogy(bol(:,1), bol(:,2));
 
-subplot(1,2,2);
+subplot(3,1,2);
 semilogy(u/eV, abs(f0 * eV^(3/2) - eedf(:,2)') ./ (f0 * eV^(3/2)));
+
+f_on_bol = interp1(u/eV, f0 * eV^(3/2), bol(1:356,1)');
+%indices = find(bol(:,1)>30);
+%bol(indices, 1) = [];
+%bol(indices, 2) = [];
+%f_on_bol(indices) = [];
+
+subplot(3,1,3);
+semilogy(bol(1:356,1)', abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
+
+mean_rel_err = 1/n * sum(abs(eedf(:,2)' - f0 * eV^(3/2)) ./ (f0 * eV^(3/2)));
+disp(mean_rel_err);
+
+mean_rel_error_bol = 1/length(f_on_bol) * sum(abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
+disp(mean_rel_error_bol);

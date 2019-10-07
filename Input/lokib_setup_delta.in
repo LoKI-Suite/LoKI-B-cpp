@@ -23,8 +23,8 @@ electronKinetics:
   growthModelType: spatial             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
-    - Model/Constant_Elastic.txt
-    - Model/Delta_Inelastic.txt
+    - Delta/Constant_Elastic.txt
+    - Delta/Delta_Inelastic.txt
 %  LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
 %  effectiveCrossSectionPopulations:   % see doc
 %    - N2_effectivePop.txt
@@ -49,7 +49,7 @@ electronKinetics:
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
       maxEnergy: 30
-      cellNumber: 3000
+      cellNumber: 12000
 %      smartGrid:                       % configuration of the smart grid
 %        minEedfDecay: 10               % minimum number of decade-fall for the EEDF
 %        maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
