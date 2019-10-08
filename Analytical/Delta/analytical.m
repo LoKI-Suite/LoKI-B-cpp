@@ -5,7 +5,7 @@ Td = 1e-21;
 
 % initialize parameters according to section 3.5
 moM = 2.5e-5;
-sigma0 = 1e-21;
+sigma0 = 1e-20;
 Q = 1e-19;
 T = 300;
 EoN = 10 * Td;
@@ -13,7 +13,7 @@ U0 = 10.00 * eV;
 
 % definitions related to grid
 uMax = 30 * eV;
-n = 12000;
+n = 3000;
 
 step = uMax / n;
 W = e / sqrt(moM * 6) * EoN / Q;
@@ -50,31 +50,32 @@ f0 = f0 / (dot(f0, sqrt(u)) * step);
 % plot(u/eV, g);
 
 basePath = ['loki/sigma_' num2str(sigma0)];
+% basePath = ['loki/total_cs/sigma_' num2str(sigma0)];
 
 eedf = importdata([basePath '/eedf_' num2str(n) '.txt']);
 eedf = eedf.data;
 
 bol = importdata('bolsig/eedf_sigma_1e-21.txt');
 
-
+clf;
 % log-plot the result
 figure(1);
 subplot(3,1,1);
-hold on;
 semilogy(u / eV, f0 * eV^(3/2));
+hold on;
 semilogy(u / eV, eedf(:,2));
-semilogy(bol(:,1), bol(:,2));
+% semilogy(bol(:,1), bol(:,2));
 
 subplot(3,1,2);
 semilogy(u/eV, abs(f0 * eV^(3/2) - eedf(:,2)') ./ (f0 * eV^(3/2)));
 
-f_on_bol = interp1(u/eV, f0 * eV^(3/2), bol(1:356,1)');
+% f_on_bol = interp1(u/eV, f0 * eV^(3/2), bol(1:356,1)');
 
-subplot(3,1,3);
-semilogy(bol(1:356,1)', abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
+% subplot(3,1,3);
+% semilogy(bol(1:356,1)', abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
 
 mean_rel_err = 1/n * sum(abs(eedf(:,2)' - f0 * eV^(3/2)) ./ (f0 * eV^(3/2)));
 disp(['loki:   ' num2str(mean_rel_err)]);
 
-mean_rel_error_bol = 1/length(f_on_bol) * sum(abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
-disp(['bolsig: ' num2str(mean_rel_error_bol)]);
+% mean_rel_error_bol = 1/length(f_on_bol) * sum(abs(f_on_bol - bol(1:356,2)') ./ f_on_bol);
+% disp(['bolsig: ' num2str(mean_rel_error_bol)]);
