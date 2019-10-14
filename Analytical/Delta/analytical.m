@@ -13,7 +13,7 @@ U0 = 10.00 * eV;
 
 % definitions related to grid
 uMax = 30 * eV;
-n = 3000;
+n = 12000;
 
 step = uMax / n;
 W = e / sqrt(moM * 6) * EoN / Q;
@@ -57,17 +57,25 @@ eedf = eedf.data;
 
 bol = importdata('bolsig/eedf_sigma_1e-21.txt');
 
-clf;
 % log-plot the result
+set(gcf,'DefaultAxesFontSize',18);
 figure(1);
-subplot(3,1,1);
+clf;
+% subplot(2,1,1);
 semilogy(u / eV, f0 * eV^(3/2));
 hold on;
 semilogy(u / eV, eedf(:,2));
+xlabel('Energy (eV)');
+ylabel('EEDF (eV^{-3/2})');
 % semilogy(bol(:,1), bol(:,2));
 
-subplot(3,1,2);
+% subplot(2,1,2);
+set(gcf,'DefaultAxesFontSize',18);
+figure(2);
+clf;
 semilogy(u/eV, abs(f0 * eV^(3/2) - eedf(:,2)') ./ (f0 * eV^(3/2)));
+xlabel('Energy (eV)');
+ylabel('Relative Error');
 
 % f_on_bol = interp1(u/eV, f0 * eV^(3/2), bol(1:356,1)');
 
