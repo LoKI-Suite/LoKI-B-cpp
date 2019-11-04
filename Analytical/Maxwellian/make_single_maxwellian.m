@@ -16,14 +16,9 @@ M = Muam*uam;
 Te = kb*Tg/e+M/(3*me^2*e)*(e*reducedField*1e-21/k0).^2;
 TeSimulation = zeros(size(Te));
 
-result = zeros(100, 2);
+cellNumber = 2000;
 
-for cellNumber = 100:100:10000
-    %     mkdir(sprintf('Maxwellian/cellNumber_%i', cellNumber));
-    
-    disp(cellNumber);
-    
-    for i = 1:length(reducedField)
+for i = 1:length(reducedField)
         
         % --- EVALUATE ENERGY GRID OF THE SIMULATION ---
         maxEnergy = str2double(sprintf('%.2e', (decades/log10(exp(1)))*Te(i)));
@@ -52,40 +47,27 @@ for cellNumber = 100:100:10000
         theoreticalEEDF = exp(-data(1,:)/Te(i))/sum(sqrt(data(1,:)).*exp(-data(1,:)/Te(i)))/(data(1,2)-data(1,1));
         relErrorEEDF(i) = sum(abs(theoreticalEEDF-data(2,:))./theoreticalEEDF)/cellNumber;
         fclose(fid);
-    end
-    
-%     summaryFolder = sprintf('Maxwellian_summary/cellNumber_%i', cellNumber);
-%     
-%     mkdir(summaryFolder);
-%     
-%     fid = fopen([summaryFolder filesep 'summary.txt'], 'w');
-%     fprintf(fid, '################################\n');
-%     fprintf(fid, '# DATA CONSIDERED FOR THE TESTS#\n');
-%     fprintf(fid, '################################\n\n');
-%     fprintf(fid, '# elastic momentum transfer constant rate coefficient = %e (m3s-1)\n', k0);
-%     fprintf(fid, '#                                     gas temperature = %f (K)\n', Tg);
-%     fprintf(fid, '#                           mass of the heavy species = %f (uam)\n', Muam);
-%     fprintf(fid, '#               decades of decay ensured for the eedf = %d \n', decades);
-%     fprintf(fid, '#                 number of cells for the energy grid = %d \n\n', cellNumber);
-%     fprintf(fid, 'E/N(Td)              Te_th(eV)            Te_sim(eV)           RelError(Te)         RelError(EEDF)\n');
-%     values(5:5:5*length(Te)) = relErrorEEDF;
-%     values(4:5:5*length(Te)) = abs(Te-TeSimulation)./Te;
-%     values(3:5:5*length(Te)) = TeSimulation;
-%     values(2:5:5*length(Te)) = Te;
-%     values(1:5:5*length(Te)) = reducedField;
-%     fprintf(fid, '%#.14e %#.14e %#.14e %#.14e %#.14e \n', values);
-%     fclose(fid);
-%     hold on;
-%     plot(reducedField, (Te-TeSimulation)./Te, reducedField, relErrorEEDF);
-    
-    result(cellNumber/100, 1) = sum(relErrorEEDF) / length(reducedField);
-    result(cellNumber/100, 2) = sum(abs(Te-TeSimulation)./Te) / length(reducedField);
 end
 
 clf;
 set(gcf, 'DefaultAxesFontSize', 18);
 fig = figure(1);
-p = loglog(100:100:10000, result(:,1), 100:100:10000, result(:,2));
-xlabel('Grid size');
-ylabel('Average relative error');
-set(p, 'LineWidth', 2);
+
+black = [0 0 0];
+set(fig,'defaultAxesColorOrder',[black; black]);
+
+yyaxis left;
+ax_one = plot(reducedField, relErrorEEDF .* 1e4);
+xlabel('Reduced Electric Field (Td)');
+ylabel('EEDF Average Relative Error (\times10^{-4})');
+
+yyaxis right;
+ax_two = plot(reducedField, abs(TeSimulation - Te)./Te .* 1e4, '--');
+ylabel('Electron Temperature Relative Error (\times10^{-4})');
+
+% set(ax_one,'color',	[0, 0.4470, 0.7410]);
+set(ax_one, 'LineWidth', 3);
+set(ax_two,'color', 'r');%[0.8500, 0.3250, 0.0980]);
+set(ax_two, 'LineWidth', 3);
+
+ylim([1.783 1.81]);
