@@ -86,20 +86,20 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
     plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
     // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
 
-    loki::Vector *nodeCrossSection = gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
+    // loki::Vector *nodeCrossSection = gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
-    loki::Vector cellCrossSection(grid.cellNumber);
+    // loki::Vector cellCrossSection(grid.cellNumber);
 
-    for (uint32_t i = 0; i < grid.cellNumber; ++i)
-        cellCrossSection[i] = 0.5 * ((*nodeCrossSection)[i] + (*nodeCrossSection)[i + 1]);
+    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    //     cellCrossSection[i] = 0.5 * ((*nodeCrossSection)[i] + (*nodeCrossSection)[i + 1]);
 
     // plot("Cell Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getCells(), cellCrossSection);
 
-    for (uint32_t i = 0; i < grid.cellNumber; ++i)
-    {
-        if (cellCrossSection[i] != 0.)
-            std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
-    }
+    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    // {
+    //     if (cellCrossSection[i] != 0.)
+    //         std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
+    // }
 
     //    this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
 }
