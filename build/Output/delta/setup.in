@@ -23,8 +23,8 @@ electronKinetics:
   growthModelType: spatial             
   includeEECollisions: false           
   LXCatFiles:                          
-    - Model/Constant_Elastic.txt
-    - Model/Delta_Inelastic.txt
+    - Delta/Constant_Elastic.txt
+    - Delta/Delta_Inelastic.txt
 
 
 
@@ -49,7 +49,7 @@ electronKinetics:
   numerics:                            
     energyGrid:                        
       maxEnergy: 30
-      cellNumber: 3000
+      cellNumber: 12000
 
 
 
