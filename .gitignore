@@ -12,6 +12,13 @@ build/cmake_install.cmake
 build/compile_commands.json
 .vscode/
 
+wasm/build/CMakeFiles/
+wasm/build/CMakeCache.txt
+wasm/build/Makefile
+wasm/build/cmake_install.cmake
+wasm/build/compile_commands.json
+wasm/.vscode/
+
 # profiler
 
 profiler/
