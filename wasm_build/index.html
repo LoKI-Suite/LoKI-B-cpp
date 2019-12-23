@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>LoKI-B WASM</title>
+</head>
+
+<body>
+    <script src="./loki.js"></script>
+    <script>
+        FS.mount(NODEFS, { root: '.' }, '.');
+        Module.onRuntimeInitialized = function () {
+            const fileName = 'default_lokib_setup.in';
+            const buffer_size = Module.lengthBytesUTF8(fileName) + 1;
+
+            let buffer = Module._malloc(buffer_size);
+
+            const run = Module.cwrap('run', 'number', '[number]');
+
+            Module.stringToUTF8(fileName, buffer, buffer_size);
+
+            console.log(run([buffer]));
+
+            Module._free(buffer);
+        };
+    </script>
+</body>
+
+</html>
