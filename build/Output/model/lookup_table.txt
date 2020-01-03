@@ -1,2 +1,0 @@
-RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          DriftVelocity(m/s)   RelativePowerBalance
-1.00000000000000e+01 7.96716332136491e+22 1.75784279389534e+23 0.00000000000000e+00 0.00000000000000e+00 6.79470263011731e-01 4.53235257955568e-01 4.52980175341154e-01 1.75784279389534e+03 3.30605532619603e-12%
