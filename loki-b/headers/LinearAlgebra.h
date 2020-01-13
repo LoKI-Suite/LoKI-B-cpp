@@ -282,8 +282,8 @@ public:
                                 const uint32_t n)
     {
         // a is the row at with the first element at the subdiagonal
-        // b is the row that we want to reduce\
-    // thus row a is used to reduce row b
+        // b is the row that we want to reduce
+        // thus row a is used to reduce row b
 
         for (uint32_t i = a; i < b; ++i)
         {

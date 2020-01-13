@@ -48,8 +48,8 @@ namespace loki {
                 typename Trait<TraitType>::Reactants reactants,
                 std::vector<typename Trait<TraitType>::State *> products,
                 std::vector<uint16_t> &stoiCoeff, bool isReverse)
-                : type(type), target(std::move(reactants)), products(std::move(products)),
-                  productStoiCoeff(std::move(stoiCoeff)), isReverse(isReverse) {}
+                : type(type), isReverse(isReverse), target(std::move(reactants)), 
+                  products(std::move(products)), productStoiCoeff(std::move(stoiCoeff))  {}
     };
 }
 
