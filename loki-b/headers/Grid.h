@@ -18,7 +18,7 @@ class Grid
 public:
     uint32_t cellNumber;
     double step;
-    
+
     // Smart grid
     const uint16_t minEedfDecay, maxEedfDecay;
     const double updateFactor;
@@ -33,13 +33,13 @@ public:
 
     const Vector &getCells() const;
 
-    const double getNode(uint32_t index) const;
+    double getNode(uint32_t index) const;
 
-    const double lastNode() const;
+    double lastNode() const;
 
-    const double getCell(uint32_t index) const;
+    double getCell(uint32_t index) const;
 
-    const double lastCell() const;
+    double lastCell() const;
 
     void updateMaxEnergy(double value);
 

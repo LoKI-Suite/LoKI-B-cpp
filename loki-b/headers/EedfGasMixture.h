@@ -24,7 +24,7 @@ namespace loki {
 
         std::vector<RateCoefficient> rateCoefficients, rateCoefficientsExtra;
 
-        bool hasCollisions[(uint8_t)CollisionType::size]{false};
+        bool hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
 
         explicit EedfGasMixture(Grid *grid);
 

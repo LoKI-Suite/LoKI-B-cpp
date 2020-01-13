@@ -84,7 +84,7 @@ namespace loki {
                     collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
                                                                isElasticOrEffective, in);
 
-                    hasCollisions[(uint8_t)collision->type] = true;
+                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
                 }
             }
         }
@@ -145,11 +145,11 @@ namespace loki {
 
             double massRatio = Constant::electronMass / gas->mass;
 
-            for (auto *collision : gas->collisions[(uint8_t) CollisionType::elastic]) {
+            for (auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::elastic)]) {
                 elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
             }
 
-            for (auto i = (uint8_t) CollisionType::elastic; i < gas->collisions.size(); ++i) {
+            for (auto i = static_cast<uint8_t>(CollisionType::elastic); i < gas->collisions.size(); ++i) {
                 for (auto *collision : gas->collisions[i]) {
                     totalCrossSection += *collision->crossSection * collision->getTarget()->density;
 

@@ -12,7 +12,7 @@
 #include <sstream>
 
 namespace loki {
-    struct WorkingConditions;
+    class WorkingConditions;
 
     class Range {
         const bool isLog;
