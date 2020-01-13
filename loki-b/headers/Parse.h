@@ -488,7 +488,7 @@ namespace loki {
                 return false;
 
             std::stringstream ss(m[1]);
-            return (bool) (ss >> property);
+            return static_cast<bool>(ss >> property);
         }
 
         /* -- getValue --
@@ -504,7 +504,7 @@ namespace loki {
 
             std::stringstream ss(valueString);
 
-            return (bool) (ss >> value);
+            return static_cast<bool>(ss >> value);
         }
 
         static bool isNumerical(const std::string &str) {
@@ -567,7 +567,7 @@ namespace loki {
 
             if (function[1] == 'o') {
                 double power;
-                bool success = (bool) (ss >> power);
+                bool success = static_cast<bool>(ss >> power);
 
                 if (function.back() == '-') power = -power;
 
@@ -576,7 +576,7 @@ namespace loki {
                 return success;
             }
 
-            return (bool) (ss >> value);
+            return static_cast<bool>(ss >> value);
         }
 
     };

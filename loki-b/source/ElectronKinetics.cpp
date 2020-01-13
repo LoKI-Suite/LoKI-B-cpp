@@ -57,7 +57,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.hasCollisions[(uint8_t)CollisionType::ionization])
+        mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
         ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
 
     A.setZero(grid.cellNumber);
@@ -94,7 +94,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
         diagPattern.emplace_back(k, k, 0.);
     }
 
-    if (mixture.hasCollisions[(uint8_t)CollisionType::attachment])
+    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
 
     if (growthModelType == GrowthModelType::spatial)
@@ -264,10 +264,10 @@ void ElectronKinetics::evaluateMatrix()
 
     evaluateInelasticOperators();
 
-    if (mixture.hasCollisions[(uint8_t)CollisionType::ionization])
+    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
         evaluateIonizationOperator();
 
-    if (mixture.hasCollisions[(uint8_t)CollisionType::attachment])
+    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
         evaluateAttachmentOperator();
 
     // Sort and erase duplicates.
@@ -370,8 +370,8 @@ void ElectronKinetics::evaluateInelasticOperators()
 
     for (auto *gas : mixture.gasses)
     {
-        for (auto vecIndex = (uint8_t)CollisionType::excitation;
-             vecIndex <= (uint8_t)CollisionType::rotational; ++vecIndex)
+        for (auto vecIndex = static_cast<uint8_t>(CollisionType::excitation);
+             vecIndex <= static_cast<uint8_t>(CollisionType::rotational); ++vecIndex)
         {
 
             for (const auto *collision : gas->collisions[vecIndex])
@@ -447,7 +447,7 @@ void ElectronKinetics::evaluateIonizationOperator()
 
     for (const auto *gas : mixture.gasses)
     {
-        for (const auto *collision : gas->collisions[(uint8_t)CollisionType::ionization])
+        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
             const double threshold = collision->crossSection->threshold;
 
@@ -457,7 +457,7 @@ void ElectronKinetics::evaluateIonizationOperator()
             hasValidCollisions = true;
 
             const double density = collision->target->density;
-            const auto numThreshold = (uint32_t)std::floor(threshold / grid.step);
+            const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
             Vector cellCrossSection(grid.cellNumber);
 
@@ -573,7 +573,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
     for (const auto *gas : mixture.gasses)
     {
-        for (const auto *collision : gas->collisions[(uint8_t)CollisionType::attachment])
+        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
             const double threshold = collision->crossSection->threshold;
 
@@ -1355,12 +1355,12 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     for (const auto *gas : mixture.gasses)
     {
-        for (const auto *collision : gas->collisions[(uint8_t)CollisionType::ionization])
+        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
             totalIonRateCoeff += collision->target->density * collision->ineRateCoeff;
         }
 
-        for (const auto *collision : gas->collisions[(uint8_t)CollisionType::attachment])
+        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
             totalAttRateCoeff += collision->target->density * collision->ineRateCoeff;
         }

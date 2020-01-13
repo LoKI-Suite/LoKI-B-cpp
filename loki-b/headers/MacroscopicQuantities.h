@@ -13,7 +13,7 @@ namespace loki {
     };
 
     // Forward declaration
-    struct EedfCollision;
+    class EedfCollision;
 
     struct RateCoefficient {
         EedfCollision * collision;

@@ -167,7 +167,7 @@ State<TraitType>::State(const StateEntry &entry,
     if (parent == nullptr)
         type = electronic;
     else
-        type = (StateType)(parent->type + 1);
+        type = static_cast<StateType>(parent->type + 1);
 }
 
 template <typename TraitType>

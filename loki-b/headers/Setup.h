@@ -36,6 +36,8 @@ namespace loki {
 
         static bool parseSubStructure(const std::string &content,
                 const std::string &fieldName, SetupBase &subStruct);
+
+        virtual ~SetupBase() {}
     };
 
     /* ------- WORKING CONDITIONS ------- */

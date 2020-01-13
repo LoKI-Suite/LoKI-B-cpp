@@ -6,13 +6,13 @@
 #include "Constant.h"
 
 namespace loki {
-    EedfGas::EedfGas(const std::string &name) : Gas(name), collisions((uint8_t) Enumeration::CollisionType::size),
-                                                extraCollisions((uint8_t) Enumeration::CollisionType::size) {}
+    EedfGas::EedfGas(const std::string &name) : Gas(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
+                                                extraCollisions(static_cast<uint8_t>(Enumeration::CollisionType::size)) {}
 
     void EedfGas::addCollision(EedfCollision *collision, bool isExtra) {
 
-        (isExtra ? this->extraCollisions[(uint8_t) collision->type] :
-         this->collisions[(uint8_t) collision->type]).emplace_back(collision);
+        (isExtra ? this->extraCollisions[static_cast<uint8_t>(collision->type)] :
+         this->collisions[static_cast<uint8_t>(collision->type)]).emplace_back(collision);
     }
 
     EedfGas::~EedfGas() {
@@ -26,10 +26,10 @@ namespace loki {
     }
 
     CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid) {
-        if (collisions[(uint8_t) CollisionType::effective].empty())
+        if (collisions[static_cast<uint8_t>(CollisionType::effective)].empty())
             Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
-        EedfCollision *eff = collisions[(uint8_t) CollisionType::effective][0];
+        EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0];
         Vector &rawEff = eff->crossSection->raw();
         Vector &rawEnergies = eff->crossSection->energies();
 
@@ -150,7 +150,7 @@ namespace loki {
         if (rotationalConstant < 0)
             Log<NoRotationalConstant>::Error(name);
 
-        if (!collisions[(uint8_t) CollisionType::rotational].empty())
+        if (!collisions[static_cast<uint8_t>(CollisionType::rotational)].empty())
             Log<RotCollisionInCARGas>::Error(name);
     }
 
@@ -171,9 +171,9 @@ namespace loki {
 
         auto *powerPtr = (double *) &power;
 
-        for (auto i = (uint8_t) CollisionType::excitation; i <= (uint8_t) CollisionType::attachment; ++i) {
+        for (auto i = static_cast<uint8_t>(CollisionType::excitation); i <= static_cast<uint8_t>(CollisionType::attachment); ++i) {
 
-            if (i == (uint8_t) CollisionType::ionization) {
+            if (i == static_cast<uint8_t>(CollisionType::ionization)) {
                 if (ionType == IonizationOperatorType::conservative) {
                     collisionPower = evaluateConservativePower(collisions[i], eedf);
                 } else {
@@ -183,14 +183,14 @@ namespace loki {
                 uint8_t index = 9;
 
                 powerPtr[index] = collisionPower.ine;
-            } else if (i == (uint8_t) CollisionType::attachment) {
+            } else if (i == static_cast<uint8_t>(CollisionType::attachment)) {
                 collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
 
                 powerPtr[10] = collisionPower.ine;
             } else {
                 collisionPower = evaluateConservativePower(collisions[i], eedf);
 
-                uint8_t baseIndex = (i - (uint8_t) CollisionType::excitation) * 3;
+                uint8_t baseIndex = (i - static_cast<uint8_t>(CollisionType::excitation)) * 3;
 
                 powerPtr[baseIndex] = collisionPower.ine;
                 powerPtr[baseIndex + 1] = collisionPower.sup;

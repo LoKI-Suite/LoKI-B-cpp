@@ -30,22 +30,22 @@ const Vector &Grid::getCells() const
     return cells;
 }
 
-const double Grid::getNode(uint32_t index) const
+double Grid::getNode(uint32_t index) const
 {
     return nodes[index];
 }
 
-const double Grid::lastNode() const
+double Grid::lastNode() const
 {
     return nodes[cellNumber];
 }
 
-const double Grid::getCell(uint32_t index) const
+double Grid::getCell(uint32_t index) const
 {
     return cells[index];
 }
 
-const double Grid::lastCell() const
+double Grid::lastCell() const
 {
     return cells[cellNumber - 1];
 }

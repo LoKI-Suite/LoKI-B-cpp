@@ -97,7 +97,7 @@ namespace loki {
             cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
         }
 
-        auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+        auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
 
         const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
@@ -141,7 +141,7 @@ namespace loki {
             cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
         }
 
-        auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+        auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
 
         if (type == CollisionType::ionization) {
 
@@ -212,7 +212,7 @@ namespace loki {
         const uint32_t nNodes = grid->cellNumber + 1,
                 nCells = grid->cellNumber;
 
-        const auto lmin = (uint32_t) (crossSection->threshold / grid->step);
+        const auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
 
         Vector cellCrossSection =
                 .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
