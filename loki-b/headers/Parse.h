@@ -63,7 +63,6 @@ namespace loki {
          */
         static bool getFieldValue(const std::string &sectionContent,
                                   const std::string &fieldName, std::string &valueBuffer) {
-
             std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
             std::smatch m;
 
@@ -122,8 +121,15 @@ namespace loki {
             // This regular expression matches a specific section in the input file. More accurately,
             // it returns the text in between the specified section and the next section on the same
             // level.
+            #ifdef _MSVC
+            // MSVC: $ matches before \n and at the end of input
             const std::regex reSection(
-                    sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*\s*$)))");
+                    sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:$\n$)))");
+            #else
+            // OTHER: $ matches only end of input
+            const std::regex reSection(
+                    sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*$)))");
+            #endif
 
             if (!std::regex_search(fileContent, m, reSection))
                 return false;
@@ -140,8 +146,13 @@ namespace loki {
          * string from comments and returns it.
          */
         static std::string removeComments(const std::string &content) {
+            std::string content_clean;
+
+            const std::regex reLine(R"(\n\s*%[^\n]*)");
+            content_clean = std::regex_replace(content, reLine, "");
+
             const std::regex reClean(R"(%[^]*?(?:\n|$))");
-            return std::regex_replace(content, reClean, "\n");
+            return std::regex_replace(content_clean, reClean, "\n");
         }
 
         /*  SECOND PARSING PHASE  */
@@ -690,7 +701,6 @@ namespace loki {
     inline
     bool Parse::setField<std::vector<std::string>>(const std::string &sectionContent,
                                                    const std::string &fieldName, std::vector<std::string> &value) {
-
         std::string fieldContent;
 
         if (!Parse::getSection(sectionContent, fieldName, fieldContent))

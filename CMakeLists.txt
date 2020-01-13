@@ -6,20 +6,27 @@ set(CMAKE_CXX_STANDARD 17)
 # --- Compiler flags --- #
 
 if(MSVC)
+    message(STATUS "Using MSVC compiler")
+
+    # #define _USE_MATH_DEFINES for M_PI and M_E
+    # #define _CRT_SECURE_NO_DEPRECATE to surpress fopen warnings (fopen_s is not available on other platforms)
+    # #define _MSVC to alter a regular expression in the Parse class (since MSVC treats the $ command differently)
+    add_definitions(-D_USE_MATH_DEFINES -D_CRT_SECURE_NO_DEPRECATE -D_MSVC)
+
     # warning flag: /W4
     # there is no alternative for -march=native in MSVC, therefore important relevant compiler flags have to be set manually for now (avx, avx2, fma etc.).
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "{CMAKE_CXX_FLAGS_RELEASE} /O3 /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
 
 else() # clang or g++
     # warning flags: -Wall -Wextra -Werror
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -DNDEBUG")
+    message(STATUS "Using g++ or Clang")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # specific to clang
     else()
         # extra for g++ (and compilers different to msvc and clang)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     endif()
 endif()
 
@@ -30,8 +37,21 @@ set(pf  loki-b/property_functions)
 set(inc include)
 
 # Specify the libraries to link for different backends.
-set(mkl mkl_intel_lp64 mkl_gnu_thread mkl_core)
 set(ob  openblas)
+set(mkl mkl_intel_lp64 mkl_core)
+
+# MSVC and Clang require to additionally link to the intel openmp library.
+# g++ can also use intel openmp threading, however GNU openmp seemed to perform better.
+# These settings might not yet work for Mac OS, as it is still untested.
+
+# [TODO] Test compiling with MKL using Clang and alter libraries where necessary.
+if(MSVC)
+  set(mkl ${mkl} mkl_intel_thread libiomp5md)
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(mkl ${mkl} mkl_intel_thread iomp5)
+else() # g++
+  set(mkl ${mkl} mkl_gnu_thread) #mkl_intel_thread iomp5 
+endif()
 
 # Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
@@ -45,13 +65,11 @@ if(USE_MKL)
   message(STATUS "Using Intel MKL")
   add_definitions(-DEIGEN_USE_MKL_ALL)
   set(backend ${mkl})
-  # set(inc ${inc} include/MKL)
   unset(USE_MKL CACHE)
 elseif(USE_OPENBLAS)
   message(STATUS "Using OpenBLAS")
   add_definitions(-DEIGEN_USE_LAPACKE -DEIGEN_USE_BLAS)
   set(backend ${ob})
-  # set(inc ${inc} include/OpenBLAS)
   unset(USE_OPENBLAS CACHE)
 else()
   message(STATUS "Using Eigen internal expressions")
@@ -76,18 +94,32 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/StandardPaths.h ${h}/JobSystem.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
+# Standard MKL directories on different operating systems. 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+  set(mkl_lib "/opt/intel/mkl/lib/intel64")
+  set(mkl_inc "/opt/intel/mkl/include")
+  set(mkl_comp "/opt/intel/lib")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+  set(mkl_inc "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/include")
+  set(mkl_lib "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/lib/intel64_win")
+  set(mkl_comp "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/compiler/lib/intel64_win")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+  # [TODO] Add Mac OS specific paths
+  set(mkl_lib "")
+  set(mkl_inc "")
+  set(mkl_comp "")
+endif()
+
 # -- loki library -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions})
 
-target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc})
-target_link_directories(loki_l PRIVATE)
-target_link_libraries(loki_l PRIVATE ${backend} stdc++fs)
-target_link_options(loki_l PRIVATE -fopenmp)
+target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki_l PRIVATE ${backend})
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
 
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc})
-target_link_directories(loki PRIVATE build)
-target_link_libraries(loki PRIVATE loki_l ${backend} stdc++fs)
-target_link_options(loki PRIVATE -fopenmp)
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki PRIVATE loki_l ${backend})
