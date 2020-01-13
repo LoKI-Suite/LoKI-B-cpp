@@ -57,8 +57,11 @@ namespace loki {
                                       SetupBase &subStruct) {
         std::string sectionContent;
 
-        if (Parse::getSection(content, fieldName, sectionContent)) {
-            if (!subStruct.parse(sectionContent)) {
+        // Added an extra new line character for MSVC regular expressions to work.
+        if (Parse::getSection(content + '\n', fieldName, sectionContent)) {
+
+            // Same here.
+            if (!subStruct.parse(sectionContent + '\n')) {
                 Log<ParseSectionError>::Error(fieldName);
                 return false;
             }

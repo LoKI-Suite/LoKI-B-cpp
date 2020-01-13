@@ -9,10 +9,21 @@
 #include <string>
 #include <iostream>
 
+#ifdef _MSVC
+
+#define RED     ""
+#define YELLOW  ""
+#define BOLD    ""
+#define NC      ""
+
+#else
+
 #define RED     "\e[1;31m"
 #define YELLOW  "\e[1;33m"
 #define BOLD    "\e[1;37m"
 #define NC      "\e[0m"
+
+#endif
 
 namespace loki {
 
