@@ -6,15 +6,22 @@ set(CMAKE_CXX_STANDARD 17)
 # --- Compiler flags --- #
 
 if(MSVC)
+    message(STATUS "Using MSVC compiler")
+
+    # #define _USE_MATH_DEFINES for M_PI and M_E
+    # #define _CRT_SECURE_NO_DEPRECATE to surpress fopen warnings (fopen_s is not available on other platforms)
+    # #define _MSVC to alter a regular expression in the Parse class (since MSVC treats the $ command differently)
+    add_definitions(-D_USE_MATH_DEFINES -D_CRT_SECURE_NO_DEPRECATE -D_MSVC)
+
     # warning flag: /W4
     # there is no alternative for -march=native in MSVC, therefore important relevant compiler flags have to be set manually for now (avx, avx2, fma etc.).
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "{CMAKE_CXX_FLAGS_RELEASE} /O3 /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
 
 else() # clang or g++
     # warning flags: -Wall -Wextra -Werror
+    message(STATUS "Using gcc or clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # specific to clang
@@ -30,7 +37,13 @@ set(pf  loki-b/property_functions)
 set(inc include)
 
 # Specify the libraries to link for different backends.
-set(mkl mkl_intel_lp64 mkl_gnu_thread mkl_core)
+# MSVC requires to additionally link to the intel openmp library.
+if(MSVC)
+  set(mkl mkl_intel_lp64 mkl_intel_thread mkl_core libiomp5md)
+else()
+  set(mkl mkl_intel_lp64 mkl_intel_thread mkl_core)
+endif()
+
 set(ob  openblas)
 
 # Specify the linear algebra backend to use (default is pure Eigen).
@@ -76,18 +89,22 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/StandardPaths.h ${h}/JobSystem.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
+set(mkl_inc "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/include")
+set(mkl_lib "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/lib/intel64_win")
+set(mkl_comp "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/compiler/lib/intel64_win")
+
 # -- loki library -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions})
 
-target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc})
-target_link_directories(loki_l PRIVATE)
-target_link_libraries(loki_l PRIVATE ${backend} stdc++fs)
-target_link_options(loki_l PRIVATE -fopenmp)
+target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki_l PRIVATE ${backend}) # stdc++fs)
+target_link_options(loki_l PRIVATE) # -fopenmp)
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
 
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc})
-target_link_directories(loki PRIVATE build)
-target_link_libraries(loki PRIVATE loki_l ${backend} stdc++fs)
-target_link_options(loki PRIVATE -fopenmp)
+target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki PRIVATE loki_l ${backend}) # stdc++fs)
+target_link_options(loki PRIVATE) # -fopenmp)
