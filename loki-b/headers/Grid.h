@@ -9,45 +9,46 @@
 #include "Event.h"
 #include "Setup.h"
 
-namespace loki {
-    class Grid {
-        Vector cells, nodes;
+namespace loki
+{
+class Grid
+{
+    Vector cells, nodes;
 
-    public:
-        // Smart grid
-        const uint16_t minEedfDecay, maxEedfDecay;
-        const double updateFactor;
-        const bool isSmart;
+public:
+    uint32_t cellNumber;
+    double step;
+    
+    // Smart grid
+    const uint16_t minEedfDecay, maxEedfDecay;
+    const double updateFactor;
+    const bool isSmart;
 
-        uint32_t cellNumber;
-        double step;
+    explicit Grid(const EnergyGridSetup &gridSetup);
+    ~Grid() = default;
 
-        explicit Grid(const EnergyGridSetup &gridSetup);
-        ~Grid() = default;
+    Grid(const Grid &other) = delete;
 
-        Grid(const Grid &other) = delete;
+    const Vector &getNodes() const;
 
-        const Vector &getNodes() const;
+    const Vector &getCells() const;
 
-        const Vector &getCells() const;
+    const double getNode(uint32_t index) const;
 
-        const double getNode(uint32_t index) const;
+    const double lastNode() const;
 
-        const double lastNode() const;
+    const double getCell(uint32_t index) const;
 
-        const double getCell(uint32_t index) const;
+    const double lastCell() const;
 
-        const double lastCell() const;
+    void updateMaxEnergy(double value);
 
-        void updateMaxEnergy(double value);
+    //Events
+    event updatedMaxEnergy1,
+        updatedMaxEnergy2;
 
-        //Events
-        event updatedMaxEnergy1,
-              updatedMaxEnergy2;
-
-        friend std::ostream& operator<<(std::ostream&, const Grid&);
-    };
-}
-
+    friend std::ostream &operator<<(std::ostream &, const Grid &);
+};
+} // namespace loki
 
 #endif //LOKI_CPP_GRID_H

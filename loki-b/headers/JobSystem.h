@@ -22,10 +22,9 @@ namespace loki {
         uint32_t iter{0};
 
     public:
-        Range(double start, double stop, uint32_t nSteps, bool isLog) : start(start), stop(stop), n(nSteps),
-                                                                        isLog(isLog) {}
+        Range(double start, double stop, uint32_t nSteps, bool isLog) : isLog(isLog), start(start), stop(stop), n(nSteps) {}
 
-        Range(const Range &other) : start(other.start), stop(other.stop), n(other.n), isLog(other.isLog) {}
+        Range(const Range &other) : isLog(other.isLog), start(other.start), stop(other.stop), n(other.n) {}
 
         bool next() {
             return (n - 1) > iter++;

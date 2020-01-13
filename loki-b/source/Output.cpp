@@ -14,7 +14,7 @@ namespace loki {
 
     Output::Output(const Setup &s, const WorkingConditions *workingConditions,
                    const JobManager *jobManager)
-            : folder(OUTPUT "/" + s.output.folder), workingConditions(workingConditions), jobManager(jobManager),
+            : workingConditions(workingConditions), folder(OUTPUT "/" + s.output.folder), jobManager(jobManager),
               inputFile(s.fileContent) {
 
         for (const auto &entry : s.output.dataFiles) {
