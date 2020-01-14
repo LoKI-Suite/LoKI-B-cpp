@@ -42,7 +42,7 @@ namespace loki {
     }
 
     void CrossSection::interpolate(const Vector &energies, Vector &result) {
-        const uint32_t &gridSize = energies.size();
+        const auto &gridSize = energies.size();
 
         result.resize(gridSize);
         result.setZero(gridSize);

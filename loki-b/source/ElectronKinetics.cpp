@@ -385,7 +385,7 @@ void ElectronKinetics::evaluateInelasticOperators()
 
                 if (targetDensity != 0)
                 {
-                    const uint32_t numThreshold = std::floor(threshold / grid.step);
+                    const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
                     Vector cellCrossSection(cellNumber);
 
@@ -582,7 +582,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
             includeNonConservativeAttachment = true;
 
-            const uint32_t numThreshold = std::floor(threshold / grid.step);
+            const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
             Vector cellCrossSection(cellNumber);
 
