@@ -21,8 +21,24 @@ Note that when compiling loki with a non-default backend, currently MKL or OpenB
     
 ### Windows
 5. run: cmake -D<BACKEND\_FLAG>=ON ..
-    - where BACKEND\_FLAG=USE\_MKL/USE\_OPENBLAS, specifying the backend to supply to Eigen
+    - where <BACKEND\_FLAG>=USE\_MKL/USE\_OPENBLAS, specifying the backend to supply to Eigen
     - this flag can also be omitted to build with pure Eigen
 6. run: cmake --build . --config Release -j <NUM\_JOBS>
     - where <NUM\_JOBS> is the maximum number of jobs to run simultaneously when compiling; just use the number of physical cores in your system. Omit this flag to use the default settings.
 7. The loki exec executable should always run from the build directory (or any directory that is a direct subdirectory of the main folder). When compiling with MSVC the executable can be placed in the 'build\\Release directory' by default, therefore it should be moved to 'build' before executing. Additionally, when compiling on Windows with the MKL, copy the 'libiomp5md.dll' file from the main folder or, preferably from its default location in your MKL installation (see ${mkl\_comp} in CMakeLists.txt), to the build directory.
+
+## Running and Plotting
+
+As of yet, LoKI-B C++ is run from the command line. To plot the data you can install gnuplot. The execution on different operating systems is very similar.
+
+### Linux
+1. Open a terminal and navigate to the 'luxurious-loki/build' directory.
+2. Run the following command: './loki <INPUT\_FILE> | gnuplot --persist'.
+    - Where <INPUT\_FILE> is the full input file name to use, including the '.in' extension, e.g. 'default_lokib_setup.in'. The input files need to be present in the 'luxurious-loki/Input' folder.
+    - The output from LoKI-B is then piped into gnuplot, where the '--persist' flag avoids gnuplot from immediately closing after plotting.
+
+### Windows
+1. Open a terminal and navigate to the 'luxurious-loki\\build' directory.
+2. Run the following command: 'loki.exe <INPUT\_FILE> | gnuplot --persist'.
+    - Where <INPUT\_FILE> is the full input file name to use, including the '.in' extension, e.g. 'default_lokib_setup.in'. The input files need to be present in the 'luxurious-loki\\Input' folder.
+    - The output from LoKI-B is then piped into gnuplot, where the '--persist' flag avoids gnuplot from immediately closing after plotting.

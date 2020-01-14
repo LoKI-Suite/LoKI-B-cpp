@@ -184,7 +184,7 @@ namespace loki {
 
                     if (kmax > 0)
                         TICS[k] += cellCrossSection[k] * auxVec[kmax-1] /
-                                   (w * atan((grid->getCell(k) - crossSection->threshold) / (2 * w)));
+                                   (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold) / (2 * w)));
                 }
 
                 collPower.ine = -factor * target->density * grid->getCell(lmin) * grid->step *
