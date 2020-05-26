@@ -8,6 +8,11 @@ cmake-build-*/
 build/
 .vscode/
 
+# Vim specific (clangd)
+
+.clangd/
+compile_commands.json
+
 # profiler
 
 profiler/
