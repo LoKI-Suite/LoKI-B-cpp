@@ -26,7 +26,7 @@ Note that when compiling loki with a non-default backend, currently MKL or OpenB
     - this flag can also be omitted to build with pure Eigen
 1. run: `cmake --build . --config Release -j <NUM_JOBS>`
     - where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when compiling; just use the number of physical cores in your system. Omit this flag to use the default settings.
-1. The loki exec executable should always run from the build directory (or any directory that is a direct subdirectory of the main folder). When compiling with MSVC the executable can be placed in the `build\Release directory` by default, therefore it should be moved to `build` before executing. Additionally, when compiling on Windows with the MKL, copy the `libiomp5md.dll` file from the main folder or, preferably from its default location in your MKL installation (see `${mkl_comp}` in CMakeLists.txt), to the build directory.
+1. The loki exec executable should always run from the build directory (or any directory that is a direct subdirectory of the main folder). When compiling with MSVC the executable can be placed in the `build\Release` directory by default, therefore it should be moved to `build` before executing. Additionally, when compiling on Windows with the MKL, copy the `libiomp5md.dll` file from the main folder or, preferably from its default location in your MKL installation (see `${mkl_comp}` in CMakeLists.txt), to the build directory.
 
 ## Running and Plotting
 
