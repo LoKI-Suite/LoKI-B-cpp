@@ -23,6 +23,8 @@ electronKinetics:
   growthModelType: temporal             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
+		%- Nitrogen/N2_LXCat.json
+		%- Nitrogen/N2_rot_LXCat.json
     - Nitrogen/N2_LXCat.txt
     - Nitrogen/N2_rot_LXCat.txt
     %- Oxygen/O2_LXCat.txt
