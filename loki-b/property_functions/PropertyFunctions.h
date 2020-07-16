@@ -9,6 +9,7 @@
 #include "Constant.h"
 #include "Traits.h"
 #include "Log.h"
+#include "Parse.h"
 
 #include <cmath>
 
