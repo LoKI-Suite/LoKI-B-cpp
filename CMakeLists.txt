@@ -82,7 +82,7 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
         ${src}/CrossSection.cpp ${src}/EedfGasMixture.cpp
         ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
-        ${src}/JobSystem.cpp)
+        ${src}/JobSystem.cpp ${src}/json.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
@@ -91,7 +91,7 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h
-        ${h}/StandardPaths.h ${h}/JobSystem.h)
+        ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 set(property_functions ${pf}/PropertyFunctions.h)
 
 # Standard MKL directories on different operating systems. 
