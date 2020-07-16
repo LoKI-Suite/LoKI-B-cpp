@@ -22,6 +22,7 @@
 #include "Log.h"
 #include "PropertyFunctions.h"
 #include "WorkingConditions.h"
+#include "Parse.h"
 
 #include <vector>
 #include <set>

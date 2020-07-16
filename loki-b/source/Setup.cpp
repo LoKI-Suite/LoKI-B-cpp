@@ -8,6 +8,7 @@
 #include <regex>
 
 #include "Setup.h"
+#include "Parse.h"
 #include <Log.h>
 
 // DONE: Think which is desirable:

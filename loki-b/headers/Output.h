@@ -15,6 +15,7 @@
 #include "Event.h"
 #include "WorkingConditions.h"
 #include "EedfGas.h"
+#include "JobSystem.h"
 
 namespace loki {
     class Output {

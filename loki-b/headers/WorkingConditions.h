@@ -15,6 +15,7 @@
 #include "Event.h"
 #include "Setup.h"
 #include "Enumeration.h"
+#include <map>
 
 namespace loki {
     class WorkingConditions {
