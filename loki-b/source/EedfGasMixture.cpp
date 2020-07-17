@@ -2,7 +2,10 @@
 // Created by daan on 20-5-19.
 //
 
+#include <stdexcept>
+#include <iostream>
 #include "EedfGasMixture.h"
+#include "json.h"
 
 // DONE: productStoiCoeff is only for the products
 // DONE: when parsing an LXCat Section first look for the PARAM keyword (since elastic collisions will not have
@@ -38,54 +41,68 @@ namespace loki {
 //        this->evaluateTotalAndElasticCS();
     }
 
-    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
-        const std::string inputPath{"../Input/"};
+    void EedfGasMixture::loadCollisions(const json_type& file, Grid *energyGrid, bool isExtra) {
 
+        throw std::runtime_error("loadCollisionsJSON not yet implemented.");
+    }
+    void EedfGasMixture::loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra) {
+        const std::string inputPath{"../Input/"};
         const std::regex reParam(R"(PARAM\.:)");
         const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
         const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
+        std::ifstream in(inputPath + file);
 
-        for (const std::string &file : files) {
-            std::ifstream in(inputPath + file);
+        if (!in.is_open()) {
+            Log<FileError>::Warning(inputPath + file);
+            return;
+        }
 
-            if (!in.is_open()) {
-                Log<FileError>::Warning(file);
+        std::string line, threshold;
+        std::smatch mThreshold, mProcess;
+
+        while (std::getline(in, line)) {
+            if (!std::regex_search(line, reParam))
                 continue;
+
+            if (std::regex_search(line, mThreshold, reThreshold)) {
+                threshold = mThreshold[1];
+            } else {
+                threshold = "0.";
             }
 
-            std::string line, threshold;
-            std::smatch mThreshold, mProcess;
+            if (!std::getline(in, line) ||
+                !std::regex_search(line, mProcess, reProcess)) {
+                Log<LXCatError>::Error(file);
+            }
 
-            while (std::getline(in, line)) {
-                if (!std::regex_search(line, reParam))
-                    continue;
+            CollisionEntry collisionEntry = parseLXCatEntry({mProcess[1], mProcess[2],
+                                                             mProcess[3], mProcess[4],
+                                                             threshold});
 
-                if (std::regex_search(line, mThreshold, reThreshold)) {
-                    threshold = mThreshold[1];
-                } else {
-                    threshold = "0.";
-                }
+            auto *collision = createCollision(collisionEntry);
 
-                if (!std::getline(in, line) ||
-                    !std::regex_search(line, mProcess, reProcess)) {
-                    Log<LXCatError>::Error(file);
-                }
+            const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                               collision->type == CollisionType::elastic);
 
-                CollisionEntry collisionEntry = parseLXCatEntry({mProcess[1], mProcess[2],
-                                                                 mProcess[3], mProcess[4],
-                                                                 threshold});
+            if (linkCollision(collision, isExtra)) {
+                collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
+                                                           isElasticOrEffective, in);
 
-                auto *collision = createCollision(collisionEntry);
+                hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+            }
+        }
+    }
+    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
 
-                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                                   collision->type == CollisionType::elastic);
-
-                if (linkCollision(collision, isExtra)) {
-                    collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
-                                                               isElasticOrEffective, in);
-
-                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
-                }
+        for (const std::string &file : files) {
+            if (file.size()>=5 && file.substr(file.size()-5)==".json")
+            {
+                json_type cnf = read_json_from_file(file);
+                loadCollisions(cnf, energyGrid, isExtra);
+            }
+            else
+            {
+                loadCollisions(file, energyGrid, isExtra);
             }
         }
     }

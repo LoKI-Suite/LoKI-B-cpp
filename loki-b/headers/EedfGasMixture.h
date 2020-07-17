@@ -9,6 +9,7 @@
 #include "WorkingConditions.h"
 #include "MacroscopicQuantities.h"
 #include "Traits.h"
+#include "json.h"
 
 #include <vector>
 
@@ -46,10 +47,30 @@ namespace loki {
     private:
 
         /* -- loadCollisions --
-         * Loads the collisions from LXCat files, supplied through a vector of strings that hold
+         * Loads the collisions from the LXCat file that is provided as first argument.
+         * Furthermore, it needs a pointer to the energy grid and a boolean to indicate
+         * whether the collisions are extra, for correct initialization and storage of
+         * the collisions.
+         */
+
+        void loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra);
+
+        /* -- loadCollisionsJSON --
+         * Loads the collisions from the JSON file that is provided as first argument.
+         * Furthermore, it needs a pointer to the energy grid and a boolean to indicate
+         * whether the collisions are extra, for correct initialization and storage of
+         * the collisions.
+         */
+        void loadCollisions(const json_type& file, Grid *energyGrid, bool isExtra);
+
+        /* -- loadCollisions --
+         * Loads the collisions from files, supplied through a vector of strings that hold
          * the filenames. Furthermore, it needs a pointer to the energy grid and a boolean to
          * indicate whether the collisions are extra, for correct initialization and storage of
-         * the collisions.
+         * the collisions. When the file extension is ".json", a JSON object is created from
+         * the file and the handling of this file is delegated to member loadCollisionsJSON,
+         * for other file types, the legacy LXCat file format is assumed and member
+         * loadCollisionsText is called.
          */
 
         void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);

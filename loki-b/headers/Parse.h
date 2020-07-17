@@ -49,6 +49,19 @@ struct Parse
 
         return true;
     }
+    template <typename T>
+    static bool setField(const json_type &sectionContent, const std::string &fieldName, T &value)
+    {
+        if (!sectionContent.contains(fieldName))
+        {
+            // std::cout << "setField: " << fieldName << " not found." << std::endl;
+            return false;
+        }
+        value = sectionContent.at(fieldName).get<T>();
+        // std::cout << "setField: " << fieldName << " = " << value << std::endl;
+
+        return true;
+    }
 
     /*
      * The getFieldValue function will extract the value of a given field name.
@@ -100,6 +113,13 @@ struct Parse
 
             container.emplace_back(it->str(1));
         }
+
+        return !container.empty();
+    }
+    static bool getList(const json_type &sectionContent, const std::string &fieldName,
+                        std::vector<std::string> &container)
+    {
+        container = sectionContent.at(fieldName).get<std::vector<std::string>>();
 
         return !container.empty();
     }
@@ -681,18 +701,10 @@ inline bool Parse::setField<Enumeration::EedfType>(const std::string &sectionCon
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
 
-    if (valueBuffer == "boltzmann")
-    {
-        value = Enumeration::EedfType::boltzmann;
-    }
-    else if (valueBuffer == "prescribed")
-    {
-        value = Enumeration::EedfType::prescribed;
-    }
-    else
-    {
-        return false;
-    }
+    value = parse_enum_string<Enumeration::EedfType>(valueBuffer, {
+		{"boltzmann",Enumeration::EedfType::boltzmann},
+		{"prescribed",Enumeration::EedfType::prescribed},
+		});
 
     return true;
 }
@@ -708,27 +720,12 @@ inline bool Parse::setField<Enumeration::IonizationOperatorType>(const std::stri
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
 
-    if (valueBuffer == "conservative")
-    {
-        value = Enumeration::IonizationOperatorType::conservative;
-    }
-    else if (valueBuffer == "oneTakesAll")
-    {
-        value = Enumeration::IonizationOperatorType::oneTakesAll;
-    }
-    else if (valueBuffer == "equalSharing")
-    {
-        value = Enumeration::IonizationOperatorType::equalSharing;
-    }
-    else if (valueBuffer == "usingSDCS")
-    {
-        value = Enumeration::IonizationOperatorType::sdcs;
-    }
-    else
-    {
-        return false;
-    }
-
+    value = parse_enum_string<Enumeration::IonizationOperatorType>(valueBuffer, {
+		{"conservative",Enumeration::IonizationOperatorType::conservative},
+		{"oneTakesAll",Enumeration::IonizationOperatorType::oneTakesAll},
+		{"equalSharing",Enumeration::IonizationOperatorType::equalSharing},
+		{"usingSDCS",Enumeration::IonizationOperatorType::sdcs}
+		});
     return true;
 }
 
@@ -743,18 +740,10 @@ inline bool Parse::setField<Enumeration::GrowthModelType>(const std::string &sec
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
 
-    if (valueBuffer == "spatial")
-    {
-        value = Enumeration::GrowthModelType::spatial;
-    }
-    else if (valueBuffer == "temporal")
-    {
-        value = Enumeration::GrowthModelType::temporal;
-    }
-    else
-    {
-        return false;
-    }
+    value = parse_enum_string<Enumeration::GrowthModelType>(valueBuffer, {
+		{"spatial",Enumeration::GrowthModelType::spatial},
+		{"temporal",Enumeration::GrowthModelType::temporal},
+		});
 
     return true;
 }
@@ -769,6 +758,73 @@ inline bool Parse::setField<std::vector<std::string>>(const std::string &section
         return false;
 
     return Parse::getList(fieldContent, fieldName, value);
+}
+
+template <>
+inline bool Parse::setField<Enumeration::EedfType>(const json_type &sectionContent, const std::string &fieldName,
+                                                   Enumeration::EedfType &value)
+{
+
+    std::string valueBuffer;
+
+    if (!setField(sectionContent,fieldName,valueBuffer))
+        return false;
+
+    value = parse_enum_string<Enumeration::EedfType>(valueBuffer, {
+		{"boltzmann",Enumeration::EedfType::boltzmann},
+		{"prescribed",Enumeration::EedfType::prescribed},
+		});
+
+    return true;
+}
+
+template <>
+inline bool Parse::setField<Enumeration::IonizationOperatorType>(const json_type &sectionContent,
+                                                                 const std::string &fieldName,
+                                                                 Enumeration::IonizationOperatorType &value)
+{
+
+    std::string valueBuffer;
+
+    if (!setField(sectionContent,fieldName,valueBuffer))
+        return false;
+
+    value = parse_enum_string<Enumeration::IonizationOperatorType>(valueBuffer, {
+		{"conservative",Enumeration::IonizationOperatorType::conservative},
+		{"oneTakesAll",Enumeration::IonizationOperatorType::oneTakesAll},
+		{"equalSharing",Enumeration::IonizationOperatorType::equalSharing},
+		{"usingSDCS",Enumeration::IonizationOperatorType::sdcs}
+		});
+    return true;
+}
+
+template <>
+inline bool Parse::setField<Enumeration::GrowthModelType>(const json_type &sectionContent,
+                                                          const std::string &fieldName,
+                                                          Enumeration::GrowthModelType &value)
+{
+
+    std::string valueBuffer;
+
+    if (!setField(sectionContent,fieldName,valueBuffer))
+        return false;
+
+    value = parse_enum_string<Enumeration::GrowthModelType>(valueBuffer, {
+		{"spatial",Enumeration::GrowthModelType::spatial},
+		{"temporal",Enumeration::GrowthModelType::temporal},
+		});
+
+    return true;
+}
+
+template <>
+inline bool Parse::setField<std::vector<std::string>>(const json_type &sectionContent, const std::string &fieldName,
+                                                      std::vector<std::string> &value)
+{
+    if (!sectionContent.contains(fieldName))
+        return false;
+
+    return Parse::getList(sectionContent, fieldName, value);
 }
 } // namespace loki
 

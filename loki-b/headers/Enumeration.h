@@ -7,8 +7,23 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <stdexcept>
 
 namespace loki::Enumeration {
+
+    template <class E>
+    E parse_enum_string(const std::string& key, const std::vector<std::pair<std::string,E>>& map)
+    {
+        for (const auto& e : map)
+        {
+		if (e.first==key)
+                {
+                    return e.second;
+                }
+        }
+        throw std::runtime_error("Illegal argument '" + key + "'.");
+    }
 
     enum class EedfType : uint8_t {
         boltzmann,

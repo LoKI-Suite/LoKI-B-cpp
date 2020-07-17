@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <Enumeration.h>
+#include "json.h"
 
 namespace loki {
     /*
@@ -31,10 +32,14 @@ namespace loki {
      */
 
     struct SetupBase {
-        virtual bool parse(const std::string &sectionContent) = 0;
+        //virtual bool parse(const std::string &sectionContent) = 0;
 
+	template <class SubStructure>
         static bool parseSubStructure(const std::string &content,
-                const std::string &fieldName, SetupBase &subStruct);
+                const std::string &fieldName, SubStructure &subStruct);
+	template <class SubStructure>
+        static bool parseSubStructure(const json_type &content,
+                const std::string &fieldName, SubStructure &subStruct);
 
         virtual ~SetupBase() {}
     };
@@ -58,7 +63,8 @@ namespace loki {
         double chamberLength = 0.;
         double chamberRadius = 0.;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- GAS PROPERTIES ------- */
@@ -82,7 +88,8 @@ namespace loki {
                     electricQuadrupoleMoment,
                     OPBParameter;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- STATE PROPERTIES ------- */
@@ -103,7 +110,8 @@ namespace loki {
                                  statisticalWeight,
                                  population;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- NUMERICS ------- */
@@ -120,7 +128,8 @@ namespace loki {
                  maxEedfDecay = 0;
         double updateFactor = 0;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /*
@@ -135,7 +144,8 @@ namespace loki {
         uint32_t cellNumber;
         SmartGridSetup smartGrid;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /*
@@ -148,7 +158,8 @@ namespace loki {
     struct OdeSetParametersSetup : public SetupBase {
         double maxStep;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /*
@@ -164,7 +175,8 @@ namespace loki {
                maxEedfRelError;
         OdeSetParametersSetup odeSetParameters;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /*
@@ -179,7 +191,8 @@ namespace loki {
         double maxPowerBalanceRelError = -1.;
         NonLinearRoutinesSetup nonLinearRoutines;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- ELECTRON KINETICS ------- */
@@ -206,7 +219,8 @@ namespace loki {
         StatePropertiesSetup stateProperties;
         NumericsSetup numerics;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- OUTPUT ------- */
@@ -223,7 +237,8 @@ namespace loki {
         std::string folder;
         std::vector<std::string> dataFiles;
 
-        bool parse(const std::string &sectionContent) override;
+        template <class Src>
+        bool parse(const Src &sectionContent);
     };
 
     /* ------- SETUP ------- */
@@ -237,7 +252,8 @@ namespace loki {
         const std::string inputPath{"../Input"};
 
         // The 'parse' function is private since users should call 'parseFile'.
-        bool parse(const std::string &sectionContent) override;
+	template <class Src>
+        bool parse(const Src &sectionContent);
     public:
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
