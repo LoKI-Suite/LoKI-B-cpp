@@ -15,13 +15,6 @@
 namespace loki {
     using namespace Enumeration;
 
-    struct RawLXCatEntry {
-        std::string reactants,
-                isReverse,
-                products,
-                type,
-                threshold;
-    };
 
     struct StateEntry {
         StateType level;
@@ -60,14 +53,6 @@ namespace loki {
         }
     };
 
-    struct CollisionEntry {
-        std::vector <StateEntry> reactants, products;
-        std::vector <uint16_t> stoiCoeff;
-        Enumeration::CollisionType type;
-        double threshold;
-        bool isReverse;
-//        std::vector<std::pair<double, double>> rawCrossSection;
-    };
 }
 
 #endif //LOKI_CPP_INPUTSTRUCTURES_H

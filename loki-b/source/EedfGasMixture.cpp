@@ -57,17 +57,28 @@ namespace loki {
             return;
         }
 
-        std::string line, threshold;
+        std::string line;
         std::smatch mThreshold, mProcess;
 
+        /*  Expectations: we cycle throught the file and look for a line that has "PARAM.:".
+         *  When we find that, we start parsing a process description.
+         *  1. Read the arguments of the parameter line, see if a threshold is specified ("E =  <double> eV"),
+         *     Set the threshold to 0 otherwise.
+         *  2. The next line should describe the process: it must be of the form [<lhs> -> <rhs>, <type>].
+         *  3. A Collision is created from the process description information
+         *  4. (Maybe) a cross section object is attached to the collision object, based on subsequent lines.
+         *
+         */
         while (std::getline(in, line)) {
             if (!std::regex_search(line, reParam))
                 continue;
 
+            // todo: warn if a threshold is specified, but isExtra==false? Then it will not be used, it seems.
+            double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold)) {
-                threshold = mThreshold[1];
-            } else {
-                threshold = "0.";
+                std::stringstream ss(mThreshold[1]);
+                if (!(ss >> threshold))
+                    Log<Message>::Error("Non numerical threshold value.");
             }
 
             if (!std::getline(in, line) ||
@@ -75,17 +86,14 @@ namespace loki {
                 Log<LXCatError>::Error(file);
             }
 
-            CollisionEntry collisionEntry = parseLXCatEntry({mProcess[1], mProcess[2],
-                                                             mProcess[3], mProcess[4],
-                                                             threshold});
-
-            auto *collision = createCollision(collisionEntry);
+            // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
+            auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4]);
 
             const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
                                                collision->type == CollisionType::elastic);
 
             if (linkCollision(collision, isExtra)) {
-                collision->crossSection = new CrossSection(collisionEntry.threshold, energyGrid,
+                collision->crossSection = new CrossSection(threshold, energyGrid,
                                                            isElasticOrEffective, in);
 
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
@@ -105,25 +113,6 @@ namespace loki {
                 loadCollisions(file, energyGrid, isExtra);
             }
         }
-    }
-
-    CollisionEntry EedfGasMixture::parseLXCatEntry(RawLXCatEntry &&entry) {
-        CollisionEntry collisionEntry{};
-
-        if (!Parse::entriesFromString(entry.reactants, collisionEntry.reactants))
-            Log<LXCatError>::Error(entry.reactants);
-        if (!Parse::entriesFromString(entry.products, collisionEntry.products, &collisionEntry.stoiCoeff))
-            Log<LXCatError>::Error(entry.products);
-
-        collisionEntry.type = Parse::collisionTypeFromString(entry.type);
-
-        std::stringstream ss(entry.threshold);
-        if (!(ss >> collisionEntry.threshold))
-            Log<Message>::Error("Non numerical threshold value.");
-
-        collisionEntry.isReverse = (entry.isReverse[0] == '<');
-
-        return collisionEntry;
     }
 
     bool EedfGasMixture::linkCollision(EedfCollision *collision, bool isExtra) {
