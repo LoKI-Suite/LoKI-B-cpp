@@ -232,13 +232,26 @@ namespace loki {
          * added to the mixture. Then a Collision object is created and its
          * pointer is returned.
          */
-
+        // arguments: smth. like "He + e", "->", "He + e", "Elastic"
         typename Trait<TraitType>::Collision *
-        createCollision(CollisionEntry &entry) {
+        createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type) {
+
+            std::vector <StateEntry> entry_reactants, entry_products;
+            std::vector <uint16_t> entry_stoiCoeff;
+            Enumeration::CollisionType entry_type;
+            bool entry_isReverse;
+
+            if (!Parse::entriesFromString(lhs, entry_reactants))
+                Log<LXCatError>::Error(lhs);
+            if (!Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff))
+                Log<LXCatError>::Error(rhs);
+            entry_type = Parse::collisionTypeFromString(type);
+            entry_isReverse = (sep[0] == '<');
+
             std::vector<typename Trait<TraitType>::State *> reactants, products;
             std::set<typename Trait<TraitType>::Gas *> targetGasses;
 
-            for (auto &stateEntry : entry.reactants) {
+            for (auto &stateEntry : entry_reactants) {
                 auto *state = reactants.emplace_back(addState(stateEntry));
                 targetGasses.insert(state->gas);
             }
@@ -246,12 +259,12 @@ namespace loki {
             if (targetGasses.size() != 1)
                 Log<Message>::Error("Multiple target gasses in a single collision.");
 
-            for (auto &stateEntry : entry.products) {
+            for (auto &stateEntry : entry_products) {
                 products.emplace_back(addState(stateEntry));
             }
 
-            return new typename Trait<TraitType>::Collision(entry.type, reactants, products,
-                                                            entry.stoiCoeff, entry.isReverse);
+            return new typename Trait<TraitType>::Collision(entry_type, reactants, products,
+                                                            entry_stoiCoeff, entry_isReverse);
         }
 
         /* -- loadGasProperties --

@@ -75,13 +75,6 @@ namespace loki {
 
         void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
 
-        /* -- parseLXCatEntry --
-         * Parses a RawLXCatEntry into StateEntries which build up a CollisionEntry object. This
-         * object acts as a blueprint for a collision.
-         */
-
-        CollisionEntry parseLXCatEntry(RawLXCatEntry &&entry);
-
         /* -- linkCollision --
          * Accepts a pointer to a newly created EedfCollision to the correct vectors of the
          * target gas and states. It also checks whether the collision already exists, if
