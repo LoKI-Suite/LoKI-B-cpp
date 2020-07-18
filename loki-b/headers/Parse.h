@@ -202,14 +202,14 @@ struct Parse
      * then stored. If a null pointer is passed, these coefficients are not stored.
      */
 
-    static bool entriesFromString(std::string &statesString, std::vector<StateEntry> &entries,
+    static bool entriesFromString(const std::string &statesString, std::vector<StateEntry> &entries,
                                   std::vector<uint16_t> *stoiCoeff = nullptr)
     {
         static const std::regex reState(
             R"((\d*)([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
 
-        std::regex_iterator<std::string::iterator> rit(statesString.begin(), statesString.end(), reState);
-        std::regex_iterator<std::string::iterator> rend;
+        std::regex_iterator<std::string::const_iterator> rit(statesString.begin(), statesString.end(), reState);
+        std::regex_iterator<std::string::const_iterator> rend;
 
         if (rit == rend)
             return false;
