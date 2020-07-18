@@ -6752,7 +6752,7 @@
       "rhs": [
         { "particle": "e", "charge": -1, "descriptor": { "e": "g" } },
         { "particle": "e", "charge": -1, "descriptor": { "e": "g" } },
-        { "particle": "N2", "charge": 0, "descriptor": { "e": "+,X" } }
+        { "particle": "N2", "charge": 1, "descriptor": { "e": "X" } }
       ],
       "superelastic": false,
       "type": "Ionization"
