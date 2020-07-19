@@ -41,19 +41,32 @@ namespace loki {
 //        this->evaluateTotalAndElasticCS();
     }
 
-    void EedfGasMixture::loadCollisions(const json_type& file, Grid *energyGrid, bool isExtra) {
+    void EedfGasMixture::loadCollisionsJSON(const json_type& cnf, Grid *energyGrid, bool isExtra) {
+unsigned ndx=0;
+        for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it) {
+            const json_type& rcnf = it->at("reaction");
+            auto *collision = createCollision(rcnf);
 
-        throw std::runtime_error("loadCollisionsJSON not yet implemented.");
+            const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                               collision->type == CollisionType::elastic);
+
+            if (linkCollision(collision, isExtra)) {
+                const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
+                collision->crossSection = new CrossSection(threshold, energyGrid,
+                                                           isElasticOrEffective, *it);
+
+                hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+            }
+        }
     }
     void EedfGasMixture::loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra) {
-        const std::string inputPath{"../Input/"};
         const std::regex reParam(R"(PARAM\.:)");
         const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
         const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
-        std::ifstream in(inputPath + file);
+        std::ifstream in(file);
 
         if (!in.is_open()) {
-            Log<FileError>::Warning(inputPath + file);
+            Log<FileError>::Warning(file);
             return;
         }
 
@@ -102,17 +115,20 @@ namespace loki {
     }
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
 
+        std::cout << "Starting loading collisions" << std::endl;
+        const std::string inputPath{"../Input/"};
         for (const std::string &file : files) {
             if (file.size()>=5 && file.substr(file.size()-5)==".json")
             {
-                json_type cnf = read_json_from_file(file);
-                loadCollisions(cnf, energyGrid, isExtra);
+                json_type cnf = read_json_from_file(inputPath + file);
+                loadCollisionsJSON(cnf, energyGrid, isExtra);
             }
             else
             {
-                loadCollisions(file, energyGrid, isExtra);
+                loadCollisions(inputPath + file, energyGrid, isExtra);
             }
         }
+        std::cout << "Finished loading collisions" << std::endl;
     }
 
     bool EedfGasMixture::linkCollision(EedfCollision *collision, bool isExtra) {
