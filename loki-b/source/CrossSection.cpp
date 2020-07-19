@@ -10,6 +10,30 @@
 
 namespace loki {
 
+    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf)
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {
+
+        using PairVector = std::vector<std::pair<double,double>>;
+	const PairVector tmp(cnf.at("data"));
+        rawEnergyData.resize(tmp.size());
+        rawCrossSection.resize(tmp.size());
+        for (PairVector::size_type i=0; i!=tmp.size(); ++i)
+        {
+            rawEnergyData[i] = tmp[i].first;
+            rawCrossSection[i] = tmp[i].second;
+        }
+#if 0
+std::cout << "isElasticOrEffective: " << isElasticOrEffective << std::endl;
+std::cout << "THRESHOLD: " << threshold << std::endl;
+for (unsigned i=0; i!=rawEnergyData.size(); ++i)
+{
+  std::cout << rawEnergyData[i] << " " << rawCrossSection[i] << std::endl;
+}
+#endif
+        this->interpolate();
+        this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    }
+
 //    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
 //            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
@@ -21,6 +45,14 @@ namespace loki {
 
         rawEnergyData = Vector::Map(rawEnergyVector.data(), rawEnergyVector.size());
         rawCrossSection = Vector::Map(rawCrossSectionVector.data(), rawCrossSectionVector.size());
+#if 0
+std::cout << "isElasticOrEffective: " << isElasticOrEffective << std::endl;
+std::cout << "THRESHOLD: " << threshold << std::endl;
+for (unsigned i=0; i!=rawEnergyData.size(); ++i)
+{
+  std::cout << rawEnergyData[i] << " " << rawCrossSection[i] << std::endl;
+}
+#endif
 
         this->interpolate();
         this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);

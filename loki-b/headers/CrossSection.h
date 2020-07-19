@@ -7,6 +7,7 @@
 
 #include "LinearAlgebra.h"
 #include "Grid.h"
+#include "json.h"
 
 #include <vector>
 #include <fstream>
@@ -21,6 +22,8 @@ namespace loki {
 
     public:
         const double threshold;
+
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf);
 
         CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in);
 
