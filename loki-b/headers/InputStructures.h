@@ -22,10 +22,10 @@ namespace loki {
 
         StateEntry() : level(none) {}
 
-        StateEntry(StateType level, std::string &&gasName, std::string &&charge,
-                   std::string &&e, std::string &&v, std::string &&J)
-                : level(level), charge(std::move(charge)), gasName(std::move(gasName)),
-                  e(std::move(e)), v(std::move(v)), J(std::move(J)) {}
+        StateEntry(StateType level, const std::string &gasName, const std::string &charge,
+                   const std::string &e, const std::string &v, const std::string &J)
+                : level(level), charge(charge), gasName(gasName),
+                  e(e), v(v), J(J) {}
 
         bool hasWildCard() {
             switch (level) {
