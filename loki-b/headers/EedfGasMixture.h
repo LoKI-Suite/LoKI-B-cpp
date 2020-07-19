@@ -61,7 +61,7 @@ namespace loki {
          * whether the collisions are extra, for correct initialization and storage of
          * the collisions.
          */
-        void loadCollisions(const json_type& file, Grid *energyGrid, bool isExtra);
+        void loadCollisionsJSON(const json_type& file, Grid *energyGrid, bool isExtra);
 
         /* -- loadCollisions --
          * Loads the collisions from files, supplied through a vector of strings that hold
