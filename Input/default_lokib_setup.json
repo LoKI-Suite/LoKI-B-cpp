@@ -15,11 +15,11 @@
 		"ionizationOperatorType": "usingSDCS",
 		"growthModelType": "temporal",
 		"includeEECollisions": false,
-		"_LXCatFiles": [
+		"LXCatFiles": [
 			"Nitrogen/JSON/v4/N2_LXCat.json",
 			"Nitrogen/JSON/v4/N2_rot_LXCat.json"
 		],
-		"LXCatFiles": [
+		"_LXCatFiles": [
 			"Nitrogen/N2_LXCat.txt",
 			"Nitrogen/N2_rot_LXCat.txt"
 		],
