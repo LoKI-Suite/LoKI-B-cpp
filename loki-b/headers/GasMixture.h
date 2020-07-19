@@ -23,6 +23,7 @@
 #include "PropertyFunctions.h"
 #include "WorkingConditions.h"
 #include "Parse.h"
+#include "json.h"
 
 #include <vector>
 #include <set>
@@ -247,6 +248,41 @@ namespace loki {
                 Log<LXCatError>::Error(rhs);
             entry_type = Parse::collisionTypeFromString(type);
             entry_isReverse = (sep[0] == '<');
+
+            std::vector<typename Trait<TraitType>::State *> reactants, products;
+            std::set<typename Trait<TraitType>::Gas *> targetGasses;
+
+            for (auto &stateEntry : entry_reactants) {
+                auto *state = reactants.emplace_back(addState(stateEntry));
+                targetGasses.insert(state->gas);
+            }
+
+            if (targetGasses.size() != 1)
+                Log<Message>::Error("Multiple target gasses in a single collision.");
+
+            for (auto &stateEntry : entry_products) {
+                products.emplace_back(addState(stateEntry));
+            }
+
+            return new typename Trait<TraitType>::Collision(entry_type, reactants, products,
+                                                            entry_stoiCoeff, entry_isReverse);
+        }
+
+        typename Trait<TraitType>::Collision *
+        createCollision(const json_type& rcnf) {
+
+            std::vector <StateEntry> entry_reactants, entry_products;
+            std::vector <uint16_t> entry_stoiCoeff;
+            Enumeration::CollisionType entry_type;
+            bool entry_isReverse;
+
+            if (!Parse::entriesFromJSON(rcnf.at("lhs"), entry_reactants))
+                Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
+            if (!Parse::entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
+                Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
+            entry_type = Parse::collisionTypeFromString(rcnf.at("type").get<std::string>());
+
+            entry_isReverse = rcnf.at("reverse_also");
 
             std::vector<typename Trait<TraitType>::State *> reactants, products;
             std::set<typename Trait<TraitType>::Gas *> targetGasses;
