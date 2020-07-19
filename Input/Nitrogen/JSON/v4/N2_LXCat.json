@@ -26,6 +26,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Effective"
     },
     "parameters": ["m/M = 0.0000195921", "complete set"],
@@ -172,6 +173,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 0.3 eV", "complete set"],
@@ -534,6 +536,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 0.6 eV", "complete set"],
@@ -593,6 +596,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 0.9 eV", "complete set"],
@@ -648,6 +652,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 1.1 eV", "complete set"],
@@ -701,6 +706,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 1.4 eV", "complete set"],
@@ -754,6 +760,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 1.7 eV", "complete set"],
@@ -804,6 +811,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 2 eV", "complete set"],
@@ -856,6 +864,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 2.2 eV", "complete set"],
@@ -906,6 +915,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 2.5 eV", "complete set"],
@@ -966,6 +976,7 @@
         }
       ],
       "superelastic": true,
+      "reverse_also": true,
       "type": "Vibrational"
     },
     "parameters": ["E = 2.7 eV", "complete set"],
@@ -1028,6 +1039,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 6.2 eV", "complete set"],
@@ -1441,6 +1453,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 7 eV", "complete set"],
@@ -1836,6 +1849,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 7.4 eV", "complete set"],
@@ -2586,6 +2600,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 7.4 eV", "complete set"],
@@ -3136,6 +3151,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 7.8 eV", "complete set"],
@@ -3524,6 +3540,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 8.2 eV", "complete set"],
@@ -4280,6 +4297,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 8.4 eV", "complete set"],
@@ -4884,6 +4902,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 8.6 eV", "complete set"],
@@ -5246,6 +5265,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 8.9 eV", "complete set"],
@@ -5763,6 +5783,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 11 eV", "complete set"],
@@ -6098,6 +6119,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 11.8 eV", "complete set"],
@@ -6503,6 +6525,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 12.2 eV", "complete set"],
@@ -6828,6 +6851,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Excitation"
     },
     "parameters": ["E = 13 eV", "complete set"],
@@ -7151,6 +7175,7 @@
         }
       ],
       "superelastic": false,
+      "reverse_also": false,
       "type": "Ionization"
     },
     "parameters": ["E = 15.6 eV", "complete set"],
