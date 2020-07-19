@@ -149,7 +149,18 @@ public:
 template <typename TraitType>
 State<TraitType>::State(StateType type, typename Trait<TraitType>::Gas *gas,
                         std::string e, std::string v, std::string J, std::string charge)
-    : type(type), gas(gas), e(std::move(e)), v(std::move(v)), J(std::move(J)), charge(std::move(charge)) {}
+    : type(type), gas(gas), e(e), v(v), J(J), charge(charge) {
+#if 0
+    std::cout << "State::State from params: " << std::endl
+	<< " type = " << static_cast<int>(type) << std::endl
+	<< " gas  = " << gas << std::endl
+	<< " e    = " << e << std::endl
+	<< " v    = " << v << std::endl
+	<< " J    = " << J << std::endl
+	<< " q    = " << charge << std::endl
+        << std::endl;
+#endif
+}
 
 /* -- Constructor --
      * Instantiates a State object as presented by a StateEntry object. Take note that
@@ -163,11 +174,21 @@ State<TraitType>::State(const StateEntry &entry,
                         typename Trait<TraitType>::Gas *gas, typename Trait<TraitType>::State *parent)
     : parent(parent), gas(gas), e(entry.e), v(entry.v), J(entry.J), charge(entry.charge)
 {
-
     if (parent == nullptr)
         type = electronic;
     else
         type = static_cast<StateType>(parent->type + 1);
+
+#if 0
+    std::cout << "State::State from entry: " << std::endl
+	<< " type = " << static_cast<int>(type) << std::endl
+	<< " gas  = " << gas << std::endl
+	<< " e    = " << e << std::endl
+	<< " v    = " << v << std::endl
+	<< " J    = " << J << std::endl
+	<< " q    = " << charge << std::endl
+        << std::endl;
+#endif
 }
 
 template <typename TraitType>
