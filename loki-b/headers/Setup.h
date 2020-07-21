@@ -24,15 +24,15 @@ namespace loki {
 
     /*
      * The SetupBase struct provides a base class that all setup structures will
-     * inherit from. It contains a pure virtual 'parse' function, that each class
+     * inherit from. It contains function template 'parse' that each class
      * can override to specify how the information in this class can be obtained
-     * from (a section of) the input file. Furthermore, it defines a
-     * 'parseSubStructure' function that accepts a SetupBase struct by reference,
+     * from (a section of) the input file. The template argument is either a
+     * string (legacy file format) or a JSON object. Furthermore, it defines a
+     * 'parseSubStructure' template that accepts a SetupBase struct by reference,
      * which is then filled.
      */
 
     struct SetupBase {
-        //virtual bool parse(const std::string &sectionContent) = 0;
 
 	template <class SubStructure>
         static bool parseSubStructure(const std::string &content,
@@ -40,8 +40,6 @@ namespace loki {
 	template <class SubStructure>
         static bool parseSubStructure(const json_type &content,
                 const std::string &fieldName, SubStructure &subStruct);
-
-        virtual ~SetupBase() {}
     };
 
     /* ------- WORKING CONDITIONS ------- */
@@ -249,21 +247,24 @@ namespace loki {
      */
 
     class Setup : public SetupBase {
-        const std::string inputPath{"../Input"};
 
-        // The 'parse' function is private since users should call 'parseFile'.
-	template <class Src>
-        bool parse(const Src &sectionContent);
     public:
+
+        Setup(const std::string& fname);
+
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
         OutputSetup output;
 
+        /** \todo remove this? Needed by Output when *output* is written to
+         *  produce the input file. It should be possible to do this after
+         *  reading without storing the result in a member.
+         */
         std::string fileContent;
+    private:
 
-        Setup() = default;
-        ~Setup() = default;
-
+	template <class Src>
+        bool parse(const Src &sectionContent);
         bool parseFile(const std::string& fileName);
     };
 

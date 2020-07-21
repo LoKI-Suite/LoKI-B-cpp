@@ -93,6 +93,14 @@ namespace loki {
         return true;
     }
 
+    Setup::Setup(const std::string& fname)
+    {
+        if (!parseFile(fname))
+        {
+            throw std::runtime_error("Error parsing input file '" + fname + "'.");
+        }
+    }
+
     /*
      * The parseFile function is only available to the main Setup class. The user
      * passes the name of the input file. The function will then extract the text
@@ -101,11 +109,14 @@ namespace loki {
 
     bool Setup::parseFile(const std::string &fileName) {
 
+        const std::string inputPath{"../Input"};
+
         // if the file name extension is ".json", create a JSON object from
 	// the file and pass that to the parse overload
         if (fileName.size()>=5 && fileName.substr(fileName.size()-5)==".json")
         {
             json_type cnf = read_json_from_file(fileName);
+            fileContent = cnf.dump(1,'\t');
             return this->parse(cnf);
         }
         // otherwise, assume fileName refers to a legacy LXCat file.
