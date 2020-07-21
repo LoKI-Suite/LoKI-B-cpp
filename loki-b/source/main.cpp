@@ -8,7 +8,7 @@
 #include <Simulation.h>
 #include <LinearAlgebra.h>
 #include <chrono>
-#include <Log.h>
+#include <exception>
 
 // TODO: Cleanup
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
@@ -37,24 +37,15 @@ void plot(const std::string &title, const std::string &xlabel, const std::string
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
-    {
-        loki::Log<loki::Message>::Warning("Expected the input file as the single argument.");
-        return 1;
-    }
-
-    std::string fileName = argv[1];
-
-    auto begin = std::chrono::high_resolution_clock::now();
-
     try
     {
-        loki::Setup setup;
-
-        if (!setup.parseFile(fileName))
+        auto begin = std::chrono::high_resolution_clock::now();
+        if (argc != 2)
         {
-            return 1;
+            throw std::runtime_error("Expected the input file as the single argument.");
         }
+
+        const loki::Setup setup(argv[1]);
 
         loki::Simulation simulation(setup);
 
@@ -62,18 +53,18 @@ int main(int argc, char **argv)
         simulation.outputPathExists.addListener(handleExistingOutputPath);
 
         simulation.run();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+
+        // generate output
+
+        return 0;
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
+        return 1;
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
-
-    // generate output
-
-    return 0;
 }
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
