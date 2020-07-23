@@ -9,12 +9,30 @@ namespace loki
 {
 
 Grid::Grid(const EnergyGridSetup &gridSetup)
-    : cells(gridSetup.cellNumber), nodes(gridSetup.cellNumber - 1), 
+    : cells(gridSetup.cellNumber), nodes(gridSetup.cellNumber - 1),
       cellNumber(gridSetup.cellNumber), step(gridSetup.maxEnergy / gridSetup.cellNumber),
-      minEedfDecay(gridSetup.smartGrid.minEedfDecay), maxEedfDecay(gridSetup.smartGrid.maxEedfDecay), 
+      minEedfDecay(gridSetup.smartGrid.minEedfDecay), maxEedfDecay(gridSetup.smartGrid.maxEedfDecay),
       updateFactor(gridSetup.smartGrid.updateFactor), isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
 {
     this->nodes = Vector::LinSpaced(cellNumber + 1, 0, gridSetup.maxEnergy);
+    this->cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
+
+    Log<Message>::Notify(*this);
+}
+
+/// \todo Use get<T>() everywhere, do not rely on implicit conversion
+/// \todo See if the elements for smartFrid support can be bundled in some way
+Grid::Grid(const json_type &cnf)
+    : cells(cnf.at("cellNumber").get<unsigned>()),
+      nodes(cnf.at("cellNumber").get<unsigned>() - 1),
+      cellNumber(cnf.at("cellNumber")),
+      step(cnf.at("maxEnergy").get<double>() / cnf.at("cellNumber").get<unsigned>()),
+      minEedfDecay(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("minEedfDecay").get<unsigned>() : 0),
+      maxEedfDecay(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("maxEedfDecay").get<unsigned>() : 0),
+      updateFactor(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("updateFactor").get<double>() : 0),
+      isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
+{
+    this->nodes = Vector::LinSpaced(cellNumber + 1, 0, cnf.at("maxEnergy"));
     this->cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
 
     Log<Message>::Notify(*this);
