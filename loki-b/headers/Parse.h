@@ -17,6 +17,7 @@
 #include "InputStructures.h"
 #include "JobSystem.h"
 #include "StandardPaths.h"
+#include "json.h"
 
 namespace loki
 {
@@ -47,19 +48,6 @@ struct Parse
 
         std::stringstream s(valueBuffer);
         s >> value;
-
-        return true;
-    }
-    template <typename T>
-    static bool setField(const json_type &sectionContent, const std::string &fieldName, T &value)
-    {
-        if (!sectionContent.contains(fieldName))
-        {
-            // std::cout << "setField: " << fieldName << " not found." << std::endl;
-            return false;
-        }
-        value = sectionContent.at(fieldName).get<T>();
-        // std::cout << "setField: " << fieldName << " = " << value << std::endl;
 
         return true;
     }
@@ -114,13 +102,6 @@ struct Parse
 
             container.emplace_back(it->str(1));
         }
-
-        return !container.empty();
-    }
-    static bool getList(const json_type &sectionContent, const std::string &fieldName,
-                        std::vector<std::string> &container)
-    {
-        container = sectionContent.at(fieldName).get<std::vector<std::string>>();
 
         return !container.empty();
     }
@@ -192,6 +173,18 @@ struct Parse
         if (!getValue(valueString, value))
             return firstValueInRange(valueString, value);
 
+        return true;
+    }
+    static bool getFirstValue(const json_type &entry, double &value)
+    {
+        if (entry.type()==json_type::value_t::string)
+        {
+            value = firstValueInRange(entry, value);
+        }
+        else
+        {
+            value = entry.get<double>();
+        }
         return true;
     }
 
@@ -556,45 +549,6 @@ struct Parse
         return true;
     }
 
-    /* -- collisionTypeFromString --
-     * Accepts a string containing a collision type (e.g. Excitation or Attachment) and
-     * returns the corresponding entry in the CollisionType enumeration.
-     */
-
-    static Enumeration::CollisionType collisionTypeFromString(const std::string &collisionTypeString)
-    {
-        static const std::regex rState(
-            R"((Elastic|Effective|Excitation|Vibrational|Rotational|Ionization|Attachment))");
-        std::smatch mState;
-
-        if (!std::regex_search(collisionTypeString, mState, rState))
-            return Enumeration::CollisionType::none;
-
-        char first = mState.str(0)[0], second = mState.str(0)[1];
-
-        switch (first)
-        {
-        case 'E':
-            switch (second)
-            {
-            case 'l':
-                return Enumeration::CollisionType::elastic;
-            case 'f':
-                return Enumeration::CollisionType::effective;
-            default:
-                return Enumeration::CollisionType::excitation;
-            }
-        case 'V':
-            return Enumeration::CollisionType::vibrational;
-        case 'R':
-            return Enumeration::CollisionType::rotational;
-        case 'I':
-            return Enumeration::CollisionType::ionization;
-        default:
-            return Enumeration::CollisionType::attachment;
-        }
-    }
-
     /* -- rawCrossSectionFromStream --
      * Accepts a reference to an input file stream of an LXCat file. This stream should be
      * at a position just after reading a collision description from the LXCat file, since
@@ -635,7 +589,7 @@ struct Parse
     {
         std::ifstream in(INPUT "/" + fileName);
 
-        if (!in.is_open())
+        if (!in)
             return false;
 
         std::stringstream ss;
@@ -814,12 +768,7 @@ inline bool Parse::setField<Enumeration::EedfType>(const std::string &sectionCon
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    value = parse_enum_string<Enumeration::EedfType>(valueBuffer, {
-		{"boltzmann",Enumeration::EedfType::boltzmann},
-		{"prescribed",Enumeration::EedfType::prescribed},
-		});
-
+    value = Enumeration::getEedfType(valueBuffer);
     return true;
 }
 
@@ -833,13 +782,7 @@ inline bool Parse::setField<Enumeration::IonizationOperatorType>(const std::stri
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    value = parse_enum_string<Enumeration::IonizationOperatorType>(valueBuffer, {
-		{"conservative",Enumeration::IonizationOperatorType::conservative},
-		{"oneTakesAll",Enumeration::IonizationOperatorType::oneTakesAll},
-		{"equalSharing",Enumeration::IonizationOperatorType::equalSharing},
-		{"usingSDCS",Enumeration::IonizationOperatorType::sdcs}
-		});
+    value = Enumeration::getIonizationOperatorType(valueBuffer);
     return true;
 }
 
@@ -853,12 +796,7 @@ inline bool Parse::setField<Enumeration::GrowthModelType>(const std::string &sec
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    value = parse_enum_string<Enumeration::GrowthModelType>(valueBuffer, {
-		{"spatial",Enumeration::GrowthModelType::spatial},
-		{"temporal",Enumeration::GrowthModelType::temporal},
-		});
-
+    value = Enumeration::getGrowthModelType(valueBuffer);
     return true;
 }
 
@@ -874,72 +812,6 @@ inline bool Parse::setField<std::vector<std::string>>(const std::string &section
     return Parse::getList(fieldContent, fieldName, value);
 }
 
-template <>
-inline bool Parse::setField<Enumeration::EedfType>(const json_type &sectionContent, const std::string &fieldName,
-                                                   Enumeration::EedfType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!setField(sectionContent,fieldName,valueBuffer))
-        return false;
-
-    value = parse_enum_string<Enumeration::EedfType>(valueBuffer, {
-		{"boltzmann",Enumeration::EedfType::boltzmann},
-		{"prescribed",Enumeration::EedfType::prescribed},
-		});
-
-    return true;
-}
-
-template <>
-inline bool Parse::setField<Enumeration::IonizationOperatorType>(const json_type &sectionContent,
-                                                                 const std::string &fieldName,
-                                                                 Enumeration::IonizationOperatorType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!setField(sectionContent,fieldName,valueBuffer))
-        return false;
-
-    value = parse_enum_string<Enumeration::IonizationOperatorType>(valueBuffer, {
-		{"conservative",Enumeration::IonizationOperatorType::conservative},
-		{"oneTakesAll",Enumeration::IonizationOperatorType::oneTakesAll},
-		{"equalSharing",Enumeration::IonizationOperatorType::equalSharing},
-		{"usingSDCS",Enumeration::IonizationOperatorType::sdcs}
-		});
-    return true;
-}
-
-template <>
-inline bool Parse::setField<Enumeration::GrowthModelType>(const json_type &sectionContent,
-                                                          const std::string &fieldName,
-                                                          Enumeration::GrowthModelType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!setField(sectionContent,fieldName,valueBuffer))
-        return false;
-
-    value = parse_enum_string<Enumeration::GrowthModelType>(valueBuffer, {
-		{"spatial",Enumeration::GrowthModelType::spatial},
-		{"temporal",Enumeration::GrowthModelType::temporal},
-		});
-
-    return true;
-}
-
-template <>
-inline bool Parse::setField<std::vector<std::string>>(const json_type &sectionContent, const std::string &fieldName,
-                                                      std::vector<std::string> &value)
-{
-    if (!sectionContent.contains(fieldName))
-        return false;
-
-    return Parse::getList(sectionContent, fieldName, value);
-}
 } // namespace loki
 
 #endif // LOKI_CPP_PARSE_H

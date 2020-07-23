@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <Enumeration.h>
-#include "json.h"
 
 namespace loki {
     /*
@@ -37,9 +36,6 @@ namespace loki {
 	template <class SubStructure>
         static bool parseSubStructure(const std::string &content,
                 const std::string &fieldName, SubStructure &subStruct);
-	template <class SubStructure>
-        static bool parseSubStructure(const json_type &content,
-                const std::string &fieldName, SubStructure &subStruct);
     };
 
     /* ------- WORKING CONDITIONS ------- */
@@ -61,8 +57,7 @@ namespace loki {
         double chamberLength = 0.;
         double chamberRadius = 0.;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- GAS PROPERTIES ------- */
@@ -86,8 +81,7 @@ namespace loki {
                     electricQuadrupoleMoment,
                     OPBParameter;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- STATE PROPERTIES ------- */
@@ -108,8 +102,7 @@ namespace loki {
                                  statisticalWeight,
                                  population;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- NUMERICS ------- */
@@ -126,8 +119,7 @@ namespace loki {
                  maxEedfDecay = 0;
         double updateFactor = 0;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -142,8 +134,7 @@ namespace loki {
         uint32_t cellNumber;
         SmartGridSetup smartGrid;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -156,8 +147,7 @@ namespace loki {
     struct OdeSetParametersSetup : public SetupBase {
         double maxStep;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -173,8 +163,7 @@ namespace loki {
                maxEedfRelError;
         OdeSetParametersSetup odeSetParameters;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -189,8 +178,7 @@ namespace loki {
         double maxPowerBalanceRelError = -1.;
         NonLinearRoutinesSetup nonLinearRoutines;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- ELECTRON KINETICS ------- */
@@ -217,8 +205,7 @@ namespace loki {
         StatePropertiesSetup stateProperties;
         NumericsSetup numerics;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- OUTPUT ------- */
@@ -235,8 +222,7 @@ namespace loki {
         std::string folder;
         std::vector<std::string> dataFiles;
 
-        template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- SETUP ------- */
@@ -263,8 +249,7 @@ namespace loki {
         std::string fileContent;
     private:
 
-	template <class Src>
-        bool parse(const Src &sectionContent);
+        bool parse(const std::string &sectionContent);
         bool parseFile(const std::string& fileName);
     };
 

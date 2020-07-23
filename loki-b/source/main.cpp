@@ -45,14 +45,23 @@ int main(int argc, char **argv)
             throw std::runtime_error("Expected the input file as the single argument.");
         }
 
-        const loki::Setup setup(argv[1]);
+        std::unique_ptr<loki::Simulation> simulation;
+        std::string fileName(argv[1]);
+        if (fileName.size()>=5 && fileName.substr(fileName.size()-5)==".json")
+        {
+            const loki::json_type cnf = loki::read_json_from_file(fileName);
+            simulation.reset(new loki::Simulation(cnf));
+        }
+        else
+        {
+            const loki::Setup setup(argv[1]);
+            simulation.reset(new loki::Simulation(setup));
+        }
 
-        loki::Simulation simulation(setup);
+        simulation->obtainedResults.addListener(handleResults);
+        simulation->outputPathExists.addListener(handleExistingOutputPath);
 
-        simulation.obtainedResults.addListener(handleResults);
-        simulation.outputPathExists.addListener(handleExistingOutputPath);
-
-        simulation.run();
+        simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
         std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 

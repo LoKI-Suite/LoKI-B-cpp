@@ -9,7 +9,6 @@
 
 #include "Setup.h"
 #include "Parse.h"
-#include "json.h"
 #include <Log.h>
 
 // DONE: Think which is desirable:
@@ -75,23 +74,6 @@ namespace loki {
 
         return true;
     }
-    template <class SubStructure>
-    bool SetupBase::parseSubStructure(const json_type &content, const std::string &fieldName,
-                                      SubStructure &subStruct) {
-        if (content.contains(fieldName)) {
-
-            // Same here.
-            if (!subStruct.parse(content.at(fieldName))) {
-                Log<ParseSectionError>::Error(fieldName);
-                return false;
-            }
-        } else {
-            Log<MissingSectionError>::Warning(fieldName);
-            return false;
-        }
-
-        return true;
-    }
 
     Setup::Setup(const std::string& fname)
     {
@@ -111,15 +93,6 @@ namespace loki {
 
         const std::string inputPath{"../Input"};
 
-        // if the file name extension is ".json", create a JSON object from
-	// the file and pass that to the parse overload
-        if (fileName.size()>=5 && fileName.substr(fileName.size()-5)==".json")
-        {
-            json_type cnf = read_json_from_file(fileName);
-            fileContent = cnf.dump(1,'\t');
-            return this->parse(cnf);
-        }
-        // otherwise, assume fileName refers to a legacy LXCat file.
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {
@@ -151,8 +124,7 @@ namespace loki {
      * call either (R_)SET() or (R_)SUB_STRUCT() for each member individually.
      */
 
-    template <class Src>
-    bool Setup::parse(const Src &sectionContent) {
+    bool Setup::parse(const std::string &sectionContent) {
 
         R_SUB_STRUCT(sectionContent, workingConditions)
         R_SUB_STRUCT(sectionContent, electronKinetics)
@@ -161,8 +133,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool WorkingConditionsSetup::parse(const Src &sectionContent) {
+    bool WorkingConditionsSetup::parse(const std::string &sectionContent) {
         // TODO: Check whether 'reducedField' is present in the case that eedfType is boltzmann
         //  (and subsequently that 'electronTemperature' is present when it is prescribed).
 
@@ -178,8 +149,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool ElectronKineticsSetup::parse(const Src &sectionContent) {
+    bool ElectronKineticsSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, isOn)
         R_SET(sectionContent, eedfType)
         SET(sectionContent, shapeParameter)
@@ -198,8 +168,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool GasPropertiesSetup::parse(const Src &sectionContent) {
+    bool GasPropertiesSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, mass)
         R_SET(sectionContent, fraction)
         R_SET(sectionContent, harmonicFrequency)
@@ -211,8 +180,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool StatePropertiesSetup::parse(const Src &sectionContent) {
+    bool StatePropertiesSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, energy)
         R_SET(sectionContent, statisticalWeight)
         R_SET(sectionContent, population)
@@ -220,8 +188,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool NumericsSetup::parse(const Src &sectionContent) {
+    bool NumericsSetup::parse(const std::string &sectionContent) {
         SET(sectionContent, maxPowerBalanceRelError)
 
         R_SUB_STRUCT(sectionContent, energyGrid)
@@ -230,8 +197,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool EnergyGridSetup::parse(const Src &sectionContent) {
+    bool EnergyGridSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, maxEnergy)
         R_SET(sectionContent, cellNumber)
 
@@ -240,8 +206,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool SmartGridSetup::parse(const Src &sectionContent) {
+    bool SmartGridSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, minEedfDecay)
         R_SET(sectionContent, maxEedfDecay)
         R_SET(sectionContent, updateFactor)
@@ -249,8 +214,7 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool NonLinearRoutinesSetup::parse(const Src &sectionContent) {
+    bool NonLinearRoutinesSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, algorithm)
         R_SET(sectionContent, mixingParameter)
         R_SET(sectionContent, maxEedfRelError)
@@ -260,15 +224,13 @@ namespace loki {
         return true;
     }
 
-    template <class Src>
-    bool OdeSetParametersSetup::parse(const Src &sectionContent) {
+    bool OdeSetParametersSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, maxStep)
 
         return true;
     }
 
-    template <class Src>
-    bool OutputSetup::parse(const Src &sectionContent) {
+    bool OutputSetup::parse(const std::string &sectionContent) {
         R_SET(sectionContent, isOn)
         R_SET(sectionContent, folder)
         R_SET(sectionContent, dataFiles)

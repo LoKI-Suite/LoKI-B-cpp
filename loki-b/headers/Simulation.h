@@ -6,6 +6,7 @@
 #define LOKI_CPP_SIMULATION_H
 
 #include "Setup.h"
+#include "json.h"
 #include "WorkingConditions.h"
 #include "ElectronKinetics.h"
 #include "JobSystem.h"
@@ -30,6 +31,7 @@ namespace loki {
         Event<std::string> outputPathExists;
     public:
         explicit Simulation(const Setup &setup);
+        explicit Simulation(const json_type &cnf);
 
         ~Simulation();
 
@@ -42,6 +44,7 @@ namespace loki {
 
     private:
         void initializeJobs(const WorkingConditionsSetup &setup);
+        void initializeJobs(const json_type &cnf);
 
         bool initializeJob(const std::string &name, const std::string &valueString,
                            void (WorkingConditions::*callback)(double));

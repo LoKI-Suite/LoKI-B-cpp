@@ -14,6 +14,7 @@
 
 namespace loki
 {
+
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
     : workingConditions(workingConditions),
       grid(setup.numerics.energyGrid),
@@ -46,6 +47,104 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     this->growthModelType = setup.growthModelType;
     this->includeEECollisions = setup.includeEECollisions;
     this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
+
+    // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
+    // mixture.grid->getNodes(), mixture.totalCrossSection);
+
+    inelasticMatrix.setZero(grid.cellNumber, grid.cellNumber);
+
+    ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+
+    attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+
+    if (ionizationOperatorType != IonizationOperatorType::conservative &&
+        mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+        ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+
+    A.setZero(grid.cellNumber);
+    B.setZero(grid.cellNumber);
+
+    boltzmannMatrix.setZero();
+
+    // SPARSE INITIALIZATION
+    std::vector<Eigen::Triplet<double>> tridiagPattern;
+    tridiagPattern.reserve(3 * grid.cellNumber - 2);
+
+    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    {
+        if (k > 0)
+            tridiagPattern.emplace_back(k - 1, k, 0.);
+
+        tridiagPattern.emplace_back(k, k, 0.);
+
+        if (k < grid.cellNumber - 1)
+            tridiagPattern.emplace_back(k + 1, k, 0.);
+    }
+
+    elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+
+    if (!mixture.CARGasses.empty())
+        CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+
+    std::vector<Eigen::Triplet<double>> diagPattern;
+    diagPattern.reserve(grid.cellNumber);
+
+    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    {
+        diagPattern.emplace_back(k, k, 0.);
+    }
+
+    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+        attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+
+    if (growthModelType == GrowthModelType::spatial)
+    {
+        ionSpatialGrowthD.setFromTriplets(diagPattern.begin(), diagPattern.end());
+        ionSpatialGrowthU.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+        fieldMatrixSpatGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    }
+    else if (growthModelType == GrowthModelType::temporal)
+    {
+        ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
+        fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    }
+
+    this->evaluateMatrix();
+}
+
+ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
+    : workingConditions(workingConditions),
+      grid(cnf.at("numerics").at("energyGrid")),
+      mixture(&grid),
+      attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
+      boltzmannMatrix(grid.cellNumber, grid.cellNumber),
+      elasticMatrix(grid.cellNumber, grid.cellNumber),
+      fieldMatrix(grid.cellNumber, grid.cellNumber),
+      attachmentMatrix(grid.cellNumber, grid.cellNumber),
+      ionSpatialGrowthD(grid.cellNumber, grid.cellNumber),
+      ionSpatialGrowthU(grid.cellNumber, grid.cellNumber),
+      fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber),
+      fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber),
+      ionTemporalGrowth(grid.cellNumber, grid.cellNumber),
+      g_c(grid.cellNumber),
+      eedf(grid.cellNumber)
+{
+
+    mixture.initialize(cnf, workingConditions);
+
+    grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
+
+    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
+
+    this->eedfType = Enumeration::getEedfType(cnf.at("eedfType"));
+    this->shapeParameter = cnf.contains("shapeParameter") ? cnf.at("shapeParameter").get<unsigned>() : 0;
+    this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
+    this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
+    this->ionizationOperatorType = Enumeration::getIonizationOperatorType(cnf.at("ionizationOperatorType"));
+    this->growthModelType = Enumeration::getGrowthModelType(cnf.at("growthModelType"));
+    this->includeEECollisions = cnf.at("includeEECollisions");
+    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
     // mixture.grid->getNodes(), mixture.totalCrossSection);

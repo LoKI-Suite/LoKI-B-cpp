@@ -25,12 +25,31 @@ namespace loki {
             }
         }
     }
+    Simulation::Simulation(const json_type& cnf)
+            : workingConditions(
+                  cnf.at("workingConditions"),
+                  Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) ),
+              enableKinetics(cnf.at("electronKinetics").at("isOn")),
+              enableOutput(cnf.at("output").at("isOn")),
+              jobManager(&workingConditions) {
+
+        if (enableKinetics) {
+            initializeJobs(cnf.at("workingConditions"));
+
+            electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &workingConditions);
+            electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
+
+            if (enableOutput) {
+                output = new Output(cnf, &workingConditions, &jobManager);
+
+                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
+                output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
+            }
+        }
+    }
 
     void Simulation::run() {
         if (enableKinetics) {
-            if (enableOutput) {
-                output->createPath();
-            }
             if (multipleSimulations) {
                 do {
                     electronKinetics->solve();
@@ -51,6 +70,15 @@ namespace loki {
         // Repeat this statement for any other fields that can be declared as a range.
         if (!Parse::isNumerical(setup.reducedField)) {
             if (!initializeJob("Reduced Field", setup.reducedField, &WorkingConditions::updateReducedField)) {
+                Log<Message>::Error("Reduced field entry in input file is ill formatted.");
+            }
+        }
+    }
+    void Simulation::initializeJobs(const json_type &cnf) {
+
+        // Repeat this statement for any other fields that can be declared as a range.
+        if (cnf.at("reducedField").type()==json_type::value_t::string) {
+            if (!initializeJob("Reduced Field", cnf.at("reducedField"), &WorkingConditions::updateReducedField)) {
                 Log<Message>::Error("Reduced field entry in input file is ill formatted.");
             }
         }
