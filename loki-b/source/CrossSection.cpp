@@ -37,7 +37,7 @@ for (unsigned i=0; i!=rawEnergyData.size(); ++i)
 //    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
 //            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
-    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in)
+    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
             : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {
         std::vector<double> rawEnergyVector, rawCrossSectionVector;
 

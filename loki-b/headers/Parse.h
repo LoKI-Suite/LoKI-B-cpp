@@ -558,7 +558,7 @@ struct Parse
      */
 
     static void rawCrossSectionFromStream(std::vector<double> &rawEnergyData, std::vector<double> &rawCrossSection,
-                                          std::ifstream &in)
+                                          std::istream &in)
     {
         std::string line;
 
