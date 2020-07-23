@@ -8,6 +8,7 @@
 #include "LinearAlgebra.h"
 #include "Event.h"
 #include "Setup.h"
+#include "json.h"
 
 namespace loki
 {
@@ -25,6 +26,7 @@ public:
     const bool isSmart;
 
     explicit Grid(const EnergyGridSetup &gridSetup);
+    explicit Grid(const json_type &cnf);
     ~Grid() = default;
 
     Grid(const Grid &other) = delete;
