@@ -8,19 +8,18 @@
 namespace loki {
     Simulation::Simulation(const loki::Setup &setup)
             : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
-              enableKinetics(setup.electronKinetics.isOn), enableOutput(setup.output.isOn),
               jobManager(&workingConditions) {
 
-        if (enableKinetics) {
+        if (setup.electronKinetics.isOn) {
             initializeJobs(setup.workingConditions);
 
             electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
             electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
 
-            if (enableOutput) {
-                output = new Output(setup, &workingConditions, &jobManager);
+            if (setup.output.isOn) {
+                output.reset(new Output(setup, &workingConditions, &jobManager));
 
-                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
+                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
@@ -29,27 +28,25 @@ namespace loki {
             : workingConditions(
                   cnf.at("workingConditions"),
                   Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) ),
-              enableKinetics(cnf.at("electronKinetics").at("isOn")),
-              enableOutput(cnf.at("output").at("isOn")),
               jobManager(&workingConditions) {
 
-        if (enableKinetics) {
+        if (cnf.at("electronKinetics").at("isOn")) {
             initializeJobs(cnf.at("workingConditions"));
 
             electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &workingConditions);
             electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
 
-            if (enableOutput) {
-                output = new Output(cnf, &workingConditions, &jobManager);
+            if (cnf.at("output").at("isOn")) {
+                output.reset(new Output(cnf, &workingConditions, &jobManager));
 
-                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
+                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
     }
 
     void Simulation::run() {
-        if (enableKinetics) {
+        if (electronKinetics.get()) {
             if (multipleSimulations) {
                 do {
                     electronKinetics->solve();
@@ -62,7 +59,6 @@ namespace loki {
     }
 
     Simulation::~Simulation() {
-        if (enableOutput) delete output;
     }
 
     void Simulation::initializeJobs(const WorkingConditionsSetup &setup) {
