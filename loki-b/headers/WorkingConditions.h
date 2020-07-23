@@ -15,6 +15,7 @@
 #include "Event.h"
 #include "Setup.h"
 #include "Enumeration.h"
+#include "json.h"
 #include <map>
 
 namespace loki {
@@ -34,7 +35,8 @@ namespace loki {
 
         std::map<std::string, double *> argumentMap;
 
-        explicit WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType);
+        WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType);
+        WorkingConditions(const json_type &cnf, const Enumeration::EedfType &eedfType);
         ~WorkingConditions() = default;
 
         // Copying this object is not allowed.
