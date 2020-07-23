@@ -12,23 +12,11 @@
 
 namespace loki::Enumeration {
 
-    template <class E>
-    E parse_enum_string(const std::string& key, const std::vector<std::pair<std::string,E>>& map)
-    {
-        for (const auto& e : map)
-        {
-		if (e.first==key)
-                {
-                    return e.second;
-                }
-        }
-        throw std::runtime_error("Illegal argument '" + key + "'.");
-    }
-
     enum class EedfType : uint8_t {
         boltzmann,
         prescribed
     };
+    EedfType getEedfType(const std::string& str);
 
     enum class IonizationOperatorType : uint8_t {
         conservative,
@@ -36,11 +24,13 @@ namespace loki::Enumeration {
         equalSharing,
         sdcs
     };
+    IonizationOperatorType getIonizationOperatorType(const std::string& str);
 
     enum class GrowthModelType : uint8_t {
         spatial,
         temporal
     };
+    GrowthModelType getGrowthModelType(const std::string& str);
 
     enum class StatePropertyDataType : uint8_t {
         direct,
@@ -72,9 +62,8 @@ namespace loki::Enumeration {
         size,
         none
     };
+    CollisionType getCollisionType(const std::string &str);
 
-    static const std::string collisionTypeName[7]{"Effective", "Elastic", "Excitation", "Vibrational", "Rotational",
-                                                  "Ionization", "Attachment"};
 }
 
 #endif //LOKI_CPP_ENUMERATION_H

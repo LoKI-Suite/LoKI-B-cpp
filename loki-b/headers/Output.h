@@ -16,6 +16,7 @@
 #include "WorkingConditions.h"
 #include "EedfGas.h"
 #include "JobSystem.h"
+#include "json.h"
 
 namespace loki {
     class Output {
@@ -35,6 +36,7 @@ namespace loki {
 
     public:
         explicit Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
+        explicit Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
 
         void createPath();
 
@@ -44,7 +46,7 @@ namespace loki {
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
 
     private:
-        void writeInputFile();
+        void writeInputFile(const std::string& fname);
 
         void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies);
 

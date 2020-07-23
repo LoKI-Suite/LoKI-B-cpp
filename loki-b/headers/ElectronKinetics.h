@@ -75,7 +75,8 @@ class ElectronKinetics
     std::vector<uint32_t> superElasticThresholds;
 
 public:
-    explicit ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
 
     ResultEvent obtainedNewEedf;
 

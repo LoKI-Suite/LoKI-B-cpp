@@ -37,6 +37,7 @@ namespace loki {
          */
 
         void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+        void initialize(const json_type &cnf, const WorkingConditions *workingConditions);
 
         // TODO: comment evaluateTotalAndElasticCS
 
@@ -90,6 +91,7 @@ namespace loki {
          */
 
         void loadGasProperties(const GasPropertiesSetup &setup) override;
+        void loadGasProperties(const json_type &cnf) override;
 
         // TODO: comment addCARGasses
 

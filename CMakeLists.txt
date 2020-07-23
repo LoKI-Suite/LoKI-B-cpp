@@ -77,7 +77,7 @@ else()
 endif()
 
 set(cpp ${src}/WorkingConditions.cpp
-        ${src}/Grid.cpp ${src}/EedfGas.cpp
+        ${src}/Grid.cpp ${src}/EedfGas.cpp ${src}/Enumeration.cpp
         ${src}/EedfState.cpp  ${src}/Setup.cpp
         ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
         ${src}/CrossSection.cpp ${src}/EedfGasMixture.cpp

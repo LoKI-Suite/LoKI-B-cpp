@@ -40,6 +40,32 @@ namespace loki {
 
 //        this->evaluateTotalAndElasticCS();
     }
+    void EedfGasMixture::initialize(const json_type &cnf, const WorkingConditions *workingConditions) {
+
+        loadCollisions(cnf.at("LXCatFiles"), grid);
+
+        if (cnf.contains("LXCatFilesExtra"))
+            loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
+
+        // DONE: Load Gas properties
+        this->loadGasProperties(cnf.at("gasProperties"));
+
+        // DONE: Load State properties
+        this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
+
+        this->evaluateStateDensities();
+
+        for (auto *gas : gasses) {
+            if (!gas->isDummy())
+                gas->checkElasticCollisions(grid);
+        }
+
+        if (cnf.contains("CARgases")) {
+          this->addCARGasses(cnf.at("CARgases"));
+        }
+
+//        this->evaluateTotalAndElasticCS();
+    }
 
     void EedfGasMixture::loadCollisionsJSON(const json_type& cnf, Grid *energyGrid, bool isExtra) {
 unsigned ndx=0;
@@ -156,6 +182,13 @@ unsigned ndx=0;
         GAS_PROPERTY(OPBParameter)
 
         GasMixture::loadGasProperties(setup);
+    }
+
+    void EedfGasMixture::loadGasProperties(const json_type &cnf) {
+        std::string fileBuffer;
+        GAS_PROPERTY_JSON(cnf,OPBParameter)
+
+        GasMixture::loadGasProperties(cnf);
     }
 
     void EedfGasMixture::evaluateTotalAndElasticCS() {

@@ -30,6 +30,32 @@ namespace loki {
                 saveTable = true;
             }
         }
+        createPath();
+        writeInputFile("setup.in");
+    }
+
+    Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
+                   const JobManager *jobManager)
+            : workingConditions(workingConditions),
+              folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>()),
+              jobManager(jobManager),
+              inputFile(cnf.dump(1,'\t')) {
+
+        for (const auto &entry : cnf.at("output").at("dataFiles")) {
+            if (entry == "eedf") {
+                saveEedf = true;
+            } else if (entry == "swarmParameters") {
+                saveSwarm = true;
+            } else if (entry == "rateCoefficients") {
+                saveRates = true;
+            } else if (entry == "powerBalance") {
+                savePower = true;
+            } else if (entry == "lookUpTable") {
+                saveTable = true;
+            }
+        }
+        createPath();
+        writeInputFile("setup.json");
     }
 
     void Output::createPath() {
@@ -51,8 +77,6 @@ namespace loki {
         } else {
             fs::create_directories(path);
         }
-
-        writeInputFile();
     }
 
     void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
@@ -72,8 +96,8 @@ namespace loki {
         if (saveTable) writeLookuptable(power, swarmParameters);
     }
 
-    void Output::writeInputFile() {
-        auto *file = std::fopen((folder + "/setup.in").c_str(), "w");
+    void Output::writeInputFile(const std::string& fname) {
+        auto *file = std::fopen((folder + "/" + fname).c_str(), "w");
 
         fprintf(file, "%s", inputFile.c_str());
 
