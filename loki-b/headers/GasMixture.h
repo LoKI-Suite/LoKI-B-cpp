@@ -41,19 +41,45 @@
  * Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
  */
 
-#define GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Warning(setup.property); else \
-                               for (auto *gas : gasses) {Parse::gasProperty(gas->name, gas->property, fileBuffer); /*std::cerr << gas->name << ", " #property ": " << gas->property << std::endl;*/}
+#define GAS_PROPERTY_TEMPL(PROPERTY,SEVERITY) \
+{ \
+    std::string fileBuffer; \
+    std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << setup.PROPERTY << "'." << std::endl; \
+    if (Parse::stringBufferFromFile(setup.PROPERTY, fileBuffer)) { \
+        for (auto *gas : gasses) { \
+            if(!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer)) { \
+                Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas " + gas->name); \
+            } \
+        } \
+    } \
+    else { \
+        Log<FileError>::SEVERITY(setup.PROPERTY); \
+    } \
+}
 
-/* -- R_GAS_PROPERTY --
- * This define works similar to GAS_PROPERTY. However, this version will throw an error whenever a
- * database file cannot be loaded or the given property is missing for a gas in the mixture. This
- * version should therefore be used for properties that are required for every gas (e.g. mass).
- */
+#define GAS_PROPERTY(PROPERTY) GAS_PROPERTY_TEMPL(PROPERTY,Warning)
+#define R_GAS_PROPERTY(PROPERTY) GAS_PROPERTY_TEMPL(PROPERTY,Error)
 
-#define R_GAS_PROPERTY(property) if (!Parse::stringBufferFromFile(setup.property, fileBuffer)) Log<FileError>::Error(setup.property); \
-                                 for (auto *gas : gasses) \
-                                     if(!Parse::gasProperty(gas->name, gas->property, fileBuffer)) \
-                                         {Log<GasPropertyError>::Error(#property " in gas " + gas->name);}
+// JSON versions. The filename is obtained from cnf, the JSON version of the input file
+/// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
+#define GAS_PROPERTY_JSON_TEMPL(cnf_object,PROPERTY,SEVERITY) \
+{ \
+    std::string fileBuffer; \
+    if (cnf_object.contains(#PROPERTY) && Parse::stringBufferFromFile(cnf_object.at(#PROPERTY), fileBuffer)) { \
+        std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << cnf_object.at(#PROPERTY) << "'." << std::endl; \
+        for (auto *gas : gasses) { \
+            if(!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer)) { \
+                Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas " + gas->name); \
+            } \
+        } \
+    } \
+    else { \
+        Log<FileError>::SEVERITY(#PROPERTY); \
+    } \
+}
+
+#define GAS_PROPERTY_JSON(cnf_object,PROPERTY) GAS_PROPERTY_JSON_TEMPL(cnf_object,PROPERTY,Warning);
+#define R_GAS_PROPERTY_JSON(cnf_object,PROPERTY) GAS_PROPERTY_JSON_TEMPL(cnf_object,PROPERTY,Error);
 
 namespace loki {
     /* -- GasMixture --
@@ -96,15 +122,9 @@ namespace loki {
 
         typename Trait<TraitType>::Gas *
         findGas(const std::string &name) {
-            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-                return (*gas == name);
-            });
-
-            if (it == gasses.end()) {
-                return nullptr;
-            }
-
-            return *it;
+            auto it = std::find_if(gasses.begin(), gasses.end(),
+                                [&name](typename Trait<TraitType>::Gas *gas) { return *gas == name; });
+            return it == gasses.end() ? nullptr : *it;
         }
 
         /* -- findState --
@@ -246,7 +266,7 @@ namespace loki {
                 Log<LXCatError>::Error(lhs);
             if (!Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff))
                 Log<LXCatError>::Error(rhs);
-            entry_type = Parse::collisionTypeFromString(type);
+            entry_type = Enumeration::getCollisionType(type);
             entry_isReverse = (sep[0] == '<');
 
             std::vector<typename Trait<TraitType>::State *> reactants, products;
@@ -280,7 +300,7 @@ namespace loki {
                 Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
             if (!Parse::entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
                 Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
-            entry_type = Parse::collisionTypeFromString(rcnf.at("type").get<std::string>());
+            entry_type = Enumeration::getCollisionType(rcnf.at("type"));
 
             entry_isReverse = rcnf.at("reverse_also");
 
@@ -311,7 +331,6 @@ namespace loki {
          */
 
         virtual void loadGasProperties(const GasPropertiesSetup &setup) {
-            std::string fileBuffer;
 
             R_GAS_PROPERTY(mass)
             GAS_PROPERTY(harmonicFrequency)
@@ -325,6 +344,41 @@ namespace loki {
             std::smatch m;
 
             for (const auto &fractionStr : setup.fraction) {
+                if (!std::regex_search(fractionStr, m, r))
+                    Log<Message>::Error("Could not parse gas fractions.");
+
+                const auto &name = m.str(1);
+
+                auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
+                    return (*gas == name);
+                });
+
+                if (it == gasses.end())
+                    Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
+
+                std::stringstream ss(m.str(2));
+
+                if (!(ss >> (*it)->fraction))
+                    Log<Message>::Error("Could not parse gas fractions.");
+
+            }
+
+            checkGasFractions();
+        }
+        virtual void loadGasProperties(const json_type &cnf) {
+
+            R_GAS_PROPERTY_JSON(cnf,mass)
+            GAS_PROPERTY_JSON(cnf,harmonicFrequency)
+            GAS_PROPERTY_JSON(cnf,anharmonicFrequency)
+            GAS_PROPERTY_JSON(cnf,electricQuadrupoleMoment)
+            GAS_PROPERTY_JSON(cnf,rotationalConstant)
+
+            // Parse fractions
+
+            const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
+            std::smatch m;
+
+            for (const std::string &fractionStr : cnf.at("fraction")) {
                 if (!std::regex_search(fractionStr, m, r))
                     Log<Message>::Error("Could not parse gas fractions.");
 
@@ -378,6 +432,15 @@ namespace loki {
             loadStateProperty(setup.energy, StatePropertyType::energy, workingConditions);
             loadStateProperty(setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
             loadStateProperty(setup.population, StatePropertyType::population, workingConditions);
+
+            checkPopulations();
+        }
+        virtual void loadStateProperties(const json_type &cnf,
+                                         const WorkingConditions *workingConditions) {
+
+            loadStateProperty(cnf.at("energy"), StatePropertyType::energy, workingConditions);
+            loadStateProperty(cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+            loadStateProperty(cnf.at("population"), StatePropertyType::population, workingConditions);
 
             checkPopulations();
         }
