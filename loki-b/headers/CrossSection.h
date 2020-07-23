@@ -10,7 +10,7 @@
 #include "json.h"
 
 #include <vector>
-#include <fstream>
+#include <iostream>
 
 namespace loki {
     class CrossSection : public Vector {
@@ -25,7 +25,7 @@ namespace loki {
 
         CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf);
 
-        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in);
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
 
         CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                      Vector rawCrossSection);
