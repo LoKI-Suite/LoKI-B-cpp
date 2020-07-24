@@ -4,33 +4,34 @@
 
 #include "WorkingConditions.h"
 #include "Constant.h"
-#include "Parse.h"
 #include "Log.h"
 #include "PropertyFunctions.h"
+#include <limits>
 
 namespace loki {
     using namespace Enumeration;
 
     // TODO: Comment on WorkingConditions().
 
-    WorkingConditions::WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType) :
+    WorkingConditions::WorkingConditions(const WorkingConditionsSetup &setup) :
         gasPressure(setup.gasPressure),
         gasTemperature(setup.gasTemperature),
         electronDensity(setup.electronDensity),
         chamberLength(setup.chamberLength),
         chamberRadius(setup.chamberRadius),
-        excitationFrequency(setup.excitationFrequency) {
-
-        if ((eedfType == EedfType::boltzmann) &&
-                !Parse::getFirstValue(setup.reducedField, reducedField)) {
-
-            Log<ParseFieldError>::Error("reducedField");
-        }
-        if ((eedfType == EedfType::prescribed) &&
-                !Parse::getFirstValue(setup.electronTemperature, electronTemperature)) {
-
-            Log<ParseFieldError>::Error("electronTemperature");
-        }
+        excitationFrequency(setup.excitationFrequency)
+    {
+        /* set the reducedField and electronTemperature to dummy
+         * values. These are set by the JobManager when prepareFirsJobs
+         * or nextJov() is called.
+         */
+        reducedField = std::numeric_limits<double>::quiet_NaN();
+        /** \todo It appears that electronTemperature is not used anywhere
+         *  at present, maybe because only EEDF type 'boltzmann' has been
+         *  implemented? It is not used, and set only by
+         *  evaluateSwarmParameters() at present. Check this.
+         */
+        electronTemperature = std::numeric_limits<double>::quiet_NaN();
 
         gasDensity = gasPressure / (Constant::boltzmann * gasTemperature);
         reducedFieldSI = reducedField * 1.e-21;
@@ -39,7 +40,7 @@ namespace loki {
         linkToArgumentMap();
     }
 
-    WorkingConditions::WorkingConditions(const json_type &cnf, const Enumeration::EedfType &eedfType) :
+    WorkingConditions::WorkingConditions(const json_type &cnf) :
         gasPressure(cnf.at("gasPressure").get<double>()),
         gasTemperature(cnf.at("gasTemperature").get<double>()),
         electronDensity(cnf.at("electronDensity").get<double>()),
@@ -47,16 +48,17 @@ namespace loki {
         chamberRadius(cnf.at("chamberRadius").get<double>()),
         excitationFrequency(cnf.at("excitationFrequency").get<double>()) {
 
-        if ((eedfType == EedfType::boltzmann) &&
-                !Parse::getFirstValue(cnf.at("reducedField"), reducedField)) {
-
-            Log<ParseFieldError>::Error("reducedField");
-        }
-        if ((eedfType == EedfType::prescribed) &&
-                !Parse::getFirstValue(cnf.at("electronTemperature"), electronTemperature)) {
-
-            Log<ParseFieldError>::Error("electronTemperature");
-        }
+        /* set the reducedField and electronTemperature to dummy
+         * values. These are set by the JobManager when prepareFirsJobs
+         * or nextJov() is called.
+         */
+        reducedField = std::numeric_limits<double>::quiet_NaN();
+        /** \todo It appears that electronTemperature is not used anywhere
+         *  at present, maybe because only EEDF type 'boltzmann' has been
+         *  implemented? It is not used, and set only by
+         *  evaluateSwarmParameters() at present. Check this.
+         */
+        electronTemperature = std::numeric_limits<double>::quiet_NaN();
 
         gasDensity = gasPressure / (Constant::boltzmann * gasTemperature);
         reducedFieldSI = reducedField * 1.e-21;

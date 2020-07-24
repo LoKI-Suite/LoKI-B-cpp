@@ -7,8 +7,13 @@
 
 namespace loki {
     Simulation::Simulation(const loki::Setup &setup)
-            : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
+            : workingConditions(setup.workingConditions),
               jobManager(&workingConditions) {
+
+        if (setup.electronKinetics.eedfType != EedfType::boltzmann)
+        {
+            throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
+        }
 
         if (setup.electronKinetics.isOn) {
             initializeJobs(setup.workingConditions);
@@ -25,10 +30,13 @@ namespace loki {
         }
     }
     Simulation::Simulation(const json_type& cnf)
-            : workingConditions(
-                  cnf.at("workingConditions"),
-                  Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) ),
+            : workingConditions( cnf.at("workingConditions")),
               jobManager(&workingConditions) {
+
+        if (Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
+        {
+            throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
+        }
 
         if (cnf.at("electronKinetics").at("isOn")) {
             initializeJobs(cnf.at("workingConditions"));
@@ -47,14 +55,10 @@ namespace loki {
 
     void Simulation::run() {
         if (electronKinetics.get()) {
-            if (multipleSimulations) {
-                do {
-                    electronKinetics->solve();
-                } while (jobManager.nextJob());
-            } else {
+            jobManager.prepareFirstJob();
+            do {
                 electronKinetics->solve();
-            }
-
+            } while (jobManager.nextJob());
         }
     }
 
@@ -63,34 +67,27 @@ namespace loki {
 
     void Simulation::initializeJobs(const WorkingConditionsSetup &setup) {
 
-        // Repeat this statement for any other fields that can be declared as a range.
-        if (!Parse::isNumerical(setup.reducedField)) {
-            if (!initializeJob("Reduced Field", setup.reducedField, &WorkingConditions::updateReducedField)) {
-                Log<Message>::Error("Reduced field entry in input file is ill formatted.");
-            }
+        // Repeat this for any other fields that can be declared as a range.
+        try {
+            const Range range{setup.reducedField};
+            jobManager.addJob({"Reduced Field", &WorkingConditions::updateReducedField,range});
+        }
+        catch(std::exception& exc)
+        {
+                Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
         }
     }
     void Simulation::initializeJobs(const json_type &cnf) {
 
-        // Repeat this statement for any other fields that can be declared as a range.
-        if (cnf.at("reducedField").type()==json_type::value_t::string) {
-            if (!initializeJob("Reduced Field", cnf.at("reducedField"), &WorkingConditions::updateReducedField)) {
-                Log<Message>::Error("Reduced field entry in input file is ill formatted.");
-            }
+        // Repeat this for any other fields that can be declared as a range.
+        try {
+            const Range range{cnf.at("reducedField")};
+            jobManager.addJob({"Reduced Field", &WorkingConditions::updateReducedField,range});
+        }
+        catch(std::exception& exc)
+        {
+                Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
         }
     }
 
-    bool Simulation::initializeJob(const std::string &name, const std::string &valueString,
-                                   void (WorkingConditions::*callback)(double)) {
-        bool success = false;
-
-        Range range = Parse::getRange(valueString, success);
-
-        if (!success) return false;
-
-        jobManager.addJob({name, &WorkingConditions::updateReducedField, range});
-        multipleSimulations = true;
-
-        return true;
-    }
 }

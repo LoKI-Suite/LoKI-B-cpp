@@ -160,34 +160,6 @@ struct Parse
         return std::regex_replace(content_clean, reClean, "\n");
     }
 
-    /*  SECOND PARSING PHASE  */
-
-    /* -- getFirstValue --
-     * Takes a string that can either be a range (linspace/logspace) or a scalar, and
-     * parses it into a double. When the string concerns a range, the first value in
-     * the range is returned.
-     */
-
-    static bool getFirstValue(const std::string &valueString, double &value)
-    {
-        if (!getValue(valueString, value))
-            return firstValueInRange(valueString, value);
-
-        return true;
-    }
-    static bool getFirstValue(const json_type &entry, double &value)
-    {
-        if (entry.type()==json_type::value_t::string)
-        {
-            value = firstValueInRange(entry, value);
-        }
-        else
-        {
-            value = entry.get<double>();
-        }
-        return true;
-    }
-
     /* -- entriesFromString --
      * Accepts a string containing the LHS or RHS of a collision equation. The states
      * in this expression are then parsed into a vector of StateEntry objects, which
@@ -642,75 +614,6 @@ struct Parse
         return std::regex_match(str, reNum);
     }
 
-    static Range getRange(const std::string &rangeString, bool &success)
-    {
-        static const std::regex r(
-            R"(\s*((?:logspace\()|(?:linspace\())\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
-        std::smatch m;
-
-        // No checking since this has already been performed once this function is called.
-        if (!std::regex_search(rangeString, m, r))
-        {
-            success = false;
-            return Range(0., 0., 0, false);
-        }
-
-        std::stringstream ss;
-
-        const std::string function = m.str(1);
-
-        double start, stop;
-        uint32_t steps;
-
-        ss << m[2];
-        ss >> start;
-        ss.clear();
-        ss << m[3];
-        ss >> stop;
-        ss.clear();
-        ss << m[4];
-        ss >> steps;
-
-        success = true;
-
-        return Range(start, stop, steps, function[1] == 'o');
-    }
-
-  private:
-    /* -- PARSING RANGES -- */
-
-    /* -- firstValueInRange --
-     * Tries to parse the first value in a string defining a range into a double,
-     * returns a boolean based on its success to do so.
-     */
-
-    static bool firstValueInRange(const std::string &rangeString, double &value)
-    {
-        static const std::regex r(R"(\s*((?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
-        std::smatch m;
-
-        if (!std::regex_search(rangeString, m, r))
-            return false;
-
-        std::stringstream ss(m[2]);
-
-        const std::string function = m.str(1);
-
-        if (function[1] == 'o')
-        {
-            double power;
-            bool success = static_cast<bool>(ss >> power);
-
-            if (function.back() == '-')
-                power = -power;
-
-            value = std::pow(10., power);
-
-            return success;
-        }
-
-        return static_cast<bool>(ss >> value);
-    }
 };
 
 /*
