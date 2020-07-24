@@ -89,4 +89,71 @@ Range::Range(const json_type& cnf)
     }
 }
 
+double Range::value() const
+{
+    if (isLog)
+        return n==1 ? std::pow(10.,start) : std::pow(10., start + iter * (stop - start) / (n - 1));
+    return n==1 ? start : start + iter * (stop - start) / (n - 1);
+}
+
+Job::Job(const std::string& _name, const callback_type _callback, const Range& _range)
+ : name(_name), callback(_callback), range(_range)
+{
+}
+
+JobManager::JobManager(WorkingConditions *workingConditions)
+ : wc(workingConditions)
+{
+}
+
+void JobManager::addJob(Job &&job)
+{
+    jobs.emplace_back(job);
+}
+
+void JobManager::addJob(Job &job)
+{
+    jobs.emplace_back(job);
+}
+
+void JobManager::prepareFirstJob()
+{
+    for (Job& job : jobs)
+    {
+        (wc->*job.callback)(job.range.value());
+    }
+}
+
+bool JobManager::nextJob()
+{
+    Job &job = jobs[jobIndex];
+
+
+    if (job.range.next()) {
+        (wc->*job.callback)(job.range.value());
+
+        if (jobIndex != jobs.size() - 1)
+            ++jobIndex;
+
+        return true;
+    } else {
+        if (jobIndex == 0) return false;
+
+        job.range.reset();
+        --jobIndex;
+
+        return nextJob();
+    }
+}
+
+std::string JobManager::getCurrentJobFolder() const {
+    std::stringstream ss;
+
+    for (const auto &job : jobs) {
+        ss << "_" << job.name << "_" << job.range.value();
+    }
+
+    return ss.str();
+}
+
 } // namespace loki
