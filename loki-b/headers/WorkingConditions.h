@@ -35,8 +35,8 @@ namespace loki {
 
         std::map<std::string, double *> argumentMap;
 
-        WorkingConditions(const WorkingConditionsSetup &setup, const Enumeration::EedfType &eedfType);
-        WorkingConditions(const json_type &cnf, const Enumeration::EedfType &eedfType);
+        WorkingConditions(const WorkingConditionsSetup &setup);
+        WorkingConditions(const json_type &cnf);
         ~WorkingConditions() = default;
 
         // Copying this object is not allowed.

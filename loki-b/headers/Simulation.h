@@ -20,11 +20,7 @@ namespace loki {
         WorkingConditions workingConditions;
         std::unique_ptr<ElectronKinetics> electronKinetics;
         std::unique_ptr<Output> output;
-
-        bool multipleSimulations{false};
-
         JobManager jobManager;
-
     public:
         ResultEvent obtainedResults;
         Event<std::string> outputPathExists;
