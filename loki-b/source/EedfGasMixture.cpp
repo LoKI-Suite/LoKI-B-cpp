@@ -31,7 +31,7 @@ namespace loki {
 
         this->evaluateStateDensities();
 
-        for (auto *gas : gasses) {
+        for (auto& gas : gases) {
             if (!gas->isDummy())
                 gas->checkElasticCollisions(grid);
         }
@@ -55,7 +55,7 @@ namespace loki {
 
         this->evaluateStateDensities();
 
-        for (auto *gas : gasses) {
+        for (auto& gas : gases) {
             if (!gas->isDummy())
                 gas->checkElasticCollisions(grid);
         }
@@ -71,6 +71,10 @@ namespace loki {
 unsigned ndx=0;
         for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it) {
             const json_type& rcnf = it->at("reaction");
+            /** \todo try to make this more exception-safe. The 'new' that is part of
+             *  createCollision is quite detached from the delete in linkCollision
+             *  (which should be called if something goes wrong on the way).
+             */
             auto *collision = createCollision(rcnf);
 
             const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
@@ -158,7 +162,7 @@ unsigned ndx=0;
     }
 
     bool EedfGasMixture::linkCollision(EedfCollision *collision, bool isExtra) {
-        // Linking the newly created collision to the relevant states and gasses
+        // Linking the newly created collision to the relevant states and gases
 
         auto *target = collision->getTarget();
 
@@ -195,17 +199,17 @@ unsigned ndx=0;
         elasticCrossSection.setZero(grid->cellNumber + 1);
         totalCrossSection.setZero(grid->cellNumber + 1);
 
-        for (auto *gas : gasses) {
+        for (auto& gas : gases) {
             if (gas->isDummy()) continue;
 
             double massRatio = Constant::electronMass / gas->mass;
 
-            for (auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::elastic)]) {
+            for (auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::elastic)]) {
                 elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
             }
 
             for (auto i = static_cast<uint8_t>(CollisionType::elastic); i < gas->collisions.size(); ++i) {
-                for (auto *collision : gas->collisions[i]) {
+                for (auto& collision : gas->collisions[i]) {
                     totalCrossSection += *collision->crossSection * collision->getTarget()->density;
 
                     if (collision->isReverse) {
@@ -235,9 +239,9 @@ unsigned ndx=0;
     }
 
     void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf) {
-        for (auto *gas : gasses) {
+        for (auto& gas : gases) {
             for (auto &collVec : gas->collisions) {
-                for (auto *collision : collVec) {
+                for (auto& collision : collVec) {
 
                     if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
                         continue;
@@ -247,7 +251,7 @@ unsigned ndx=0;
             }
 
             for (auto &collVec : gas->extraCollisions) {
-                for (auto *collision : collVec) {
+                for (auto& collision : collVec) {
 
                     if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
                         continue;

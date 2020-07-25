@@ -24,7 +24,7 @@
 //  5. [DONE] Separate backend and front end
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gasses,
+                   const loki::Power &power, const std::vector<std::unique_ptr<loki::EedfGas>>& gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
@@ -77,16 +77,16 @@ int main(int argc, char **argv)
 }
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gasses,
+                   const loki::Power &power, const std::vector<std::unique_ptr<loki::EedfGas>>& gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
                    const loki::Vector &firstAnisotropy)
 {
     plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
-    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
+    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
 
-    // loki::Vector *nodeCrossSection = gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
+    // loki::Vector *nodeCrossSection = gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
     // loki::Vector cellCrossSection(grid.cellNumber);
 

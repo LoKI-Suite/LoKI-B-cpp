@@ -21,10 +21,10 @@
 namespace loki {
     class EedfGas : public Gas<Boltzmann> {
     public:
-
+        using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
         // We need to store the collisions per Gas since we need to calculate
         // the mass ratio when evaluating the total and elastic cross-sections.
-        std::vector<std::vector<EedfCollision *>> collisions, extraCollisions;
+        std::vector<CollisionVector> collisions, extraCollisions;
         std::map<EedfState *, double> effectivePopulations;
         double OPBParameter = 0.;
 
@@ -42,7 +42,7 @@ namespace loki {
 
         const GasPower &getPower() const;
 
-        void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
+        void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const;
 
     private:
         GasPower power;
@@ -54,10 +54,10 @@ namespace loki {
 
         void setDefaultEffPop(EedfState *ground);
 
-        CollPower evaluateConservativePower(std::vector<EedfCollision *> &collisionVector, const Vector &eedf);
+        CollPower evaluateConservativePower(const CollisionVector& collisionVector, const Vector &eedf) const;
 
-        CollPower evaluateNonConservativePower(std::vector<EedfCollision *> &collisionVector,
-                                               const IonizationOperatorType ionType, const Vector &eedf);
+        CollPower evaluateNonConservativePower(const CollisionVector& collisionVector,
+                                               const IonizationOperatorType ionType, const Vector &eedf) const;
     };
 }
 

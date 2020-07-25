@@ -6,7 +6,7 @@
 #define LOKI_CPP_GASMIXTURE_H
 
 // DONE: Fill the Gas, State and Collision structures.
-// DONE: Implement the templated approach to gasses and states
+// DONE: Implement the templated approach to gases and states
 // DONE: Think of how we can parse the LXCat data. Especially for states, do we need an
 //  auxiliary structure like StateEntry or can we immediately create the state?
 //  If not then alter the GasMixture class (replace StateEntry by State).
@@ -33,9 +33,9 @@
 /* -- GAS_PROPERTY --
  * This define accepts the name of a gas property (e.g. mass) and will try load the corresponding database
  * file. If this fails it will output a warning (but nothing more). If the file is succesfully loaded, it
- * will then try to set the property for all gasses in the mixture. This version will not throw an error
+ * will then try to set the property for all gases in the mixture. This version will not throw an error
  * in any case, and can therefore be used for gas properties that are not mandatory for every gas (e.g.
- * atomic gasses do not have a harmonicFrequency).
+ * atomic gases do not have a harmonicFrequency).
  *
  * It assumes that the passed property has the same name in the Gas and GasPropertiesSetup structures.
  * Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
@@ -46,7 +46,7 @@
     std::string fileBuffer; \
     std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << setup.PROPERTY << "'." << std::endl; \
     if (Parse::stringBufferFromFile(setup.PROPERTY, fileBuffer)) { \
-        for (auto *gas : gasses) { \
+        for (auto& gas : gases) { \
             if(!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer)) { \
                 Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas " + gas->name); \
             } \
@@ -67,7 +67,7 @@
     std::string fileBuffer; \
     if (cnf_object.contains(#PROPERTY) && Parse::stringBufferFromFile(cnf_object.at(#PROPERTY), fileBuffer)) { \
         std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << cnf_object.at(#PROPERTY) << "'." << std::endl; \
-        for (auto *gas : gasses) { \
+        for (auto& gas : gases) { \
             if(!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer)) { \
                 Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas " + gas->name); \
             } \
@@ -95,19 +95,19 @@ namespace loki {
 
     template<typename TraitType>
     struct GasMixture {
-        // Vector of pointers to all the gasses in the mixture.
-        std::vector<typename Trait<TraitType>::Gas *> gasses;
+        using Gas = typename Trait<TraitType>::Gas;
+        using Gases = std::vector<std::unique_ptr<Gas>>;
+        using value_type = typename Gases::value_type;
+        using State = typename Trait<TraitType>::State;
+        // Vector of pointers to all the gases in the mixture.
+        Gases gases;
 
-        virtual ~GasMixture() {
-            for (auto *gas : gasses) {
-                delete gas;
-            }
-        };
+        virtual ~GasMixture() {}
 
         void print() {
-            for (int i = 0; i < gasses.size(); ++i) {
-                std::cout << "Gas: " << gasses[i]->name << std::endl;
-                gasses[i]->print();
+            for (const auto& gas : gases) {
+                std::cout << "Gas: " << gas->name << std::endl;
+                gas->print();
             }
         }
 
@@ -120,11 +120,10 @@ namespace loki {
          * returned.
          */
 
-        typename Trait<TraitType>::Gas *
-        findGas(const std::string &name) {
-            auto it = std::find_if(gasses.begin(), gasses.end(),
-                                [&name](typename Trait<TraitType>::Gas *gas) { return *gas == name; });
-            return it == gasses.end() ? nullptr : *it;
+        Gas* findGas(const std::string &name) {
+            auto it = std::find_if(gases.begin(), gases.end(),
+                                [&name](const value_type& gas) { return gas->name == name; });
+            return it == gases.end() ? nullptr : it->get();
         }
 
         /* -- findState --
@@ -136,11 +135,10 @@ namespace loki {
          * character) then a pointer to the first sibling is returned.
          */
 
-        typename Trait<TraitType>::State *
-        findState(const StateEntry &entry) {
+        State* findState(const StateEntry &entry) {
             // Find gas.
 
-            auto *gas = findGas(entry.gasName);
+            const auto& gas = findGas(entry.gasName);
 
             if (gas == nullptr)
                 return nullptr;
@@ -156,7 +154,7 @@ namespace loki {
 
             // Find electronic state.
 
-            auto *state = gas->find(entry);
+            auto * state = gas->find(entry);
 
             if (state == nullptr)
                 return nullptr;
@@ -206,24 +204,10 @@ namespace loki {
          * gas with the same name already exists it returns a pointer to that gas.
          */
 
-        typename Trait<TraitType>::Gas *
+        Gas*
         addGas(const std::string &name) {
-            auto *gas = findGas(name);
-
-            if (gas == nullptr)
-                return gasses.emplace_back(new typename Trait<TraitType>::Gas(name));
-
-            return gas;
-
-//            auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-//                return (*gas == name);
-//            });
-//
-//            if (it == gasses.end()) {
-//                return gasses.emplace_back(new typename Trait<TraitType>::Gas(name));
-//            }
-//
-//            return *it;
+            Gas* gas = findGas(name);
+            return gas != nullptr ? gas : gases.emplace_back(new Gas(name)).get();
         }
 
         /* -- addState --
@@ -234,10 +218,9 @@ namespace loki {
          * returned instead.
          */
 
-        typename Trait<TraitType>::State *
+        State*
         addState(const StateEntry &entry) {
-            auto *gas = addGas(entry.gasName);
-
+            Gas* gas = addGas(entry.gasName);
             auto *state = addState(gas, entry);
 
             for (uint8_t lvl = electronic; lvl < entry.level; ++lvl) {
@@ -249,7 +232,7 @@ namespace loki {
 
         /* -- createCollision --
          * Creates a collision based on a provided CollisionEntry object. The
-         * gasses and states involved in the collision are first created and
+         * gases and states involved in the collision are first created and
          * added to the mixture. Then a Collision object is created and its
          * pointer is returned.
          */
@@ -269,8 +252,8 @@ namespace loki {
             entry_type = Enumeration::getCollisionType(type);
             entry_isReverse = (sep[0] == '<');
 
-            std::vector<typename Trait<TraitType>::State *> reactants, products;
-            std::set<typename Trait<TraitType>::Gas *> targetGasses;
+            std::vector<State*> reactants, products;
+            std::set<Gas*> targetGasses;
 
             for (auto &stateEntry : entry_reactants) {
                 auto *state = reactants.emplace_back(addState(stateEntry));
@@ -278,7 +261,7 @@ namespace loki {
             }
 
             if (targetGasses.size() != 1)
-                Log<Message>::Error("Multiple target gasses in a single collision.");
+                Log<Message>::Error("Multiple target gases in a single collision.");
 
             for (auto &stateEntry : entry_products) {
                 products.emplace_back(addState(stateEntry));
@@ -304,16 +287,16 @@ namespace loki {
 
             entry_isReverse = rcnf.at("reverse_also");
 
-            std::vector<typename Trait<TraitType>::State *> reactants, products;
-            std::set<typename Trait<TraitType>::Gas *> targetGasses;
+            std::vector<State*> reactants, products;
+            std::set<Gas*> targetGasses;
 
-            for (auto &stateEntry : entry_reactants) {
+            for (const auto &stateEntry : entry_reactants) {
                 auto *state = reactants.emplace_back(addState(stateEntry));
                 targetGasses.insert(state->gas);
             }
 
             if (targetGasses.size() != 1)
-                Log<Message>::Error("Multiple target gasses in a single collision.");
+                Log<Message>::Error("Multiple target gases in a single collision.");
 
             for (auto &stateEntry : entry_products) {
                 products.emplace_back(addState(stateEntry));
@@ -349,11 +332,11 @@ namespace loki {
 
                 const auto &name = m.str(1);
 
-                auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-                    return (*gas == name);
+                auto it = std::find_if(gases.begin(), gases.end(), [&name](value_type& gas) {
+                    return (gas->name == name);
                 });
 
-                if (it == gasses.end())
+                if (it == gases.end())
                     Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
 
                 std::stringstream ss(m.str(2));
@@ -384,11 +367,11 @@ namespace loki {
 
                 const auto &name = m.str(1);
 
-                auto it = std::find_if(gasses.begin(), gasses.end(), [&name](typename Trait<TraitType>::Gas *gas) {
-                    return (*gas == name);
+                auto it = std::find_if(gases.begin(), gases.end(), [&name](value_type& gas) {
+                    return (gas->name == name);
                 });
 
-                if (it == gasses.end())
+                if (it == gases.end())
                     Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
 
                 std::stringstream ss(m.str(2));
@@ -408,7 +391,7 @@ namespace loki {
         void checkGasFractions() {
             double norm = 0;
 
-            for (const auto *gas : gasses) {
+            for (const auto& gas : gases) {
                 norm += gas->fraction;
             }
 
@@ -417,7 +400,7 @@ namespace loki {
         }
 
         void checkPopulations() {
-            for (auto *gas : gasses)
+            for (auto& gas : gases)
                 gas->checkPopulations();
         }
 
@@ -481,7 +464,7 @@ namespace loki {
                             if (entry.hasWildCard()) {
                                 PropertyFunctions::constantValue<TraitType>(state->siblings(), value, propertyType);
                             } else {
-                                std::vector<typename Trait<TraitType>::State *> states{state};
+                                std::vector<State*> states{state};
                                 PropertyFunctions::constantValue<TraitType>(states, value, propertyType);
                             }
                         } else {
@@ -498,7 +481,7 @@ namespace loki {
                                 PropertyFunctions::callByName<TraitType>(functionName, state->siblings(),
                                                                          arguments, propertyType);
                             } else {
-                                std::vector<typename Trait<TraitType>::State *> states{state};
+                                std::vector<State*> states{state};
                                 PropertyFunctions::callByName<TraitType>(functionName, states, arguments, propertyType);
                             }
                         }
@@ -531,7 +514,7 @@ namespace loki {
          */
 
         void evaluateStateDensities() {
-            for (auto *gas : gasses)
+            for (auto& gas : gases)
                 gas->evaluateStateDensities();
         }
 
@@ -544,14 +527,14 @@ namespace loki {
          * ancestor is added its pointer returned.
          */
 
-        typename Trait<TraitType>::State *
-        addState(typename Trait<TraitType>::Gas *gas, const StateEntry &entry) {
+        State*
+        addState(Gas*gas, const StateEntry &entry) {
             auto &states = (entry.charge.empty() ? gas->stateTree : gas->ionicStates);
 
             auto *state = gas->find(entry);
 
             if (state == nullptr) {
-                state = gas->states.emplace_back(new typename Trait<TraitType>::State(entry, gas));
+                state = gas->states.emplace_back(new State(entry, gas)).get();
                 return states.emplace_back(state);
             }
 
@@ -566,14 +549,14 @@ namespace loki {
          * its pointer returned.
          */
 
-        typename Trait<TraitType>::State *
-        addState(typename Trait<TraitType>::State *parent, const StateEntry &entry) {
+        State*
+        addState(State* parent, const StateEntry &entry) {
 
-            auto *state = parent->find(entry);
+            auto * state = parent->find(entry);
 
             if (state == nullptr) {
                 state = parent->gas->states.emplace_back(
-                        new typename Trait<TraitType>::State(entry, parent->gas, parent));
+                        new State(entry, parent->gas, parent)).get();
                 return parent->children.emplace_back(state);
             }
 
