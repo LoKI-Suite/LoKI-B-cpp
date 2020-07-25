@@ -123,3 +123,27 @@ add_executable(loki ${src}/main.cpp)
 target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
 target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki PRIVATE loki_l ${backend})
+
+# first we can indicate the documentation build as an option and set it to ON by default
+option(BUILD_DOC "Build documentation" ON)
+
+# check if Doxygen is installed
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # to always build the doxygen docs, add option ALL to the following list.
+    add_custom_target( doc_doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+else (DOXYGEN_FOUND)
+  message("Doxygen need to be installed to generate the doxygen documentation")
+endif (DOXYGEN_FOUND)
