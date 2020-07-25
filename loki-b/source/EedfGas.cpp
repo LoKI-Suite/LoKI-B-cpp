@@ -15,21 +15,13 @@ namespace loki {
          this->collisions[static_cast<uint8_t>(collision->type)]).emplace_back(collision);
     }
 
-    EedfGas::~EedfGas() {
-        for (const auto &vec : collisions)
-            for (auto *collision : vec)
-                delete collision;
-
-        for (const auto &vec : extraCollisions)
-            for (auto *collision : vec)
-                delete collision;
-    }
+    EedfGas::~EedfGas() { }
 
     CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid) {
         if (collisions[static_cast<uint8_t>(CollisionType::effective)].empty())
             Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
-        EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0];
+        EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0].get();
         Vector &rawEff = eff->crossSection->raw();
         Vector &rawEnergies = eff->crossSection->energies();
 
@@ -41,7 +33,7 @@ namespace loki {
         }
 
         for (const auto &pair : effectivePopulations) {
-            for (const auto *collision : pair.first->collisions) {
+            for (const auto& collision : pair.first->collisions) {
                 if (collision->type == CollisionType::effective)
                     continue;
 
@@ -132,7 +124,7 @@ namespace loki {
 
             for (auto *state : statesToUpdate) {
                 std::vector stateVector{state};
-                auto *collision = new EedfCollision(CollisionType::elastic, stateVector, stateVector,
+                auto* collision = new EedfCollision(CollisionType::elastic, stateVector, stateVector,
                                                     stoiCoeff, false);
 
                 collision->crossSection = elasticCS;
@@ -165,7 +157,7 @@ namespace loki {
         return power;
     }
 
-    void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) {
+    void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const {
 
         CollPower collisionPower;
 
@@ -199,10 +191,10 @@ namespace loki {
         }
     }
 
-    CollPower EedfGas::evaluateConservativePower(std::vector<EedfCollision *> &collisionVector, const Vector &eedf) {
+    CollPower EedfGas::evaluateConservativePower(const CollisionVector& collisionVector, const Vector &eedf) const {
         CollPower collPower;
 
-        for (auto *collision : collisionVector) {
+        for (auto& collision : collisionVector) {
             const Grid *grid = collision->crossSection->getGrid();
 
             if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
@@ -214,11 +206,11 @@ namespace loki {
         return collPower;
     }
 
-    CollPower EedfGas::evaluateNonConservativePower(std::vector<EedfCollision *> &collisionVector,
-                                                    const IonizationOperatorType ionType, const Vector &eedf) {
+    CollPower EedfGas::evaluateNonConservativePower(const CollisionVector& collisionVector,
+                                                    const IonizationOperatorType ionType, const Vector &eedf) const {
         CollPower collPower;
 
-        for (auto *collision : collisionVector) {
+        for (auto& collision : collisionVector) {
             const Grid *grid = collision->crossSection->getGrid();
 
             if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))

@@ -41,7 +41,7 @@ namespace loki {
         void createPath();
 
         void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
-                       const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
+                       const std::vector<std::unique_ptr<EedfGas>> &gases, const SwarmParameters &swarmParameters,
                        const std::vector<RateCoefficient> &rateCoefficients,
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
 
@@ -52,7 +52,7 @@ namespace loki {
 
         void writeSwarm(const SwarmParameters &swarmParameters);
 
-        void writePower(const Power &power, const std::vector<EedfGas *> &gasses);
+        void writePower(const Power &power, const std::vector<std::unique_ptr<EedfGas>>& gases);
 
         void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                    const std::vector<RateCoefficient> &extraRateCoefficients);

@@ -64,7 +64,7 @@ namespace loki {
 
     /*
      * GasPropertiesSetup is an auxiliary structure that stores the properties from the setup file
-     * concerning the specified gasses.
+     * concerning the specified gases.
      *
      * Note that its fields are all strings since gas properties are supplied through a
      * database file.
@@ -88,7 +88,7 @@ namespace loki {
 
     /*
      * StatePropertiesSetup is an auxiliary structure that stores the properties from the
-     * setup file concerning the specified gasses.
+     * setup file concerning the specified gases.
      *
      * Note that its fields are all strings since state properties are supplied through
      * either a file, function, or direct value. The type of the input data will be deduced

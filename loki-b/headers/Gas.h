@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <memory>
 #include <cmath>
 
 namespace loki {
@@ -35,6 +36,8 @@ namespace loki {
     template <typename TraitType>
     class Gas {
     public:
+        using State = typename Trait<TraitType>::State;
+
         const std::string name;
         double mass{-1},
                harmonicFrequency{-1},
@@ -47,11 +50,11 @@ namespace loki {
 
         // TODO: Do we actually need this first vector?
         // Vector that stores pointers to all states in the system.
-        std::vector<typename Trait<TraitType>::State *> states;
+        std::vector<std::unique_ptr<State>> states;
 
         // The stateTree vector stores pointers to the electronic non-ionic states.
         // The ionicStates vector stores pointers to the electronic ionic states.
-        std::vector<typename Trait<TraitType>::State *> stateTree, ionicStates;
+        std::vector<State*> stateTree, ionicStates;
 
         /* -- evaluateStateDensities --
          * Calls evaluateDensity on all electronic states for this gas.
@@ -72,12 +75,11 @@ namespace loki {
          * otherwise a null pointer is returned.
          */
 
-        typename Trait<TraitType>::State *
-        find(const StateEntry &entry) {
+        State* find(const StateEntry &entry) {
             auto &childStates = (entry.charge.empty() ? stateTree : ionicStates);
 
             auto it = std::find_if(childStates.begin(), childStates.end(),
-                                   [&entry](typename Trait<TraitType>::State *state) {
+                                   [&entry](State* state) {
                                        return *state >= entry;
                                    });
 
@@ -115,38 +117,25 @@ namespace loki {
         }
 
     protected:
-        explicit Gas(std::string name) : name(std::move(name)) {}
-
+        explicit Gas(std::string name) : name(name) {}
     public:
-        /* -- == --
-         * This overload allows a Gas object to be compared to a string. If the
-         * string is equal to the name of the gas this function will return true.
-         */
-
-        bool operator==(const std::string &otherName) {
-            return name == otherName;
-        }
-
         /* -- print --
          * Prints the (first non-ionic then ionic) electronic states and their
          * children.
          */
 
         void print() const {
-            for (uint16_t i = 0; i < stateTree.size(); ++i) {
-                std::cout << *stateTree[i] << std::endl;
-                stateTree[i]->printChildren();
+            for (const auto& s : stateTree) {
+                std::cout << *s << std::endl;
+                s->printChildren();
             }
-            for (uint16_t i = 0; i < ionicStates.size(); ++i) {
-                std::cout << *ionicStates[i] << std::endl;
-                ionicStates[i]->printChildren();
+            for (const auto& s : ionicStates) {
+                std::cout << *s << std::endl;
+                s->printChildren();
             }
         }
 
-        ~Gas() {
-            for (auto *state : states)
-                delete state;
-        }
+        ~Gas() {}
     };
 }
 

@@ -20,7 +20,7 @@ namespace loki
 {
 using namespace Enumeration;
 
-typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas *>,
+typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<std::unique_ptr<EedfGas>>,
               const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>,
               const Vector>
     ResultEvent;

@@ -80,7 +80,7 @@ namespace loki {
     }
 
     void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
-                           const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
+                           const std::vector<std::unique_ptr<EedfGas>>&gases, const SwarmParameters &swarmParameters,
                            const std::vector<RateCoefficient> &rateCoefficients,
                            const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy) {
 
@@ -91,7 +91,7 @@ namespace loki {
 
         if (saveEedf) writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
         if (saveSwarm) writeSwarm(swarmParameters);
-        if (savePower) writePower(power, gasses);
+        if (savePower) writePower(power, gases);
         if (saveRates) writeRateCoefficients(rateCoefficients, extraRateCoefficients);
         if (saveTable) writeLookuptable(power, swarmParameters);
     }
@@ -135,7 +135,7 @@ namespace loki {
         fclose(file);
     }
 
-    void Output::writePower(const Power &power, const std::vector<EedfGas *> &gasses) {
+    void Output::writePower(const Power &power, const std::vector<std::unique_ptr<EedfGas>>&gases) {
         auto *file = std::fopen((folder + "/" + subFolder + "/power_balance.txt").c_str(), "w");
 
         fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
@@ -182,7 +182,7 @@ namespace loki {
         fprintf(file, "\n");
         fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n", power.rotationalNet);
 
-        for (const auto *gas : gasses) {
+        for (const auto& gas : gases) {
             const GasPower &gasPower = gas->getPower();
 
             fprintf(file, "\n");

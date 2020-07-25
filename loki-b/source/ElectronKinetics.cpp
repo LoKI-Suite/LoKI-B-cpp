@@ -271,7 +271,7 @@ void ElectronKinetics::solve()
 
     evaluateFirstAnisotropy();
 
-    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gasses, swarmParameters,
+    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases, swarmParameters,
                          mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
 }
 
@@ -437,7 +437,7 @@ void ElectronKinetics::evaluateCAROperator()
 
     double sigma0B = 0.;
 
-    for (auto *gas : mixture.CARGasses)
+    for (auto& gas : mixture.CARGasses)
     {
         sigma0B += gas->fraction * gas->electricQuadrupoleMoment * gas->rotationalConstant;
     }
@@ -467,13 +467,13 @@ void ElectronKinetics::evaluateInelasticOperators()
 
     inelasticMatrix.setZero();
 
-    for (auto *gas : mixture.gasses)
+    for (auto& gas : mixture.gases)
     {
         for (auto vecIndex = static_cast<uint8_t>(CollisionType::excitation);
              vecIndex <= static_cast<uint8_t>(CollisionType::rotational); ++vecIndex)
         {
 
-            for (const auto *collision : gas->collisions[vecIndex])
+            for (const auto& collision : gas->collisions[vecIndex])
             {
                 const double threshold = collision->crossSection->threshold;
 
@@ -544,9 +544,9 @@ void ElectronKinetics::evaluateIonizationOperator()
     if (ionizationOperatorType != IonizationOperatorType::conservative)
         ionizationMatrix.setZero();
 
-    for (const auto *gas : mixture.gasses)
+    for (const auto& gas : mixture.gases)
     {
-        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
+        for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
             const double threshold = collision->crossSection->threshold;
 
@@ -670,9 +670,9 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
     const uint32_t cellNumber = grid.cellNumber;
 
-    for (const auto *gas : mixture.gasses)
+    for (const auto& gas : mixture.gases)
     {
-        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
+        for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
             const double threshold = collision->crossSection->threshold;
 
@@ -1377,7 +1377,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
-    for (auto *gas : mixture.gasses)
+    for (auto& gas : mixture.gases)
     {
         gas->evaluatePower(ionizationOperatorType, eedf);
         power += gas->getPower();
@@ -1452,14 +1452,14 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
 
-    for (const auto *gas : mixture.gasses)
+    for (const auto& gas : mixture.gases)
     {
-        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
+        for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
             totalIonRateCoeff += collision->target->density * collision->ineRateCoeff;
         }
 
-        for (const auto *collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
+        for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
             totalAttRateCoeff += collision->target->density * collision->ineRateCoeff;
         }
