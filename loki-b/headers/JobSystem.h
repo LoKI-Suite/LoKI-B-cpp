@@ -28,7 +28,6 @@ namespace loki {
         uint32_t n;
         uint32_t iter{0};
     public:
-        Range(const Range &other) : isLog(other.isLog), start(other.start), stop(other.stop), n(other.n) {}
         // expects a legacy Range string: a numerical value or a linspan or logspan description
         Range(const std::string& str);
         Range(const json_type& cnf);
@@ -40,20 +39,25 @@ namespace loki {
         double value() const;
     };
 
+    /** A Job controls one of the parameters of a parametrized model.
+     *  It manages a Range object that describes the value(s) of the parameter
+     *  for which the model must be run, In addition it manages a callback function,
+     *  which is called when the parameter value changes.
+     */
     struct Job
     {
         /** Type callback_type is a pointer to a member of WorkingConditions
          *  that accepts a double and returns void.
          */
         using callback_type = void (WorkingConditions::*)(double);
-        Job(const std::string& _name, const callback_type _callback, const Range& _range);
+        Job(const std::string& _name, const callback_type _callback, Range* _range);
 
         std::string name;
         /** callback is the function that gets called by the JobManager when a
          *  new value in the range is activated.
          */
         const callback_type callback;
-        Range range;
+        std::unique_ptr<Range> range;
     };
 
     class JobManager
@@ -63,8 +67,8 @@ namespace loki {
         ~JobManager() = default;
         JobManager(const JobManager &other) = delete;
 
-        void addJob(Job &&job);
-        void addJob(Job &job);
+        void addJob(const std::string& _name, const Job::callback_type _callback, const std::string& range);
+        void addJob(const std::string& _name, const Job::callback_type _callback, const json_type& range);
         void prepareFirstJob();
         bool nextJob();
         std::string getCurrentJobFolder() const;
