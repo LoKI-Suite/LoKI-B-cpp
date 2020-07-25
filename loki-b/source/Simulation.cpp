@@ -69,8 +69,7 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            const Range range{setup.reducedField};
-            jobManager.addJob({"Reduced Field", &WorkingConditions::updateReducedField,range});
+            jobManager.addJob("Reduced Field", &WorkingConditions::updateReducedField,setup.reducedField);
         }
         catch(std::exception& exc)
         {
@@ -81,8 +80,7 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            const Range range{cnf.at("reducedField")};
-            jobManager.addJob({"Reduced Field", &WorkingConditions::updateReducedField,range});
+            jobManager.addJob("Reduced Field", &WorkingConditions::updateReducedField,cnf.at("reducedField"));
         }
         catch(std::exception& exc)
         {
