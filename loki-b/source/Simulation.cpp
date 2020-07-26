@@ -8,7 +8,7 @@
 namespace loki {
     Simulation::Simulation(const loki::Setup &setup)
             : workingConditions(setup.workingConditions),
-              jobManager(&workingConditions) {
+              jobManager() {
 
         if (setup.electronKinetics.eedfType != EedfType::boltzmann)
         {
@@ -31,7 +31,7 @@ namespace loki {
     }
     Simulation::Simulation(const json_type& cnf)
             : workingConditions( cnf.at("workingConditions")),
-              jobManager(&workingConditions) {
+              jobManager() {
 
         if (Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
         {
@@ -69,7 +69,9 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            jobManager.addJob("Reduced Field", &WorkingConditions::updateReducedField,setup.reducedField);
+            jobManager.addJob("Reduced Field",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+                setup.reducedField);
         }
         catch(std::exception& exc)
         {
@@ -80,7 +82,9 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            jobManager.addJob("Reduced Field", &WorkingConditions::updateReducedField,cnf.at("reducedField"));
+            jobManager.addJob("Reduced Field",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+                cnf.at("reducedField"));
         }
         catch(std::exception& exc)
         {

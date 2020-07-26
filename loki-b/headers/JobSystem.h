@@ -11,11 +11,10 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <functional>
 #include "json.h"
 
 namespace loki {
-
-    class WorkingConditions;
 
     class Range
     {
@@ -42,14 +41,14 @@ namespace loki {
     /** A Job controls one of the parameters of a parametrized model.
      *  It manages a Range object that describes the value(s) of the parameter
      *  for which the model must be run, In addition it manages a callback function,
-     *  which is called when the parameter value changes.
+     *  which is called by the JobMaanager when this parameter value changes:
+     *  it must prepare the model to do a run with the new set of values.
      */
     struct Job
     {
-        /** Type callback_type is a pointer to a member of WorkingConditions
-         *  that accepts a double and returns void.
+        using callback_type = std::function<void(double)>;
+        /** The callback function must accept a double and returns a void.
          */
-        using callback_type = void (WorkingConditions::*)(double);
         Job(const std::string& _name, const callback_type _callback, Range* _range);
 
         std::string name;
@@ -63,7 +62,7 @@ namespace loki {
     class JobManager
     {
     public:
-        explicit JobManager(WorkingConditions *workingConditions);
+        JobManager();
         ~JobManager() = default;
         JobManager(const JobManager &other) = delete;
 
@@ -75,7 +74,6 @@ namespace loki {
     private:
         std::vector<Job> jobs;
         uint32_t jobIndex{0};
-        WorkingConditions *wc;
     };
 
 } // namespace loki
