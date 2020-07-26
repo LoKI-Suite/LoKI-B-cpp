@@ -25,7 +25,6 @@ namespace loki {
         double start, stop;
 
         uint32_t n;
-        uint32_t iter{0};
     public:
         // expects a legacy Range string: a numerical value or a linspan or logspan description
         Range(const std::string& str);
@@ -33,9 +32,8 @@ namespace loki {
         Range(double value) : isLog(false), start(value), stop(value), n(1) {}
         Range(double start, double stop, uint32_t nSteps, bool isLog) : isLog(isLog), start(start), stop(stop), n(nSteps) {}
 
-        void reset() { iter = 0; }
-        bool next() { return (n-1) > iter++; }
-        double value() const;
+        uint32_t size() { return n; }
+        double value(uint32_t iter) const;
     };
 
     /** A Job controls one of the parameters of a parametrized model.
@@ -57,6 +55,9 @@ namespace loki {
          */
         const callback_type callback;
         std::unique_ptr<Range> range;
+        uint32_t iter{0};
+        void reset() { iter = 0; }
+        bool next() { return (range->size()-1) > iter++; }
     };
 
     class JobManager
