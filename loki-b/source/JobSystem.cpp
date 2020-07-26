@@ -101,8 +101,7 @@ Job::Job(const std::string& _name, const callback_type _callback, Range* _range)
 {
 }
 
-JobManager::JobManager(WorkingConditions *workingConditions)
- : wc(workingConditions)
+JobManager::JobManager()
 {
 }
 
@@ -120,7 +119,7 @@ void JobManager::prepareFirstJob()
 {
     for (Job& job : jobs)
     {
-        (wc->*job.callback)(job.range->value());
+        (job.callback)(job.range->value());
     }
 }
 
@@ -130,7 +129,7 @@ bool JobManager::nextJob()
 
 
     if (job.range->next()) {
-        (wc->*job.callback)(job.range->value());
+        (job.callback)(job.range->value());
 
         if (jobIndex != jobs.size() - 1)
             ++jobIndex;
