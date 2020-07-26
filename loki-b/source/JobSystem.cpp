@@ -89,7 +89,7 @@ Range::Range(const json_type& cnf)
     }
 }
 
-double Range::value() const
+double Range::value(uint32_t iter) const
 {
     if (isLog)
         return n==1 ? std::pow(10.,start) : std::pow(10., start + iter * (stop - start) / (n - 1));
@@ -119,7 +119,7 @@ void JobManager::prepareFirstJob()
 {
     for (Job& job : jobs)
     {
-        (job.callback)(job.range->value());
+        (job.callback)(job.range->value(job.iter));
     }
 }
 
@@ -128,8 +128,8 @@ bool JobManager::nextJob()
     Job &job = jobs[jobIndex];
 
 
-    if (job.range->next()) {
-        (job.callback)(job.range->value());
+    if (job.next()) {
+        (job.callback)(job.range->value(job.iter));
 
         if (jobIndex != jobs.size() - 1)
             ++jobIndex;
@@ -138,7 +138,7 @@ bool JobManager::nextJob()
     } else {
         if (jobIndex == 0) return false;
 
-        job.range->reset();
+        job.reset();
         --jobIndex;
 
         return nextJob();
@@ -149,7 +149,7 @@ std::string JobManager::getCurrentJobFolder() const {
     std::stringstream ss;
 
     for (const auto &job : jobs) {
-        ss << "_" << job.name << "_" << job.range->value();
+        ss << "_" << job.name << "_" << job.range->value(job.iter);
     }
 
     return ss.str();
