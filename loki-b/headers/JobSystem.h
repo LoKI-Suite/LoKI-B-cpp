@@ -13,27 +13,40 @@
 #include <stdexcept>
 #include <functional>
 #include "json.h"
+#include <cassert>
 
 namespace loki {
 
+    /** This class gives access to a sequence of values and has two public
+     *  members: size() returns the number of values, value(size_type)
+     *  returns the value for a given index. The number of values is passed
+     *  to the constructor and kept in a private member, value() delegates
+     *  the retrieval of the value to the protected virtual member get_value.
+     *  That member must be implemented by derived classes to do the
+     *  actual calculation and retrun the value.
+     */
     class Range
     {
-        /** \todo make isLog, start, stop and n constant after the string and json_type ctors
-         *  have been updated to allow that.
-         */
-        bool isLog;
-        double start, stop;
-
-        uint32_t n;
     public:
-        // expects a legacy Range string: a numerical value or a linspan or logspan description
-        Range(const std::string& str);
-        Range(const json_type& cnf);
-        Range(double value) : isLog(false), start(value), stop(value), n(1) {}
-        Range(double start, double stop, uint32_t nSteps, bool isLog) : isLog(isLog), start(start), stop(stop), n(nSteps) {}
+        using size_type = std::size_t;
+        /// This constructor records \a size, the number of values in the Range
+        Range(size_type size) : m_size(size) {}
+        virtual ~Range(){}
 
-        uint32_t size() { return n; }
-        double value(uint32_t iter) const;
+        /// returns the number of values of this Range.
+        size_type size() const { return m_size; }
+        /// Returns the \a ndx'th value. Argument \a ndx must be smaller than size().
+        double value(size_type ndx) const
+        {
+            assert(ndx<size());
+            return get_value(ndx);
+        }
+    protected:
+        /// Must be overridden to return the value for \a ndx < size().
+        virtual double get_value(size_type ndx) const=0;
+    private:
+        /// The number of values of this Range
+        const size_type m_size;
     };
 
     /** A Job controls one of the parameters of a parametrized model.
@@ -42,8 +55,9 @@ namespace loki {
      *  which is called by the JobMaanager when this parameter value changes:
      *  it must prepare the model to do a run with the new set of values.
      */
-    struct Job
+    class Job
     {
+    public:
         using callback_type = std::function<void(double)>;
         /** The callback function must accept a double and returns a void.
          */
@@ -54,27 +68,30 @@ namespace loki {
          *  new value in the range is activated.
          */
         const callback_type callback;
-        std::unique_ptr<Range> range;
-        uint32_t iter{0};
-        void reset() { iter = 0; }
-        bool next() { return (range->size()-1) > iter++; }
+        double active_value() const { return range->value(active_ndx); }
+        void reset() { active_ndx = 0; }
+        bool advance() { return (range->size()-1) > active_ndx++; }
+    private:
+        std::unique_ptr<const Range> range;
+        Range::size_type active_ndx;
     };
 
     class JobManager
     {
     public:
         JobManager();
-        ~JobManager() = default;
+        ~JobManager();
         JobManager(const JobManager &other) = delete;
 
-        void addJob(const std::string& _name, const Job::callback_type _callback, const std::string& range);
-        void addJob(const std::string& _name, const Job::callback_type _callback, const json_type& range);
+        void addParameter(const std::string& _name, const Job::callback_type _callback, const std::string& range);
+        void addParameter(const std::string& _name, const Job::callback_type _callback, const json_type& range);
         void prepareFirstJob();
-        bool nextJob();
+        bool prepareNextJob();
         std::string getCurrentJobFolder() const;
     private:
-        std::vector<Job> jobs;
-        uint32_t jobIndex{0};
+        std::vector<std::unique_ptr<Job>> jobs;
+        using size_type = std::size_t;
+        size_type jobIndex;
     };
 
 } // namespace loki

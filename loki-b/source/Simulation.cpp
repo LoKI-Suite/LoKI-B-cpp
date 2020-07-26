@@ -58,7 +58,7 @@ namespace loki {
             jobManager.prepareFirstJob();
             do {
                 electronKinetics->solve();
-            } while (jobManager.nextJob());
+            } while (jobManager.prepareNextJob());
         }
     }
 
@@ -69,7 +69,7 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            jobManager.addJob("Reduced Field",
+            jobManager.addParameter("Reduced Field",
                 std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
                 setup.reducedField);
         }
@@ -82,7 +82,7 @@ namespace loki {
 
         // Repeat this for any other fields that can be declared as a range.
         try {
-            jobManager.addJob("Reduced Field",
+            jobManager.addParameter("Reduced Field",
                 std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
                 cnf.at("reducedField"));
         }

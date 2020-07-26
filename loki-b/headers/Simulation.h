@@ -27,22 +27,16 @@ namespace loki {
     public:
         explicit Simulation(const Setup &setup);
         explicit Simulation(const json_type &cnf);
-
-        ~Simulation();
-
         // Copying this object is not allowed.
         Simulation(const Simulation &other) = delete;
+        ~Simulation();
 
-        // TODO: comment run
-
+        /// \todo document run
         void run();
 
     private:
         void initializeJobs(const WorkingConditionsSetup &setup);
         void initializeJobs(const json_type &cnf);
-
-        bool initializeJob(const std::string &name, const std::string &valueString,
-                           void (WorkingConditions::*callback)(double));
     };
 }
 
