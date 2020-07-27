@@ -17,7 +17,7 @@
 
 namespace loki {
 
-    /** This class gives access to a sequence of values and has two public
+    /** A Range class gives access to a sequence of values and has two public
      *  members: size() returns the number of values, value(size_type)
      *  returns the value for a given index. The number of values is passed
      *  to the constructor and kept in a private member, value() delegates
@@ -29,8 +29,23 @@ namespace loki {
     {
     public:
         using size_type = std::size_t;
-        /// This constructor records \a size, the number of values in the Range
-        Range(size_type size) : m_size(size) {}
+
+        /** Create a new Range object from string \a str. The caller must
+         *  assume ownership of the pointer that is returned by this function.
+         *
+         *  The argument can describe a single value, or a linear of logarithmic
+         *  value range. Some sample input and the values it will produce are:
+         *  \verbatim
+              "42.0"             # 42.0
+              "linspan(0,20,3)"  # 0, 10, 20
+              "logspan(2,4,3)"   # 1e2, 1e3, 1e4 \endverbatim
+         *
+         *  \sa RangeSingleValue
+         *  \sa RangeLinSpace
+         *  \sa RangeLogSpace
+         */
+        static Range* create(const std::string& str);
+        static Range* create(const json_type& cnf);
         virtual ~Range(){}
 
         /// returns the number of values of this Range.
@@ -42,6 +57,8 @@ namespace loki {
             return get_value(ndx);
         }
     protected:
+        /// This constructor records \a size, the number of values in the Range
+        Range(size_type size) : m_size(size) {}
         /// Must be overridden to return the value for \a ndx < size().
         virtual double get_value(size_type ndx) const=0;
     private:
@@ -61,7 +78,7 @@ namespace loki {
         using callback_type = std::function<void(double)>;
         /** The callback function must accept a double and returns a void.
          */
-        Job(const std::string& _name, const callback_type _callback, Range* _range);
+        Job(const std::string& _name, const callback_type _callback, const Range* _range);
 
         std::string name;
         /** callback is the function that gets called by the JobManager when a
@@ -76,6 +93,16 @@ namespace loki {
         Range::size_type active_ndx;
     };
 
+    /** Class JobManager makanages a collection of parameter definitions and
+     *  makes it easy to run a simulation for each combination of parameter values.
+     *
+     *  A parameter can be declared by calling member addParameter, passing the name
+     *  of the parameter, a pointer to a callback function, which is called when
+     *  the JobManager activates a new value for this parameter, and a pointer to
+     *  a Range object, which describes the vaues of this parameter. This class
+     *  takes ownership of the Range pointer and will delete it at the end of its
+     *  lifetime.
+     */
     class JobManager
     {
     public:
@@ -83,8 +110,7 @@ namespace loki {
         ~JobManager();
         JobManager(const JobManager &other) = delete;
 
-        void addParameter(const std::string& _name, const Job::callback_type _callback, const std::string& range);
-        void addParameter(const std::string& _name, const Job::callback_type _callback, const json_type& range);
+        void addParameter(const std::string& _name, const Job::callback_type _callback, const Range* range);
         void prepareFirstJob();
         bool prepareNextJob();
         std::string getCurrentJobFolder() const;
