@@ -46,7 +46,7 @@ namespace loki {
          */
         static Range* create(const std::string& str);
         static Range* create(const json_type& cnf);
-        virtual ~Range(){}
+        virtual ~Range();
 
         /// returns the number of values of this Range.
         size_type size() const { return m_size; }
@@ -66,57 +66,46 @@ namespace loki {
         const size_type m_size;
     };
 
-    /** A Job controls one of the parameters of a parametrized model.
-     *  It manages a Range object that describes the value(s) of the parameter
-     *  for which the model must be run, In addition it manages a callback function,
-     *  which is called by the JobMaanager when this parameter value changes:
-     *  it must prepare the model to do a run with the new set of values.
-     */
-    class Job
-    {
-    public:
-        using callback_type = std::function<void(double)>;
-        /** The callback function must accept a double and returns a void.
-         */
-        Job(const std::string& _name, const callback_type _callback, const Range* _range);
-
-        std::string name;
-        /** callback is the function that gets called by the JobManager when a
-         *  new value in the range is activated.
-         */
-        const callback_type callback;
-        double active_value() const { return range->value(active_ndx); }
-        void reset() { active_ndx = 0; }
-        bool advance() { return (range->size()-1) > active_ndx++; }
-    private:
-        std::unique_ptr<const Range> range;
-        Range::size_type active_ndx;
-    };
-
-    /** Class JobManager makanages a collection of parameter definitions and
-     *  makes it easy to run a simulation for each combination of parameter values.
+    /** Class JobManager manages a collection of parameter definitions and
+     *  makes it easy to run a simulation for each combination of parameter
+     *  values.
      *
-     *  A parameter can be declared by calling member addParameter, passing the name
-     *  of the parameter, a pointer to a callback function, which is called when
-     *  the JobManager activates a new value for this parameter, and a pointer to
-     *  a Range object, which describes the vaues of this parameter. This class
-     *  takes ownership of the Range pointer and will delete it at the end of its
-     *  lifetime.
+     *  A parameter can be declared by calling member addParameter, passing the
+     *  name of the parameter, a pointer to a callback function and a pointer
+     *  to a range object. The callback function must accept a double-valued
+     *  argument and return void. It defines the action that must be undertaken
+     *  by the model when the value of this parameter changes, and takes the
+     *  new parameter value as argument. The JobManager assumes ownership of
+     *  the Range pointer and will delete it when its destructor is invoked.
+     *
+     *  After the simulation has been set up, the user should call member
+     *  prepareFirstJob() to activate the initial combination of parameter
+     *  values. Subsequent parameter combinations can be activated by calling
+     *  prepareNextJob(). That member returns true if a new job could be
+     *  activated, false if the set of parameter combinations is exhausted.
+     *  Member getCurrentJobFolder() returns a case identifier
+     *  that contains the names and active values of the parameters, separated
+     *  by underscore characters.
      */
     class JobManager
     {
     public:
+        using size_type = std::size_t;
+        using callback_type = std::function<void(double)>;
+
         JobManager();
         ~JobManager();
         JobManager(const JobManager &other) = delete;
 
-        void addParameter(const std::string& _name, const Job::callback_type _callback, const Range* range);
+        void addParameter(const std::string& _name, const callback_type _callback, const Range* range);
         void prepareFirstJob();
         bool prepareNextJob();
         std::string getCurrentJobFolder() const;
+        size_type dimension() const { return parameters.size(); }
+        size_type njobs() const;
     private:
-        std::vector<std::unique_ptr<Job>> jobs;
-        using size_type = std::size_t;
+        class Parameter;
+        std::vector<std::unique_ptr<Parameter>> parameters;
         size_type jobIndex;
     };
 

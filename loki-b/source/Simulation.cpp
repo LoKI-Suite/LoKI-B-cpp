@@ -28,6 +28,10 @@ namespace loki {
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
+        Log<Message>::Notify("Simulation has been set up",
+            ", number of parameters = ", jobManager.dimension(),
+            ", number of jobs = ", jobManager.njobs()
+        );
     }
     Simulation::Simulation(const json_type& cnf)
             : workingConditions( cnf.at("workingConditions")),
@@ -51,6 +55,10 @@ namespace loki {
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
+        Log<Message>::Notify("Simulation has been set up",
+            ", number of parameters = ", jobManager.dimension(),
+            ", number of jobs = ", jobManager.njobs()
+        );
     }
 
     void Simulation::run() {

@@ -8,6 +8,10 @@
 
 namespace loki {
 
+Range::~Range()
+{
+}
+
 /** A degenerate Range implementation that describes a single value.
  */
 class RangeSingleValue : public Range
@@ -19,7 +23,7 @@ public:
         Log<Message>::Notify("Creating single-value range, value = ", value);
     }
 protected:
-    virtual double get_value(size_type ndx) const
+    virtual double get_value(size_type ndx) const override
     {
         return m_value;
     }
@@ -47,7 +51,7 @@ public:
         }
     }
 protected:
-    virtual double get_value(size_type ndx) const
+    virtual double get_value(size_type ndx) const override
     {
         return start + ndx * (stop - start) / (size() - 1);
     }
@@ -77,7 +81,7 @@ public:
         }
     }
 protected:
-    virtual double get_value(size_type ndx) const
+    virtual double get_value(size_type ndx) const override
     {
         const double log_value = log_start + ndx * (log_stop - log_start) / (size() - 1);
         return std::pow(10.,log_value);
@@ -158,10 +162,36 @@ Range* Range::create(const json_type& cnf)
     }
 }
 
-Job::Job(const std::string& _name, const callback_type _callback, const Range* _range)
- : name(_name), callback(_callback), range(_range), active_ndx(0)
+/** A Parameter controls one of the parameters of a parametrized model.
+ *  It manages a Range object that describes the value(s) of the parameter
+ *  for which the model must be run, In addition it manages a callback function,
+ *  which is called by the JobMaanager when this parameter value changes:
+ *  it must prepare the model to do a run with the new set of values.
+ */
+class JobManager::Parameter
 {
-}
+public:
+    /** The callback function must accept a double and returns a void.
+     */
+    Parameter(const std::string& _name, const callback_type _callback, const Range* _range)
+    : name(_name), callback(_callback), range(_range), active_ndx(0)
+    {
+    }
+
+    std::string name;
+    /** callback is the function that gets called by the JobManager when a
+     *  new value in the range is activated.
+     */
+    const callback_type callback;
+    Range::size_type size() const { return range->size(); }
+    double active_value() const { return range->value(active_ndx); }
+    void reset() { active_ndx = 0; }
+    bool advance() { return (range->size()-1) > active_ndx++; }
+private:
+    const std::unique_ptr<const Range> range;
+    Range::size_type active_ndx;
+};
+
 
 JobManager::JobManager()
  : jobIndex(0)
@@ -172,49 +202,68 @@ JobManager::~JobManager()
 {
 }
 
-void JobManager::addParameter(const std::string& _name, const Job::callback_type _callback, const Range* range)
+void JobManager::addParameter(const std::string& _name, const callback_type _callback, const Range* range)
 {
     Log<Message>::Notify("Adding simulation parameter '", _name, "'");
-    jobs.emplace_back(new Job{_name, _callback, range});
+    parameters.emplace_back(new Parameter{_name, _callback, range});
 }
 
 void JobManager::prepareFirstJob()
 {
-    for (const auto& parameter : jobs)
+    for (const auto& p : parameters)
     {
-        (parameter->callback)(parameter->active_value());
+        (p->callback)(p->active_value());
     }
 }
 
 bool JobManager::prepareNextJob()
 {
-    Job &parameter = *jobs[jobIndex];
+    Parameter &p = *parameters[jobIndex];
 
 
-    if (parameter.advance()) {
-        (parameter.callback)(parameter.active_value());
+    if (p.advance()) {
+        (p.callback)(p.active_value());
 
-        if (jobIndex != jobs.size() - 1)
+        if (jobIndex != parameters.size() - 1)
             ++jobIndex;
 
         return true;
     } else {
         if (jobIndex == 0) return false;
 
-        parameter.reset();
+        p.reset();
         --jobIndex;
 
         return prepareNextJob();
     }
 }
 
-std::string JobManager::getCurrentJobFolder() const {
+JobManager::size_type JobManager::njobs() const
+{
+    if (dimension()==0)
+    {
+        return 0;
+    }
+    size_type n=1;
+    for (const auto& p : parameters)
+    {
+        n *= p->size();
+    }
+    return n;
+}
+
+std::string JobManager::getCurrentJobFolder() const
+{
     std::stringstream ss;
 
-    for (const auto &parameter : jobs) {
-        ss << "_" << parameter->name << "_" << parameter->active_value();
+    for (const auto &p : parameters)
+    {
+        if (p!=parameters.front())
+        {
+            ss << '_';
+        }
+        ss << p->name << "_" << p->active_value();
     }
-
     return ss.str();
 }
 
