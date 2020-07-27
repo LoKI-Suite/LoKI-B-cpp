@@ -1,6 +1,10 @@
 {
 	"workingConditions": {
-		"reducedField": "50",
+		"reducedField": 50,
+		"_reducedField": "linspace(50,100,6)",
+		"_reducedField": { "value": 50 },
+		"_reducedField": [ "linspace", 50, 100, 6 ],
+		"_reducedField": { "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6} },
 		"electronTemperature": "0.03",
 		"excitationFrequency": 0,
 		"gasPressure": 133.32,
@@ -67,7 +71,7 @@
 		"refreshFrequency": 1
 	},
 	"output": {
-		"isOn": false,
+		"isOn": true,
 		"folder": "simulation",
 		"dataFiles": [
 			"eedf",
