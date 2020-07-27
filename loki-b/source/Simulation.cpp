@@ -71,7 +71,7 @@ namespace loki {
         try {
             jobManager.addParameter("Reduced Field",
                 std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
-                setup.reducedField);
+                Range::create(setup.reducedField));
         }
         catch(std::exception& exc)
         {
@@ -84,7 +84,7 @@ namespace loki {
         try {
             jobManager.addParameter("Reduced Field",
                 std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
-                cnf.at("reducedField"));
+                Range::create(cnf.at("reducedField")));
         }
         catch(std::exception& exc)
         {

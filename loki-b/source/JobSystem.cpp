@@ -3,6 +3,7 @@
 //
 
 #include "JobSystem.h"
+#include "Log.h"
 #include "Parse.h"
 
 namespace loki {
@@ -15,6 +16,7 @@ public:
     RangeSingleValue(double value)
         : Range(1), m_value(value)
     {
+        Log<Message>::Notify("Creating single-value range, value = ", value);
     }
 protected:
     virtual double get_value(size_type ndx) const
@@ -22,21 +24,26 @@ protected:
         return m_value;
     }
 private:
-    double m_value;
+    const double m_value;
 };
 
-/** A range that represents a 'linspan', a series of equidistant
+/** A range that represents a 'linspace', a series of equidistant
  *  values in a given domain.
  */
-class RangeLinSpan : public Range
+class RangeLinSpace : public Range
 {
 public:
-    RangeLinSpan(double start, double stop, size_type steps)
-        : Range(steps), start(start), stop(stop)
+    RangeLinSpace(double start, double stop, size_type size)
+        : Range(size), start(start), stop(stop)
     {
-        if (size()<2)
+        Log<Message>::Notify("Creating linspace range"
+            ", start = ", start,
+            ", stop = ", stop,
+            ", size = ", size
+        );
+        if (size<2)
         {
-            throw std::runtime_error("Range(linspan): at least two points required.");
+            throw std::runtime_error("Range(linspace): at least two points required.");
         }
     }
 protected:
@@ -45,23 +52,28 @@ protected:
         return start + ndx * (stop - start) / (size() - 1);
     }
 private:
-    double start;
-    double stop;
+    const double start;
+    const double stop;
 };
 
-/** A range that represents a 'logspan', the values are obtained as
- *  10^v, where v is a series of equidistant values in a given
+/** A range that represents a 'logspace', the values are obtained as
+ *  10^v, where v is any of a series of equidistant values in a given
  *  domain.
  */
-class RangeLogSpan : public Range
+class RangeLogSpace : public Range
 {
 public:
-    RangeLogSpan(double log_start, double log_stop, size_type steps)
-        : Range(steps), log_start(log_start), log_stop(log_stop)
+    RangeLogSpace(double log_start, double log_stop, size_type size)
+        : Range(size), log_start(log_start), log_stop(log_stop)
     {
-        if (size()<2)
+        Log<Message>::Notify("Creating logspace range"
+            ", log_start = ", log_start,
+            ", log_stop = ", log_stop,
+            ", size = ", size
+        );
+        if (size<2)
         {
-            throw std::runtime_error("Range(logspan): at least two points required.");
+            throw std::runtime_error("Range(logspace): at least two points required.");
         }
     }
 protected:
@@ -71,15 +83,15 @@ protected:
         return std::pow(10.,log_value);
     }
 private:
-    double log_start;
-    double log_stop;
+    const double log_start;
+    const double log_stop;
 };
 
 static Range* createLinLogRange(const std::string &rangeString)
 {
     try {
         static const std::regex r(
-            R"(\s*((?:logspace\()|(?:linspace\())\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
+            R"(\s*((?:logspace)|(?:linspace))\(\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
         std::smatch m;
 
         if (!std::regex_search(rangeString, m, r))
@@ -92,7 +104,7 @@ static Range* createLinLogRange(const std::string &rangeString)
         const std::string function = m.str(1);
 
         double start, stop;
-        Range::size_type steps;
+        Range::size_type nvalues;
 
         ss << m[2];
         ss >> start;
@@ -101,12 +113,12 @@ static Range* createLinLogRange(const std::string &rangeString)
         ss >> stop;
         ss.clear();
         ss << m[4];
-        ss >> steps;
+        ss >> nvalues;
 
-        if (function=="linspan")
-            return new RangeLinSpan(start, stop, steps);
-        else if (function=="logspan")
-            return new RangeLogSpan(start, stop, steps);
+        if (function=="linspace")
+            return new RangeLinSpace(start, stop, nvalues);
+        else if (function=="logspace")
+            return new RangeLogSpace(start, stop, nvalues);
         else
             throw std::runtime_error("Unknown function '" + function + "'.");
     }
@@ -117,7 +129,7 @@ static Range* createLinLogRange(const std::string &rangeString)
     }
 }
 
-Range* createRange(const std::string& str)
+Range* Range::create(const std::string& str)
 {
     if (Parse::isNumerical(str))
     {
@@ -134,7 +146,7 @@ Range* createRange(const std::string& str)
     }
 }
 
-Range* createRange(const json_type& cnf)
+Range* Range::create(const json_type& cnf)
 {
     if (cnf.type()==json_type::value_t::string)
     {
@@ -146,7 +158,7 @@ Range* createRange(const json_type& cnf)
     }
 }
 
-Job::Job(const std::string& _name, const callback_type _callback, Range* _range)
+Job::Job(const std::string& _name, const callback_type _callback, const Range* _range)
  : name(_name), callback(_callback), range(_range), active_ndx(0)
 {
 }
@@ -160,14 +172,10 @@ JobManager::~JobManager()
 {
 }
 
-void JobManager::addParameter(const std::string& _name, const Job::callback_type _callback, const std::string& range)
+void JobManager::addParameter(const std::string& _name, const Job::callback_type _callback, const Range* range)
 {
-    jobs.emplace_back(new Job{_name, _callback, createRange(range)});
-}
-
-void JobManager::addParameter(const std::string& _name, const Job::callback_type _callback, const json_type& range)
-{
-    jobs.emplace_back(new Job{_name, _callback, createRange(range)});
+    Log<Message>::Notify("Adding simulation parameter '", _name, "'");
+    jobs.emplace_back(new Job{_name, _callback, range});
 }
 
 void JobManager::prepareFirstJob()
