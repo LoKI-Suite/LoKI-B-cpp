@@ -285,7 +285,7 @@ namespace loki {
                 Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
             entry_type = Enumeration::getCollisionType(rcnf.at("type"));
 
-            entry_isReverse = rcnf.at("reverse_also");
+            entry_isReverse = rcnf.at("superelastic");
 
             std::vector<State*> reactants, products;
             std::set<Gas*> targetGasses;
