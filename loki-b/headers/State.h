@@ -141,7 +141,7 @@ public:
 
     void evaluateDensity();
 
-    void printChildren() const;
+    void printChildren(std::ostream& os) const;
 
     virtual ~State() = default;
 };
@@ -192,7 +192,7 @@ State<TraitType>::State(const StateEntry &entry,
 }
 
 template <typename TraitType>
-void State<TraitType>::printChildren() const
+void State<TraitType>::printChildren(std::ostream& os) const
 {
     std::string space = "  ";
 
@@ -203,8 +203,8 @@ void State<TraitType>::printChildren() const
     {
         if (state != nullptr)
         {
-            std::cout << space << *state << std::endl;
-            state->printChildren();
+            os << space << *state << std::endl;
+            state->printChildren(os);
         }
     }
 }

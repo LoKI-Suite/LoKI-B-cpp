@@ -124,14 +124,14 @@ namespace loki {
          * children.
          */
 
-        void print() const {
+        void print(std::ostream& os) const {
             for (const auto& s : stateTree) {
-                std::cout << *s << std::endl;
-                s->printChildren();
+                os << *s << std::endl;
+                s->printChildren(os);
             }
             for (const auto& s : ionicStates) {
-                std::cout << *s << std::endl;
-                s->printChildren();
+                os << *s << std::endl;
+                s->printChildren(os);
             }
         }
 
