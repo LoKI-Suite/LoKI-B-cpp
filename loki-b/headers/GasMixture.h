@@ -104,10 +104,10 @@ namespace loki {
 
         virtual ~GasMixture() {}
 
-        void print() {
+        void print(std::ostream& os) {
             for (const auto& gas : gases) {
-                std::cout << "Gas: " << gas->name << std::endl;
-                gas->print();
+                os << "Gas: " << gas->name << std::endl;
+                gas->print(os);
             }
         }
 
