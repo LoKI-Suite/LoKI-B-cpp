@@ -2,6 +2,7 @@
 // Created by daan on 2-5-19.
 //
 
+#include "EedfState.h"
 #include "EedfGas.h"
 #include "Constant.h"
 
@@ -127,7 +128,7 @@ namespace loki {
                 auto* collision = new EedfCollision(CollisionType::elastic, stateVector, stateVector,
                                                     stoiCoeff, false);
 
-                collision->crossSection = elasticCS;
+                collision->crossSection.reset(elasticCS);
 
                 state->addCollision(collision, false);
                 this->addCollision(collision, false);

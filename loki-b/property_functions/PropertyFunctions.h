@@ -10,6 +10,7 @@
 #include "Traits.h"
 #include "Log.h"
 #include "Parse.h"
+#include "GasBase.h"
 
 #include <cmath>
 
@@ -40,9 +41,7 @@ namespace loki::PropertyFunctions {
      * population member variables of the supplied state object.
      */
 
-    template<typename TraitType>
-    static void
-    setStateProperty(typename Trait<TraitType>::State *state, const double &value, StatePropertyType type) {
+    inline void setStateProperty(GasBase::StateBase *state, const double &value, StatePropertyType type) {
         switch (type) {
             case StatePropertyType::energy:
                 state->energy = value;
@@ -56,8 +55,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    template<typename TraitType>
-    void boltzmannPopulation(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void boltzmannPopulation(std::vector<GasBase::StateBase*> &states,
                              const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::population)
             Log<WrongPropertyError>::Error("boltzmannPopulation");
@@ -77,8 +75,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    template<typename TraitType>
-    void harmonicOscillatorEnergy(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void harmonicOscillatorEnergy(std::vector<GasBase::StateBase*> &states,
                                   const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::energy)
             Log<WrongPropertyError>::Error("harmonicOscillatorEnergy");
@@ -89,8 +86,8 @@ namespace loki::PropertyFunctions {
         if (states.at(0)->type != vibrational)
             Log<Message>::Error("Trying to assign harmonic oscillator energy to non-vibrational state.");
 
-        if (states.at(0)->gas->harmonicFrequency < 0)
-            Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas->name +
+        if (states.at(0)->gas_base().harmonicFrequency < 0)
+            Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas_base().name +
                                 " to evaluate state energies.");
 
         for (auto *state : states) {
@@ -100,12 +97,11 @@ namespace loki::PropertyFunctions {
                 Log<Message>::Error("Non numerical vib level (" + state->v +
                                     ") when trying to assign harmonic oscillator energy.");
 
-            state->energy = plankReducedInEv * state->gas->harmonicFrequency * (vibLevel + .5);
+            state->energy = plankReducedInEv * state->gas_base().harmonicFrequency * (vibLevel + .5);
         }
     }
 
-    template<typename TraitType>
-    void rigidRotorEnergy(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void rigidRotorEnergy(std::vector<GasBase::StateBase*> &states,
                           const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::energy)
             Log<WrongPropertyError>::Error("rigidRotorEnergy");
@@ -116,8 +112,8 @@ namespace loki::PropertyFunctions {
         if (states.at(0)->type != rotational)
             Log<Message>::Error("Trying to assign rigid rotor energy to non-rotational state.");
 
-        if (states.at(0)->gas->rotationalConstant < 0)
-            Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas->name +
+        if (states.at(0)->gas_base().rotationalConstant < 0)
+            Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas_base().name +
                                 " to evaluate state energies.");
 
         for (auto *state : states) {
@@ -127,12 +123,11 @@ namespace loki::PropertyFunctions {
                 Log<Message>::Error("Non numerical rot level (" + state->J +
                                     ") when trying to assign rigid rotor energy.");
 
-            state->energy = state->gas->rotationalConstant * rotLevel * (rotLevel + 1.);
+            state->energy = state->gas_base().rotationalConstant * rotLevel * (rotLevel + 1.);
         }
     }
 
-    template<typename TraitType>
-    void rotationalDegeneracy_N2(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void rotationalDegeneracy_N2(std::vector<GasBase::StateBase*> &states,
                           const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::statisticalWeight)
             Log<WrongPropertyError>::Error("rotationalDegeneracy_N2");
@@ -154,8 +149,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    template<typename TraitType>
-    void rotationalDegeneracy(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void rotationalDegeneracy(std::vector<GasBase::StateBase*> &states,
                                  const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::statisticalWeight)
             Log<WrongPropertyError>::Error("rotationalDegeneracy");
@@ -177,8 +171,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    template<typename TraitType>
-    void constantValue(std::vector<typename Trait<TraitType>::State *> &states,
+    inline void constantValue(std::vector<GasBase::StateBase*> &states,
                        double value, StatePropertyType type) {
 
 //            if (arguments.size() != 1)
@@ -187,24 +180,23 @@ namespace loki::PropertyFunctions {
 //            const double &value = arguments[0];
 
         for (auto *state : states) {
-            setStateProperty<TraitType>(state, value, type);
+            setStateProperty(state, value, type);
         }
     }
 
-    template<typename TraitType>
-    void callByName(const std::string &name, std::vector<typename Trait<TraitType>::State *> &states,
+    inline void callByName(const std::string &name, std::vector<GasBase::StateBase*> &states,
                     const std::vector<double> &arguments, StatePropertyType type) {
 
         if (name == "boltzmannPopulation")
-            boltzmannPopulation<TraitType>(states, arguments, type);
+            boltzmannPopulation(states, arguments, type);
         else if (name == "harmonicOscillatorEnergy")
-            harmonicOscillatorEnergy<TraitType>(states, arguments, type);
+            harmonicOscillatorEnergy(states, arguments, type);
         else if (name == "rigidRotorEnergy")
-            rigidRotorEnergy<TraitType>(states, arguments, type);
+            rigidRotorEnergy(states, arguments, type);
         else if (name == "rotationalDegeneracy_N2")
-            rotationalDegeneracy_N2<TraitType>(states, arguments, type);
+            rotationalDegeneracy_N2(states, arguments, type);
         else if (name == "rotationalDegeneracy")
-            rotationalDegeneracy<TraitType>(states, arguments, type);
+            rotationalDegeneracy(states, arguments, type);
         else
             Log<PropertyFunctionError>::Error(name);
     }

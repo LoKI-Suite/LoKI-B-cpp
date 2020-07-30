@@ -3,6 +3,7 @@
 //
 
 #include "ElectronKinetics.h"
+#include "Constant.h"
 #include <chrono>
 #include <iomanip>
 #include <cmath>
@@ -84,7 +85,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
     fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
     std::vector<Eigen::Triplet<double>> diagPattern;
@@ -182,7 +183,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
     fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
     std::vector<Eigen::Triplet<double>> diagPattern;
@@ -271,7 +272,7 @@ void ElectronKinetics::solve()
 
     evaluateFirstAnisotropy();
 
-    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases, swarmParameters,
+    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases(), swarmParameters,
                          mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
 }
 
@@ -282,7 +283,7 @@ const Grid *ElectronKinetics::getGrid()
 
 void ElectronKinetics::invertLinearMatrix()
 {
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
     {
         boltzmannMatrix =
             1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
@@ -358,7 +359,7 @@ void ElectronKinetics::evaluateMatrix()
 
     evaluateFieldOperator();
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
         evaluateCAROperator();
 
     evaluateInelasticOperators();
@@ -437,7 +438,7 @@ void ElectronKinetics::evaluateCAROperator()
 
     double sigma0B = 0.;
 
-    for (auto& gas : mixture.CARGasses)
+    for (auto& gas : mixture.CARGases)
     {
         sigma0B += gas->fraction * gas->electricQuadrupoleMoment * gas->rotationalConstant;
     }
@@ -467,7 +468,7 @@ void ElectronKinetics::evaluateInelasticOperators()
 
     inelasticMatrix.setZero();
 
-    for (auto& gas : mixture.gases)
+    for (const auto& gas : mixture.gases())
     {
         for (auto vecIndex = static_cast<uint8_t>(CollisionType::excitation);
              vecIndex <= static_cast<uint8_t>(CollisionType::rotational); ++vecIndex)
@@ -544,7 +545,7 @@ void ElectronKinetics::evaluateIonizationOperator()
     if (ionizationOperatorType != IonizationOperatorType::conservative)
         ionizationMatrix.setZero();
 
-    for (const auto& gas : mixture.gases)
+    for (const auto& gas : mixture.gases())
     {
         for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
@@ -670,7 +671,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
     const uint32_t cellNumber = grid.cellNumber;
 
-    for (const auto& gas : mixture.gases)
+    for (const auto& gas : mixture.gases())
     {
         for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
@@ -797,7 +798,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     for (uint32_t i = 0; i < grid.cellNumber; ++i)
         cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection[i] + mixture.totalCrossSection[i + 1]);
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
     {
         boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix +
                                    attachmentMatrix);
@@ -973,7 +974,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
                  EoN = workingConditions->reducedFieldSI,
                  WoN = workingConditions->reducedExcFreqSI;
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
     {
         boltzmannMatrix =
             1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
@@ -1107,7 +1108,7 @@ void ElectronKinetics::solveEEColl()
     {
         if (growthModelType == GrowthModelType::spatial)
         {
-            if (mixture.CARGasses.empty())
+            if (mixture.CARGases.empty())
             {
                 boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
                                            fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU +
@@ -1122,7 +1123,7 @@ void ElectronKinetics::solveEEColl()
         }
         else if (growthModelType == GrowthModelType::temporal)
         {
-            if (mixture.CARGasses.empty())
+            if (mixture.CARGases.empty())
             {
                 boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
                                            ionTemporalGrowth + fieldMatrixTempGrowth);
@@ -1137,7 +1138,7 @@ void ElectronKinetics::solveEEColl()
     }
     else
     {
-        if (mixture.CARGasses.empty())
+        if (mixture.CARGases.empty())
         {
             boltzmannMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
                                        inelasticMatrix + fieldMatrix);
@@ -1299,7 +1300,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     power.elasticGain = factor * kTg * elasticGain;
     power.elasticLoss = power.elasticNet - power.elasticGain;
 
-    if (!mixture.CARGasses.empty())
+    if (!mixture.CARGases.empty())
     {
         double carNet = 0., carGain = 0.;
 
@@ -1377,7 +1378,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
-    for (auto& gas : mixture.gases)
+    for (auto& gas : mixture.gases())
     {
         gas->evaluatePower(ionizationOperatorType, eedf);
         power += gas->getPower();
@@ -1452,7 +1453,7 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
 
-    for (const auto& gas : mixture.gases)
+    for (const auto& gas : mixture.gases())
     {
         for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {

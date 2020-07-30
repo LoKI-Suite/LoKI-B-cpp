@@ -7,6 +7,7 @@
 
 #include "Setup.h"
 #include "EedfGasMixture.h"
+#include "EedfCollision.h"
 #include "Grid.h"
 #include "WorkingConditions.h"
 #include "LinearAlgebra.h"
@@ -20,7 +21,7 @@ namespace loki
 {
 using namespace Enumeration;
 
-typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<std::unique_ptr<EedfGas>>,
+typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas*>,
               const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>,
               const Vector>
     ResultEvent;
