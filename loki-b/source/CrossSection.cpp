@@ -11,7 +11,8 @@
 namespace loki {
 
     CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf)
-            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective)
+    {
 
         using PairVector = std::vector<std::pair<double,double>>;
 	const PairVector tmp(cnf.at("data"));
@@ -38,7 +39,8 @@ for (unsigned i=0; i!=rawEnergyData.size(); ++i)
 //            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
     CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
-            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {
+            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective)
+    {
         std::vector<double> rawEnergyVector, rawCrossSectionVector;
 
         Parse::rawCrossSectionFromStream(rawEnergyVector, rawCrossSectionVector, in);
@@ -61,19 +63,20 @@ for (unsigned i=0; i!=rawEnergyData.size(); ++i)
     CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                                Vector rawCrossSection)
             : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective),
-              rawEnergyData(std::move(rawEnergyData)), rawCrossSection(std::move(rawCrossSection)) {
-
+              rawEnergyData(std::move(rawEnergyData)), rawCrossSection(std::move(rawCrossSection))
+    {
         this->interpolate();
         this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
-
     }
 
-    void CrossSection::interpolate() {
+    void CrossSection::interpolate()
+    {
 
         interpolate(energyGrid->getNodes(), *this);
     }
 
-    void CrossSection::interpolate(const Vector &energies, Vector &result) {
+    void CrossSection::interpolate(const Vector &energies, Vector &result)
+    {
         const auto &gridSize = energies.size();
 
         result.resize(gridSize);
@@ -81,57 +84,70 @@ for (unsigned i=0; i!=rawEnergyData.size(); ++i)
 
         uint32_t csIndex = 0, gridIndex = 0;
 
-        if (!isElasticOrEffective) {
-            for (uint32_t i = 0; i < gridSize; ++i) {
-                if (energies[i] > threshold) {
+        if (!isElasticOrEffective)
+        {
+            for (uint32_t i = 0; i < gridSize; ++i)
+        {
+                if (energies[i] > threshold)
+                {
                     gridIndex = i;
                     break;
                 }
             }
         }
 
-        for (; gridIndex < gridSize; ++gridIndex) {
+        for (; gridIndex < gridSize; ++gridIndex)
+        {
             while (csIndex < rawCrossSection.size()
-                   && rawEnergyData[csIndex] < energies[gridIndex]) {
+                   && rawEnergyData[csIndex] < energies[gridIndex])
+            {
 
                 ++csIndex;
             }
 
-            if (csIndex >= rawCrossSection.size()) {
+            if (csIndex >= rawCrossSection.size())
+            {
 //                (*this)[gridIndex] = rawCrossSection.back().second;
                 result[gridIndex] = 0.;
                 continue;
             }
 
-            if (csIndex == 0) {
-                if (rawEnergyData[csIndex] == energies[gridIndex]) {
+            if (csIndex == 0)
+            {
+                if (rawEnergyData[csIndex] == energies[gridIndex])
+                {
                     result[gridIndex] = rawCrossSection[csIndex];
-                } else {
+                }
+                else
+                {
                     result[gridIndex] = 0.;
                 }
                 continue;
             }
 
-            const double prevEnergy = rawEnergyData[csIndex - 1],
-                    nextEnergy = rawEnergyData[csIndex],
-                    prevCS = rawCrossSection[csIndex - 1],
-                    nextCS = rawCrossSection[csIndex];
-
+            const double prevEnergy = rawEnergyData[csIndex - 1];
+            const double nextEnergy = rawEnergyData[csIndex];
+            const double prevCS = rawCrossSection[csIndex - 1];
+            const double nextCS = rawCrossSection[csIndex];
             const double alpha = (energies[gridIndex] - prevEnergy) / (nextEnergy - prevEnergy);
 
             result[gridIndex] = (1. - alpha) * prevCS + alpha * nextCS;
         }
     }
 
-    Vector &CrossSection::raw() {
+    Vector &CrossSection::raw()
+    {
         return rawCrossSection;
     }
 
-    Vector &CrossSection::energies() {
+    Vector &CrossSection::energies()
+    {
         return rawEnergyData;
     }
 
-    const Grid *CrossSection::getGrid() {
+    const Grid* CrossSection::getGrid() const
+    {
         return energyGrid;
     }
-}
+
+} // namespace loki

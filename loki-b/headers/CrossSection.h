@@ -13,13 +13,13 @@
 #include <iostream>
 
 namespace loki {
-    class CrossSection : public Vector {
+
+    class CrossSection : public Vector
+    {
 //        std::vector<std::pair<double, double>> rawCrossSection;
         Vector rawEnergyData, rawCrossSection;
         Grid *energyGrid;
-
         const bool isElasticOrEffective;
-
     public:
         const double threshold;
 
@@ -38,7 +38,7 @@ namespace loki {
 
         Vector &energies();
 
-        const Grid *getGrid();
+        const Grid *getGrid() const;
 
 //        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
 

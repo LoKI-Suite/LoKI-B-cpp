@@ -5,14 +5,20 @@
 #ifndef LOKI_CPP_EEDFCOLLISION_H
 #define LOKI_CPP_EEDFCOLLISION_H
 
+#include "Traits.h"
 #include "Collision.h"
 #include "Enumeration.h"
 #include "CrossSection.h"
 #include "Power.h"
 #include "MacroscopicQuantities.h"
+#include <memory>
 
 namespace loki {
-    class EedfCollision : public Collision<Boltzmann> {
+
+    class EedfState;
+
+    class EedfCollision : public Collision<Boltzmann>
+    {
 
         // The raw cross section data and threshold is stored in
         // the CrossSection object
@@ -20,8 +26,9 @@ namespace loki {
     public:
 
         // DONE: Inelastic and superelastic rate coefficient variables should be here
-        double ineRateCoeff{0.}, supRateCoeff{0.};
-        CrossSection *crossSection{nullptr};
+        double ineRateCoeff{0.};
+        double supRateCoeff{0.};
+        std::unique_ptr<CrossSection> crossSection;
 
         // TODO: Find out the most effective way to pass vectors to this constructor and then to the base class.
         //  Should we use r-value references and move semantics?

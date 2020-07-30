@@ -5,8 +5,8 @@
 #ifndef LOKI_CPP_EEDFGAS_H
 #define LOKI_CPP_EEDFGAS_H
 
+#include "Enumeration.h"
 #include "Gas.h"
-#include "EedfState.h"
 #include "EedfCollision.h"
 #include "CrossSection.h"
 #include "Grid.h"

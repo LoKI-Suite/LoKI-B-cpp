@@ -5,6 +5,9 @@
 #ifndef LOKI_CPP_EEDFGASMIXTURE_H
 #define LOKI_CPP_EEDFGASMIXTURE_H
 
+#include "EedfCollision.h"
+#include "EedfState.h"
+#include "EedfGas.h"
 #include "GasMixture.h"
 #include "WorkingConditions.h"
 #include "MacroscopicQuantities.h"
@@ -14,30 +17,30 @@
 #include <vector>
 
 namespace loki {
-    class EedfGasMixture : public GasMixture<Boltzmann> {
+
+    class EedfGasMixture : public GasMixture<Boltzmann>
+    {
     public:
+
+        explicit EedfGasMixture(Grid *grid);
+        /** Initializes the gas mixture by loading the desired collisions from LXCat files.
+         *  These files are read from the electron kinetics setup structure. It also
+         *  requires a pointer to the energy grid in order to properly initialize the
+         *  cross sections of the collisions.
+         */
+        void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+        void initialize(const json_type &cnf, const WorkingConditions *workingConditions);
 
         Vector elasticCrossSection, totalCrossSection;
 
         Grid *grid{nullptr};
 
-        std::vector<EedfGas *> CARGasses;
+        std::vector<EedfGas *> CARGases;
 
         std::vector<RateCoefficient> rateCoefficients, rateCoefficientsExtra;
 
         bool hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
 
-        explicit EedfGasMixture(Grid *grid);
-
-        /* -- initialize --
-         * Initializes the gas mixture by loading the desired collisions from LXCat files.
-         * These files are read from the electron kinetics setup structure. It also
-         * requires a pointer to the energy grid in order to properly initialize the
-         * cross sections of the collisions.
-         */
-
-        void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
-        void initialize(const json_type &cnf, const WorkingConditions *workingConditions);
 
         // TODO: comment evaluateTotalAndElasticCS
 
@@ -93,9 +96,9 @@ namespace loki {
         void loadGasProperties(const GasPropertiesSetup &setup) override;
         void loadGasProperties(const json_type &cnf) override;
 
-        // TODO: comment addCARGasses
+        // TODO: comment addCARGases
 
-        void addCARGasses(const std::vector<std::string> &CARVector);
+        void addCARGases(const std::vector<std::string> &CARVector);
     };
 }
 

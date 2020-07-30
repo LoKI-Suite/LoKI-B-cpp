@@ -76,7 +76,7 @@ else()
   set(backend )
 endif()
 
-set(cpp ${src}/WorkingConditions.cpp
+set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cpp
         ${src}/Grid.cpp ${src}/EedfGas.cpp ${src}/Enumeration.cpp
         ${src}/EedfState.cpp  ${src}/Setup.cpp
         ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
@@ -84,7 +84,7 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
         ${src}/JobSystem.cpp ${src}/json.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-        ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
+        ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
