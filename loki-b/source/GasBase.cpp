@@ -237,4 +237,62 @@ GasBase::StateBase* GasBase::find(const StateEntry& entry)
     return *it;
 }
 
+GasBase::StateBase* GasBase::findState(const StateEntry &entry)
+{
+    if (entry.e == "*" && entry.level == electronic) {
+        auto &states = entry.charge.empty() ? stateBaseTree : ionicBaseStates;
+
+        if (states.empty())
+            return nullptr;
+
+        return states[0];
+    }
+
+    // Find electronic state.
+
+    auto * state = find(entry);
+
+    if (state == nullptr)
+        return nullptr;
+
+    if (entry.level == electronic)
+        return state;
+
+    if (entry.v == "*" && entry.level == vibrational) {
+        if (state->m_children.empty())
+            return nullptr;
+
+        return state->m_children[0];
+    }
+
+    // Find vibrational state.
+
+    state = state->find(entry);// findState(state, entry);
+
+    if (state == nullptr)
+        return nullptr;
+
+    if (entry.level == vibrational)
+        return state;
+
+    if (entry.J == "*" && entry.level == rotational) {
+        if (state->m_children.empty())
+            return nullptr;
+
+        return state->m_children[0];
+    }
+
+    // Find rotational state
+
+    state = state->find(entry);//findState(state, entry);
+
+    if (state == nullptr)
+        return nullptr;
+
+    if (entry.level == rotational)
+        return state;
+
+    return nullptr;
+}
+
 } // namespace loki
