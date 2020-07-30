@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <Enumeration.h>
+#include "LoKI-B/Enumeration.h"
 
 namespace loki {
     /*

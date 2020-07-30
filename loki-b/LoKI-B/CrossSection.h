@@ -5,9 +5,9 @@
 #ifndef LOKI_CPP_CROSSSECTION_H
 #define LOKI_CPP_CROSSSECTION_H
 
-#include "LinearAlgebra.h"
-#include "Grid.h"
-#include "json.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/json.h"
 
 #include <vector>
 #include <iostream>

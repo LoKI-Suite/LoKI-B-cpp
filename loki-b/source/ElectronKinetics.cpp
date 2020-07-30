@@ -2,8 +2,8 @@
 // Created by daan on 13-5-19.
 //
 
-#include "ElectronKinetics.h"
-#include "Constant.h"
+#include "LoKI-B/ElectronKinetics.h"
+#include "LoKI-B/Constant.h"
 #include <chrono>
 #include <iomanip>
 #include <cmath>

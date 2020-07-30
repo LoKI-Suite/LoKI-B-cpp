@@ -1,8 +1,8 @@
 #ifndef LOKI_CPP_GASBASE_H
 #define LOKI_CPP_GASBASE_H
 
-#include "InputStructures.h"
-#include "Enumeration.h"
+#include "LoKI-B/InputStructures.h"
+#include "LoKI-B/Enumeration.h"
 
 namespace loki {
 
@@ -48,7 +48,7 @@ public:
          * In case this state is electronic, this vector is obtained via the
          * gas, otherwise it is obtained via the parent.
          */
-        std::vector<StateBase*> &siblings_base()
+        const std::vector<StateBase*> &siblings_base() const
         {
             if (type == electronic)
             {

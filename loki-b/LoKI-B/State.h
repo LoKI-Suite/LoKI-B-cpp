@@ -56,23 +56,24 @@ public:
     typename Trait<TraitType>::State* parent() { return static_cast<typename Trait<TraitType>::State*>(GasBase::StateBase::parent_base()); }
     typename Trait<TraitType>::Gas* gas() { return static_cast<typename Trait<TraitType>::Gas*>(&GasBase::StateBase::gas_base()); }
 
-    std::vector<typename Trait<TraitType>::State *> children;
+    const std::vector<typename Trait<TraitType>::State *>& children() const { return m_children; }
+
     /* Returns a vector containing the sibling states of the current state.
      * In case this state is electronic, this vector is obtained via the
      * gas, otherwise it is obtained via the parent.
      */
-    std::vector<typename Trait<TraitType>::State *> &siblings()
+    const std::vector<typename Trait<TraitType>::State *> &siblings() const
     {
         if (type == electronic)
         {
             return charge.empty() ? gas()->stateTree : gas()->ionicStates;
         }
-        return parent()->children;
+        return parent()->m_children;
     }
     typename Trait<TraitType>::State* add_child(typename Trait<TraitType>::State* state)
     {
         StateBase::add_child(state);
-        return children.emplace_back(state);
+        return m_children.emplace_back(state);
     }
 
     /* Allows to search the children in order to find a state that is equal
@@ -85,6 +86,10 @@ public:
     {
         return static_cast<typename Trait<TraitType>::State*>(StateBase::find(entry));
     }
+
+    private:
+
+    std::vector<typename Trait<TraitType>::State *> m_children;
 };
 
 } // namespace loki

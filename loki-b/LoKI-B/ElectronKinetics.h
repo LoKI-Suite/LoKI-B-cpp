@@ -5,15 +5,15 @@
 #ifndef LOKI_CPP_ELECTRONKINETICS_H
 #define LOKI_CPP_ELECTRONKINETICS_H
 
-#include "Setup.h"
-#include "EedfGasMixture.h"
-#include "EedfCollision.h"
-#include "Grid.h"
-#include "WorkingConditions.h"
-#include "LinearAlgebra.h"
-#include "Power.h"
-#include "MacroscopicQuantities.h"
-#include "Event.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/EedfGasMixture.h"
+#include "LoKI-B/EedfCollision.h"
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Power.h"
+#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/Event.h"
 
 // TODO: comment ElectronKinetics class
 

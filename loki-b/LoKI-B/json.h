@@ -1,7 +1,7 @@
 #ifndef LOKI_CPP_JSON_H
 #define LOKI_CPP_JSON_H
 
-#include "../include/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 #include <iostream>
 #include <string>
 

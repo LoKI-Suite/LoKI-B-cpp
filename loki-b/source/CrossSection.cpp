@@ -4,9 +4,9 @@
 // Created by daan on 15-5-19.
 //
 
-#include "CrossSection.h"
-#include "Parse.h"
-#include "Log.h"
+#include "LoKI-B/CrossSection.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/Log.h"
 
 namespace loki {
 

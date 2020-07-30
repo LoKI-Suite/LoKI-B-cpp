@@ -5,12 +5,12 @@
 #ifndef LOKI_CPP_EEDFCOLLISION_H
 #define LOKI_CPP_EEDFCOLLISION_H
 
-#include "Traits.h"
-#include "Collision.h"
-#include "Enumeration.h"
-#include "CrossSection.h"
-#include "Power.h"
-#include "MacroscopicQuantities.h"
+#include "LoKI-B/Traits.h"
+#include "LoKI-B/Collision.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/CrossSection.h"
+#include "LoKI-B/Power.h"
+#include "LoKI-B/MacroscopicQuantities.h"
 #include <memory>
 
 namespace loki {

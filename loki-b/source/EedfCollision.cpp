@@ -2,10 +2,10 @@
 // Created by daan on 21-5-19.
 //
 
-#include "EedfState.h"
-#include "EedfCollision.h"
-#include "Constant.h"
-#include "Log.h"
+#include "LoKI-B/EedfState.h"
+#include "LoKI-B/EedfCollision.h"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
 
 namespace loki {
 

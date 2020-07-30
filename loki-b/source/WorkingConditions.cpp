@@ -2,10 +2,10 @@
 // Created by daan on 2-5-19.
 //
 
-#include "WorkingConditions.h"
-#include "Constant.h"
-#include "Log.h"
-#include "PropertyFunctions.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/PropertyFunctions.h"
 #include <limits>
 
 namespace loki {

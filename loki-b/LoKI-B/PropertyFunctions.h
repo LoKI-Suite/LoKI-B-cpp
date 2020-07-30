@@ -5,12 +5,12 @@
 #ifndef LOKI_CPP_PROPERTYFUNCTIONS_H
 #define LOKI_CPP_PROPERTYFUNCTIONS_H
 
-#include "Enumeration.h"
-#include "Constant.h"
-#include "Traits.h"
-#include "Log.h"
-#include "Parse.h"
-#include "GasBase.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/Traits.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/GasBase.h"
 
 #include <cmath>
 
@@ -55,7 +55,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void boltzmannPopulation(std::vector<GasBase::StateBase*> &states,
+    inline void boltzmannPopulation(const std::vector<GasBase::StateBase*> &states,
                              const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::population)
             Log<WrongPropertyError>::Error("boltzmannPopulation");
@@ -75,7 +75,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void harmonicOscillatorEnergy(std::vector<GasBase::StateBase*> &states,
+    inline void harmonicOscillatorEnergy(const std::vector<GasBase::StateBase*> &states,
                                   const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::energy)
             Log<WrongPropertyError>::Error("harmonicOscillatorEnergy");
@@ -101,7 +101,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void rigidRotorEnergy(std::vector<GasBase::StateBase*> &states,
+    inline void rigidRotorEnergy(const std::vector<GasBase::StateBase*> &states,
                           const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::energy)
             Log<WrongPropertyError>::Error("rigidRotorEnergy");
@@ -127,7 +127,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void rotationalDegeneracy_N2(std::vector<GasBase::StateBase*> &states,
+    inline void rotationalDegeneracy_N2(const std::vector<GasBase::StateBase*> &states,
                           const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::statisticalWeight)
             Log<WrongPropertyError>::Error("rotationalDegeneracy_N2");
@@ -149,7 +149,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void rotationalDegeneracy(std::vector<GasBase::StateBase*> &states,
+    inline void rotationalDegeneracy(const std::vector<GasBase::StateBase*> &states,
                                  const std::vector<double> &arguments, StatePropertyType type) {
         if (type != StatePropertyType::statisticalWeight)
             Log<WrongPropertyError>::Error("rotationalDegeneracy");
@@ -171,7 +171,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void constantValue(std::vector<GasBase::StateBase*> &states,
+    inline void constantValue(const std::vector<GasBase::StateBase*> &states,
                        double value, StatePropertyType type) {
 
 //            if (arguments.size() != 1)
@@ -184,7 +184,7 @@ namespace loki::PropertyFunctions {
         }
     }
 
-    inline void callByName(const std::string &name, std::vector<GasBase::StateBase*> &states,
+    inline void callByName(const std::string &name, const std::vector<GasBase::StateBase*> &states,
                     const std::vector<double> &arguments, StatePropertyType type) {
 
         if (name == "boltzmannPopulation")

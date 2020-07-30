@@ -1,9 +1,15 @@
-/** \file   Functions for calculating enum-values from their string representation.
+/** \file
+ *
+ *  Functions for calculating enum-values from their string representation.
+ *
  *  \author Jan van Dijk
  *  \date   July 2020
  */
 
-#include "Enumeration.h"
+#include "LoKI-B/Enumeration.h"
+#include <vector>
+#include <utility>
+#include <stdexcept>
 
 namespace loki::Enumeration {
 

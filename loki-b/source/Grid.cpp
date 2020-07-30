@@ -2,8 +2,8 @@
 // Created by daan on 2-5-19.
 //
 
-#include "../headers/Grid.h"
-#include <Log.h>
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {

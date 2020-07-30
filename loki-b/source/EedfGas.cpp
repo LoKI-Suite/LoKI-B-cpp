@@ -2,9 +2,9 @@
 // Created by daan on 2-5-19.
 //
 
-#include "EedfState.h"
-#include "EedfGas.h"
-#include "Constant.h"
+#include "LoKI-B/EedfState.h"
+#include "LoKI-B/EedfGas.h"
+#include "LoKI-B/Constant.h"
 
 namespace loki {
     EedfGas::EedfGas(const std::string &name) : Gas(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
@@ -71,11 +71,11 @@ namespace loki {
         // vib children of ele ground to Boltzmann at 300K
         // rot children of vib ground to Boltzmann at 300K
 
-        if (!ground->children.empty()) {
+        if (!ground->children().empty()) {
             double norm = 0;
-            EedfState *childGround = ground->children[0];
+            EedfState *childGround = ground->children()[0];
 
-            for (auto *child : ground->children) {
+            for (auto *child : ground->children()) {
                 if (child->energy < 0) {
                     Log<NoEnergy>::Error(*child);
                 } else if (child->statisticalWeight < 0) {
@@ -88,7 +88,7 @@ namespace loki {
                 effectivePopulations.emplace(child, effPop);
                 norm += effPop;
             }
-            for (auto *child : ground->children) {
+            for (auto *child : ground->children()) {
                 effectivePopulations[child] /= (norm / effectivePopulations[ground]);
             }
 

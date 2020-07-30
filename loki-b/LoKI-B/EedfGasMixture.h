@@ -5,14 +5,14 @@
 #ifndef LOKI_CPP_EEDFGASMIXTURE_H
 #define LOKI_CPP_EEDFGASMIXTURE_H
 
-#include "EedfCollision.h"
-#include "EedfState.h"
-#include "EedfGas.h"
-#include "GasMixture.h"
-#include "WorkingConditions.h"
-#include "MacroscopicQuantities.h"
-#include "Traits.h"
-#include "json.h"
+#include "LoKI-B/EedfCollision.h"
+#include "LoKI-B/EedfState.h"
+#include "LoKI-B/EedfGas.h"
+#include "LoKI-B/GasMixture.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/Traits.h"
+#include "LoKI-B/json.h"
 
 #include <vector>
 

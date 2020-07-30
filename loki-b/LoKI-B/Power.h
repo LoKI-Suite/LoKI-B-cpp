@@ -5,7 +5,7 @@
 #ifndef LOKI_CPP_POWER_H
 #define LOKI_CPP_POWER_H
 
-#include "Enumeration.h"
+#include "LoKI-B/Enumeration.h"
 
 namespace loki {
     struct CollPower {
