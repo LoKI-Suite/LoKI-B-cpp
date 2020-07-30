@@ -4,9 +4,9 @@
 
 #include <iostream>
 
-#include <Setup.h>
-#include <Simulation.h>
-#include <LinearAlgebra.h>
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Simulation.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include <chrono>
 #include <exception>
 

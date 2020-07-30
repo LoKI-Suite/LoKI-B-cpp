@@ -5,8 +5,8 @@
 #ifndef LOKI_CPP_EEDFSTATE_H
 #define LOKI_CPP_EEDFSTATE_H
 
-#include "State.h"
-#include "Traits.h"
+#include "LoKI-B/State.h"
+#include "LoKI-B/Traits.h"
 
 #include <vector>
 

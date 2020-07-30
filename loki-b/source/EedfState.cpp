@@ -2,8 +2,8 @@
 // Created by daan on 2-5-19.
 //
 
-#include "EedfState.h"
-#include "EedfGas.h"
+#include "LoKI-B/EedfState.h"
+#include "LoKI-B/EedfGas.h"
 
 namespace loki {
 

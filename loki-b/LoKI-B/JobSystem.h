@@ -1,4 +1,6 @@
-/** \file LoKI-B support for parameterized series of simulations.
+/** \file
+ *
+ *  LoKI-B support for parameterized series of simulations.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium

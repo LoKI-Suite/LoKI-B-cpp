@@ -5,10 +5,10 @@
 #ifndef LOKI_CPP_GRID_H
 #define LOKI_CPP_GRID_H
 
-#include "LinearAlgebra.h"
-#include "Event.h"
-#include "Setup.h"
-#include "json.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Event.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
 
 namespace loki
 {

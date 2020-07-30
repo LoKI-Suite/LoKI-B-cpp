@@ -7,9 +7,9 @@
 #include <sstream>
 #include <regex>
 
-#include "Setup.h"
-#include "Parse.h"
-#include <Log.h>
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/Log.h"
 
 // DONE: Think which is desirable:
 //  1. Should fields that are required and cannot be parsed immediately throw an

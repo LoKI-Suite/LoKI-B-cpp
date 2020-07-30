@@ -13,13 +13,13 @@
 // DONE: Implement LXCat file parsing.
 // DONE: Implement Property file / function / value parsing.
 
-#include "GasMixtureBase.h"
-#include "Collision.h"
-#include "Setup.h"
-#include "Traits.h"
-#include "Log.h"
-#include "Parse.h"
-#include "json.h"
+#include "LoKI-B/GasMixtureBase.h"
+#include "LoKI-B/Collision.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Traits.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/json.h"
 
 #include <vector>
 #include <set>
@@ -46,7 +46,6 @@ namespace loki {
         using Collision = typename Trait<TraitType>::Collision;
         // Vector of pointers to all the gases in the mixture.
         const std::vector<Gas*>& gases() const { return m_gases; }
-        std::vector<Gas*>& gases() { return m_gases; }
     protected:
         /// \todo Still needed?
         Gas* findGas(const std::string& name) { return static_cast<Gas*>(GasMixtureBase::findGas(name)); }

@@ -1,10 +1,10 @@
 #ifndef LOKI_CPP_GASMIXTUREBASE_H
 #define LOKI_CPP_GASMIXTUREBASE_H
 
-#include "GasBase.h"
-#include "Setup.h"
-#include "json.h"
-#include "WorkingConditions.h"
+#include "LoKI-B/GasBase.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
+#include "LoKI-B/WorkingConditions.h"
 
 #include <vector>
 #include <memory>

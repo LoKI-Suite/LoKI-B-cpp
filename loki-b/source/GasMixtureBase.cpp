@@ -1,7 +1,7 @@
-#include "GasMixtureBase.h"
-#include "Log.h"
-#include "Parse.h"
-#include "PropertyFunctions.h"
+#include "LoKI-B/GasMixtureBase.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/PropertyFunctions.h"
 
 #include <regex>
 

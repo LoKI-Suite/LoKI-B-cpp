@@ -4,9 +4,9 @@
 
 #include <stdexcept>
 #include <iostream>
-#include "EedfGasMixture.h"
-#include "Constant.h"
-#include "json.h"
+#include "LoKI-B/EedfGasMixture.h"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/json.h"
 
 // DONE: productStoiCoeff is only for the products
 // DONE: when parsing an LXCat Section first look for the PARAM keyword (since elastic collisions will not have

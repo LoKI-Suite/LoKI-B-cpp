@@ -5,12 +5,12 @@
 #ifndef LOKI_CPP_SIMULATION_H
 #define LOKI_CPP_SIMULATION_H
 
-#include "Setup.h"
-#include "json.h"
-#include "WorkingConditions.h"
-#include "ElectronKinetics.h"
-#include "JobSystem.h"
-#include "Output.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/ElectronKinetics.h"
+#include "LoKI-B/JobSystem.h"
+#include "LoKI-B/Output.h"
 
 #include <memory>
 

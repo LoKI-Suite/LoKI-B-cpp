@@ -32,8 +32,7 @@ endif()
 
 # --- loki-b --- #
 set(src loki-b/source)
-set(h   loki-b/headers)
-set(pf  loki-b/property_functions)
+set(h   loki-b/LoKI-B)
 set(inc include)
 set(tests loki-b/tests)
 
@@ -91,9 +90,8 @@ set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
-        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h
+        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
-set(property_functions ${pf}/PropertyFunctions.h)
 
 # Standard MKL directories on different operating systems. 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -114,19 +112,19 @@ endif()
 # -- loki library -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions})
 
-target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki_l PRIVATE ${backend})
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_include_directories(loki PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki PRIVATE loki_l ${backend})
 
 # -- loki tests -- #
 add_executable(test_statebase ${tests}/test_statebase.cpp)
-target_include_directories(test_statebase PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(test_statebase PRIVATE loki_l ${backend})
 

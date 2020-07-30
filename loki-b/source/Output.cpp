@@ -2,9 +2,9 @@
 // Created by daan on 04-07-2019.
 //
 
-#include "Output.h"
-#include "Log.h"
-#include "StandardPaths.h"
+#include "LoKI-B/Output.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/StandardPaths.h"
 
 #include <filesystem>
 #include <iomanip>
