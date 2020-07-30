@@ -93,6 +93,14 @@ public:
      * otherwise a null pointer is returned.
      */
     StateBase* find(const StateEntry& entry);
+    /** This member is the State part of the member findState that was previously
+     *  completely in GasMixture.h. It differs from member find, which also takes
+     *  an Entry and returns a State pointer, but the semantics are not documented
+     *  anywhere.
+     *  \todo Document the semantics of this function, describe the differences
+     *        with find, see if these members can be merged somehow.
+     */
+    StateBase* findState(const StateEntry& entry);
 
     // The stateTree vector stores pointers to the electronic non-ionic states.
     // The ionicStates vector stores pointers to the electronic ionic states.

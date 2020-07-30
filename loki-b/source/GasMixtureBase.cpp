@@ -43,68 +43,8 @@ GasBase* GasMixtureBase::findGas(const std::string &name)
 
 GasBase::StateBase* GasMixtureBase::findState(const StateEntry &entry)
 {
-    // Find gas.
-
-    const auto& gas = findGas(entry.gasName);
-
-    if (gas == nullptr)
-        return nullptr;
-
-    if (entry.e == "*" && entry.level == electronic) {
-        /// \todo Use siblings here?
-        auto &states = entry.charge.empty() ? gas->stateBaseTree : gas->ionicBaseStates;
-
-        if (states.empty())
-            return nullptr;
-
-        return states[0];
-    }
-
-    // Find electronic state.
-
-    auto * state = gas->find(entry);
-
-    if (state == nullptr)
-        return nullptr;
-
-    if (entry.level == electronic)
-        return state;
-
-    if (entry.v == "*" && entry.level == vibrational) {
-        if (state->m_children.empty())
-            return nullptr;
-
-        return state->m_children[0];
-    }
-
-    // Find vibrational state.
-
-    state = state->find(entry);// findState(state, entry);
-
-    if (state == nullptr)
-        return nullptr;
-
-    if (entry.level == vibrational)
-        return state;
-
-    if (entry.J == "*" && entry.level == rotational) {
-        if (state->m_children.empty())
-            return nullptr;
-
-        return state->m_children[0];
-    }
-
-    // Find rotational state
-
-    state = state->find(entry);//findState(state, entry);
-
-    if (state == nullptr)
-        return nullptr;
-
-    if (entry.level == rotational)
-        return state;
-
-    return nullptr;
+    GasBase* gas = findGas(entry.gasName);
+    return gas ? gas->findState(entry) : nullptr;
 }
 
 void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
