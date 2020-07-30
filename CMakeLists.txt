@@ -35,6 +35,7 @@ set(src loki-b/source)
 set(h   loki-b/headers)
 set(pf  loki-b/property_functions)
 set(inc include)
+set(tests loki-b/tests)
 
 # Specify the libraries to link for different backends.
 set(ob  openblas)
@@ -119,10 +120,16 @@ target_link_libraries(loki_l PRIVATE ${backend})
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
-
 target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
 target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki PRIVATE loki_l ${backend})
+
+# -- loki tests -- #
+add_executable(test_statebase ${tests}/test_statebase.cpp)
+target_include_directories(test_statebase PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
+target_link_libraries(test_statebase PRIVATE loki_l ${backend})
+
 
 # first we can indicate the documentation build as an option and set it to ON by default
 option(BUILD_DOC "Build documentation" ON)
