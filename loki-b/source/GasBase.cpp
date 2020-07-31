@@ -87,7 +87,7 @@ bool GasBase::StateBase::operator>=(const StateEntry &entry)
 
 std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
 {
-    os << state.gas_base().name << '(';
+    os << state.gas().name << '(';
 
     if (!state.charge.empty())
         os << state.charge << ',';
@@ -150,9 +150,9 @@ void GasBase::StateBase::checkPopulations() const
 void GasBase::StateBase::evaluateDensity()
 {
     if (type == electronic)
-        density = population * gas_base().fraction;
+        density = population * gas().fraction;
     else
-        density = population * parent_base()->density;
+        density = population * parent()->density;
 
     for (auto *state : m_children)
         state->evaluateDensity();

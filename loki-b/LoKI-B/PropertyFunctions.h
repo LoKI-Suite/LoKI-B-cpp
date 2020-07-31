@@ -86,8 +86,8 @@ namespace loki::PropertyFunctions {
         if (states.at(0)->type != vibrational)
             Log<Message>::Error("Trying to assign harmonic oscillator energy to non-vibrational state.");
 
-        if (states.at(0)->gas_base().harmonicFrequency < 0)
-            Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas_base().name +
+        if (states.at(0)->gas().harmonicFrequency < 0)
+            Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas().name +
                                 " to evaluate state energies.");
 
         for (auto *state : states) {
@@ -97,7 +97,7 @@ namespace loki::PropertyFunctions {
                 Log<Message>::Error("Non numerical vib level (" + state->v +
                                     ") when trying to assign harmonic oscillator energy.");
 
-            state->energy = plankReducedInEv * state->gas_base().harmonicFrequency * (vibLevel + .5);
+            state->energy = plankReducedInEv * state->gas().harmonicFrequency * (vibLevel + .5);
         }
     }
 
@@ -112,8 +112,8 @@ namespace loki::PropertyFunctions {
         if (states.at(0)->type != rotational)
             Log<Message>::Error("Trying to assign rigid rotor energy to non-rotational state.");
 
-        if (states.at(0)->gas_base().rotationalConstant < 0)
-            Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas_base().name +
+        if (states.at(0)->gas().rotationalConstant < 0)
+            Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas().name +
                                 " to evaluate state energies.");
 
         for (auto *state : states) {
@@ -123,7 +123,7 @@ namespace loki::PropertyFunctions {
                 Log<Message>::Error("Non numerical rot level (" + state->J +
                                     ") when trying to assign rigid rotor energy.");
 
-            state->energy = state->gas_base().rotationalConstant * rotLevel * (rotLevel + 1.);
+            state->energy = state->gas().rotationalConstant * rotLevel * (rotLevel + 1.);
         }
     }
 

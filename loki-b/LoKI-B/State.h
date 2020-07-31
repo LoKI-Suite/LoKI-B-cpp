@@ -53,8 +53,8 @@ protected:
     {
     }
 public:
-    typename Trait<TraitType>::State* parent() { return static_cast<typename Trait<TraitType>::State*>(GasBase::StateBase::parent_base()); }
-    typename Trait<TraitType>::Gas* gas() { return static_cast<typename Trait<TraitType>::Gas*>(&GasBase::StateBase::gas_base()); }
+    typename Trait<TraitType>::State* parent() { return static_cast<typename Trait<TraitType>::State*>(GasBase::StateBase::parent()); }
+    typename Trait<TraitType>::Gas* gas() { return static_cast<typename Trait<TraitType>::Gas*>(&GasBase::StateBase::gas()); }
 
     const std::vector<typename Trait<TraitType>::State *>& children() const { return m_children; }
 
