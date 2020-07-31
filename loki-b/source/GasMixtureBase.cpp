@@ -72,7 +72,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                         Log<PropertyValueParseError>::Error(valueString);
 
                     if (entry.hasWildCard()) {
-                        PropertyFunctions::constantValue(state->siblings_base(), value, propertyType);
+                        PropertyFunctions::constantValue(state->siblings(), value, propertyType);
                     } else {
                         /// \todo Can we avoid creation of the intermediate vector?
                         std::vector<GasBase::StateBase*> states{state};
@@ -89,7 +89,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                         Log<PropertyArgumentsError>::Error(argumentString);
 
                     if (entry.hasWildCard()) {
-                        PropertyFunctions::callByName(functionName, state->siblings_base(),
+                        PropertyFunctions::callByName(functionName, state->siblings(),
                                                                  arguments, propertyType);
                     } else {
                         /// \todo Can we avoid creation of the intermediate vector?
@@ -112,7 +112,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                     Log<PropertyStateError>::Error(entry.first);
 
                 if (entry.first.hasWildCard()) {
-                    PropertyFunctions::constantValue(state->siblings_base(), entry.second, propertyType);
+                    PropertyFunctions::constantValue(state->siblings(), entry.second, propertyType);
                 } else {
                     PropertyFunctions::setStateProperty(state, entry.second, propertyType);
                 }

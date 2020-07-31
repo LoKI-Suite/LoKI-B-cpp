@@ -40,23 +40,25 @@ public:
          */
         void evaluateDensity();
 
-        const GasBase& gas_base() const { return *m_gas_base; }
-        GasBase& gas_base() { return *m_gas_base; }
-        const StateBase* parent_base() const { return m_parent_base; }
-        StateBase* parent_base() { return m_parent_base; }
+        const GasBase& gas() const { return *m_gas_base; }
+        GasBase& gas() { return *m_gas_base; }
+        const StateBase* parent() const { return m_parent_base; }
+        StateBase* parent() { return m_parent_base; }
         /* Returns a vector containing the sibling states of the current state.
          * In case this state is electronic, this vector is obtained via the
          * gas, otherwise it is obtained via the parent.
          */
-        const std::vector<StateBase*> &siblings_base() const
+        const std::vector<StateBase*> &siblings() const
         {
             if (type == electronic)
             {
-                return charge.empty() ? gas_base().stateBaseTree : gas_base().ionicBaseStates;
+                return charge.empty() ? gas().stateBaseTree : gas().ionicBaseStates;
             }
             /// \todo assert/test the parent exists
-            return parent_base()->m_children;
+            return parent()->m_children;
         }
+        const std::vector<StateBase *>& children() const { return m_children; }
+        std::vector<StateBase *>& children() { return m_children; }
     protected:
         void add_child(StateBase* child) { m_children.push_back(child); }
     private:
