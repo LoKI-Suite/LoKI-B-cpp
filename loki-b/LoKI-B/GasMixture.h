@@ -110,8 +110,8 @@ namespace loki {
             entry_type = Enumeration::getCollisionType(type);
             entry_isReverse = (sep[0] == '<');
 
-            std::vector<GasBase::StateBase*> reactants;
-            std::vector<GasBase::StateBase*> products;
+            std::vector<State*> reactants;
+            std::vector<State*> products;
             std::set<GasBase*> targetGases;
 
             for (auto &stateEntry : entry_reactants) {
@@ -145,8 +145,8 @@ namespace loki {
 
             entry_isReverse = rcnf.at("superelastic");
 
-            std::vector<GasBase::StateBase*> reactants;
-            std::vector<GasBase::StateBase*> products;
+            std::vector<State*> reactants;
+            std::vector<State*> products;
             std::set<GasBase*> targetGases;
 
             for (const auto &stateEntry : entry_reactants) {
@@ -199,8 +199,8 @@ namespace loki {
             auto * state = parent->find(entry);
             if (state == nullptr)
             {
-                state = parent->gas()->states.emplace_back(
-                        new State(entry, parent->gas(), parent)).get();
+                state = parent->gas().states.emplace_back(
+                        new State(entry, &parent->gas(), parent)).get();
                 parent->add_child(state);
             }
             return state;
