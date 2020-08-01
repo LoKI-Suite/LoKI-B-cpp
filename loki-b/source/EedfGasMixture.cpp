@@ -188,7 +188,7 @@ namespace loki {
         }
 
         target->addCollision(collision, isExtra);
-        target->gas()->addCollision(collision, isExtra);
+        target->gas().addCollision(collision, isExtra);
 
         return true;
     }
