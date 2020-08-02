@@ -14,8 +14,6 @@ namespace loki {
 
     class EedfState : public State<Boltzmann> {
     public:
-        std::vector<EedfCollision *> m_collisions, m_collisionsExtra;
-
         EedfState(const StateEntry &entry, EedfGas *gas, EedfState * parent = nullptr)
             : State(entry, gas, parent)
         {}
