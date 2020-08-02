@@ -24,9 +24,12 @@ namespace loki {
         using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
         // We need to store the collisions per Gas since we need to calculate
         // the mass ratio when evaluating the total and elastic cross-sections.
-        std::vector<CollisionVector> collisions, extraCollisions;
+        std::vector<CollisionVector> collisions, collisionsExtra;
         std::map<EedfState *, double> effectivePopulations;
         double OPBParameter = 0.;
+
+        std::map<GasBase::StateBase *,std::vector<EedfCollision*>> m_state_collisions;
+        std::map<GasBase::StateBase *,std::vector<EedfCollision*>> m_state_collisionsExtra;
 
         explicit EedfGas(const std::string &name);
 

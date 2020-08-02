@@ -206,7 +206,7 @@ namespace loki {
         Log<Message>::Notify(*collision);
 
         // Check if the collision already exists. If so delete the new entry and return false.
-        auto &currentCollisions = (isExtra ? target->m_collisionsExtra : target->m_collisions);
+        auto &currentCollisions = isExtra ? target->gas().m_state_collisionsExtra[target] : target->gas().m_state_collisions[target];
 
         if (std::find_if(currentCollisions.begin(), currentCollisions.end(),
                              [& collision](const EedfCollision *itCollision) {
@@ -346,7 +346,7 @@ namespace loki {
                     rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
                 }
             }
-            for (auto &collVec : gas->extraCollisions)
+            for (auto &collVec : gas->collisionsExtra)
             {
                 for (auto& collision : collVec)
                 {
