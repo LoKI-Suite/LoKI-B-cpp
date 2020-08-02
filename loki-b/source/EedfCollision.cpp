@@ -26,7 +26,7 @@ namespace loki {
     bool EedfCollision::operator==(const EedfCollision &other)
     {
         if (type != other.type) return false;
-        if (target != other.target) return false;
+        if (getTarget() != other.getTarget()) return false;
 
         // Comparing pointers since there is only one instantiation of each state.
         for (const auto *state : other.products)
@@ -38,6 +38,10 @@ namespace loki {
         return true;
     }
 
+    const EedfState *EedfCollision::getTarget() const
+    {
+        return target;
+    }
     EedfState *EedfCollision::getTarget()
     {
         return target;
@@ -45,7 +49,7 @@ namespace loki {
 
     std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
     {
-        os << "e + " << *collision.target
+        os << "e + " << *collision.getTarget()
            << (collision.isReverse ? " <->" : " ->");
 
         if (collision.type != CollisionType::attachment) os << " e +";
@@ -74,10 +78,10 @@ namespace loki {
 
         crossSection->interpolate(superElasticEnergies, result);
 
-        if (target->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*target);
+        if (getTarget()->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
         if (products[0]->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
 
-        const double swRatio = target->statisticalWeight / products[0]->statisticalWeight;
+        const double swRatio = getTarget()->statisticalWeight / products[0]->statisticalWeight;
 
         uint32_t minIndex = 0;
 
@@ -116,11 +120,11 @@ namespace loki {
             ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.ine = -factor * target->density * grid->step * grid->getNode(lmin) * ineSum;
+        collPower.ine = -factor * getTarget()->density * grid->step * grid->getNode(lmin) * ineSum;
 
         if (isReverse)
         {
-            const double statWeightRatio = target->statisticalWeight / products[0]->statisticalWeight;
+            const double statWeightRatio = getTarget()->statisticalWeight / products[0]->statisticalWeight;
 
             double supSum = 0;
 
@@ -175,7 +179,7 @@ namespace loki {
                     sumThree += grid->getCell(i) * term;
                 }
 
-                collPower.ine = -factor * target->density * grid->step *
+                collPower.ine = -factor * getTarget()->density * grid->step *
                                 (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
 
             }
@@ -187,7 +191,7 @@ namespace loki {
                     sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
                 }
 
-                collPower.ine = -factor * target->density * grid->step * grid->getCell(lmin - 1) * sum;
+                collPower.ine = -factor * getTarget()->density * grid->step * grid->getCell(lmin - 1) * sum;
             }
             else if (ionizationOperatorType == IonizationOperatorType::sdcs)
             {
@@ -207,7 +211,7 @@ namespace loki {
                                    (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold) / (2 * w)));
                 }
 
-                collPower.ine = -factor * target->density * grid->getCell(lmin) * grid->step *
+                collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->step *
                                 eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->step * TICS)).sum();
             }
         }
@@ -220,7 +224,7 @@ namespace loki {
                 sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
             }
 
-            collPower.ine = -factor * target->density * grid->step * sum;
+            collPower.ine = -factor * getTarget()->density * grid->step * sum;
         }
         /// \todo For other Collision types, collPower is unitialized at this point
 
@@ -245,10 +249,10 @@ namespace loki {
 
         if (isReverse)
         {
-            const double tStatWeight = target->statisticalWeight;
+            const double tStatWeight = getTarget()->statisticalWeight;
             const double pStatWeight = products[0]->statisticalWeight;
 
-            if (tStatWeight <= 0.) Log<NoStatWeight>::Error(*target);
+            if (tStatWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
             if (pStatWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
 
             const double statWeightRatio = tStatWeight / pStatWeight;

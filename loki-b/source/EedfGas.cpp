@@ -29,8 +29,8 @@ namespace loki {
         Vector rawEl = rawEff; // copy raw effective into raw elastic
 
         if (effectivePopulations.empty()) {
-            effectivePopulations.emplace(eff->target, 1.);
-            setDefaultEffPop(eff->target);
+            effectivePopulations.emplace(eff->getTarget(), 1.);
+            setDefaultEffPop(eff->getTarget());
         }
 
         for (const auto &pair : effectivePopulations) {

@@ -37,6 +37,7 @@ namespace loki {
 
         ~EedfCollision();
 
+        const EedfState *getTarget() const;
         EedfState *getTarget();
 
         void superElastic(const Vector &energyData, Vector &result) const;
