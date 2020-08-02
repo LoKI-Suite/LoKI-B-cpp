@@ -11,7 +11,7 @@ namespace loki {
 
     EedfCollision::EedfCollision(Enumeration::CollisionType type, std::vector<EedfState *> &reactants,
                                  std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse)
-    : Collision(type, reactants[0], products, stoiCoeff, isReverse)
+    : Collision(type, reactants, products, stoiCoeff, isReverse)
     {
         if (reactants.size() != 1)
             Log<MultipleReactantInEedfCol>::Warning(*this);
@@ -23,7 +23,17 @@ namespace loki {
     {
     }
 
-    bool EedfCollision::operator==(const EedfCollision &other)
+    /** \todo What is intended here? Should we not just compare the
+     *        lists of participants and the type below (after ordering),
+     *        as well as the type? It may be better to store the products
+     *        (and the LHS) as a map<name,stoich_coefficients> then. Then
+     *        the below could be implemented as:
+     *
+     *        type()=o.type() && lhs()=o.lhs() && rhs==o.rhs()
+     *
+     *  \bug at present, 'e + X' and 'X + e' would result in distinct processes.
+     */
+    bool EedfCollision::operator==(const EedfCollision &other) const
     {
         if (type != other.type) return false;
         if (getTarget() != other.getTarget()) return false;
@@ -40,11 +50,11 @@ namespace loki {
 
     const EedfState *EedfCollision::getTarget() const
     {
-        return target;
+        return Collision::target.front();
     }
     EedfState *EedfCollision::getTarget()
     {
-        return target;
+        return Collision::target.front();
     }
 
     std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
