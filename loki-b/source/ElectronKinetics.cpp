@@ -481,7 +481,7 @@ void ElectronKinetics::evaluateInelasticOperators()
                 if (threshold < grid.step || threshold > grid.getNodes()[grid.cellNumber])
                     continue;
 
-                const double targetDensity = collision->target->density;
+                const double targetDensity = collision->getTarget()->density;
 
                 if (targetDensity != 0)
                 {
@@ -505,7 +505,7 @@ void ElectronKinetics::evaluateInelasticOperators()
 
                     if (collision->isReverse)
                     {
-                        const double swRatio = collision->target->statisticalWeight /
+                        const double swRatio = collision->getTarget()->statisticalWeight /
                                                collision->products[0]->statisticalWeight;
                         const double productDensity = collision->products[0]->density;
 
@@ -556,7 +556,7 @@ void ElectronKinetics::evaluateIonizationOperator()
 
             hasValidCollisions = true;
 
-            const double density = collision->target->density;
+            const double density = collision->getTarget()->density;
             const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
             Vector cellCrossSection(grid.cellNumber);
@@ -686,7 +686,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
             Vector cellCrossSection(cellNumber);
 
-            const double targetDensity = collision->target->density;
+            const double targetDensity = collision->getTarget()->density;
 
             for (uint32_t i = 0; i < cellNumber; ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
@@ -1457,12 +1457,12 @@ void ElectronKinetics::evaluateSwarmParameters()
     {
         for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
-            totalIonRateCoeff += collision->target->density * collision->ineRateCoeff;
+            totalIonRateCoeff += collision->getTarget()->density * collision->ineRateCoeff;
         }
 
         for (const auto& collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
-            totalAttRateCoeff += collision->target->density * collision->ineRateCoeff;
+            totalAttRateCoeff += collision->getTarget()->density * collision->ineRateCoeff;
         }
     }
 
