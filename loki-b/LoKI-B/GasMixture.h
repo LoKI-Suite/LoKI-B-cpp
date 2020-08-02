@@ -14,7 +14,6 @@
 // DONE: Implement Property file / function / value parsing.
 
 #include "LoKI-B/GasMixtureBase.h"
-#include "LoKI-B/Collision.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Traits.h"
 #include "LoKI-B/Log.h"
@@ -43,7 +42,6 @@ namespace loki {
     public:
         using Gas = typename Trait<TraitType>::Gas;
         using State = typename Trait<TraitType>::State;
-        using Collision = typename Trait<TraitType>::Collision;
         // Vector of pointers to all the gases in the mixture.
         const std::vector<Gas*>& gases() const { return m_gases; }
     protected:
@@ -88,81 +86,6 @@ namespace loki {
             }
 
             return state;
-        }
-        /** Creates a collision based on a provided CollisionEntry object. The
-         *  gases and states involved in the collision are first created and
-         *  added to the mixture. Then a Collision object is created and its
-         *  pointer is returned.
-         */
-        // arguments: smth. like "He + e", "->", "He + e", "Elastic"
-        Collision* createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type)
-        {
-
-            std::vector <StateEntry> entry_reactants, entry_products;
-            std::vector <uint16_t> entry_stoiCoeff;
-            Enumeration::CollisionType entry_type;
-            bool entry_isReverse;
-
-            if (!Parse::entriesFromString(lhs, entry_reactants))
-                Log<LXCatError>::Error(lhs);
-            if (!Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff))
-                Log<LXCatError>::Error(rhs);
-            entry_type = Enumeration::getCollisionType(type);
-            entry_isReverse = (sep[0] == '<');
-
-            std::vector<State*> reactants;
-            std::vector<State*> products;
-            std::set<GasBase*> targetGases;
-
-            for (auto &stateEntry : entry_reactants) {
-                auto *state = reactants.emplace_back(addState(stateEntry));
-                targetGases.insert(&state->gas());
-            }
-
-            if (targetGases.size() != 1)
-                Log<Message>::Error("Multiple target gases in a single collision.");
-
-            for (auto &stateEntry : entry_products) {
-                products.emplace_back(addState(stateEntry));
-            }
-
-            return new Collision(entry_type, reactants, products,
-                        entry_stoiCoeff, entry_isReverse);
-        }
-        Collision* createCollision(const json_type& rcnf)
-        {
-
-            std::vector <StateEntry> entry_reactants, entry_products;
-            std::vector <uint16_t> entry_stoiCoeff;
-            Enumeration::CollisionType entry_type;
-            bool entry_isReverse;
-
-            if (!Parse::entriesFromJSON(rcnf.at("lhs"), entry_reactants))
-                Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
-            if (!Parse::entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
-                Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
-            entry_type = Enumeration::getCollisionType(rcnf.at("type"));
-
-            entry_isReverse = rcnf.at("superelastic");
-
-            std::vector<State*> reactants;
-            std::vector<State*> products;
-            std::set<GasBase*> targetGases;
-
-            for (const auto &stateEntry : entry_reactants) {
-                auto *state = reactants.emplace_back(addState(stateEntry));
-                targetGases.insert(&state->gas());
-            }
-
-            if (targetGases.size() != 1)
-                Log<Message>::Error("Multiple target gases in a single collision.");
-
-            for (auto &stateEntry : entry_products) {
-                products.emplace_back(addState(stateEntry));
-            }
-
-            return new Collision(entry_type, reactants, products,
-                        entry_stoiCoeff, entry_isReverse);
         }
     private:
         /** This overload accepts a pointer to a gas. It will check if the electronic

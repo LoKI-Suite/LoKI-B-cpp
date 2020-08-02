@@ -10,8 +10,13 @@ namespace loki {
     EedfGas::EedfGas(const std::string &name) : Gas(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
                                                 extraCollisions(static_cast<uint8_t>(Enumeration::CollisionType::size)) {}
 
-    void EedfGas::addCollision(EedfCollision *collision, bool isExtra) {
+    void EedfGas::addCollision(EedfCollision *collision, bool isExtra)
+    {
+        // add to the state's list
+        EedfState* target = collision->getTarget();
+        (isExtra ? target->m_collisionsExtra : target->m_collisions).emplace_back(collision);
 
+        // add to the gas' list
         (isExtra ? this->extraCollisions[static_cast<uint8_t>(collision->type)] :
          this->collisions[static_cast<uint8_t>(collision->type)]).emplace_back(collision);
     }
@@ -34,7 +39,7 @@ namespace loki {
         }
 
         for (const auto &pair : effectivePopulations) {
-            for (const auto& collision : pair.first->collisions) {
+            for (const auto& collision : pair.first->m_collisions) {
                 if (collision->type == CollisionType::effective)
                     continue;
 
@@ -100,12 +105,12 @@ namespace loki {
                                      std::vector<EedfState *> &statesToUpdate) {
         for (auto *eleState : stateStructure) {
             if (eleState->population > 0) {
-                auto it = find_if(eleState->collisions.begin(), eleState->collisions.end(),
+                auto it = find_if(eleState->m_collisions.begin(), eleState->m_collisions.end(),
                                   [](EedfCollision *collision) {
                                       return collision->type == CollisionType::elastic;
                                   });
 
-                if (it == eleState->collisions.end())
+                if (it == eleState->m_collisions.end())
                     statesToUpdate.emplace_back(eleState);
             }
         }
@@ -130,7 +135,6 @@ namespace loki {
 
                 collision->crossSection.reset(elasticCS);
 
-                state->addCollision(collision, false);
                 this->addCollision(collision, false);
             }
         }

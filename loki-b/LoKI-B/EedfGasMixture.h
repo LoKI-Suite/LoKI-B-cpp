@@ -21,6 +21,7 @@ namespace loki {
     class EedfGasMixture : public GasMixture<Boltzmann>
     {
     public:
+        using Collision = EedfCollision;
 
         explicit EedfGasMixture(Grid *grid);
         /** Initializes the gas mixture by loading the desired collisions from LXCat files.
@@ -50,6 +51,23 @@ namespace loki {
 
     private:
 
+        /** Creates a collision based on a provided CollisionEntry object. The
+         *  gases and states involved in the collision are first created and
+         *  added to the mixture. Then a Collision object is created and its
+         *  pointer is returned.
+         */
+        // arguments: smth. like "He + e", "->", "He + e", "Elastic"
+        Collision* createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type, bool isExtra);
+        Collision* createCollision(const json_type& rcnf, bool isExtra);
+        /** Create a collision if it does not already exists, and attaches it to the target gas/state.
+         */
+        Collision* createCollision(
+                Enumeration::CollisionType entry_type,
+                std::vector<StateEntry> entry_reactants,
+                std::vector<StateEntry> entry_products,
+                std::vector <uint16_t> entry_stoiCoeff,
+                bool reverse_also,
+                bool isExtra);
         /* -- loadCollisions --
          * Loads the collisions from the LXCat file that is provided as first argument.
          * Furthermore, it needs a pointer to the energy grid and a boolean to indicate
@@ -78,14 +96,6 @@ namespace loki {
          */
 
         void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
-
-        /* -- linkCollision --
-         * Accepts a pointer to a newly created EedfCollision to the correct vectors of the
-         * target gas and states. It also checks whether the collision already exists, if
-         * this is the case then the new collision is deleted and the function returns false.
-         */
-
-        bool linkCollision(EedfCollision *collision, bool isExtra);
 
         /* -- loadGasProperties --
          * EedfGas introduces one extra property that has to be set from a file: OPBParameter.
