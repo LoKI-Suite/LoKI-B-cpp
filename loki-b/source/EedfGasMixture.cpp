@@ -81,20 +81,17 @@ namespace loki {
         for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it)
         {
             const json_type& rcnf = it->at("reaction");
-            /** \todo try to make this more exception-safe. The 'new' that is part of
-             *  createCollision is quite detached from the delete in linkCollision
-             *  (which should be called if something goes wrong on the way).
-             */
-            auto *collision = createCollision(rcnf);
-            const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                               collision->type == CollisionType::elastic);
-            if (linkCollision(collision, isExtra))
+            auto *collision = createCollision(rcnf,isExtra);
+            if (collision)
             {
+                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                               collision->type == CollisionType::elastic);
                 const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
                 collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                            isElasticOrEffective, *it));
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
             }
+
         }
     }
     void EedfGasMixture::loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra)
@@ -140,12 +137,12 @@ namespace loki {
             }
 
             // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
-            auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4]);
+            auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4],isExtra);
 
-            const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                               collision->type == CollisionType::elastic);
-            if (linkCollision(collision, isExtra))
+            if (collision)
             {
+                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                               collision->type == CollisionType::elastic);
                 collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                            isElasticOrEffective, in));
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
@@ -171,8 +168,37 @@ namespace loki {
         std::cout << "Finished loading collisions" << std::endl;
     }
 
-    bool EedfGasMixture::linkCollision(EedfCollision *collision, bool isExtra)
+    EedfGasMixture::Collision* EedfGasMixture::createCollision(
+                Enumeration::CollisionType entry_type,
+                std::vector<StateEntry> entry_reactants,
+                std::vector<StateEntry> entry_products,
+                std::vector <uint16_t> entry_stoiCoeff,
+                bool reverse_also,
+                bool isExtra)
     {
+
+        std::vector<State*> reactants;
+        std::vector<State*> products;
+        std::set<GasBase*> targetGases;
+
+        for (auto &stateEntry : entry_reactants) {
+            auto *state = reactants.emplace_back(addState(stateEntry));
+            targetGases.insert(&state->gas());
+        }
+
+        if (targetGases.size() != 1)
+            Log<Message>::Error("Multiple target gases in a single collision.");
+
+        for (auto &stateEntry : entry_products) {
+            products.emplace_back(addState(stateEntry));
+        }
+
+        /** \todo Check if we have this process already without create a Collision object.
+         *        That also allows us to get rid of the EEDFCollision's operator==
+         */
+        std::unique_ptr<Collision> collision{new Collision(entry_type, reactants, products,
+                    entry_stoiCoeff, reverse_also)};
+
         // Linking the newly created collision to the relevant states and gases
 
         auto *target = collision->getTarget();
@@ -180,17 +206,63 @@ namespace loki {
         Log<Message>::Notify(*collision);
 
         // Check if the collision already exists. If so delete the new entry and return false.
-        if (target->hasCollision(collision, isExtra))
+        auto &currentCollisions = (isExtra ? target->m_collisionsExtra : target->m_collisions);
+
+        if (std::find_if(currentCollisions.begin(), currentCollisions.end(),
+                             [& collision](const EedfCollision *itCollision) {
+
+                                 return *itCollision == *collision;
+                             }) != currentCollisions.end())
         {
             Log<DoubleCollision>::Warning(*collision);
-            delete collision;
-            return false;
+            return nullptr;
+            // collision is a unique_ptr, its destructor will delete the collision object
         }
+        else
+        {
+            target->gas().addCollision(collision.get(), isExtra);
+            return collision.release();
+        }
+    }
 
-        target->addCollision(collision, isExtra);
-        target->gas().addCollision(collision, isExtra);
+    EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)
+    {
 
-        return true;
+        std::vector <StateEntry> entry_reactants, entry_products;
+        std::vector <uint16_t> entry_stoiCoeff;
+
+        if (!Parse::entriesFromString(lhs, entry_reactants))
+            Log<LXCatError>::Error(lhs);
+        if (!Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff))
+            Log<LXCatError>::Error(rhs);
+        const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(type);
+        const bool entry_isReverse = (sep[0] == '<');
+
+        /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
+        if (entry_reactants.size() != 1)
+            Log<Message>::Error("Expected one target in collision's left-hand side '" + lhs + "'.");
+
+        return createCollision(entry_type,entry_reactants,entry_products,entry_stoiCoeff,entry_isReverse,isExtra);
+    }
+
+    EedfGasMixture::Collision* EedfGasMixture::createCollision(const json_type& rcnf,bool isExtra)
+    {
+
+        std::vector <StateEntry> entry_reactants, entry_products;
+        std::vector <uint16_t> entry_stoiCoeff;
+
+        if (!Parse::entriesFromJSON(rcnf.at("lhs"), entry_reactants))
+            Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
+        if (!Parse::entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
+            Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
+        const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(rcnf.at("type"));
+        const bool entry_isReverse = rcnf.at("superelastic");
+
+        /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
+        if (entry_reactants.size() != 1)
+            Log<Message>::Error("Expected one target in collision:\n" + rcnf.dump(2));
+
+        return createCollision(entry_type,entry_reactants,entry_products,entry_stoiCoeff,entry_isReverse,isExtra);
     }
 
     void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)
