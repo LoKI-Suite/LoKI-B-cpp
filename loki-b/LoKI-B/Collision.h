@@ -32,10 +32,15 @@ namespace loki {
 
         // In the case that TraitType = Boltzmann, this will be a pointer to an EedfState.
         // When TraitType = Chemistry, this is a vector of pointers to Chemstates.
-        const typename Trait<TraitType>::Reactants target;
+
+        // now instead:
+        using StateVector = std::vector<typename Trait<TraitType>::State*>;
+protected:
+        const StateVector target;
+public:
 
         // Vector of pointers to the product states.
-        const std::vector<typename Trait<TraitType>::State *> products;
+        const StateVector products;
 
         // Vector of stoichiometric coefficents belonging to the products of the collsion.
         const std::vector<uint16_t> productStoiCoeff;
@@ -46,8 +51,8 @@ namespace loki {
          *  using move semantics.
          */
         Collision(Enumeration::CollisionType type,
-                typename Trait<TraitType>::Reactants reactants,
-                std::vector<typename Trait<TraitType>::State *> products,
+                StateVector reactants,
+                StateVector products,
                 std::vector<uint16_t> &stoiCoeff, bool isReverse)
         : type(type),
         isReverse(isReverse),

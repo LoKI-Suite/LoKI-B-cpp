@@ -29,7 +29,6 @@ namespace loki {
         typedef EedfGas Gas;
         typedef EedfState State;
         typedef EedfCollision Collision;
-        typedef EedfState *Reactants;
     };
 
     template<>
@@ -37,7 +36,6 @@ namespace loki {
         typedef ChemGas Gas;
         typedef ChemState State;
         typedef ChemCollision Collision;
-        typedef std::vector<ChemState *> Reactants;
     };
 }
 

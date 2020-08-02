@@ -42,7 +42,7 @@ namespace loki {
 
         void superElastic(const Vector &energyData, Vector &result) const;
 
-        bool operator==(const EedfCollision &other);
+        bool operator==(const EedfCollision &other) const;
 
         friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
 
