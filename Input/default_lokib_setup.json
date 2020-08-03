@@ -1,29 +1,37 @@
 {
 	"workingConditions": {
 		"reducedField": 50,
-		"electronTemperature": 0.03,
-		"excitationFrequency": 0,                      
-		"gasPressure": 133.32,                         
-		"gasTemperature": 300,                         
-		"electronDensity": 1e19,                       
-		"chamberLength": 1.0,                          
+		"_reducedField": "linspace(50,100,6)",
+		"_reducedField": { "value": 50 },
+		"_reducedField": [ "linspace", 50, 100, 6 ],
+		"_reducedField": { "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6} },
+		"electronTemperature": "0.03",
+		"excitationFrequency": 0,
+		"gasPressure": 133.32,
+		"gasTemperature": 300,
+		"electronDensity": 1e19,
+		"chamberLength": 1.0,
 		"chamberRadius": 1.0
 	},
 	"electronKinetics":	{
 		"isOn": true,
-		"eedfType": "boltzmann",                  
-		"ionizationOperatorType": "usingSDCS",    
-		"growthModelType": "temporal",             
-		"includeEECollisions": false,           
+		"eedfType": "boltzmann",
+		"ionizationOperatorType": "usingSDCS",
+		"growthModelType": "temporal",
+		"includeEECollisions": false,
 		"LXCatFiles": [
+			"Nitrogen/JSON/v4/N2_LXCat.json",
+			"Nitrogen/JSON/v4/N2_rot_LXCat.json"
+		],
+		"_LXCatFiles": [
 			"Nitrogen/N2_LXCat.txt",
-			"Nitrogen/N2_rot_lxcat.txt"
-		],                         
-		"gasProperties": {                      
+			"Nitrogen/N2_rot_LXCat.txt"
+		],
+		"gasProperties": {
 			"mass": "Databases/masses.txt",
-			"fraction": {
-				"N2": 1
-			},
+			"fraction": [
+				"N2 = 1"
+			],
 			"harmonicFrequency": "Databases/harmonicFrequencies.txt",
 			"anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
 			"rotationalConstant": "Databases/rotationalConstants.txt",
@@ -31,30 +39,30 @@
 			"OPBParameter": "Databases/OPBParameter.txt"
 		},
 		"stateProperties": {
-			"energy": {
-				"N2(X,v=*)": "harmonicOscillatorEnergy",
-				"N2(X,v=0,J=*)": "rigidRotorEnergy"
-			},
-			"statisticalWeight": {
-				"N2(X,v=*)": 1.0,
-				"N2(X,v=0,J=*)": "rotationalDegeneracy_N2"
-			},
-			"population": {
-				"N2(X)": 1.0,
-				"N2(X,v=0,J=*)": "boltzmannPopulation@gasTemperature",
-				"file": "Nitrogen/N2_vibpop.txt"
-			}
+			"energy": [
+				"N2(X,v=*) = harmonicOscillatorEnergy",
+				"N2(X,v=0,J=*) = rigidRotorEnergy"
+			],
+			"statisticalWeight": [
+				"N2(X,v=*) = 1.0",
+				"N2(X,v=0,J=*) = rotationalDegeneracy_N2"
+			],
+			"population": [
+				"N2(X) = 1.0",
+				"N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature",
+				"Nitrogen/N2_vibpop.txt"
+			]
 		},
-		"numerics": {                            
-			"energyGrid": {                       
+		"numerics": {
+			"energyGrid": {
 				"maxEnergy": 20,
-				"cellNumber": 1000,
-				"maxPowerBalanceRelError": 1e-9,
-				"nonLinearRoutines": {
-					"algorithm": "mixingDirectSolutions",
-					"mixingParameter": 0.7,
-					"maxEedfRelError": 1e-9            
-				}
+				"cellNumber": 1000
+			},
+			"maxPowerBalanceRelError": 1e-9,
+			"nonLinearRoutines": {
+				"algorithm": "mixingDirectSolutions",
+				"mixingParameter": 0.7,
+				"maxEedfRelError": 1e-9
 			}
 		}
 	},
@@ -63,13 +71,13 @@
 		"refreshFrequency": 1
 	},
 	"output": {
-		"isOn": false,
+		"isOn": true,
 		"folder": "simulation",
 		"dataFiles": [
-			"eedf", 
-			"swarmParameters", 
-			"rateCoefficients", 
-			"powerBalance", 
+			"eedf",
+			"swarmParameters",
+			"rateCoefficients",
+			"powerBalance",
 			"lookUpTable"
 		]
 	}

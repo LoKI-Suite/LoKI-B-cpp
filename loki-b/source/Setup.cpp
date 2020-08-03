@@ -7,8 +7,9 @@
 #include <sstream>
 #include <regex>
 
-#include "Setup.h"
-#include <Log.h>
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/Log.h"
 
 // DONE: Think which is desirable:
 //  1. Should fields that are required and cannot be parsed immediately throw an
@@ -53,8 +54,9 @@ namespace loki {
      * desired.
      */
 
+    template <class SubStructure>
     bool SetupBase::parseSubStructure(const std::string &content, const std::string &fieldName,
-                                      SetupBase &subStruct) {
+                                      SubStructure &subStruct) {
         std::string sectionContent;
 
         // Added an extra new line character for MSVC regular expressions to work.
@@ -73,6 +75,14 @@ namespace loki {
         return true;
     }
 
+    Setup::Setup(const std::string& fname)
+    {
+        if (!parseFile(fname))
+        {
+            throw std::runtime_error("Error parsing input file '" + fname + "'.");
+        }
+    }
+
     /*
      * The parseFile function is only available to the main Setup class. The user
      * passes the name of the input file. The function will then extract the text
@@ -80,6 +90,9 @@ namespace loki {
      */
 
     bool Setup::parseFile(const std::string &fileName) {
+
+        const std::string inputPath{"../Input"};
+
         std::ifstream file(inputPath + '/' + fileName);
 
         if (!file.is_open()) {

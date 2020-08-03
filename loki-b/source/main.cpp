@@ -4,11 +4,11 @@
 
 #include <iostream>
 
-#include <Setup.h>
-#include <Simulation.h>
-#include <LinearAlgebra.h>
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Simulation.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include <chrono>
-#include <Log.h>
+#include <exception>
 
 // TODO: Cleanup
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
@@ -24,7 +24,7 @@
 //  5. [DONE] Separate backend and front end
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gasses,
+                   const loki::Power &power, const std::vector<loki::EedfGas*>& gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
@@ -37,56 +37,56 @@ void plot(const std::string &title, const std::string &xlabel, const std::string
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
-    {
-        loki::Log<loki::Message>::Warning("Expected the input file as the single argument.");
-        return 1;
-    }
-
-    std::string fileName = argv[1];
-
-    auto begin = std::chrono::high_resolution_clock::now();
-
     try
     {
-        loki::Setup setup;
-
-        if (!setup.parseFile(fileName))
+        auto begin = std::chrono::high_resolution_clock::now();
+        if (argc != 2)
         {
-            return 1;
+            throw std::runtime_error("Expected the input file as the single argument.");
         }
 
-        loki::Simulation simulation(setup);
+        std::unique_ptr<loki::Simulation> simulation;
+        std::string fileName(argv[1]);
+        if (fileName.size()>=5 && fileName.substr(fileName.size()-5)==".json")
+        {
+            const loki::json_type cnf = loki::read_json_from_file(fileName);
+            simulation.reset(new loki::Simulation(cnf));
+        }
+        else
+        {
+            const loki::Setup setup(argv[1]);
+            simulation.reset(new loki::Simulation(setup));
+        }
 
-        simulation.obtainedResults.addListener(handleResults);
-        simulation.outputPathExists.addListener(handleExistingOutputPath);
+        simulation->obtainedResults.addListener(handleResults);
+        simulation->outputPathExists.addListener(handleExistingOutputPath);
 
-        simulation.run();
+        simulation->run();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+
+        // generate output
+
+        return 0;
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
+        return 1;
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
-
-    // generate output
-
-    return 0;
 }
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gasses,
+                   const loki::Power &power, const std::vector<loki::EedfGas*>& gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
                    const loki::Vector &firstAnisotropy)
 {
     plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
-    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
+    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
 
-    // loki::Vector *nodeCrossSection = gasses[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
+    // loki::Vector *nodeCrossSection = gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
     // loki::Vector cellCrossSection(grid.cellNumber);
 

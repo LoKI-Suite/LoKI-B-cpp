@@ -11,11 +11,13 @@
 #include <map>
 #include <regex>
 #include <string>
+#include <set>
 
 #include "Enumeration.h"
 #include "InputStructures.h"
 #include "JobSystem.h"
 #include "StandardPaths.h"
+#include "json.h"
 
 namespace loki
 {
@@ -158,22 +160,6 @@ struct Parse
         return std::regex_replace(content_clean, reClean, "\n");
     }
 
-    /*  SECOND PARSING PHASE  */
-
-    /* -- getFirstValue --
-     * Takes a string that can either be a range (linspace/logspace) or a scalar, and
-     * parses it into a double. When the string concerns a range, the first value in
-     * the range is returned.
-     */
-
-    static bool getFirstValue(const std::string &valueString, double &value)
-    {
-        if (!getValue(valueString, value))
-            return firstValueInRange(valueString, value);
-
-        return true;
-    }
-
     /* -- entriesFromString --
      * Accepts a string containing the LHS or RHS of a collision equation. The states
      * in this expression are then parsed into a vector of StateEntry objects, which
@@ -182,14 +168,129 @@ struct Parse
      * then stored. If a null pointer is passed, these coefficients are not stored.
      */
 
-    static bool entriesFromString(std::string &statesString, std::vector<StateEntry> &entries,
+    static StateEntry entryFromJSON(const json_type& cnf)
+    {
+            const std::string gasName = cnf.at("particle");
+            const int charge_int = cnf.at("charge").get<int>();
+            const std::string charge = charge_int ? std::to_string(charge_int) : std::string{};
+            const json_type& descr = cnf.at("descriptor");
+            if (descr.contains("states"))
+            {
+                // We have an array of state objects, instead of a single one.
+                // loki-b expects a single string for "e", "v" and "J" (the latter
+                // can be empty. We need to 'pessimize' the input by canoncatenating
+                // the info into single string. The question here is what loki-b
+                // supports. Is it allowed, for example, that the "e" fields are
+                // different? For now we assume that everything is possible and we
+                // simply concatenate all unique "e"'s while for "v" and "J" we assume
+                // that the entries form a continuous value-range.
+                std::set<std::string> e_vals;
+                std::set<unsigned> v_vals;
+                std::set<unsigned> J_vals;
+                for (json_type::const_iterator s = descr.at("states").begin(); s!= descr.at("states").end(); ++s)
+                {
+                    e_vals.insert(s->at("e").get<std::string>());
+                    if (s->contains("v"))
+                    {
+                        v_vals.insert(s->at("v").get<int>());
+                    }
+                    if (s->contains("J"))
+                    {
+                        J_vals.insert(s->at("J").get<int>());
+                    }
+                }
+                std::string e;
+                if (e_vals.size()!=1)
+                {
+                    throw std::runtime_error("Expected a unique electronic state identifier.");
+                }
+                else
+                {
+                    e = *e_vals.begin();
+                }
+                std::string v;
+                if (v_vals.size()==1)
+                {
+                    v = *v_vals.begin();
+                }
+                else if (v_vals.size()>1)
+                {
+                    int nv = *v_vals.rbegin()+1-*v_vals.begin();
+                    if (nv!=v_vals.size())
+                    {
+                        throw std::runtime_error("Expected a contiguous v-range.");
+                    }
+                    v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
+                }
+                std::string J;
+                if (J_vals.size()==1)
+                {
+                    J = *J_vals.begin();
+                }
+                else if (J_vals.size()>1)
+                {
+                    int nJ = *J_vals.rbegin()+1-*J_vals.begin();
+                    if (nJ!=J_vals.size())
+                    {
+                        throw std::runtime_error("Expected a contiguous J-range.");
+                    }
+                    J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
+                }
+                Enumeration::StateType stateType
+                    = J.empty()==false ? rotational
+                    : v.empty()==false ? vibrational
+                    : electronic;
+                return StateEntry{stateType,gasName,charge,e,v,J};
+            }
+            else
+            {
+                const std::string e{descr.at("e").get<std::string>()};
+                const std::string v{descr.contains("v") ? (
+                    descr.at("v").type()==json_type::value_t::string
+                        ? descr.at("v").get<std::string>()
+                        : std::to_string(descr.at("v").get<int>())
+                ) : std::string{} };
+                const std::string J{descr.contains("J") ? std::to_string(descr.at("J").get<int>()) : std::string{} };
+                /** \todo Check the precise semantics of the next line. Is it possible that J
+                 *        is specified, but not v? Is e always specified?
+                 */
+                Enumeration::StateType stateType
+                    = descr.contains("J") ? rotational
+                    : descr.contains("v") ? vibrational
+                    : electronic;
+                return StateEntry{stateType,gasName,charge,e,v,J};
+            }
+    }
+    static bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
+                                  std::vector<uint16_t> *stoiCoeff = nullptr)
+    {
+        for (json_type::const_iterator i=cnf.begin(); i!=cnf.end(); ++i)
+        {
+            if (i->at("particle").get<std::string>() == "e")
+            {
+                continue;
+            }
+            /** \todo It appeaes that the present JSON simply repeats the particle
+             *        object when it appears more than once. Then the stoichiometric
+             *        coefficient of each entry will be one, and we hope that 'e + e'
+             *        will be handled the same way as '2 e' (JvD).
+             */
+            entries.push_back(entryFromJSON(*i));
+            if (stoiCoeff)
+            {
+                    stoiCoeff->push_back(1);
+            }
+        }
+        return true;
+    }
+    static bool entriesFromString(const std::string &statesString, std::vector<StateEntry> &entries,
                                   std::vector<uint16_t> *stoiCoeff = nullptr)
     {
         static const std::regex reState(
             R"((\d*)([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
 
-        std::regex_iterator<std::string::iterator> rit(statesString.begin(), statesString.end(), reState);
-        std::regex_iterator<std::string::iterator> rend;
+        std::regex_iterator<std::string::const_iterator> rit(statesString.begin(), statesString.end(), reState);
+        std::regex_iterator<std::string::const_iterator> rend;
 
         if (rit == rend)
             return false;
@@ -231,7 +332,6 @@ struct Parse
             }
 
             entries.emplace_back(stateType, rit->str(2), rit->str(3), rit->str(4), rit->str(5), rit->str(6));
-
             ++rit;
         }
 
@@ -270,7 +370,6 @@ struct Parse
         {
             stateType = rotational;
         }
-
         return {stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
     }
 
@@ -422,45 +521,6 @@ struct Parse
         return true;
     }
 
-    /* -- collisionTypeFromString --
-     * Accepts a string containing a collision type (e.g. Excitation or Attachment) and
-     * returns the corresponding entry in the CollisionType enumeration.
-     */
-
-    static Enumeration::CollisionType collisionTypeFromString(const std::string &collisionTypeString)
-    {
-        static const std::regex rState(
-            R"((Elastic|Effective|Excitation|Vibrational|Rotational|Ionization|Attachment))");
-        std::smatch mState;
-
-        if (!std::regex_search(collisionTypeString, mState, rState))
-            return Enumeration::CollisionType::none;
-
-        char first = mState.str(0)[0], second = mState.str(0)[1];
-
-        switch (first)
-        {
-        case 'E':
-            switch (second)
-            {
-            case 'l':
-                return Enumeration::CollisionType::elastic;
-            case 'f':
-                return Enumeration::CollisionType::effective;
-            default:
-                return Enumeration::CollisionType::excitation;
-            }
-        case 'V':
-            return Enumeration::CollisionType::vibrational;
-        case 'R':
-            return Enumeration::CollisionType::rotational;
-        case 'I':
-            return Enumeration::CollisionType::ionization;
-        default:
-            return Enumeration::CollisionType::attachment;
-        }
-    }
-
     /* -- rawCrossSectionFromStream --
      * Accepts a reference to an input file stream of an LXCat file. This stream should be
      * at a position just after reading a collision description from the LXCat file, since
@@ -470,7 +530,7 @@ struct Parse
      */
 
     static void rawCrossSectionFromStream(std::vector<double> &rawEnergyData, std::vector<double> &rawCrossSection,
-                                          std::ifstream &in)
+                                          std::istream &in)
     {
         std::string line;
 
@@ -501,7 +561,7 @@ struct Parse
     {
         std::ifstream in(INPUT "/" + fileName);
 
-        if (!in.is_open())
+        if (!in)
             return false;
 
         std::stringstream ss;
@@ -554,75 +614,6 @@ struct Parse
         return std::regex_match(str, reNum);
     }
 
-    static Range getRange(const std::string &rangeString, bool &success)
-    {
-        static const std::regex r(
-            R"(\s*((?:logspace\()|(?:linspace\())\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
-        std::smatch m;
-
-        // No checking since this has already been performed once this function is called.
-        if (!std::regex_search(rangeString, m, r))
-        {
-            success = false;
-            return Range(0., 0., 0, false);
-        }
-
-        std::stringstream ss;
-
-        const std::string function = m.str(1);
-
-        double start, stop;
-        uint32_t steps;
-
-        ss << m[2];
-        ss >> start;
-        ss.clear();
-        ss << m[3];
-        ss >> stop;
-        ss.clear();
-        ss << m[4];
-        ss >> steps;
-
-        success = true;
-
-        return Range(start, stop, steps, function[1] == 'o');
-    }
-
-  private:
-    /* -- PARSING RANGES -- */
-
-    /* -- firstValueInRange --
-     * Tries to parse the first value in a string defining a range into a double,
-     * returns a boolean based on its success to do so.
-     */
-
-    static bool firstValueInRange(const std::string &rangeString, double &value)
-    {
-        static const std::regex r(R"(\s*((?:logspace\(-?)|(?:linspace\())\s*(\d+\.?\d*)\s*)");
-        std::smatch m;
-
-        if (!std::regex_search(rangeString, m, r))
-            return false;
-
-        std::stringstream ss(m[2]);
-
-        const std::string function = m.str(1);
-
-        if (function[1] == 'o')
-        {
-            double power;
-            bool success = static_cast<bool>(ss >> power);
-
-            if (function.back() == '-')
-                power = -power;
-
-            value = std::pow(10., power);
-
-            return success;
-        }
-
-        return static_cast<bool>(ss >> value);
-    }
 };
 
 /*
@@ -680,20 +671,7 @@ inline bool Parse::setField<Enumeration::EedfType>(const std::string &sectionCon
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    if (valueBuffer == "boltzmann")
-    {
-        value = Enumeration::EedfType::boltzmann;
-    }
-    else if (valueBuffer == "prescribed")
-    {
-        value = Enumeration::EedfType::prescribed;
-    }
-    else
-    {
-        return false;
-    }
-
+    value = Enumeration::getEedfType(valueBuffer);
     return true;
 }
 
@@ -707,28 +685,7 @@ inline bool Parse::setField<Enumeration::IonizationOperatorType>(const std::stri
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    if (valueBuffer == "conservative")
-    {
-        value = Enumeration::IonizationOperatorType::conservative;
-    }
-    else if (valueBuffer == "oneTakesAll")
-    {
-        value = Enumeration::IonizationOperatorType::oneTakesAll;
-    }
-    else if (valueBuffer == "equalSharing")
-    {
-        value = Enumeration::IonizationOperatorType::equalSharing;
-    }
-    else if (valueBuffer == "usingSDCS")
-    {
-        value = Enumeration::IonizationOperatorType::sdcs;
-    }
-    else
-    {
-        return false;
-    }
-
+    value = Enumeration::getIonizationOperatorType(valueBuffer);
     return true;
 }
 
@@ -742,20 +699,7 @@ inline bool Parse::setField<Enumeration::GrowthModelType>(const std::string &sec
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-
-    if (valueBuffer == "spatial")
-    {
-        value = Enumeration::GrowthModelType::spatial;
-    }
-    else if (valueBuffer == "temporal")
-    {
-        value = Enumeration::GrowthModelType::temporal;
-    }
-    else
-    {
-        return false;
-    }
-
+    value = Enumeration::getGrowthModelType(valueBuffer);
     return true;
 }
 
@@ -770,6 +714,7 @@ inline bool Parse::setField<std::vector<std::string>>(const std::string &section
 
     return Parse::getList(fieldContent, fieldName, value);
 }
+
 } // namespace loki
 
 #endif // LOKI_CPP_PARSE_H
