@@ -5,11 +5,12 @@
 #ifndef LOKI_CPP_SIMULATION_H
 #define LOKI_CPP_SIMULATION_H
 
-#include "Setup.h"
-#include "WorkingConditions.h"
-#include "ElectronKinetics.h"
-#include "JobSystem.h"
-#include "Output.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/ElectronKinetics.h"
+#include "LoKI-B/JobSystem.h"
+#include "LoKI-B/Output.h"
 
 #include <memory>
 
@@ -18,33 +19,24 @@ namespace loki {
     class Simulation {
         WorkingConditions workingConditions;
         std::unique_ptr<ElectronKinetics> electronKinetics;
-        Output *output;
-        const bool enableKinetics, enableOutput;
-
-        bool multipleSimulations{false};
-
+        std::unique_ptr<Output> output;
         JobManager jobManager;
-
     public:
         ResultEvent obtainedResults;
         Event<std::string> outputPathExists;
     public:
         explicit Simulation(const Setup &setup);
-
-        ~Simulation();
-
+        explicit Simulation(const json_type &cnf);
         // Copying this object is not allowed.
         Simulation(const Simulation &other) = delete;
+        ~Simulation();
 
-        // TODO: comment run
-
+        /// \todo document run
         void run();
 
     private:
         void initializeJobs(const WorkingConditionsSetup &setup);
-
-        bool initializeJob(const std::string &name, const std::string &valueString,
-                           void (WorkingConditions::*callback)(double));
+        void initializeJobs(const json_type &cnf);
     };
 }
 

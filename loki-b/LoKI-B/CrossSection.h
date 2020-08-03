@@ -5,24 +5,27 @@
 #ifndef LOKI_CPP_CROSSSECTION_H
 #define LOKI_CPP_CROSSSECTION_H
 
-#include "LinearAlgebra.h"
-#include "Grid.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/json.h"
 
 #include <vector>
-#include <fstream>
+#include <iostream>
 
 namespace loki {
-    class CrossSection : public Vector {
+
+    class CrossSection : public Vector
+    {
 //        std::vector<std::pair<double, double>> rawCrossSection;
         Vector rawEnergyData, rawCrossSection;
         Grid *energyGrid;
-
         const bool isElasticOrEffective;
-
     public:
         const double threshold;
 
-        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::ifstream &in);
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf);
+
+        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
 
         CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                      Vector rawCrossSection);
@@ -35,7 +38,7 @@ namespace loki {
 
         Vector &energies();
 
-        const Grid *getGrid();
+        const Grid *getGrid() const;
 
 //        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
 

@@ -2,71 +2,102 @@
 // Created by daan on 13-5-19.
 //
 
-#include "Simulation.h"
+#include "LoKI-B/Simulation.h"
 #include <chrono>
 
 namespace loki {
     Simulation::Simulation(const loki::Setup &setup)
-            : workingConditions(setup.workingConditions, setup.electronKinetics.eedfType),
-              enableKinetics(setup.electronKinetics.isOn), enableOutput(setup.output.isOn),
-              jobManager(&workingConditions) {
+            : workingConditions(setup.workingConditions),
+              jobManager() {
 
-        if (enableKinetics) {
+        if (setup.electronKinetics.eedfType != EedfType::boltzmann)
+        {
+            throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
+        }
+
+        if (setup.electronKinetics.isOn) {
             initializeJobs(setup.workingConditions);
 
             electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
             electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
 
-            if (enableOutput) {
-                output = new Output(setup, &workingConditions, &jobManager);
+            if (setup.output.isOn) {
+                output.reset(new Output(setup, &workingConditions, &jobManager));
 
-                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output);
+                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
                 output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
             }
         }
+        Log<Message>::Notify("Simulation has been set up",
+            ", number of parameters = ", jobManager.dimension(),
+            ", number of jobs = ", jobManager.njobs()
+        );
+    }
+    Simulation::Simulation(const json_type& cnf)
+            : workingConditions( cnf.at("workingConditions")),
+              jobManager() {
+
+        if (Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
+        {
+            throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
+        }
+
+        if (cnf.at("electronKinetics").at("isOn")) {
+            initializeJobs(cnf.at("workingConditions"));
+
+            electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &workingConditions);
+            electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
+
+            if (cnf.at("output").at("isOn")) {
+                output.reset(new Output(cnf, &workingConditions, &jobManager));
+
+                electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
+                output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
+            }
+        }
+        Log<Message>::Notify("Simulation has been set up",
+            ", number of parameters = ", jobManager.dimension(),
+            ", number of jobs = ", jobManager.njobs()
+        );
     }
 
     void Simulation::run() {
-        if (enableKinetics) {
-            if (enableOutput) {
-                output->createPath();
-            }
-            if (multipleSimulations) {
-                do {
-                    electronKinetics->solve();
-                } while (jobManager.nextJob());
-            } else {
+        if (electronKinetics.get()) {
+            jobManager.prepareFirstJob();
+            do {
                 electronKinetics->solve();
-            }
-
+            } while (jobManager.prepareNextJob());
         }
     }
 
     Simulation::~Simulation() {
-        if (enableOutput) delete output;
     }
 
     void Simulation::initializeJobs(const WorkingConditionsSetup &setup) {
 
-        // Repeat this statement for any other fields that can be declared as a range.
-        if (!Parse::isNumerical(setup.reducedField)) {
-            if (!initializeJob("Reduced Field", setup.reducedField, &WorkingConditions::updateReducedField)) {
-                Log<Message>::Error("Reduced field entry in input file is ill formatted.");
-            }
+        // Repeat this for any other fields that can be declared as a range.
+        try {
+            jobManager.addParameter("Reduced Field",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+                Range::create(setup.reducedField));
+        }
+        catch(std::exception& exc)
+        {
+                Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
+        }
+    }
+    void Simulation::initializeJobs(const json_type &cnf) {
+
+        // Repeat this for any other fields that can be declared as a range.
+        try {
+            jobManager.addParameter("Reduced Field",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+                Range::create(cnf.at("reducedField")));
+        }
+        catch(std::exception& exc)
+        {
+                Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
         }
     }
 
-    bool Simulation::initializeJob(const std::string &name, const std::string &valueString,
-                                   void (WorkingConditions::*callback)(double)) {
-        bool success = false;
-
-        Range range = Parse::getRange(valueString, success);
-
-        if (!success) return false;
-
-        jobManager.addJob({name, &WorkingConditions::updateReducedField, range});
-        multipleSimulations = true;
-
-        return true;
-    }
 }

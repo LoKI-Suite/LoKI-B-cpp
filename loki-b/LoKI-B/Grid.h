@@ -5,9 +5,10 @@
 #ifndef LOKI_CPP_GRID_H
 #define LOKI_CPP_GRID_H
 
-#include "LinearAlgebra.h"
-#include "Event.h"
-#include "Setup.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Event.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
 
 namespace loki
 {
@@ -25,6 +26,7 @@ public:
     const bool isSmart;
 
     explicit Grid(const EnergyGridSetup &gridSetup);
+    explicit Grid(const json_type &cnf);
     ~Grid() = default;
 
     Grid(const Grid &other) = delete;

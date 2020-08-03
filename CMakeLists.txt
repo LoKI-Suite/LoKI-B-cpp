@@ -32,9 +32,9 @@ endif()
 
 # --- loki-b --- #
 set(src loki-b/source)
-set(h   loki-b/headers)
-set(pf  loki-b/property_functions)
+set(h   loki-b/LoKI-B)
 set(inc include)
+set(tests loki-b/tests)
 
 # Specify the libraries to link for different backends.
 set(ob  openblas)
@@ -76,23 +76,22 @@ else()
   set(backend )
 endif()
 
-set(cpp ${src}/WorkingConditions.cpp
-        ${src}/Grid.cpp ${src}/EedfGas.cpp
-        ${src}/EedfState.cpp  ${src}/Setup.cpp
+set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cpp
+        ${src}/Grid.cpp ${src}/EedfGas.cpp ${src}/Enumeration.cpp
+        ${src}/Setup.cpp
         ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
         ${src}/CrossSection.cpp ${src}/EedfGasMixture.cpp
         ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
-        ${src}/JobSystem.cpp)
+        ${src}/JobSystem.cpp ${src}/json.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-        ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
+        ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
-        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h
-        ${h}/StandardPaths.h ${h}/JobSystem.h)
-set(property_functions ${pf}/PropertyFunctions.h)
+        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
+        ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 
 # Standard MKL directories on different operating systems. 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -113,13 +112,43 @@ endif()
 # -- loki library -- #
 add_library(loki_l ${headers} ${cpp} ${property_functions})
 
-target_include_directories(loki_l PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki_l PRIVATE ${backend})
 
 # -- loki default front end -- #
 add_executable(loki ${src}/main.cpp)
-
-target_include_directories(loki PRIVATE ${h} ${pf} ${inc} ${mkl_inc})
+target_include_directories(loki PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki PRIVATE loki_l ${backend})
+
+# -- loki tests -- #
+add_executable(test_statebase ${tests}/test_statebase.cpp)
+target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
+target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
+target_link_libraries(test_statebase PRIVATE loki_l ${backend})
+
+
+# first we can indicate the documentation build as an option and set it to ON by default
+option(BUILD_DOC "Build documentation" ON)
+
+# check if Doxygen is installed
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # to always build the doxygen docs, add option ALL to the following list.
+    add_custom_target( doc_doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+else (DOXYGEN_FOUND)
+  message("Doxygen need to be installed to generate the doxygen documentation")
+endif (DOXYGEN_FOUND)

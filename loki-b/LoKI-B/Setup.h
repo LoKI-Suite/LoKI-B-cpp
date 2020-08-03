@@ -8,8 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <Enumeration.h>
-#include <Parse.h>
+#include "LoKI-B/Enumeration.h"
 
 namespace loki {
     /*
@@ -24,20 +23,19 @@ namespace loki {
 
     /*
      * The SetupBase struct provides a base class that all setup structures will
-     * inherit from. It contains a pure virtual 'parse' function, that each class
+     * inherit from. It contains function template 'parse' that each class
      * can override to specify how the information in this class can be obtained
-     * from (a section of) the input file. Furthermore, it defines a
-     * 'parseSubStructure' function that accepts a SetupBase struct by reference,
+     * from (a section of) the input file. The template argument is either a
+     * string (legacy file format) or a JSON object. Furthermore, it defines a
+     * 'parseSubStructure' template that accepts a SetupBase struct by reference,
      * which is then filled.
      */
 
     struct SetupBase {
-        virtual bool parse(const std::string &sectionContent) = 0;
 
+	template <class SubStructure>
         static bool parseSubStructure(const std::string &content,
-                const std::string &fieldName, SetupBase &subStruct);
-
-        virtual ~SetupBase() {}
+                const std::string &fieldName, SubStructure &subStruct);
     };
 
     /* ------- WORKING CONDITIONS ------- */
@@ -59,14 +57,14 @@ namespace loki {
         double chamberLength = 0.;
         double chamberRadius = 0.;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- GAS PROPERTIES ------- */
 
     /*
      * GasPropertiesSetup is an auxiliary structure that stores the properties from the setup file
-     * concerning the specified gasses.
+     * concerning the specified gases.
      *
      * Note that its fields are all strings since gas properties are supplied through a
      * database file.
@@ -83,14 +81,14 @@ namespace loki {
                     electricQuadrupoleMoment,
                     OPBParameter;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- STATE PROPERTIES ------- */
 
     /*
      * StatePropertiesSetup is an auxiliary structure that stores the properties from the
-     * setup file concerning the specified gasses.
+     * setup file concerning the specified gases.
      *
      * Note that its fields are all strings since state properties are supplied through
      * either a file, function, or direct value. The type of the input data will be deduced
@@ -104,7 +102,7 @@ namespace loki {
                                  statisticalWeight,
                                  population;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- NUMERICS ------- */
@@ -121,7 +119,7 @@ namespace loki {
                  maxEedfDecay = 0;
         double updateFactor = 0;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -136,7 +134,7 @@ namespace loki {
         uint32_t cellNumber;
         SmartGridSetup smartGrid;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -149,7 +147,7 @@ namespace loki {
     struct OdeSetParametersSetup : public SetupBase {
         double maxStep;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -165,7 +163,7 @@ namespace loki {
                maxEedfRelError;
         OdeSetParametersSetup odeSetParameters;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /*
@@ -180,7 +178,7 @@ namespace loki {
         double maxPowerBalanceRelError = -1.;
         NonLinearRoutinesSetup nonLinearRoutines;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- ELECTRON KINETICS ------- */
@@ -207,7 +205,7 @@ namespace loki {
         StatePropertiesSetup stateProperties;
         NumericsSetup numerics;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- OUTPUT ------- */
@@ -224,7 +222,7 @@ namespace loki {
         std::string folder;
         std::vector<std::string> dataFiles;
 
-        bool parse(const std::string &sectionContent) override;
+        bool parse(const std::string &sectionContent);
     };
 
     /* ------- SETUP ------- */
@@ -235,20 +233,23 @@ namespace loki {
      */
 
     class Setup : public SetupBase {
-        const std::string inputPath{"../Input"};
 
-        // The 'parse' function is private since users should call 'parseFile'.
-        bool parse(const std::string &sectionContent) override;
     public:
+
+        Setup(const std::string& fname);
+
         WorkingConditionsSetup workingConditions;
         ElectronKineticsSetup electronKinetics;
         OutputSetup output;
 
+        /** \todo remove this? Needed by Output when *output* is written to
+         *  produce the input file. It should be possible to do this after
+         *  reading without storing the result in a member.
+         */
         std::string fileContent;
+    private:
 
-        Setup() = default;
-        ~Setup() = default;
-
+        bool parse(const std::string &sectionContent);
         bool parseFile(const std::string& fileName);
     };
 

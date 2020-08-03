@@ -2,9 +2,9 @@
 // Created by daan on 04-07-2019.
 //
 
-#include "Output.h"
-#include "Log.h"
-#include "StandardPaths.h"
+#include "LoKI-B/Output.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/StandardPaths.h"
 
 #include <filesystem>
 #include <iomanip>
@@ -30,6 +30,32 @@ namespace loki {
                 saveTable = true;
             }
         }
+        createPath();
+        writeInputFile("setup.in");
+    }
+
+    Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
+                   const JobManager *jobManager)
+            : workingConditions(workingConditions),
+              folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>()),
+              jobManager(jobManager),
+              inputFile(cnf.dump(1,'\t')) {
+
+        for (const auto &entry : cnf.at("output").at("dataFiles")) {
+            if (entry == "eedf") {
+                saveEedf = true;
+            } else if (entry == "swarmParameters") {
+                saveSwarm = true;
+            } else if (entry == "rateCoefficients") {
+                saveRates = true;
+            } else if (entry == "powerBalance") {
+                savePower = true;
+            } else if (entry == "lookUpTable") {
+                saveTable = true;
+            }
+        }
+        createPath();
+        writeInputFile("setup.json");
     }
 
     void Output::createPath() {
@@ -51,12 +77,10 @@ namespace loki {
         } else {
             fs::create_directories(path);
         }
-
-        writeInputFile();
     }
 
     void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
-                           const std::vector<EedfGas *> &gasses, const SwarmParameters &swarmParameters,
+                           const std::vector<EedfGas*>&gases, const SwarmParameters &swarmParameters,
                            const std::vector<RateCoefficient> &rateCoefficients,
                            const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy) {
 
@@ -67,13 +91,13 @@ namespace loki {
 
         if (saveEedf) writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
         if (saveSwarm) writeSwarm(swarmParameters);
-        if (savePower) writePower(power, gasses);
+        if (savePower) writePower(power, gases);
         if (saveRates) writeRateCoefficients(rateCoefficients, extraRateCoefficients);
         if (saveTable) writeLookuptable(power, swarmParameters);
     }
 
-    void Output::writeInputFile() {
-        auto *file = std::fopen((folder + "/setup.in").c_str(), "w");
+    void Output::writeInputFile(const std::string& fname) {
+        auto *file = std::fopen((folder + "/" + fname).c_str(), "w");
 
         fprintf(file, "%s", inputFile.c_str());
 
@@ -111,7 +135,7 @@ namespace loki {
         fclose(file);
     }
 
-    void Output::writePower(const Power &power, const std::vector<EedfGas *> &gasses) {
+    void Output::writePower(const Power &power, const std::vector<EedfGas*>&gases) {
         auto *file = std::fopen((folder + "/" + subFolder + "/power_balance.txt").c_str(), "w");
 
         fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
@@ -158,7 +182,7 @@ namespace loki {
         fprintf(file, "\n");
         fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n", power.rotationalNet);
 
-        for (const auto *gas : gasses) {
+        for (const auto& gas : gases) {
             const GasPower &gasPower = gas->getPower();
 
             fprintf(file, "\n");
