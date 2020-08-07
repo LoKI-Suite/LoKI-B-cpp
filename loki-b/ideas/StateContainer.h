@@ -5,86 +5,157 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <type_traits>
 
 #include "LoKI-B/json.h"
 
 namespace loki {
+namespace experimental {
 
-struct RootInfo
+#if 0
+
+/// \todo Use this later, instead of the ad-hoc members below (Info base class or member)?
+class StateData
 {
-    RootInfo(const std::string& dummy)
+public:
+    double population{0};
+    double energy{-1};
+    double statisticalWeight{-1};
+    double density{0};
+};
+#endif
+
+class RootInfo
+{
+public:
+    RootInfo(const std::string& gasname)
+     : m_gasname(gasname)
     {
     }
+    std::string str() const { return m_gasname; }
+private:
+    const std::string m_gasname;
 };
 
-struct ChargeInfo
+class ChargeInfo
 {
+public:
     ChargeInfo(const json_type& info) : m_q(info.at("charge").get<std::string>()) {};
     ChargeInfo(const std::string& info) : m_q(info) {};
-    std::string m_q;
+    bool operator==(const std::string& info) const
+    {
+        return m_q==info;
+    }
+    std::string str() const { return "charge="+m_q; }
+private:
+    const std::string m_q;
 };
 
-struct ElectronicInfo
+class ElectronicInfo
 {
+public:
     ElectronicInfo(const json_type& info) : m_e(info.at("e").get<std::string>()) {};
     ElectronicInfo(const std::string& info) : m_e(info) {};
+    bool operator==(const std::string& info) const
+    {
+        return m_e==info;
+    }
+    std::string str() const { return "e="+m_e; }
+private:
     std::string m_e;
 };
 
-struct VibrationalInfo
+class VibrationalInfo
 {
+public:
     VibrationalInfo(const json_type& info) : m_v(info.at("v").get<std::string>()) {};
     VibrationalInfo(const std::string& info) : m_v(info) {};
+    bool operator==(const std::string& info) const
+    {
+        return m_v==info;
+    }
+    std::string str() const { return "v="+m_v
+        + ", g_v=" + std::to_string(statisticalWeight)
+        + ", E/eV=" + std::to_string(energy)
+        + ", population=" + std::to_string(population); }
+    const std::string& v() const { return m_v; }
+
+    // ad hoc public members to test propertyFunction ideas...
+    double energy=-1;
+    double statisticalWeight=-1;
+    double population{0};
+private:
     std::string m_v;
 };
 
-struct RotationalInfo
+class RotationalInfo
 {
+public:
     RotationalInfo(const json_type& info) : m_J(info.at("J").get<std::string>()) {};
     RotationalInfo(const std::string& info) : m_J(info) {};
+    bool operator==(const std::string& info) const
+    {
+        return m_J==info;
+    }
+    std::string str() const { return "J="+m_J
+        + ", g_J=" + std::to_string(statisticalWeight)
+        + ", E/eV=" + std::to_string(energy)
+        + ", population=" + std::to_string(population); }
+    const std::string& J() const { return m_J; }
+
+    // ad hoc public members to test propertyFunction ideas...
+    double energy=-1;
+    double statisticalWeight=-1;
+    double population{0};
+private:
     std::string m_J;
 };
 
 
 //enum StateLevel { Charge, Electronic, Vibrational, Rotational };
 
-template <class ParentT>
-class ParentSupport
-{
-public:
-    using Parent = ParentT;
-    ParentSupport(const Parent& p) : m_parent(p) {}
-    const Parent& parent() const { return m_parent; }
-private:
-    const Parent& m_parent;
-};
-
 template <typename ChildT>
 class ChildContainer
 {
+    using ChildrenType = std::vector<std::unique_ptr<ChildT>>;
 public:
     using ChildType = ChildT;
-    using ChildrenType = std::vector<std::unique_ptr<ChildType>>;
+    using size_type = typename ChildrenType::size_type;
+    using iterator = typename ChildrenType::iterator;
+    using const_iterator = typename ChildrenType::const_iterator;
 
-    void printChildren(std::ostream& os, const std::string& prefix=std::string{}) const
+    bool empty() const { return m_children.empty(); }
+    size_type size() const { return m_children.size(); }
+    iterator begin() { return m_children.begin(); }
+    iterator end() { return m_children.end(); }
+    const_iterator begin() const { return m_children.begin(); }
+    const_iterator end() const { return m_children.end(); }
+
+    void print(std::ostream& os, const std::string& prefix=std::string{}) const
     {
-        if (m_children.empty())
+        for (const auto& c : m_children)
         {
-            os << prefix << std::endl;
-        }
-        else
-        {
-            for (const auto& c : m_children)
-            {
-                c->printChildren(os,prefix + " " + c->name());
-            }
+            c->print(os,prefix);
         }
     }
     template <class StateT>
-    ChildT* add_child(StateT& parent, const std::string& info)
+    ChildT* add(StateT& parent, const std::string& info)
     {
         return m_children.emplace_back(new ChildType(parent,info)).get();
     }
+    ChildType* find(const std::string& info) const
+    {
+        for (const auto& c : m_children)
+        {
+            if (*c==info)
+            {
+                return c.get();
+            }
+        }
+        return nullptr;
+    }
+private:
     ChildrenType m_children;
 };
 
@@ -92,104 +163,124 @@ template <>
 class ChildContainer<void>
 {
 public:
-    void printChildren(std::ostream& os, const std::string& prefix) const
+    void print(std::ostream& os, const std::string& prefix) const
     {
-        os << prefix << std::endl;
     }
 };
 
-template <typename ParentT, typename StateT, typename ChildT=void>
-class StateBase : public ParentSupport<ParentT>, public ChildContainer<ChildT>
+template <typename StateInfo, typename ParentT, typename StateT, typename ChildT=void>
+class State
 {
 public:
-    const std::string& name() const { return m_name; }
-    ChildT* add_child(const std::string& info)
+    using Parent = ParentT;
+    using ChildContainer = loki::experimental::ChildContainer<ChildT>;
+
+    const Parent& parent() const { return m_parent; }
+    const StateInfo& info() const { return m_info; }
+    // reconsider:
+    StateInfo& info() { return m_info; }
+    const ChildContainer& children() const { return m_children; }
+
+    ChildT* ensure_state(const std::string& info)
     {
-        return ChildContainer<ChildT>::add_child(*static_cast<StateT*>(this),info);
+        ChildT* c = m_children.find(info);
+        return c ? c : m_children.add(*static_cast<StateT*>(this),info);
     }
     template <class ...Args>
-    auto add_child(const std::string& info, Args... args)
+    auto ensure_state(const std::string& info, Args... args)
     {
-        return add_child(info)->add_child(args...);
+        return ensure_state(info)->ensure_state(args...);
     }
-    friend StateT;
-    StateBase(const ParentT& parent, const std::string& name)
-    : ParentSupport<ParentT>(parent),
-      m_name(name)
+    bool operator==(const std::string& info) const
     {
+        return m_info==info;
     }
-    // needed? Rather do this in the State's Info part
-    const std::string m_name;
+    void print(std::ostream& os, const std::string& prefix=std::string{}) const
+    {
+        os << prefix << m_info.str() << std::endl;
+        m_children.print(os,prefix+' ');
+    }
+    State(const ParentT& parent, const std::string& name)
+    : m_parent(parent),
+      m_info(name)
+    {
+        static_assert(std::is_base_of_v<State,StateT>);
+    }
+private:
+    const Parent& m_parent;
+    ChildContainer m_children;
+    StateInfo m_info;
 };
 
-class StateRoot;
+template <class StateT>
+const typename StateT::Parent::ChildContainer& siblings(const StateT& state)
+{
+    return state.parent().children();
+}
 
 class Gas;
+class StateRoot;
 class StateCharge;
+class StateElectronic;
+class StateVibrational;
+class StateRotational;
 
-class StateRoot : public StateBase<Gas,StateRoot,StateCharge>
+class StateRoot : public State<RootInfo,Gas,StateRoot,StateCharge>
 {
 public:
     StateRoot(Gas& gas);
+    const Gas& getGas() const { return parent(); }
 };
 
-class StateElectronic;
-
-class StateCharge : public StateBase<StateRoot,StateCharge,StateElectronic>
+class StateCharge : public State<ChargeInfo,StateRoot,StateCharge,StateElectronic>
 {
 public:
-    StateCharge(const Parent& parent, const std::string& q)
-    : StateBase<StateRoot,StateCharge,StateElectronic>(parent,"charge="+q),
-    m_q{q} {}
-private:
-    const ChargeInfo m_q;
+    using State::State;
+    const Gas& getGas() const { return parent().getGas(); }
 };
 
-class StateVibrational;
-
-class StateElectronic : public StateBase<StateCharge,StateElectronic,StateVibrational>
+class StateElectronic : public State<ElectronicInfo,StateCharge,StateElectronic,StateVibrational>
 {
 public:
-    StateElectronic(const Parent& parent, const std::string& e)
-    : StateBase<StateCharge,StateElectronic,StateVibrational>(parent,"electronic="+e),
-    m_e{e} {}
-private:
-    const ElectronicInfo m_e;
+    using State::State;
+    const Gas& getGas() const { return parent().getGas(); }
 };
 
-class StateRotational;
-
-class StateVibrational : public StateBase<StateElectronic,StateVibrational,StateRotational>
+class StateVibrational : public State<VibrationalInfo,StateElectronic,StateVibrational,StateRotational>
 {
 public:
-    StateVibrational(const Parent& parent, const std::string& v)
-    : StateBase<StateElectronic,StateVibrational,StateRotational>(parent,"vibrational="+v),
-    m_v{v} {}
-private:
-    const VibrationalInfo m_v;
+    using State::State;
+    const Gas& getGas() const { return parent().getGas(); }
 };
 
-class StateRotational : public StateBase<StateVibrational,StateRotational>
+class StateRotational : public State<RotationalInfo,StateVibrational,StateRotational>
 {
 public:
-    StateRotational(const Parent& parent, const std::string& J)
-    : StateBase<StateVibrational,StateRotational,void>(parent,"rotational="+J),
-    m_J{J} {}
-private:
-    const RotationalInfo m_J;
+    using State::State;
+    const Gas& getGas() const { return parent().getGas(); }
 };
 
 class Gas
 {
 public:
     explicit Gas(const std::string& name);
+    /** arguments: C [, E [, V [, J ] ] ],
+     * where C, E, V and J are info-strings for the charge, electronic,
+     * vibrational and rotational aspects of the state. As an example,
+     * ensure_state("0","X") creates an eleronic state, while the four-argument
+     * invocation ensure_state("0","X","0","2") creates the neutral state
+     * X(v=2,J=2).
+     */
     template <class ...Args>
-    auto add_state(Args... args)
+    auto ensure_state(Args... args)
     {
-        return m_states->add_child(args...);
+        return m_states->ensure_state(args...);
     }
     void printStates(std::ostream& os) const;
     const std::string& name() const { return m_name; }
+
+    double harmonicFrequency;
+    double rotationalConstant;
 private:
     const std::string m_name;
     std::unique_ptr<StateRoot> m_states;
@@ -199,20 +290,53 @@ private:
 // implementation:
 
 StateRoot::StateRoot(Gas& gas)
-    : StateBase<Gas,StateRoot,StateCharge>(gas,gas.name())
+    : State<RootInfo,Gas,StateRoot,StateCharge>(gas,gas.name())
 {
 }
 
 inline Gas::Gas(const std::string& name)
-: m_name(name), m_states(new StateRoot(*this))
+    : m_name(name),
+    m_states(new StateRoot(*this)), harmonicFrequency(-1), rotationalConstant(-1)
 {
 }
 
 void Gas::printStates(std::ostream& os) const
 {
-    m_states->printChildren(os,name());
+    m_states->print(os,std::string{});
 }
 
+class GasMixture
+{
+public:
+    using Gases = std::vector<std::unique_ptr<Gas>>;
+    Gas& ensure_gas(const std::string& name)
+    {
+        for (const auto& g : m_gases)
+        {
+            if (g->name()==name)
+            {
+                return *g;
+            }
+        }
+        return *m_gases.emplace_back(new Gas{name});
+    }
+    template <class ...Args>
+    auto ensure_state(const std::string& gas, Args... args)
+    {
+        return ensure_gas(gas).ensure_state(args...);
+    }
+    void print(std::ostream& os) const
+    {
+        for (const auto& g : m_gases)
+        {
+            g->printStates(os);
+        }
+    }
+private:
+    Gases m_gases;
+};
+
+} // namespace experimental
 } // namespace loki
 
 #endif // LOKI_CPP_STATECONTAINER_H
