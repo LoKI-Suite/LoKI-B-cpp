@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <limits>
 #include <type_traits>
 
 #include "LoKI-B/json.h"
@@ -48,6 +49,7 @@ public:
         return m_q==info;
     }
     std::string str() const { return "charge="+m_q; }
+    double population{0};
 private:
     const std::string m_q;
 };
@@ -62,6 +64,7 @@ public:
         return m_e==info;
     }
     std::string str() const { return "e="+m_e; }
+    double population{0};
 private:
     std::string m_e;
 };
@@ -155,6 +158,23 @@ public:
         }
         return nullptr;
     }
+    void checkPopulations(const std::string& name) const
+    {
+        if (m_children.empty())
+        {
+            return;
+        }
+        double totalPopulation = 0.;
+        for (auto& state : m_children)
+        {
+            totalPopulation += state->info().population;
+            state->checkPopulations();
+        }
+        if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+        {
+            throw std::runtime_error("Populations of children of '" + name + "' do not add up to unity.");
+        }
+    }
 private:
     ChildrenType m_children;
 };
@@ -164,6 +184,9 @@ class ChildContainer<void>
 {
 public:
     void print(std::ostream& os, const std::string& prefix) const
+    {
+    }
+    void checkPopulations(const std::string& name) const
     {
     }
 };
@@ -205,6 +228,10 @@ public:
       m_info(name)
     {
         static_assert(std::is_base_of_v<State,StateT>);
+    }
+    void checkPopulations() const
+    {
+        m_children.checkPopulations(m_info.str());
     }
 private:
     const Parent& m_parent;
@@ -279,6 +306,12 @@ public:
     void printStates(std::ostream& os) const;
     const std::string& name() const { return m_name; }
 
+    void checkPopulations() const
+    {
+        std::cout << "Checking populations of gas '" << m_name << std::endl;
+        m_states->checkPopulations();
+    }
+
     double harmonicFrequency;
     double rotationalConstant;
 private:
@@ -311,11 +344,11 @@ public:
     using Gases = std::vector<std::unique_ptr<Gas>>;
     Gas& ensure_gas(const std::string& name)
     {
-        for (const auto& g : m_gases)
+        for (const auto& gas : m_gases)
         {
-            if (g->name()==name)
+            if (gas->name()==name)
             {
-                return *g;
+                return *gas;
             }
         }
         return *m_gases.emplace_back(new Gas{name});
@@ -327,9 +360,16 @@ public:
     }
     void print(std::ostream& os) const
     {
-        for (const auto& g : m_gases)
+        for (const auto& gas : m_gases)
         {
-            g->printStates(os);
+            gas->printStates(os);
+        }
+    }
+    void checkPopulations() const
+    {
+        for (const auto& gas : m_gases)
+        {
+            gas->checkPopulations();
         }
     }
 private:
