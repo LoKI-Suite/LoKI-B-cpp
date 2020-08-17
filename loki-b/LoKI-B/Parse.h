@@ -172,7 +172,7 @@ struct Parse
     {
             const std::string gasName = cnf.at("particle");
             const int charge_int = cnf.at("charge").get<int>();
-            const std::string charge = charge_int ? std::to_string(charge_int) : std::string{};
+            const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
             const json_type& descr = cnf.at("descriptor");
             if (descr.contains("states"))
             {
@@ -239,8 +239,9 @@ struct Parse
                 Enumeration::StateType stateType
                     = J.empty()==false ? rotational
                     : v.empty()==false ? vibrational
-                    : electronic;
-                return StateEntry{stateType,gasName,charge,e,v,J};
+                    : e.empty()==false ? electronic
+                    : charge;
+                return StateEntry{stateType,gasName,charge_str,e,v,J};
             }
             else
             {
@@ -257,8 +258,9 @@ struct Parse
                 Enumeration::StateType stateType
                     = descr.contains("J") ? rotational
                     : descr.contains("v") ? vibrational
-                    : electronic;
-                return StateEntry{stateType,gasName,charge,e,v,J};
+                    : descr.contains("e") ? electronic
+                    : charge;
+                return StateEntry{stateType,gasName,charge_str,e,v,J};
             }
     }
     static bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,

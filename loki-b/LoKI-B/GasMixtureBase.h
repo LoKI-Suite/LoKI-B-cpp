@@ -69,7 +69,6 @@ namespace loki {
     public:
         using Gases = std::vector<std::unique_ptr<GasBase>>;
         virtual ~GasMixtureBase(){}
-        GasBase* addGas(GasBase* gas);
         void print(std::ostream& os);
         /** Checks whether the sum of the gas fractions is equal to 1.
          */
@@ -116,6 +115,8 @@ namespace loki {
          */
         virtual void loadGasProperties(const GasPropertiesSetup &setup);
         virtual void loadGasProperties(const json_type &cnf);
+  public:
+        GasBase* addGas(GasBase* gas);
   private:
         Gases m_gases;
     };

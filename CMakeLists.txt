@@ -86,10 +86,10 @@ set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cp
         ${src}/JobSystem.cpp ${src}/json.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
-        ${h}/Collision.h ${h}/State.h ${h}/EedfState.h
+        ${h}/Collision.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
-        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h ${h}/Traits.h
+        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/InputStructures.h
         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)

@@ -305,7 +305,7 @@ public:
     /** arguments: C [, E [, V [, J ] ] ],
      * where C, E, V and J are info-strings for the charge, electronic,
      * vibrational and rotational aspects of the state. As an example,
-     * ensure_state("0","X") creates an eleronic state, while the four-argument
+     * ensure_state("0","X") creates electronic state N2(X), while the four-argument
      * invocation ensure_state("0","X","0","2") creates the neutral state
      * X(v=2,J=2).
      */

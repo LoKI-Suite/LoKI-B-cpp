@@ -2,9 +2,9 @@
 // Created by daan on 2-5-19.
 //
 
-#include "LoKI-B/EedfState.h"
 #include "LoKI-B/EedfGas.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/EedfCollision.h"
 
 namespace loki {
     EedfGas::EedfGas(const std::string &name) : Gas(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
@@ -122,8 +122,7 @@ namespace loki {
 
         std::vector<EedfState *> statesToUpdate;
 
-        findStatesToUpdate(stateTree, statesToUpdate);
-        findStatesToUpdate(ionicStates, statesToUpdate);
+        findStatesToUpdate(get_root().children(), statesToUpdate);
 
         if (!statesToUpdate.empty()) {
             CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);

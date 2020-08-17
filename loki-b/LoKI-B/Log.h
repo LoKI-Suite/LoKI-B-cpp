@@ -9,7 +9,7 @@
 #include <string>
 #include <iostream>
 
-#ifdef _MSVC
+#if 1 // def _MSVC
 
 #define RED     ""
 #define YELLOW  ""

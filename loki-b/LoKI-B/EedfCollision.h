@@ -5,25 +5,25 @@
 #ifndef LOKI_CPP_EEDFCOLLISION_H
 #define LOKI_CPP_EEDFCOLLISION_H
 
-#include "LoKI-B/Traits.h"
 #include "LoKI-B/Collision.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/CrossSection.h"
 #include "LoKI-B/Power.h"
 #include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/EedfGas.h"
 #include <memory>
 
 namespace loki {
 
-    class EedfState;
-
-    class EedfCollision : public Collision<Boltzmann>
+    //class EedfCollision : public Collision<State<EedfGas>>
+    class EedfCollision : public Collision<EedfGas::State>
     {
 
         // The raw cross section data and threshold is stored in
         // the CrossSection object
 
     public:
+        using EedfState = State;
 
         // DONE: Inelastic and superelastic rate coefficient variables should be here
         double ineRateCoeff{0.};

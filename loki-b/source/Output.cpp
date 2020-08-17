@@ -5,6 +5,7 @@
 #include "LoKI-B/Output.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/StandardPaths.h"
+#include "LoKI-B/EedfCollision.h"
 
 #include <filesystem>
 #include <iomanip>

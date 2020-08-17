@@ -6,7 +6,6 @@
 #define LOKI_CPP_COLLISION_H
 
 #include "Enumeration.h"
-#include "State.h"
 
 #include <vector>
 
@@ -20,21 +19,18 @@ namespace loki {
      *  Collision<Chemistry> stores one vector of pointers to EedfStates for the LHS and one for the
      *  RHS.
      */
-    template<typename TraitType>
+    template<typename StateT>
     class Collision
     {
     public:
+        using State = StateT;
 
         virtual ~Collision() {}
 
         const Enumeration::CollisionType type;
         const bool isReverse;
 
-        // In the case that TraitType = Boltzmann, this will be a pointer to an EedfState.
-        // When TraitType = Chemistry, this is a vector of pointers to Chemstates.
-
-        // now instead:
-        using StateVector = std::vector<typename Trait<TraitType>::State*>;
+        using StateVector = std::vector<State*>;
 protected:
         const StateVector target;
 public:
