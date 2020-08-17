@@ -6,19 +6,17 @@
 #define LOKI_CPP_EEDFGASMIXTURE_H
 
 #include "LoKI-B/EedfCollision.h"
-#include "LoKI-B/EedfState.h"
 #include "LoKI-B/EedfGas.h"
 #include "LoKI-B/GasMixture.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/MacroscopicQuantities.h"
-#include "LoKI-B/Traits.h"
 #include "LoKI-B/json.h"
 
 #include <vector>
 
 namespace loki {
 
-    class EedfGasMixture : public GasMixture<Boltzmann>
+    class EedfGasMixture : public GasMixture<EedfGas>
     {
     public:
         using Collision = EedfCollision;

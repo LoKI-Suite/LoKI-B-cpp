@@ -182,7 +182,7 @@ namespace loki {
         std::set<GasBase*> targetGases;
 
         for (auto &stateEntry : entry_reactants) {
-            auto *state = reactants.emplace_back(addState(stateEntry));
+            auto *state = reactants.emplace_back(ensureState(stateEntry));
             targetGases.insert(&state->gas());
         }
 
@@ -190,7 +190,7 @@ namespace loki {
             Log<Message>::Error("Multiple target gases in a single collision.");
 
         for (auto &stateEntry : entry_products) {
-            products.emplace_back(addState(stateEntry));
+            products.emplace_back(ensureState(stateEntry));
         }
 
         /** \todo Check if we have this process already without create a Collision object.

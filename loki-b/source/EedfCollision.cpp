@@ -2,7 +2,6 @@
 // Created by daan on 21-5-19.
 //
 
-#include "LoKI-B/EedfState.h"
 #include "LoKI-B/EedfCollision.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
@@ -48,11 +47,11 @@ namespace loki {
         return true;
     }
 
-    const EedfState *EedfCollision::getTarget() const
+    const EedfCollision::EedfState *EedfCollision::getTarget() const
     {
         return Collision::target.front();
     }
-    EedfState *EedfCollision::getTarget()
+    EedfCollision::EedfState *EedfCollision::getTarget()
     {
         return Collision::target.front();
     }

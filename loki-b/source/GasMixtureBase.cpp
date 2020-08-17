@@ -7,7 +7,15 @@
 
 namespace loki {
 
-GasBase* GasMixtureBase::addGas(GasBase* gas) { return m_gases.emplace_back(gas).get(); }
+GasBase* GasMixtureBase::addGas(GasBase* gas)
+{
+    if (findGas(gas->name))
+    {
+        throw std::logic_error("Attempt to register gas with name '" + gas->name + "' twice.");
+    }
+    return m_gases.emplace_back(gas).get();
+}
+
 void GasMixtureBase::print(std::ostream& os)
 {
     for (const auto& gas : m_gases) {

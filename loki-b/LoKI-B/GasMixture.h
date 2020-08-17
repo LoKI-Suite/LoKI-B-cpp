@@ -15,7 +15,6 @@
 
 #include "LoKI-B/GasMixtureBase.h"
 #include "LoKI-B/Setup.h"
-#include "LoKI-B/Traits.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/json.h"
@@ -36,15 +35,14 @@ namespace loki {
      *  States and Collisions, whereas the latter handles their Chemistry
      *  equivalents.
      */
-    template<typename TraitType>
+    template<typename GasT>
     class GasMixture : public GasMixtureBase
     {
     public:
-        using Gas = typename Trait<TraitType>::Gas;
-        using State = typename Trait<TraitType>::State;
+        using Gas = GasT;
+        using State = typename Gas::State;
         // Vector of pointers to all the gases in the mixture.
         const std::vector<Gas*>& gases() const { return m_gases; }
-    protected:
         /// \todo Still needed?
         Gas* findGas(const std::string& name) { return static_cast<Gas*>(GasMixtureBase::findGas(name)); }
 #if 0
@@ -54,20 +52,16 @@ namespace loki {
         /** Tries to add a new gas based on a given name and returns a pointer to it. If a
          *  gas with the same name already exists it returns a pointer to that gas.
          */
-        Gas* addGas(const std::string &name)
+        Gas* ensureGas(const std::string &name)
         {
             Gas* gas = findGas(name);
-            if (gas)
-            {
-                return gas;
-            }
-            else
+            if (!gas)
             {
                 gas = new Gas(name);
                 GasMixtureBase::addGas(gas);
                 m_gases.emplace_back(gas);
-                return gas;
             }
+            return gas;
         }
 
         /** This overload accepts only a reference to a StateEntry object. This is the main
@@ -76,58 +70,11 @@ namespace loki {
          *  state itself. If the state already exists, then a pointer to this state is
          *  returned instead.
          */
-        State* addState(const StateEntry &entry)
+        State* ensureState(const StateEntry &entry)
         {
-            Gas* gas = addGas(entry.gasName);
-            auto *state = addState(gas, entry);
-
-            for (uint8_t lvl = electronic; lvl < entry.level; ++lvl) {
-                state = addState(state, entry);
-            }
-
-            return state;
+            return ensureGas(entry.gasName)->ensureState(entry);
         }
     private:
-        /** This overload accepts a pointer to a gas. It will check if the electronic
-         *  ancestor of the state described by the given StateEntry already exists.
-         *  If it does, a pointer is returned to this state, and if it does not, the
-         *  ancestor is added its pointer returned.
-         */
-
-        State* addState(Gas*gas, const StateEntry &entry)
-        {
-            auto &states = (entry.charge.empty() ? gas->stateTree : gas->ionicStates);
-            auto &gas_states_base = (entry.charge.empty() ? static_cast<GasBase*>(gas)->stateBaseTree : static_cast<GasBase*>(gas)->ionicBaseStates);
-
-            auto *state = gas->find(entry);
-
-            if (state == nullptr) {
-                state = gas->states.emplace_back(new State(entry, gas)).get();
-                gas_states_base.push_back(state);
-                /// \todo also add to the mixture's base state vector, once that has added.
-                return states.emplace_back(state);
-            }
-
-            return state;
-        }
-
-        /** This overload accepts a pointer to a state. It will check if one of the
-         *  current children of this state is an ancestor of (or equal to) the state
-         *  described by the given StateEntry. If such a child exists, its pointer is
-         *  returned, if it does not exist then the appropriate state is created and
-         *  its pointer returned.
-         */
-        State* addState(State* parent, const StateEntry &entry)
-        {
-            auto * state = parent->find(entry);
-            if (state == nullptr)
-            {
-                state = parent->gas().states.emplace_back(
-                        new State(entry, &parent->gas(), parent)).get();
-                parent->add_child(state);
-            }
-            return state;
-        }
         // Vector of pointers to all the gases in the mixture.
         std::vector<Gas*> m_gases;
     };

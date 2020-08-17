@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <string>
+#include <iostream>
 
 namespace loki::Enumeration {
 
@@ -43,11 +44,26 @@ namespace loki::Enumeration {
     };
 
     enum StateType : uint8_t {
+        root,
+        charge,
         electronic,
         vibrational,
         rotational,
         none
     };
+    inline std::ostream& operator<<(std::ostream& os, StateType type)
+    {
+        switch(type)
+        {
+        case root: os << "root"; break;
+        case charge: os << "charge"; break;
+        case electronic: os << "electronic"; break;
+        case vibrational: os << "vibrational"; break;
+        case rotational: os << "rotational"; break;
+        case none: os << "none"; break;
+        }
+        return os;
+    }
 
     enum class CollisionType : uint8_t {
         effective,

@@ -7,7 +7,6 @@
 
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Constant.h"
-#include "LoKI-B/Traits.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/GasBase.h"
@@ -20,7 +19,7 @@
  *
  * The arguments are as follows.
  *
- *  1. A vector of pointers to the states (typename Trait<TraitType>::State) of which to set the property.
+ *  1. A vector of pointers to the states (StateBase) of which to set the property.
  *  2. A vector of doubles representing the arguments to be used by the property function. E.g. in the
  *     case of boltzmannPopulation this vector contains a single argument, the temperature.
  *  3. A StatePropertyType indicating whether the function is supposed to set either the energy, population
