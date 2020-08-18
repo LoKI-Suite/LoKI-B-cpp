@@ -37,13 +37,13 @@ inline void setStateProperty(StateT& state, const double &value, loki::StateProp
 {
     switch (type) {
         case loki::StatePropertyType::energy:
-            state.info().energy = value;
+            state.energy() = value;
             break;
         case loki::StatePropertyType::statisticalWeight:
-            state.info().statisticalWeight = value;
+            state.statisticalWeight() = value;
             break;
         case loki::StatePropertyType::population:
-            state.info().population = value;
+            state.population() = value;
             break;
     }
 }
@@ -71,11 +71,11 @@ inline void boltzmannPopulation(const ChildContainer<StateT> &states, const std:
     double norm = 0.;
 
     for (auto& state : states) {
-        state->info().population = state->info().statisticalWeight * std::exp(-state->info().energy / (Constant::kBeV * temp));
-        norm += state->info().population;
+        state->population() = state->statisticalWeight() * std::exp(-state->energy() / (Constant::kBeV * temp));
+        norm += state->population();
     }
     for (auto& state : states) {
-        state->info().population /= norm;
+        state->population() /= norm;
     }
 }
 
@@ -94,11 +94,11 @@ inline void harmonicOscillatorEnergy(const ChildContainer<StateVibrational> &sta
     {
         double v;
 
-        if (!Parse::getValue(state->info().v(), v))
-            Log<Message>::Error("Non numerical vib level (" + state->info().v() +
+        if (!Parse::getValue(state->v(), v))
+            Log<Message>::Error("Non numerical vib level (" + state->v() +
                                 ") when trying to assign harmonic oscillator energy.");
 
-        state->info().energy = Constant::plankReducedInEv * gas.harmonicFrequency * (v + .5);
+        state->energy() = Constant::plankReducedInEv * gas.harmonicFrequency * (v + .5);
     }
 }
 
@@ -112,11 +112,11 @@ inline void rotationalDegeneracy_N2(const ChildContainer<StateRotational> &state
     {
         double J;
 
-        if (!Parse::getValue(state->info().J(), J))
-            Log<Message>::Error("Non numerical rot level (" + state->info().J() +
+        if (!Parse::getValue(state->J(), J))
+            Log<Message>::Error("Non numerical rot level (" + state->J() +
                                 ") when trying to assign rigid rotor energy.");
 
-        state->info().statisticalWeight = 3*(1. + .5 * (1. + std::pow(-1., J))) * (2. * J + 1.);
+        state->statisticalWeight() = 3*(1. + .5 * (1. + std::pow(-1., J))) * (2. * J + 1.);
     }
 }
 
@@ -130,11 +130,11 @@ inline void rotationalDegeneracy(const ChildContainer<StateRotational>& states,
     {
         double J;
 
-        if (!Parse::getValue(state->info().J(), J))
-            Log<Message>::Error("Non numerical rot level (" + state->info().J() +
+        if (!Parse::getValue(state->J(), J))
+            Log<Message>::Error("Non numerical rot level (" + state->J() +
                                 ") when trying to assign rigid rotor energy.");
 
-        state->info().statisticalWeight = 2 * J + 1;
+        state->statisticalWeight() = 2 * J + 1;
     }
 }
 
@@ -156,11 +156,11 @@ inline void rigidRotorEnergy(const ChildContainer<StateRotational>&states,
     {
         double J;
 
-        if (!Parse::getValue(state->info().J(), J))
-            Log<Message>::Error("Non numerical rot level (" + state->info().J() +
+        if (!Parse::getValue(state->J(), J))
+            Log<Message>::Error("Non numerical rot level (" + state->J() +
                                 ") when trying to assign rigid rotor energy.");
 
-        state->info().energy = gas.rotationalConstant * J * (J + 1.);
+        state->energy() = gas.rotationalConstant * J * (J + 1.);
     }
 
 #if 0

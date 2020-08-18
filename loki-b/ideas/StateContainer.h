@@ -14,36 +14,45 @@
 namespace loki {
 namespace experimental {
 
-//enum StateLevel { Charge, Electronic, Vibrational, Rotational };
-
 template <class ChildT>
 using ChildContainer = std::vector<std::unique_ptr<ChildT>>;
 
-template <typename StateInfo, typename ParentT, typename StateT, typename ChildT>
-class State
+/* Template arguments:
+ *
+ *  - Node data (other than parent, children etc.)
+ *  - The Parent, Current and Child types. StateT must be derived from
+ *    State<StateInfoT,ParentT,StateT,ChildT>. This is checked with a
+ *    static_assert in the constructor.
+ *
+ *  NOTE the specialization for ChildT=void, which terminates the state sequence.
+ */
+template <typename StateInfoT, typename ParentT, typename StateT, typename ChildT>
+class State : public StateInfoT
 {
 public:
+    using StateInfo = StateInfoT;
     using Parent = ParentT;
-    using ChildType = ChildT;
-    using ChildContainer = loki::experimental::ChildContainer<ChildType>;
+    using Child = ChildT;
+    using ChildContainer = loki::experimental::ChildContainer<Child>;
 
     using size_type = typename ChildContainer::size_type;
     using iterator = typename ChildContainer::iterator;
     using const_iterator = typename ChildContainer::const_iterator;
 
-    State(const ParentT& parent, const std::string& name)
-    : m_parent(parent),
-      m_info(name)
+    State(const Parent& parent, const std::string& name)
+    : StateInfo(name), m_parent(parent)
     {
         static_assert(std::is_base_of_v<State,StateT>);
     }
 
     const Parent& parent() const { return m_parent; }
-    const StateInfo& info() const { return m_info; }
-    // reconsider:
-    StateInfo& info() { return m_info; }
 
     const ChildContainer& children() const { return m_children; }
+    /** \todo We could just expose children(), but probably it
+     *  is better to use indicet_iterator to present the children
+     *  by reference instead of pointer. That will also be more
+     *  const-safe.
+     */
     bool empty() const { return m_children.empty(); }
     size_type size() const { return m_children.size(); }
     iterator begin() { return m_children.begin(); }
@@ -51,37 +60,23 @@ public:
     const_iterator begin() const { return m_children.begin(); }
     const_iterator end() const { return m_children.end(); }
 
-
-    ChildT* add_state(const std::string& info)
+    Child* ensure_state(const std::string& info)
     {
-        return m_children.emplace_back(new ChildType(*static_cast<StateT*>(this),info)).get();
-    }
-    ChildT* ensure_state(const std::string& info)
-    {
-        ChildT* c = find(info);
+        Child* c = find(info);
         return c ? c : add_state(info);
     }
     template <class ...Args>
     auto ensure_state(const std::string& info, Args... args)
     {
+        // create child state 'info' (when necessary),
+        // call ensure_state on that object with the remaining args.
         return ensure_state(info)->ensure_state(args...);
     }
-    bool operator==(const std::string& info) const
-    {
-        return m_info==info;
-    }
-    void print(std::ostream& os, const std::string& prefix=std::string{}) const
-    {
-        os << prefix << m_info.str() << std::endl;
-        for (const auto& c : m_children)
-        {
-            c->print(os,prefix);
-        }
-    }
-    ChildType* find(const std::string& info) const
+    Child* find(const std::string& info) const
     {
         for (const auto& c : m_children)
         {
+            /// \todo This will call StateInfo::operator==(info), which is a bit too subtle.
             if (*c==info)
             {
                 return c.get();
@@ -89,96 +84,130 @@ public:
         }
         return nullptr;
     }
-    void checkPopulations() const
-    {
-        if (m_children.empty())
-        {
-            return;
-        }
-        double totalPopulation = 0.;
-        for (auto& state : m_children)
-        {
-            totalPopulation += state->info().population;
-            state->checkPopulations();
-        }
-        if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
-        {
-            throw std::runtime_error("Populations of children of '" + m_info.str() + "' do not add up to unity.");
-        }
-    }
 private:
+    Child* add_state(const std::string& info)
+    {
+        return m_children.emplace_back(new Child(*static_cast<StateT*>(this),info)).get();
+    }
     const Parent& m_parent;
     ChildContainer m_children;
-    StateInfo m_info;
 };
 
-template <typename StateInfo, typename ParentT, typename StateT>
-class State<StateInfo,ParentT,StateT,void>
+/* Specialization for ChildT=void. This does not have/support child states.
+ */
+template <typename StateInfoT, typename ParentT, typename StateT>
+class State<StateInfoT,ParentT,StateT,void> : public StateInfoT
 {
 public:
+    using StateInfo = StateInfoT;
     using Parent = ParentT;
+    using Child = void;
 
-    const Parent& parent() const { return m_parent; }
-    const StateInfo& info() const { return m_info; }
-    // reconsider:
-    StateInfo& info() { return m_info; }
-
-    bool operator==(const std::string& info) const
-    {
-        return m_info==info;
-    }
-    void print(std::ostream& os, const std::string& prefix=std::string{}) const
-    {
-        os << prefix << m_info.str() << std::endl;
-    }
-    State(const ParentT& parent, const std::string& name)
-    : m_parent(parent),
-      m_info(name)
+    State(const Parent& parent, const std::string& name)
+    : StateInfo(name), m_parent(parent)
     {
         static_assert(std::is_base_of_v<State,StateT>);
     }
-    void checkPopulations() const
-    {
-    }
+    const Parent& parent() const { return m_parent; }
 private:
     const Parent& m_parent;
-    StateInfo m_info;
 };
 
-#if 0
-template <class StateT>
-const typename StateT::Parent::ChildContainer& siblings(const StateT& state)
+/** \todo See if we can be smarter about the various overloads, there
+ *  are a lot if also Operator can be a const/non-const reference.
+ *  Pass all arguments by value and let the caller use std::ref, std::cref?
+ */
+
+template <class StateT, class Operation, std::enable_if_t<!std::is_same_v<typename StateT::Child,void>>* =nullptr>
+void apply(const StateT& state, const Operation& operation, bool recurse)
 {
-    return state.parent().children();
+    operation(state);
+    if (recurse)
+    {
+        for (const auto& c : state)
+        {
+            apply(*c,operation,recurse);
+        }
+    }
 }
-#endif
 
-#if 0
+// version for Child==void
+template <class StateT, class Operation, std::enable_if_t<std::is_same_v<typename StateT::Child,void>>* =nullptr>
+void apply(const StateT& state, const Operation& operation, bool recurse)
+{
+    operation(state);
+}
 
-/// \todo Use this later, instead of the ad-hoc members below (Info base class or member)?
+template <class StateT, class Operation, std::enable_if_t<!std::is_same_v<typename StateT::Child,void>>* =nullptr>
+void apply(StateT& state, const Operation& operation, bool recurse)
+{
+    if (recurse)
+    {
+        for (const auto& c : state)
+        {
+            apply(*c,operation,recurse);
+        }
+    }
+}
+
+// version for Child==void
+template <class StateT, class Operation, std::enable_if_t<std::is_same_v<typename StateT::Child,void>>* =nullptr>
+void apply(StateT& state, const Operation& operation, bool recurse)
+{
+    operation(state);
+}
+
+// common State data. Use accessors so we can implement some ops later using member function pointers.
+
 class StateData
 {
 public:
-    double population{0};
-    double energy{-1};
-    double statisticalWeight{-1};
-    double density{0};
-};
-#endif
+    StateData()
+    : m_population{0},
+    m_energy{-1},
+    m_statisticalWeight{-1},
+    m_density{0}
+    {}
 
-class RootInfo
+    double population() const { return m_population; }
+    double energy() const { return m_energy; }
+    double statisticalWeight() const { return m_statisticalWeight; }
+    double density() const { return m_density; }
+
+    double& population() { return m_population; }
+    double& energy() { return m_energy; }
+    double& statisticalWeight() { return m_statisticalWeight; }
+    double& density() { return m_density; }
+
+private:
+    double m_population;
+    double m_energy;
+    double m_statisticalWeight;
+    double m_density;
+};
+
+// info for the various states: Root, Charge, Electronic, Vibrational, Rotational.
+
+class RootInfo : public StateData
 {
 public:
     RootInfo(const std::string& gasname)
      : m_gasname(gasname)
     {
+        /// \todo think harder about population initialization.
+        population()=1.0;
+    }
+    bool operator==(const std::string& info) const
+    {
+        return m_gasname==info;
     }
     std::string str() const { return m_gasname; }
+    const std::string& gasName() const { return m_gasname; }
 private:
     const std::string m_gasname;
 };
 
-class ChargeInfo
+class ChargeInfo : public StateData
 {
 public:
     ChargeInfo(const json_type& info) : m_q(info.at("charge").get<std::string>()) {};
@@ -188,12 +217,12 @@ public:
         return m_q==info;
     }
     std::string str() const { return "charge="+m_q; }
-    double population{0};
+    const std::string& q() const { return m_q; }
 private:
     const std::string m_q;
 };
 
-class ElectronicInfo
+class ElectronicInfo : public StateData
 {
 public:
     ElectronicInfo(const json_type& info) : m_e(info.at("e").get<std::string>()) {};
@@ -203,12 +232,12 @@ public:
         return m_e==info;
     }
     std::string str() const { return "e="+m_e; }
-    double population{0};
+    const std::string& e() const { return m_e; }
 private:
-    std::string m_e;
+    const std::string m_e;
 };
 
-class VibrationalInfo
+class VibrationalInfo : public StateData
 {
 public:
     VibrationalInfo(const json_type& info) : m_v(info.at("v").get<std::string>()) {};
@@ -217,21 +246,13 @@ public:
     {
         return m_v==info;
     }
-    std::string str() const { return "v="+m_v
-        + ", g_v=" + std::to_string(statisticalWeight)
-        + ", E/eV=" + std::to_string(energy)
-        + ", population=" + std::to_string(population); }
+    std::string str() const { return "v="+m_v; }
     const std::string& v() const { return m_v; }
-
-    // ad hoc public members to test propertyFunction ideas...
-    double energy=-1;
-    double statisticalWeight=-1;
-    double population{0};
 private:
     std::string m_v;
 };
 
-class RotationalInfo
+class RotationalInfo : public StateData
 {
 public:
     RotationalInfo(const json_type& info) : m_J(info.at("J").get<std::string>()) {};
@@ -240,18 +261,10 @@ public:
     {
         return m_J==info;
     }
-    std::string str() const { return "J="+m_J
-        + ", g_J=" + std::to_string(statisticalWeight)
-        + ", E/eV=" + std::to_string(energy)
-        + ", population=" + std::to_string(population); }
+    std::string str() const { return "J="+m_J; }
     const std::string& J() const { return m_J; }
-
-    // ad hoc public members to test propertyFunction ideas...
-    double energy=-1;
-    double statisticalWeight=-1;
-    double population{0};
 private:
-    std::string m_J;
+    const std::string m_J;
 };
 
 
@@ -263,11 +276,18 @@ class StateElectronic;
 class StateVibrational;
 class StateRotational;
 
+// here we assemble the various pieces of the chain.
+// Root has the Gas as parent (todo: reconsider that), StateCharge as parent.
+
 class StateRoot : public State<RootInfo,Gas,StateRoot,StateCharge>
 {
 public:
     StateRoot(Gas& gas);
     const Gas& getGas() const { return parent(); }
+    /** \todo see if we can provide level() in a better way without having this member in every State type below
+     *  Same for getGas(). Make this a free function template?
+     */
+    static constexpr unsigned level() { return 0; }
 };
 
 class StateCharge : public State<ChargeInfo,StateRoot,StateCharge,StateElectronic>
@@ -275,6 +295,7 @@ class StateCharge : public State<ChargeInfo,StateRoot,StateCharge,StateElectroni
 public:
     using State::State;
     const Gas& getGas() const { return parent().getGas(); }
+    static constexpr unsigned level() { return Parent::level()+1; }
 };
 
 class StateElectronic : public State<ElectronicInfo,StateCharge,StateElectronic,StateVibrational>
@@ -282,6 +303,7 @@ class StateElectronic : public State<ElectronicInfo,StateCharge,StateElectronic,
 public:
     using State::State;
     const Gas& getGas() const { return parent().getGas(); }
+    static constexpr unsigned level() { return Parent::level()+1; }
 };
 
 class StateVibrational : public State<VibrationalInfo,StateElectronic,StateVibrational,StateRotational>
@@ -289,6 +311,7 @@ class StateVibrational : public State<VibrationalInfo,StateElectronic,StateVibra
 public:
     using State::State;
     const Gas& getGas() const { return parent().getGas(); }
+    static constexpr unsigned level() { return Parent::level()+1; }
 };
 
 class StateRotational : public State<RotationalInfo,StateVibrational,StateRotational,void>
@@ -296,6 +319,7 @@ class StateRotational : public State<RotationalInfo,StateVibrational,StateRotati
 public:
     using State::State;
     const Gas& getGas() const { return parent().getGas(); }
+    static constexpr unsigned level() { return Parent::level()+1; }
 };
 
 class Gas
@@ -317,14 +341,15 @@ public:
     void printStates(std::ostream& os) const;
     const std::string& name() const { return m_name; }
 
-    void checkPopulations() const
-    {
-        std::cout << "Checking populations of gas '" << m_name << std::endl;
-        m_states->checkPopulations();
-    }
+    void checkPopulations() const;
+    void evaluateStateDensities() const;
 
     double harmonicFrequency;
     double rotationalConstant;
+    double fraction;
+
+    const StateRoot& states() const { return *m_states; }
+    StateRoot& states() { return *m_states; }
 private:
     const std::string m_name;
     std::unique_ptr<StateRoot> m_states;
@@ -333,20 +358,70 @@ private:
 
 // implementation:
 
-StateRoot::StateRoot(Gas& gas)
+inline StateRoot::StateRoot(Gas& gas)
     : State<RootInfo,Gas,StateRoot,StateCharge>(gas,gas.name())
 {
 }
 
 inline Gas::Gas(const std::string& name)
     : m_name(name),
-    m_states(new StateRoot(*this)), harmonicFrequency(-1), rotationalConstant(-1)
+    m_states(new StateRoot(*this)), harmonicFrequency(-1), rotationalConstant(-1), fraction(1)
 {
 }
 
-void Gas::printStates(std::ostream& os) const
+inline void Gas::printStates(std::ostream& os) const
 {
-    m_states->print(os,std::string{});
+    apply(states(), [&](const auto& st) { os << std::string(st.level(),' ') << st.str() << std::endl; }, true );
+}
+
+struct PopulationChecker
+{
+    void operator()(const StateRotational& state) const
+    {
+        // nothing, does not have children
+    }
+    template <class StateT>
+    void operator()(const StateT& state) const
+    {
+        if (state.empty())
+        {
+            return;
+        }
+        double totalPopulation = 0.;
+        for (auto& c : state)
+        {
+            totalPopulation += c->population();
+        }
+        if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+        {
+            throw std::runtime_error("Populations of children of '" + state.str() + "' do not add up to unity.");
+        }
+    }
+};
+
+inline void Gas::checkPopulations() const
+{
+    std::cout << "Checking populations of gas '" << m_name << std::endl;
+    apply(states(),PopulationChecker{}, true);
+}
+
+struct DensityEvaluator
+{
+    void operator()(StateRoot& state) const
+    {
+        state.density() = state.population() * state.getGas().fraction;
+    }
+    template <class StateT>
+    void operator()(StateT& state) const
+    {
+        state.density() = state.population() * state.parent().density();
+    }
+};
+
+inline void Gas::evaluateStateDensities() const
+{
+    std::cout << "Evaluating densities of gas '" << m_name << std::endl;
+    apply(*m_states,DensityEvaluator{}, true);
 }
 
 class GasMixture
@@ -369,6 +444,10 @@ public:
     {
         return ensure_gas(gas).ensure_state(args...);
     }
+    auto ensure_state(const std::string& gas)
+    {
+        return &ensure_gas(gas).states();
+    }
     void print(std::ostream& os) const
     {
         for (const auto& gas : m_gases)
@@ -381,6 +460,13 @@ public:
         for (const auto& gas : m_gases)
         {
             gas->checkPopulations();
+        }
+    }
+    void evaluateStateDensities() const
+    {
+        for (const auto& gas : m_gases)
+        {
+            gas->evaluateStateDensities();
         }
     }
 private:
