@@ -129,6 +129,11 @@ target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(test_statebase PRIVATE loki_l ${backend})
 
+add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
+target_include_directories(test_reaction_format PRIVATE loki-b ${inc} ${mkl_inc})
+target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
+target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
+
 # -- loki tests -- #
 add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
 target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
