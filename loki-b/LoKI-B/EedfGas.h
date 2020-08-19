@@ -6,7 +6,7 @@
 #define LOKI_CPP_EEDFGAS_H
 
 #include "LoKI-B/Enumeration.h"
-#include "LoKI-B/Gas.h"
+#include "LoKI-B/GasBase.h"
 #include "LoKI-B/CrossSection.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Power.h"
@@ -21,9 +21,10 @@ namespace loki {
 
     class EedfCollision;
 
-    class EedfGas : public Gas<EedfGas> {
+    class EedfGas : public GasBase
+    {
     public:
-        using EedfState = State;
+        using EedfState = StateBase;
         using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
         // We need to store the collisions per Gas since we need to calculate
         // the mass ratio when evaluating the total and elastic cross-sections.

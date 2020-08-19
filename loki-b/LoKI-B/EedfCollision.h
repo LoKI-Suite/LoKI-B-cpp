@@ -16,14 +16,14 @@
 namespace loki {
 
     //class EedfCollision : public Collision<State<EedfGas>>
-    class EedfCollision : public Collision<EedfGas::State>
+    class EedfCollision : public Collision<GasBase::State>
     {
 
         // The raw cross section data and threshold is stored in
         // the CrossSection object
 
     public:
-        using EedfState = State;
+        using EedfState = GasBase::State;
 
         // DONE: Inelastic and superelastic rate coefficient variables should be here
         double ineRateCoeff{0.};
@@ -41,8 +41,7 @@ namespace loki {
         EedfState *getTarget();
 
         void superElastic(const Vector &energyData, Vector &result) const;
-
-        bool operator==(const EedfCollision &other) const;
+        bool is_same_as(CollisionType other_type, const State* other_target, const StateVector& other_products) const;
 
         friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
 

@@ -192,37 +192,35 @@ namespace loki {
         for (auto &stateEntry : entry_products) {
             products.emplace_back(ensureState(stateEntry));
         }
+        /// \todo Eliminate this cast at some moment
+        // reference to the one-and-only target gas for this collision
+        // (that there is only one has been established a few lines up).
+        EedfGas& eedfGas = static_cast<EedfGas&>(**targetGases.begin());
 
         /** \todo Check if we have this process already without create a Collision object.
          *        That also allows us to get rid of the EEDFCollision's operator==
          */
-        std::unique_ptr<Collision> collision{new Collision(entry_type, reactants, products,
-                    entry_stoiCoeff, reverse_also)};
 
         // Linking the newly created collision to the relevant states and gases
 
-        auto *target = collision->getTarget();
+        auto *target = reactants.front();
 
+        // small change: before there were separate lists (extra / non-extra). Duplication
+        // was not detected if the same collision would be added to both lists.
+        for (const auto& c : m_collisions)
+        {
+            if (c->is_same_as(entry_type, target, products))
+            {
+                Log<DoubleCollision>::Warning(*c);
+                return nullptr;
+            }
+        }
+        std::unique_ptr<Collision> collision{new Collision(entry_type, reactants, products,
+                    entry_stoiCoeff, reverse_also)};
         Log<Message>::Notify(*collision);
-
-        // Check if the collision already exists. If so delete the new entry and return false.
-        auto &currentCollisions = isExtra ? target->gas().m_state_collisionsExtra[target] : target->gas().m_state_collisions[target];
-
-        if (std::find_if(currentCollisions.begin(), currentCollisions.end(),
-                             [& collision](const EedfCollision *itCollision) {
-
-                                 return *itCollision == *collision;
-                             }) != currentCollisions.end())
-        {
-            Log<DoubleCollision>::Warning(*collision);
-            return nullptr;
-            // collision is a unique_ptr, its destructor will delete the collision object
-        }
-        else
-        {
-            target->gas().addCollision(collision.get(), isExtra);
-            return collision.release();
-        }
+        eedfGas.addCollision(collision.get(), isExtra);
+        m_collisions.push_back(collision.get());
+        return collision.release();
     }
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)

@@ -7,7 +7,7 @@
 #include "LoKI-B/EedfCollision.h"
 
 namespace loki {
-    EedfGas::EedfGas(const std::string &name) : Gas(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
+    EedfGas::EedfGas(const std::string &name) : GasBase(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
                                                 collisionsExtra(static_cast<uint8_t>(Enumeration::CollisionType::size)) {}
 
     void EedfGas::addCollision(EedfCollision *collision, bool isExtra)
@@ -23,7 +23,8 @@ namespace loki {
 
     EedfGas::~EedfGas() { }
 
-    CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid) {
+    CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
+    {
         if (collisions[static_cast<uint8_t>(CollisionType::effective)].empty())
             Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 

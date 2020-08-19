@@ -64,6 +64,17 @@ public:
          * evaluate all densities in the state tree.
          */
         void evaluateDensity();
+        StateBase* ensure_state(const StateEntry &entry)
+        {
+            StateBase* state = find(entry);
+            if (state)
+            {
+                return state;
+            }
+            state = new StateBase(entry, &gas(), *this);
+            add_child(state);
+            return state;
+        }
     protected:
         void add_child(StateBase* child) { m_children.emplace_back(child); }
     private:
@@ -82,6 +93,8 @@ public:
         double statisticalWeight;
         double density;
     };
+    /// \todo Get rid of StateBase, use State exclusively here and elsewhere.
+    using State = StateBase;
     explicit GasBase(std::string name);
     virtual ~GasBase();
     /** Prints the (first non-ionic then ionic) electronic states and their
@@ -104,6 +117,18 @@ public:
      *        with find, see if these members can be merged somehow.
      */
     StateBase* findState(const StateEntry& entry);
+    State* ensureState(const StateEntry &entry)
+    {
+        auto *state = get_root().ensure_state(entry);
+        // state is now a 'charge state' (container)
+        for (uint8_t lvl = charge; lvl < entry.level; ++lvl) {
+            state = state->ensure_state(entry);
+        }
+        return state;
+    }
+
+    State& get_root() { return *m_root; }
+    const State& get_root() const { return *m_root; }
 
   public:
 

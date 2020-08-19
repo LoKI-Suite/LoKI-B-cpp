@@ -30,15 +30,14 @@ namespace loki {
      *
      *        type()=o.type() && lhs()=o.lhs() && rhs==o.rhs()
      *
-     *  \bug at present, 'e + X' and 'X + e' would result in distinct processes.
      */
-    bool EedfCollision::operator==(const EedfCollision &other) const
+    bool EedfCollision::is_same_as(CollisionType other_type, const EedfState* other_target, const StateVector& other_products) const
     {
-        if (type != other.type) return false;
-        if (getTarget() != other.getTarget()) return false;
+        if (type != other_type) return false;
+        if (getTarget() != other_target) return false;
 
         // Comparing pointers since there is only one instantiation of each state.
-        for (const auto *state : other.products)
+        for (const auto *state : other_products)
         {
             if (std::find(products.begin(), products.end(), state) == products.end())
                 return false;

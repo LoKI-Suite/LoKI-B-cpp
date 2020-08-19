@@ -107,6 +107,8 @@ namespace loki {
         // TODO: comment addCARGases
 
         void addCARGases(const std::vector<std::string> &CARVector);
+
+        std::vector<const Collision*> m_collisions;
     };
 }
 

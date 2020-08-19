@@ -85,7 +85,7 @@ set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cp
         ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
         ${src}/JobSystem.cpp ${src}/json.cpp)
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-        ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/Gas.h ${h}/EedfGas.h ${h}/Constant.h
+        ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h
         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h

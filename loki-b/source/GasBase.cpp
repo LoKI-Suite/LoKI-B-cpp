@@ -214,7 +214,8 @@ GasBase::StateBase* GasBase::StateBase::find(const StateEntry &entry)
 }
 
 GasBase::GasBase(std::string name)
-    : name{name},
+    : m_root(new State(this)),
+    name{name},
     mass{-1},
     harmonicFrequency{-1},
     anharmonicFrequency{-1},
