@@ -8,11 +8,16 @@
  */
 
 #include "LoKI-B/GasBase.h"
-#include "LoKI-B/Gas.h"
 #include "LoKI-B/Parse.h"
 
 // GasBase has a protected destructor. Derive a dummy class to allow the creation of an object.
-class TestGas : public loki::Gas<TestGas> { public: TestGas(const std::string& name) : loki::Gas<TestGas>(name) {} };
+class TestGas : public loki::GasBase
+{
+public:
+    TestGas(const std::string& name) : loki::GasBase(name)
+    {
+    }
+};
 
 unsigned ntests=0;
 unsigned nerrors=0;
