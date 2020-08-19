@@ -19,7 +19,7 @@ namespace loki
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
     : workingConditions(workingConditions),
       grid(setup.numerics.energyGrid),
-      mixture(&grid),
+      mixture(&grid, setup, workingConditions),
       attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
       boltzmannMatrix(grid.cellNumber, grid.cellNumber),
       elasticMatrix(grid.cellNumber, grid.cellNumber),
@@ -33,9 +33,6 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       g_c(grid.cellNumber),
       eedf(grid.cellNumber)
 {
-
-    mixture.initialize(setup, workingConditions);
-
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
@@ -60,7 +57,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+    {
         ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    }
 
     A.setZero(grid.cellNumber);
     B.setZero(grid.cellNumber);
@@ -97,7 +96,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     }
 
     if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+    }
 
     if (growthModelType == GrowthModelType::spatial)
     {
@@ -117,7 +118,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
     : workingConditions(workingConditions),
       grid(cnf.at("numerics").at("energyGrid")),
-      mixture(&grid),
+      mixture(&grid, cnf, workingConditions),
       attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
       boltzmannMatrix(grid.cellNumber, grid.cellNumber),
       elasticMatrix(grid.cellNumber, grid.cellNumber),
@@ -131,9 +132,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
       g_c(grid.cellNumber),
       eedf(grid.cellNumber)
 {
-
-    mixture.initialize(cnf, workingConditions);
-
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
@@ -158,7 +156,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+    {
         ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    }
 
     A.setZero(grid.cellNumber);
     B.setZero(grid.cellNumber);
@@ -195,7 +195,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     }
 
     if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+    }
 
     if (growthModelType == GrowthModelType::spatial)
     {

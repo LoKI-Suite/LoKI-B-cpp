@@ -7,8 +7,13 @@
 #include "LoKI-B/EedfCollision.h"
 
 namespace loki {
-    EedfGas::EedfGas(const std::string &name) : GasBase(name), collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
-                                                collisionsExtra(static_cast<uint8_t>(Enumeration::CollisionType::size)) {}
+
+    EedfGas::EedfGas(const std::string &name)
+    : GasBase(name),
+    collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
+    collisionsExtra(static_cast<uint8_t>(Enumeration::CollisionType::size))
+    {
+    }
 
     void EedfGas::addCollision(EedfCollision *collision, bool isExtra)
     {
@@ -72,12 +77,14 @@ namespace loki {
         return new CrossSection(0., energyGrid, true, rawEnergies, rawEl);
     }
 
-    void EedfGas::setDefaultEffPop(EedfState *ground) {
+    void EedfGas::setDefaultEffPop(EedfState *ground)
+    {
         // ele ground to 1
         // vib children of ele ground to Boltzmann at 300K
         // rot children of vib ground to Boltzmann at 300K
 
-        if (!ground->children().empty()) {
+        if (!ground->children().empty())
+        {
             double norm = 0;
             EedfState *childGround = ground->children()[0];
 
@@ -94,7 +101,8 @@ namespace loki {
                 effectivePopulations.emplace(child, effPop);
                 norm += effPop;
             }
-            for (auto *child : ground->children()) {
+            for (auto *child : ground->children())
+            {
                 effectivePopulations[child] /= (norm / effectivePopulations[ground]);
             }
 
@@ -103,8 +111,10 @@ namespace loki {
     }
 
     void EedfGas::findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
-                                     std::vector<EedfState *> &statesToUpdate) {
-        for (auto *eleState : stateStructure) {
+                                     std::vector<EedfState *> &statesToUpdate)
+    {
+        for (auto *eleState : stateStructure)
+        {
             if (eleState->population > 0) {
                 auto& colls = m_state_collisions[eleState];
                 auto it = find_if(colls.begin(), colls.end(),
@@ -118,18 +128,21 @@ namespace loki {
         }
     }
 
-    void EedfGas::checkElasticCollisions(Grid *energyGrid) {
+    void EedfGas::checkElasticCollisions(Grid *energyGrid)
+    {
         if (isDummy()) return;
 
         std::vector<EedfState *> statesToUpdate;
 
         findStatesToUpdate(get_root().children(), statesToUpdate);
 
-        if (!statesToUpdate.empty()) {
+        if (!statesToUpdate.empty())
+        {
             CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);
             std::vector<uint16_t> stoiCoeff{1};
 
-            for (auto *state : statesToUpdate) {
+            for (auto *state : statesToUpdate)
+            {
                 std::vector stateVector{state};
                 auto* collision = new EedfCollision(CollisionType::elastic, stateVector, stateVector,
                                                     stoiCoeff, false);
@@ -141,7 +154,8 @@ namespace loki {
         }
     }
 
-    void EedfGas::checkCARConditions() {
+    void EedfGas::checkCARConditions()
+    {
         if (electricQuadrupoleMoment < 0)
             Log<NoElectricQuadMoment>::Error(name);
 
@@ -152,26 +166,32 @@ namespace loki {
             Log<RotCollisionInCARGas>::Error(name);
     }
 
-    bool EedfGas::isDummy() {
+    bool EedfGas::isDummy()
+    {
         for (const auto &vec : collisions)
+        {
             if (!vec.empty()) return false;
-
+        }
         return true;
     }
 
-    const GasPower &EedfGas::getPower() const {
+    const GasPower &EedfGas::getPower() const
+    {
         return power;
     }
 
-    void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const {
+    void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const
+    {
 
         CollPower collisionPower;
 
         auto *powerPtr = (double *) &power;
 
-        for (auto i = static_cast<uint8_t>(CollisionType::excitation); i <= static_cast<uint8_t>(CollisionType::attachment); ++i) {
+        for (auto i = static_cast<uint8_t>(CollisionType::excitation); i <= static_cast<uint8_t>(CollisionType::attachment); ++i)
+        {
 
-            if (i == static_cast<uint8_t>(CollisionType::ionization)) {
+            if (i == static_cast<uint8_t>(CollisionType::ionization))
+            {
                 if (ionType == IonizationOperatorType::conservative) {
                     collisionPower = evaluateConservativePower(collisions[i], eedf);
                 } else {
@@ -181,11 +201,15 @@ namespace loki {
                 uint8_t index = 9;
 
                 powerPtr[index] = collisionPower.ine;
-            } else if (i == static_cast<uint8_t>(CollisionType::attachment)) {
+            }
+            else if (i == static_cast<uint8_t>(CollisionType::attachment))
+            {
                 collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
 
                 powerPtr[10] = collisionPower.ine;
-            } else {
+            }
+            else
+            {
                 collisionPower = evaluateConservativePower(collisions[i], eedf);
 
                 uint8_t baseIndex = (i - static_cast<uint8_t>(CollisionType::excitation)) * 3;
@@ -197,10 +221,12 @@ namespace loki {
         }
     }
 
-    CollPower EedfGas::evaluateConservativePower(const CollisionVector& collisionVector, const Vector &eedf) const {
+    CollPower EedfGas::evaluateConservativePower(const CollisionVector& collisionVector, const Vector &eedf) const
+    {
         CollPower collPower;
 
-        for (auto& collision : collisionVector) {
+        for (auto& collision : collisionVector)
+        {
             const Grid *grid = collision->crossSection->getGrid();
 
             if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
@@ -208,15 +234,16 @@ namespace loki {
 
             collPower += collision->evaluateConservativePower(eedf);
         }
-
         return collPower;
     }
 
     CollPower EedfGas::evaluateNonConservativePower(const CollisionVector& collisionVector,
-                                                    const IonizationOperatorType ionType, const Vector &eedf) const {
+                                                    const IonizationOperatorType ionType, const Vector &eedf) const
+    {
         CollPower collPower;
 
-        for (auto& collision : collisionVector) {
+        for (auto& collision : collisionVector)
+        {
             const Grid *grid = collision->crossSection->getGrid();
 
             if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
@@ -224,8 +251,8 @@ namespace loki {
 
             collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);
         }
-
         return collPower;
     }
 
 }
+

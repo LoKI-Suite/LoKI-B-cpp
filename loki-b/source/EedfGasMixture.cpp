@@ -16,11 +16,8 @@ namespace loki {
 
     using namespace Enumeration;
 
-    EedfGasMixture::EedfGasMixture(Grid *grid)
+    EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
     : grid(grid)
-    {
-    }
-    void EedfGasMixture::initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
     {
 
         loadCollisions(setup.LXCatFiles, grid);
@@ -46,7 +43,8 @@ namespace loki {
 
 //        this->evaluateTotalAndElasticCS();
     }
-    void EedfGasMixture::initialize(const json_type &cnf, const WorkingConditions *workingConditions)
+    EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
+    : grid(grid)
     {
 
         loadCollisions(cnf.at("LXCatFiles"), grid);

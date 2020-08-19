@@ -21,14 +21,13 @@ namespace loki {
     public:
         using Collision = EedfCollision;
 
-        explicit EedfGasMixture(Grid *grid);
         /** Initializes the gas mixture by loading the desired collisions from LXCat files.
          *  These files are read from the electron kinetics setup structure. It also
          *  requires a pointer to the energy grid in order to properly initialize the
          *  cross sections of the collisions.
          */
-        void initialize(const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
-        void initialize(const json_type &cnf, const WorkingConditions *workingConditions);
+        EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+        EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
 
         Vector elasticCrossSection, totalCrossSection;
 
