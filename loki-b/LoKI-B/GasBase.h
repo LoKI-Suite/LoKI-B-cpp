@@ -3,10 +3,28 @@
 
 #include "LoKI-B/InputStructures.h"
 #include "LoKI-B/Enumeration.h"
+#include <vector>
 #include <memory>
 #include <iostream>
 
 namespace loki {
+
+/// obsolete
+void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry> &entries,
+                              std::vector<uint16_t> *stoiCoeff);
+/* Accepts a string containing the LHS or RHS of a collision equation. The states
+ * in this expression are then parsed into a vector of StateEntry objects, which
+ * is passed by reference. Furthermore, the user can supply a pointer to a vector
+ * in which the stoichiometric coefficients of the states in this collision are
+ * then stored. If a null pointer is passed, these coefficients are not stored.
+ */
+void entriesFromStringNew(const std::string stateString, std::vector<StateEntry> entries, std::vector<uint16_t>* stoiCoeff);
+
+/// \todo Make this a StateEntry constructor
+StateEntry entryFromJSON(const json_type& cnf);
+
+bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
+                              std::vector<uint16_t> *stoiCoeff = nullptr);
 
 class GasBase
 {
