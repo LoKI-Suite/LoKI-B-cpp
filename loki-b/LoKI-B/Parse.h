@@ -285,24 +285,42 @@ struct Parse
         }
         return true;
     }
-    static bool entriesFromString(const std::string &statesString, std::vector<StateEntry> &entries,
+    static void entriesFromString(const std::string &statesString, std::vector<StateEntry> &entries,
                                   std::vector<uint16_t> *stoiCoeff = nullptr)
     {
+        // format: side ('->' | '<->') side
+        // side:   ws? term ws? (+ ws? digit? term)* ws?
+        // gas: [A-z][A-z0-9]*) )
+        // state: charge [,e[, 'v=' v [,'J=' J]]]
+        // term:   'e' | gas '(' state ')'
+
+ //       static std::string re_gas(R"[A-Za-z][A-Za-z0-9]*");
+ //       static std::string re_state(R"([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
+
         static const std::regex reState(
-            R"((\d*)([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
+            R"((\d*)\s*([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
 
         std::regex_iterator<std::string::const_iterator> rit(statesString.begin(), statesString.end(), reState);
         std::regex_iterator<std::string::const_iterator> rend;
 
         if (rit == rend)
-            return false;
+        {
+            throw std::runtime_error("No entries found.");
+        }
 
         while (rit != rend)
         {
+        try {
             Enumeration::StateType stateType;
 
-            if (rit->str(2).empty() || rit->str(4).empty())
-                return false;
+            if (rit->str(2).empty())
+            {
+                throw std::runtime_error("Empry gas name.");
+            }
+            if (rit->str(4).empty())
+            {
+                throw std::runtime_error("Electron state not specified.");
+            }
 
             if (rit->str(5).empty())
             {
@@ -336,8 +354,11 @@ struct Parse
             entries.emplace_back(stateType, rit->str(2), rit->str(3), rit->str(4), rit->str(5), rit->str(6));
             ++rit;
         }
-
-        return true;
+        catch(std::exception& exc)
+        {
+            throw std::runtime_error("While parsing particle '" + rit->str(0) + "':\n" + std::string{exc.what()});
+        }
+        }
     }
 
     /* -- propertyStateFromString --
