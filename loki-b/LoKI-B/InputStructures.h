@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Enumeration.h"
+#include "LoKI-B/json.h"
 
 namespace loki {
     using namespace Enumeration;

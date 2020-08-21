@@ -228,8 +228,8 @@ namespace loki {
         std::vector <uint16_t> entry_stoiCoeff;
 
         /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
-        Parse::entriesFromString(lhs, entry_reactants);
-        Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff);
+        entriesFromStringOld(lhs, entry_reactants, nullptr);
+        entriesFromStringOld(rhs, entry_products, &entry_stoiCoeff);
         const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(type);
         const bool entry_isReverse = (sep[0] == '<');
 
@@ -246,9 +246,9 @@ namespace loki {
         std::vector <StateEntry> entry_reactants, entry_products;
         std::vector <uint16_t> entry_stoiCoeff;
 
-        if (!Parse::entriesFromJSON(rcnf.at("lhs"), entry_reactants))
+        if (!entriesFromJSON(rcnf.at("lhs"), entry_reactants))
             Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
-        if (!Parse::entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
+        if (!entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
             Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
         const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(rcnf.at("type"));
         const bool entry_isReverse = rcnf.at("superelastic");
