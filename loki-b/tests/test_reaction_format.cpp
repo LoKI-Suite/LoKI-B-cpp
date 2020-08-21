@@ -8,6 +8,9 @@ namespace {
  */
 void entriesFromStringNew(const std::string stateString, std::vector<loki::StateEntry> entries, std::vector<uint16_t>* stoiCoeff)
 {
+    /// \todo Remove when integrated:
+    using namespace loki;
+
     std::cout << " * Testing '" << stateString << "'." << std::endl; 
 
     const std::string plus_sign = "\\+";
@@ -100,6 +103,16 @@ void entriesFromStringNew(const std::string stateString, std::vector<loki::State
             {
                 throw std::runtime_error("Found trailing characters '" + stateRemainder + "'.");
             }
+            Enumeration::StateType stateType
+                = J.empty()==false ? rotational
+                : v.empty()==false ? vibrational
+                : e.empty()==false ? electronic
+                : charge;
+            entries.push_back(StateEntry(stateType,g,q,e,v,J));
+            if (stoiCoeff)
+            {
+                stoiCoeff->push_back(c.empty() ? 1 : std::stoi(c));
+            }
         }
         catch (std::exception& exc)
         {
@@ -110,6 +123,16 @@ void entriesFromStringNew(const std::string stateString, std::vector<loki::State
         {
             g = res[3];
             s = std::string{};
+            if (g!="e")
+            {
+                throw std::logic_error("Expected 'e', found '" + g + ".");
+            }
+            std::cout << "WARNING: ADDING AN ELECTRON TO THE STATE ENTRY LIST." << std::endl;
+            entries.push_back(StateEntry(charge,g,"-",std::string{},std::string{},std::string{}));
+            if (stoiCoeff)
+            {
+                stoiCoeff->push_back(c.empty() ? 1 : std::stoi(c));
+            }
         }
         std::cout << "stoich = '" << c
             << "', particle = '" << g << "'."
