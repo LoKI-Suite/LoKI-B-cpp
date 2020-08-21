@@ -19,7 +19,7 @@ bool test_parser(const std::string stateString, bool new_parser)
         assert(entries.size()==stoiCoeff.size());
         for (std::size_t ndx=0; ndx!=entries.size(); ++ndx)
         {
-            std::cout << stoiCoeff[ndx] << '\t' << entries[ndx] << ", type = " << entries[ndx].level << std::endl;
+            std::cout << " - " << stoiCoeff[ndx] << '\t' << entries[ndx] << ", type = " << entries[ndx].level << std::endl;
         }
         return true;
     }
@@ -37,7 +37,8 @@ void test(const std::string& stateString, bool expected=true)
 {
     if (test_parser(stateString,false)!=expected)
     {
-        std::cout << "ERROR (OLD PARSER): Unexpected result " << !expected << " for input " << stateString << std::endl;
+        std::cout << "ERROR (OLD PARSER): Unexpected " << (expected ? "failure" : "pass")
+            << " for input " << stateString << std::endl;
         ++nerrors_old;
     }
     if (test_parser(stateString,true)!=expected)
