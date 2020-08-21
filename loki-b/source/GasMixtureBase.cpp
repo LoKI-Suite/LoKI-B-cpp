@@ -64,7 +64,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
         StatePropertyDataType dataType = Parse::statePropertyDataType(line, valueString);
 
         if (dataType != StatePropertyDataType::file) {
-            StateEntry entry = Parse::propertyStateFromString(line);
+            StateEntry entry = propertyStateFromString(line);
 
             if (entry.level != none) {
                 GasBase::StateBase* state = findState(entry);
@@ -110,7 +110,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
         } else {
             std::vector<std::pair<StateEntry, double>> entries;
 
-            if (!Parse::statePropertyFile(valueString, entries))
+            if (!statePropertyFile(valueString, entries))
                 Log<FileError>::Error(valueString);
 
             for (auto &entry : entries) {

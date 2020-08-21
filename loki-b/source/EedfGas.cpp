@@ -10,8 +10,8 @@ namespace loki {
 
     EedfGas::EedfGas(const std::string &name)
     : GasBase(name),
-    collisions(static_cast<uint8_t>(Enumeration::CollisionType::size)),
-    collisionsExtra(static_cast<uint8_t>(Enumeration::CollisionType::size))
+    collisions(static_cast<uint8_t>(CollisionType::size)),
+    collisionsExtra(static_cast<uint8_t>(CollisionType::size))
     {
     }
 

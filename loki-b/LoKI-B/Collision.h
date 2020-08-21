@@ -27,7 +27,7 @@ namespace loki {
 
         virtual ~Collision() {}
 
-        const Enumeration::CollisionType type;
+        const CollisionType type;
         const bool isReverse;
 
         using StateVector = std::vector<State*>;
@@ -46,7 +46,7 @@ public:
         /** Initializes the members of the Collision class, the vectors are initialized
          *  using move semantics.
          */
-        Collision(Enumeration::CollisionType type,
+        Collision(CollisionType type,
                 StateVector reactants,
                 StateVector products,
                 std::vector<uint16_t> &stoiCoeff, bool isReverse)

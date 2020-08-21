@@ -40,7 +40,7 @@ namespace loki {
             : workingConditions( cnf.at("workingConditions")),
               jobManager()
     {
-        if (Enumeration::getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
+        if (getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
         {
             throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
         }

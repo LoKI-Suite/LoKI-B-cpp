@@ -1,7 +1,7 @@
 #ifndef LOKI_CPP_GASBASE_H
 #define LOKI_CPP_GASBASE_H
 
-#include "LoKI-B/InputStructures.h"
+#include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Enumeration.h"
 #include <vector>
 #include <memory>
@@ -9,30 +9,12 @@
 
 namespace loki {
 
-/// obsolete
-void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry> &entries,
-                              std::vector<uint16_t> *stoiCoeff);
-/* Accepts a string containing the LHS or RHS of a collision equation. The states
- * in this expression are then parsed into a vector of StateEntry objects, which
- * is passed by reference. Furthermore, the user can supply a pointer to a vector
- * in which the stoichiometric coefficients of the states in this collision are
- * then stored. If a null pointer is passed, these coefficients are not stored.
- */
-void entriesFromStringNew(const std::string stateString, std::vector<StateEntry> entries, std::vector<uint16_t>* stoiCoeff);
-
-/// \todo Make this a StateEntry constructor
-StateEntry entryFromJSON(const json_type& cnf);
-
-bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
-                              std::vector<uint16_t> *stoiCoeff = nullptr);
-
 class GasBase
 {
 public:
     class StateBase
     {
     public:
-        using StateType = Enumeration::StateType;
         using ChildContainer = std::vector<StateBase*>;
         StateBase(const StateEntry &entry, GasBase* gas, StateBase& parent);
         StateBase(GasBase* gas);
@@ -139,7 +121,7 @@ public:
     {
         auto *state = get_root().ensure_state(entry);
         // state is now a 'charge state' (container)
-        for (uint8_t lvl = charge; lvl < entry.level; ++lvl) {
+        for (uint8_t lvl = StateType::charge; lvl < entry.level; ++lvl) {
             state = state->ensure_state(entry);
         }
         return state;

@@ -9,7 +9,6 @@
 #include <limits>
 
 namespace loki {
-    using namespace Enumeration;
 
     // TODO: Comment on WorkingConditions().
 

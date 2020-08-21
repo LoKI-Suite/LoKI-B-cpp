@@ -8,7 +8,7 @@
 
 namespace loki {
 
-    EedfCollision::EedfCollision(Enumeration::CollisionType type, std::vector<EedfState *> &reactants,
+    EedfCollision::EedfCollision(CollisionType type, std::vector<EedfState *> &reactants,
                                  std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse)
     : Collision(type, reactants, products, stoiCoeff, isReverse)
     {

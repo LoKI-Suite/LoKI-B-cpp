@@ -136,12 +136,12 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
-    this->eedfType = Enumeration::getEedfType(cnf.at("eedfType"));
+    this->eedfType = getEedfType(cnf.at("eedfType"));
     this->shapeParameter = cnf.contains("shapeParameter") ? cnf.at("shapeParameter").get<unsigned>() : 0;
     this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
-    this->ionizationOperatorType = Enumeration::getIonizationOperatorType(cnf.at("ionizationOperatorType"));
-    this->growthModelType = Enumeration::getGrowthModelType(cnf.at("growthModelType"));
+    this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
+    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     this->includeEECollisions = cnf.at("includeEECollisions");
     this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
 

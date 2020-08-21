@@ -32,7 +32,7 @@ namespace loki {
 
         // TODO: Find out the most effective way to pass vectors to this constructor and then to the base class.
         //  Should we use r-value references and move semantics?
-        EedfCollision(Enumeration::CollisionType type, std::vector<EedfState *> &reactants,
+        EedfCollision(CollisionType type, std::vector<EedfState *> &reactants,
                       std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse);
 
         ~EedfCollision();
