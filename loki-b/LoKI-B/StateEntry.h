@@ -32,15 +32,15 @@ public:
 std::ostream &operator<<(std::ostream &os, const StateEntry &entry);
 
 /// obsolete
-void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry> &entries,
-                              std::vector<uint16_t> *stoiCoeff);
+void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry>& entries,
+                              std::vector<uint16_t>* stoiCoeff);
 /* Accepts a string containing the LHS or RHS of a collision equation. The states
  * in this expression are then parsed into a vector of StateEntry objects, which
  * is passed by reference. Furthermore, the user can supply a pointer to a vector
  * in which the stoichiometric coefficients of the states in this collision are
  * then stored. If a null pointer is passed, these coefficients are not stored.
  */
-void entriesFromStringNew(const std::string stateString, std::vector<StateEntry> entries, std::vector<uint16_t>* stoiCoeff);
+void entriesFromStringNew(const std::string stateString, std::vector<StateEntry>& entries, std::vector<uint16_t>* stoiCoeff);
 
 /// \todo Make this a StateEntry constructor
 StateEntry entryFromJSON(const json_type& cnf);
