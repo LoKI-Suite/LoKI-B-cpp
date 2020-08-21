@@ -50,8 +50,8 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
     return os;
 }
 
-void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry> &entries,
-                              std::vector<uint16_t> *stoiCoeff = nullptr)
+void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry>& entries,
+                              std::vector<uint16_t>* stoiCoeff = nullptr)
 {
     static const std::regex reState(
         R"((\d*)\s*([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
@@ -125,10 +125,8 @@ namespace {
 
 }
 
-void entriesFromStringNew(const std::string stateString, std::vector<StateEntry> entries, std::vector<uint16_t>* stoiCoeff)
+void entriesFromStringNew(const std::string stateString, std::vector<StateEntry>& entries, std::vector<uint16_t>* stoiCoeff)
 {
-    std::cout << " * Testing '" << stateString << "'." << std::endl;
-
     const std::string plus_sign = "\\+";
     const std::string ws = "\\s*";
     const std::string coef = group("\\d*");
@@ -243,13 +241,13 @@ void entriesFromStringNew(const std::string stateString, std::vector<StateEntry>
             {
                 throw std::logic_error("Expected 'e', found '" + g + ".");
             }
-            std::cout << "WARNING: ADDING AN ELECTRON TO THE STATE ENTRY LIST." << std::endl;
             entries.push_back(StateEntry(charge,g,"-",std::string{},std::string{},std::string{}));
             if (stoiCoeff)
             {
                 stoiCoeff->push_back(c.empty() ? 1 : std::stoi(c));
             }
         }
+#if 0
         std::cout << "stoich = '" << c
             << "', particle = '" << g << "'."
             << "', state id = '" << s
@@ -258,6 +256,7 @@ void entriesFromStringNew(const std::string stateString, std::vector<StateEntry>
                 << "', v = '" << v
                 << "', J = '" << J
                 << "'" << std::endl;
+#endif
         remainder = res.suffix().str();
     }
     catch(std::exception& exc)
