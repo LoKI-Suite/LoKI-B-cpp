@@ -25,12 +25,8 @@ namespace loki {
         if (!setup.LXCatFilesExtra.empty())
             loadCollisions(setup.LXCatFilesExtra, grid, true);
 
-        // DONE: Load Gas properties
         this->loadGasProperties(setup.gasProperties);
-
-        // DONE: Load State properties
         this->loadStateProperties(setup.stateProperties, workingConditions);
-
         this->evaluateStateDensities();
 
         for (auto& gas : gases())
@@ -43,6 +39,7 @@ namespace loki {
 
 //        this->evaluateTotalAndElasticCS();
     }
+
     EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
     : grid(grid)
     {
@@ -52,12 +49,8 @@ namespace loki {
         if (cnf.contains("LXCatFilesExtra"))
             loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
 
-        // DONE: Load Gas properties
         this->loadGasProperties(cnf.at("gasProperties"));
-
-        // DONE: Load State properties
         this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
-
         this->evaluateStateDensities();
 
         for (auto& gas : gases())
@@ -118,6 +111,7 @@ namespace loki {
          */
         while (std::getline(in, line))
         {
+        try {
             if (!std::regex_search(line, reParam))
                 continue;
             // todo: warn if a threshold is specified, but isExtra==false? Then it will not be used, it seems.
@@ -145,6 +139,11 @@ namespace loki {
                                                            isElasticOrEffective, in));
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
             }
+        }
+        catch(std::exception& exc)
+        {
+            throw std::runtime_error("While creating collision '" + line + "':\n" + std::string(exc.what()));
+        }
         }
     }
     void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
@@ -179,7 +178,8 @@ namespace loki {
         std::vector<State*> products;
         std::set<GasBase*> targetGases;
 
-        for (auto &stateEntry : entry_reactants) {
+        for (auto &stateEntry : entry_reactants)
+        {
             auto *state = reactants.emplace_back(ensureState(stateEntry));
             targetGases.insert(&state->gas());
         }
@@ -187,7 +187,8 @@ namespace loki {
         if (targetGases.size() != 1)
             Log<Message>::Error("Multiple target gases in a single collision.");
 
-        for (auto &stateEntry : entry_products) {
+        for (auto &stateEntry : entry_products)
+        {
             products.emplace_back(ensureState(stateEntry));
         }
         /// \todo Eliminate this cast at some moment
@@ -223,14 +224,12 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)
     {
-
         std::vector <StateEntry> entry_reactants, entry_products;
         std::vector <uint16_t> entry_stoiCoeff;
 
-        if (!Parse::entriesFromString(lhs, entry_reactants))
-            Log<LXCatError>::Error(lhs);
-        if (!Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff))
-            Log<LXCatError>::Error(rhs);
+        /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
+        Parse::entriesFromString(lhs, entry_reactants);
+        Parse::entriesFromString(rhs, entry_products, &entry_stoiCoeff);
         const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(type);
         const bool entry_isReverse = (sep[0] == '<');
 
