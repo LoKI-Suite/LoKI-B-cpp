@@ -62,7 +62,7 @@ namespace loki {
                 CollisionType entry_type,
                 std::vector<StateEntry> entry_reactants,
                 std::vector<StateEntry> entry_products,
-                std::vector <uint16_t> entry_stoiCoeff,
+                std::vector <uint16_t> entry_products_stoiCoeff,
                 bool reverse_also,
                 bool isExtra);
         /* -- loadCollisions --
