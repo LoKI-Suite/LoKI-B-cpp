@@ -11,7 +11,7 @@
 #include <utility>
 #include <stdexcept>
 
-namespace loki::Enumeration {
+namespace loki {
 
 namespace {
 
@@ -73,4 +73,4 @@ namespace {
                 });
     }
 
-} // namespace loki::Enumeration
+} // namespace loki

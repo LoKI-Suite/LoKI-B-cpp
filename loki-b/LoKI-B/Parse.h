@@ -5,19 +5,15 @@
 #ifndef LOKI_CPP_PARSE_H
 #define LOKI_CPP_PARSE_H
 
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <regex>
 #include <string>
-#include <set>
 
-#include "Enumeration.h"
-#include "InputStructures.h"
-#include "JobSystem.h"
-#include "StandardPaths.h"
-#include "json.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/StandardPaths.h"
+#include "LoKI-B/json.h"
 
 namespace loki
 {
@@ -160,41 +156,6 @@ struct Parse
         return std::regex_replace(content_clean, reClean, "\n");
     }
 
-    /* -- propertyStateFromString --
-     * Extracts a StateEntry object from a given string and returns it. Note that this function
-     * is specifically used when loading state properties, since then the states can contain
-     * wild card characters.
-     */
-
-    static StateEntry propertyStateFromString(const std::string &propertyString)
-    {
-        static const std::regex reState(
-            R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
-        std::smatch m;
-
-        if (!std::regex_search(propertyString, m, reState))
-            return {};
-
-        if (m.str(1).empty() || m.str(3).empty())
-            return {};
-
-        Enumeration::StateType stateType;
-
-        if (m.str(4).empty())
-        {
-            stateType = electronic;
-        }
-        else if (m.str(5).empty())
-        {
-            stateType = vibrational;
-        }
-        else
-        {
-            stateType = rotational;
-        }
-        return {stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
-    }
-
     /* -- statePropertyDataType --
      * Deduces whether an entry in the stateProperties section describes loading
      * of state properties by direct value, file or function. The result is
@@ -300,45 +261,6 @@ struct Parse
 
         stateString = m.str(1);
         valueString = m.str(2);
-
-        return true;
-    }
-
-    /* -- statePropertyFile --
-     * Parses a state property file into a vector of StateEntry, double pairs. This vector
-     * is passed by reference.
-     */
-
-    static bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)
-    {
-        const std::string inputPath = INPUT "/";
-
-        std::ifstream in(inputPath + fileName);
-
-        if (!in.is_open())
-            return false;
-
-        std::string line;
-
-        while (std::getline(in, line))
-        {
-            line = removeComments(line);
-
-            if (line.size() < 3)
-                continue;
-
-            std::string stateString, valueString;
-
-            if (!Parse::stateAndValue(line, stateString, valueString))
-                return false;
-
-            double value;
-
-            if (!Parse::getValue(valueString, value))
-                return false;
-
-            entries.emplace_back(Parse::propertyStateFromString(stateString), value);
-        }
 
         return true;
     }
@@ -485,43 +407,43 @@ inline bool Parse::setField<bool>(const std::string &sectionContent, const std::
 }
 
 template <>
-inline bool Parse::setField<Enumeration::EedfType>(const std::string &sectionContent, const std::string &fieldName,
-                                                   Enumeration::EedfType &value)
+inline bool Parse::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName,
+                                                   EedfType &value)
 {
 
     std::string valueBuffer;
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-    value = Enumeration::getEedfType(valueBuffer);
+    value = getEedfType(valueBuffer);
     return true;
 }
 
 template <>
-inline bool Parse::setField<Enumeration::IonizationOperatorType>(const std::string &sectionContent,
+inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionContent,
                                                                  const std::string &fieldName,
-                                                                 Enumeration::IonizationOperatorType &value)
+                                                                 IonizationOperatorType &value)
 {
 
     std::string valueBuffer;
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-    value = Enumeration::getIonizationOperatorType(valueBuffer);
+    value = getIonizationOperatorType(valueBuffer);
     return true;
 }
 
 template <>
-inline bool Parse::setField<Enumeration::GrowthModelType>(const std::string &sectionContent,
+inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent,
                                                           const std::string &fieldName,
-                                                          Enumeration::GrowthModelType &value)
+                                                          GrowthModelType &value)
 {
 
     std::string valueBuffer;
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
         return false;
-    value = Enumeration::getGrowthModelType(valueBuffer);
+    value = getGrowthModelType(valueBuffer);
     return true;
 }
 

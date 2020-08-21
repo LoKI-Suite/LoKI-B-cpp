@@ -29,7 +29,7 @@ void test_state_string(const std::string str, bool should_pass)
         using namespace loki;
 
 //        std::cout << "State string: '" << str << "'." << std::endl;
-        const StateEntry e = Parse::propertyStateFromString(str);
+        const StateEntry e = propertyStateFromString(str);
 //        std::cout << "Entry: '" << e << "." << std::endl;
         TestGas gas(e.gasName);
   //      std::cout << "Gas name: '" << gas.name << "'." << std::endl;

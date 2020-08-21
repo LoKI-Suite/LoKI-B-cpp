@@ -9,7 +9,7 @@
 #include <string>
 #include <iostream>
 
-namespace loki::Enumeration {
+namespace loki {
 
     enum class EedfType : uint8_t {
         boltzmann,
@@ -78,6 +78,6 @@ namespace loki::Enumeration {
     };
     CollisionType getCollisionType(const std::string &str);
 
-}
+} // namespace loki
 
 #endif //LOKI_CPP_ENUMERATION_H

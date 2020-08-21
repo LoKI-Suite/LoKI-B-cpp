@@ -14,8 +14,6 @@
 
 namespace loki {
 
-    using namespace Enumeration;
-
     EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
     : grid(grid)
     {
@@ -166,7 +164,7 @@ namespace loki {
     }
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(
-                Enumeration::CollisionType entry_type,
+                CollisionType entry_type,
                 std::vector<StateEntry> entry_reactants,
                 std::vector<StateEntry> entry_products,
                 std::vector <uint16_t> entry_stoiCoeff,
@@ -230,7 +228,7 @@ namespace loki {
         /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
         entriesFromStringOld(lhs, entry_reactants, nullptr);
         entriesFromStringOld(rhs, entry_products, &entry_stoiCoeff);
-        const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(type);
+        const CollisionType entry_type = getCollisionType(type);
         const bool entry_isReverse = (sep[0] == '<');
 
         /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
@@ -250,7 +248,7 @@ namespace loki {
             Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
         if (!entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_stoiCoeff))
             Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
-        const Enumeration::CollisionType entry_type = Enumeration::getCollisionType(rcnf.at("type"));
+        const CollisionType entry_type = getCollisionType(rcnf.at("type"));
         const bool entry_isReverse = rcnf.at("superelastic");
 
         /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
@@ -353,4 +351,5 @@ namespace loki {
             }
         }
     }
-}
+
+} // namespace loki
