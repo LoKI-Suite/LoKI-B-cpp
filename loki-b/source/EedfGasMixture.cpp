@@ -68,12 +68,15 @@ namespace loki {
             const json_type& rcnf = it->at("reaction");
             try {
                 auto *collision = createCollision(rcnf,isExtra);
-                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                               collision->type == CollisionType::elastic);
-                const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
-                collision->crossSection.reset(new CrossSection(threshold, energyGrid,
-                                                           isElasticOrEffective, *it));
-                hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+                if (collision)
+                {
+                    const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                                   collision->type == CollisionType::elastic);
+                    const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
+                    collision->crossSection.reset(new CrossSection(threshold, energyGrid,
+                                                               isElasticOrEffective, *it));
+                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+                }
             }
             catch (std::exception &exc)
             {
@@ -129,12 +132,14 @@ namespace loki {
             {
                 // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
                 auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4],isExtra);
-
-                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                               collision->type == CollisionType::elastic);
-                collision->crossSection.reset(new CrossSection(threshold, energyGrid,
-                                                           isElasticOrEffective, in));
-                hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+                if (collision)
+                {
+                    const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                                   collision->type == CollisionType::elastic);
+                    collision->crossSection.reset(new CrossSection(threshold, energyGrid,
+                                                               isElasticOrEffective, in));
+                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+                }
             }
             catch (std::exception &exc)
             {
