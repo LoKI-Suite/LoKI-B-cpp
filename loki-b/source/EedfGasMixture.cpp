@@ -8,10 +8,6 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/json.h"
 
-// DONE: productStoiCoeff is only for the products
-// DONE: when parsing an LXCat Section first look for the PARAM keyword (since elastic collisions will not have
-//  a threshold).
-
 namespace loki {
 
     EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions)
@@ -165,29 +161,30 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(
                 CollisionType entry_type,
-                std::vector<StateEntry> entry_reactants,
-                std::vector<StateEntry> entry_products,
-                std::vector <uint16_t> entry_products_stoiCoeff,
+                const std::vector<StateEntry>& entry_lhsStates,
+                const std::vector <uint16_t>& entry_lhsCoeffs,
+                const std::vector<StateEntry>& entry_rhsStates,
+                const std::vector <uint16_t>& entry_rhsCoeffs,
                 bool reverse_also,
                 bool isExtra)
     {
 
-        std::vector<State*> reactants;
-        std::vector<State*> products;
+        std::vector<State*> lhsStates;
+        std::vector<State*> rhsStates;
         std::set<GasBase*> targetGases;
 
-        for (auto &stateEntry : entry_reactants)
+        for (auto &stateEntry : entry_lhsStates)
         {
-            auto *state = reactants.emplace_back(ensureState(stateEntry));
+            auto *state = lhsStates.emplace_back(ensureState(stateEntry));
             targetGases.insert(&state->gas());
         }
 
         if (targetGases.size() != 1)
             Log<Message>::Error("Multiple target gases in a single collision.");
 
-        for (auto &stateEntry : entry_products)
+        for (auto &stateEntry : entry_rhsStates)
         {
-            products.emplace_back(ensureState(stateEntry));
+            rhsStates.emplace_back(ensureState(stateEntry));
         }
         /// \todo Eliminate this cast at some moment
         // reference to the one-and-only target gas for this collision
@@ -200,20 +197,22 @@ namespace loki {
 
         // Linking the newly created collision to the relevant states and gases
 
-        auto *target = reactants.front();
+        auto *target = lhsStates.front();
 
         // small change: before there were separate lists (extra / non-extra). Duplication
         // was not detected if the same collision would be added to both lists.
         for (const auto& c : m_collisions)
         {
-            if (c->is_same_as(entry_type, target, products))
+            if (c->is_same_as(entry_type, target, rhsStates))
             {
                 Log<DoubleCollision>::Warning(*c);
                 return nullptr;
             }
         }
-        std::unique_ptr<Collision> collision{new Collision(entry_type, reactants, products,
-                    entry_products_stoiCoeff, reverse_also)};
+        std::unique_ptr<Collision> collision{new Collision(entry_type,
+                    lhsStates, entry_lhsCoeffs,
+                    rhsStates, entry_rhsCoeffs,
+                    reverse_also)};
         Log<Message>::Notify(*collision);
         eedfGas.addCollision(collision.get(), isExtra);
         m_collisions.push_back(collision.get());
@@ -222,46 +221,72 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)
     {
-        std::vector <StateEntry> entry_reactants, entry_products;
-        std::vector <uint16_t> entry_reactants_stoiCoeff,entry_products_stoiCoeff;
+//#define LOKIB_USE_OLD_STATEENTRY_PARSER
+#ifdef LOKIB_USE_OLD_STATEENTRY_PARSER
+        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
+        std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
 
         const CollisionType entry_type = getCollisionType(type);
         const bool entry_isReverse = (sep[0] == '<');
-//#define LOKIB_USE_OLD_STATEENTRY_PARSER
-#ifdef LOKIB_USE_OLD_STATEENTRY_PARSER
-        /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
-        entriesFromStringOld(lhs, entry_reactants, &entry_reactants_stoiCoeff);
-        entriesFromStringOld(rhs, entry_products, &entry_products_stoiCoeff);
-#else
-        entriesFromStringNew(lhs, entry_reactants, &entry_reactants_stoiCoeff);
-        entriesFromStringNew(rhs, entry_products, &entry_products_stoiCoeff);
 
-        /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
+        /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
+        entriesFromStringOld(lhs, entry_lhsStates, &entry_lhsCoeffs);
+        entriesFromStringOld(rhs, entry_rhsStates, &entry_rhsCoeffs);
+        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
+        if (entry_lhsStates.size() != 1 || entry_lhsCoeffs[0] != 1)
+        {
+            Log<Message>::Error("Expected one target in collision's left-hand side '" + lhs + "'.");
+        }
+#else
+        // if we use the new parser, also electron states that participate in
+        // reactions are recognized and created. Since, at present, the
+        // EedfCollision class expects to receive only the heavies on both
+        // sides of the reaction, we remove the electrons from the state
+        // and coefficient arrays. For the left-hand side this is done in
+        // a special way, since we also need to check that the reaction is
+        // of the form 'e + X -> ...': it must be a binary encounter of an
+        // electron ans a heavy particle.
+
+        /** \todo It seems to make sense to do this stripping in the EedfCollision
+         *        constructor, since that class really decide that it only wants
+         *        to see the heavies. The Collision base class could then have
+         *        the full species/coefficient lists.
+         */
+
+        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
+        std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
+
+        const CollisionType entry_type = getCollisionType(type);
+        const bool entry_isReverse = (sep[0] == '<');
+
+        entriesFromStringNew(lhs, entry_lhsStates, &entry_lhsCoeffs);
+        entriesFromStringNew(rhs, entry_rhsStates, &entry_rhsCoeffs);
+
         // for the left hand side we expect 'e + X' or 'X + e'.
-        assert(entry_reactants.size()==entry_reactants_stoiCoeff.size());
-        if (entry_reactants.size() != 2
-            || entry_reactants_stoiCoeff[0]!=1
-            || entry_reactants_stoiCoeff[1]!=1
-            || (entry_reactants[0].gasName=="e" && entry_reactants[1].gasName=="e")
-            || (entry_reactants[0].gasName!="e" && entry_reactants[1].gasName!="e")
+        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
+        if (entry_lhsStates.size() != 2
+            || entry_lhsCoeffs[0]!=1
+            || entry_lhsCoeffs[1]!=1
+            || (entry_lhsStates[0].gasName=="e" && entry_lhsStates[1].gasName=="e")
+            || (entry_lhsStates[0].gasName!="e" && entry_lhsStates[1].gasName!="e")
         )
         {
             Log<Message>::Error("Expected an electron-heavy process on left-hand side '" + lhs + "'.");
         }
-        unsigned electron_ndx = entry_reactants[0].gasName=="e" ? 0 : 1;
+        unsigned electron_ndx = entry_lhsStates[0].gasName=="e" ? 0 : 1;
         // remove the electron entry, the present Eedf collision code only wants to see the target
-        entry_reactants.erase(entry_reactants.begin()+electron_ndx);
-        entry_reactants_stoiCoeff.erase(entry_reactants_stoiCoeff.begin()+electron_ndx);
-        assert(entry_reactants.size()==1);
-        assert(entry_reactants_stoiCoeff.size()==1);
+        entry_lhsStates.erase(entry_lhsStates.begin()+electron_ndx);
+        entry_lhsCoeffs.erase(entry_lhsCoeffs.begin()+electron_ndx);
+        assert(entry_lhsStates.size()==1);
+        assert(entry_lhsCoeffs.size()==1);
         // now remove all electrons from the right-hand side (since EedfCollision wants that).
         // beware of iterator invalidation
-        for (unsigned i=0; i!= entry_products.size(); /**/)
+        for (unsigned i=0; i!= entry_rhsStates.size(); /**/)
         {
-            if (entry_products[i].gasName=="e")
+            if (entry_rhsStates[i].gasName=="e")
             {
-                entry_products.erase(entry_products.begin()+i);
-                entry_products_stoiCoeff.erase(entry_products_stoiCoeff.begin()+i);
+                entry_rhsStates.erase(entry_rhsStates.begin()+i);
+                entry_rhsCoeffs.erase(entry_rhsCoeffs.begin()+i);
             }
             else
             {
@@ -269,31 +294,22 @@ namespace loki {
             }
         }
 #endif // LOKIB_USE_OLD_STATEENTRY_PARSER
-        /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
-        if (entry_reactants.size() != 1)
-        {
-            Log<Message>::Error("Expected one target in collision's left-hand side '" + lhs + "'.");
-        }
-        return createCollision(entry_type,entry_reactants,entry_products,entry_products_stoiCoeff,entry_isReverse,isExtra);
+        return createCollision(entry_type,entry_lhsStates,entry_lhsCoeffs,entry_rhsStates,entry_rhsCoeffs,entry_isReverse,isExtra);
     }
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(const json_type& rcnf,bool isExtra)
     {
-        std::vector <StateEntry> entry_reactants, entry_products;
-        std::vector <uint16_t> entry_products_stoiCoeff;
+        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
+        std::vector <uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
 
-        if (!entriesFromJSON(rcnf.at("lhs"), entry_reactants))
+        if (!entriesFromJSON(rcnf.at("lhs"), entry_lhsStates, &entry_lhsCoeffs))
             Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
-        if (!entriesFromJSON(rcnf.at("rhs"), entry_products, &entry_products_stoiCoeff))
+        if (!entriesFromJSON(rcnf.at("rhs"), entry_rhsStates, &entry_rhsCoeffs))
             Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
         const CollisionType entry_type = getCollisionType(rcnf.at("type"));
         const bool entry_isReverse = rcnf.at("superelastic");
 
-        /// \todo Should we not test this, instead of the number of target gases (which is teted later)?
-        if (entry_reactants.size() != 1)
-            Log<Message>::Error("Expected one target in collision:\n" + rcnf.dump(2));
-
-        return createCollision(entry_type,entry_reactants,entry_products,entry_products_stoiCoeff,entry_isReverse,isExtra);
+        return createCollision(entry_type,entry_lhsStates,entry_lhsCoeffs,entry_rhsStates,entry_rhsCoeffs,entry_isReverse,isExtra);
     }
 
     void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)
@@ -339,7 +355,7 @@ namespace loki {
                         Vector superElastic;
                         collision->superElastic(grid->getNodes(), superElastic);
 
-                        totalCrossSection += superElastic * collision->products[0]->density;
+                        totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->density;
                     }
                 }
             }

@@ -15,14 +15,18 @@
 
 namespace loki {
 
-    //class EedfCollision : public Collision<State<EedfGas>>
-    class EedfCollision : public Collision<GasBase::State>
+    class EedfCollision : public Collision
     {
 
         // The raw cross section data and threshold is stored in
         // the CrossSection object
 
+        StateVector m_lhsHeavyStates;
     public:
+        CoeffVector m_lhsHeavyCoeffs;
+        StateVector m_rhsHeavyStates;
+        CoeffVector m_rhsHeavyCoeffs;
+
         using EedfState = GasBase::State;
 
         // DONE: Inelastic and superelastic rate coefficient variables should be here
@@ -30,10 +34,12 @@ namespace loki {
         double supRateCoeff{0.};
         std::unique_ptr<CrossSection> crossSection;
 
-        // TODO: Find out the most effective way to pass vectors to this constructor and then to the base class.
-        //  Should we use r-value references and move semantics?
-        EedfCollision(CollisionType type, std::vector<EedfState *> &reactants,
-                      std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse);
+        EedfCollision(CollisionType type,
+                      const StateVector& lhsStates,
+                      const CoeffVector& lhsCoeffs,
+                      const StateVector& rhsStates,
+                      const CoeffVector& rhsCoeffs,
+                      bool isReverse);
 
         ~EedfCollision();
 
