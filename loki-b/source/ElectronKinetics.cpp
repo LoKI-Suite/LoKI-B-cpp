@@ -508,8 +508,8 @@ void ElectronKinetics::evaluateInelasticOperators()
                     if (collision->isReverse)
                     {
                         const double swRatio = collision->getTarget()->statisticalWeight /
-                                               collision->products[0]->statisticalWeight;
-                        const double productDensity = collision->products[0]->density;
+                                               collision->m_rhsHeavyStates[0]->statisticalWeight;
+                        const double productDensity = collision->m_rhsHeavyStates[0]->density;
 
                         if (productDensity == 0)
                             continue;

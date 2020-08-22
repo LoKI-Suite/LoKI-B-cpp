@@ -6,24 +6,18 @@
 #define LOKI_CPP_COLLISION_H
 
 #include "Enumeration.h"
+#include "GasBase.h"
 
 #include <vector>
 
 namespace loki {
 
     /** This class is a base class to the EedfCollision and future ChemCollision (Reaction) classes.
-     *  It is templated to allow the use of trait classes (classes that define types).
-     *
-     *  Collision<Boltzmann> stores a pointer to a single EedfState target and a vector of pointers
-     *  to EedfState products.
-     *  Collision<Chemistry> stores one vector of pointers to EedfStates for the LHS and one for the
-     *  RHS.
      */
-    template<typename StateT>
     class Collision
     {
     public:
-        using State = StateT;
+        using State = GasBase::State;
 
         virtual ~Collision() {}
 
@@ -31,15 +25,7 @@ namespace loki {
         const bool isReverse;
 
         using StateVector = std::vector<State*>;
-protected:
-        const StateVector target;
-public:
-
-        // Vector of pointers to the product states.
-        const StateVector products;
-
-        // Vector of stoichiometric coefficents belonging to the products of the collsion.
-        const std::vector<uint16_t> productStoiCoeff;
+        using CoeffVector = std::vector<uint16_t>;
 
     protected:
 
@@ -47,16 +33,34 @@ public:
          *  using move semantics.
          */
         Collision(CollisionType type,
-                StateVector reactants,
-                StateVector products,
-                std::vector<uint16_t> &stoiCoeff, bool isReverse)
+                const StateVector& lhsStates,
+                const CoeffVector& lhsCoeffs,
+                const StateVector& rhsStates,
+                const CoeffVector& rhsCoeffs,
+                bool isReverse)
         : type(type),
-        isReverse(isReverse),
-        target(std::move(reactants)),
-        products(std::move(products)),
-        productStoiCoeff(std::move(stoiCoeff))
+        isReverse(isReverse)
+#if 0
+,
+        m_lhsStates(lhsStates),
+        m_lhsCoeffs(lhsCoeffs),
+        m_rhsStates(rhsStates),
+        m_rhsCoeffs(rhsCoeffs)
+#endif
         {
         }
+private:
+#if 0
+        // Vector of pointers to the reactant states.
+        const StateVector m_lhsStates;
+        // Vector of stoichiometric coefficents belonging to the reactants of the collsion.
+        const CoeffVector m_lhsCoeffs;
+
+        // Vector of pointers to the product states.
+        const StateVector m_rhsStates;
+        // Vector of stoichiometric coefficents belonging to the products of the collsion.
+        const CoeffVector m_rhsCoeffs;
+#endif
     };
 }
 

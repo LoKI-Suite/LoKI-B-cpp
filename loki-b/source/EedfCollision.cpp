@@ -8,13 +8,21 @@
 
 namespace loki {
 
-    EedfCollision::EedfCollision(CollisionType type, std::vector<EedfState *> &reactants,
-                                 std::vector<EedfState *> &products, std::vector<uint16_t> &stoiCoeff, bool isReverse)
-    : Collision(type, reactants, products, stoiCoeff, isReverse)
+    EedfCollision::EedfCollision(CollisionType type,
+        const StateVector &lhsStates,
+        const CoeffVector &lhsCoeffs,
+        const StateVector &rhsStates,
+        const CoeffVector &rhsCoeffs,
+        bool isReverse)
+    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
+    m_lhsHeavyStates(lhsStates),
+    m_lhsHeavyCoeffs(lhsCoeffs),
+    m_rhsHeavyStates(rhsStates),
+    m_rhsHeavyCoeffs(rhsCoeffs)
     {
-        if (reactants.size() != 1)
+        if (lhsStates.size() != 1)
             Log<MultipleReactantInEedfCol>::Warning(*this);
-        if (isReverse && products.size() > 1)
+        if (isReverse && rhsStates.size() > 1)
             Log<MultipleProductsInReverse>::Error(*this);
     }
 
@@ -39,7 +47,7 @@ namespace loki {
         // Comparing pointers since there is only one instantiation of each state.
         for (const auto *state : other_products)
         {
-            if (std::find(products.begin(), products.end(), state) == products.end())
+            if (std::find(m_rhsHeavyStates.begin(), m_rhsHeavyStates.end(), state) == m_rhsHeavyStates.end())
                 return false;
         }
 
@@ -48,11 +56,11 @@ namespace loki {
 
     const EedfCollision::EedfState *EedfCollision::getTarget() const
     {
-        return Collision::target.front();
+        return m_lhsHeavyStates.front();
     }
     EedfCollision::EedfState *EedfCollision::getTarget()
     {
-        return Collision::target.front();
+        return m_lhsHeavyStates.front();
     }
 
     std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
@@ -63,10 +71,10 @@ namespace loki {
         if (collision.type != CollisionType::attachment) os << " e +";
         if (collision.type == CollisionType::ionization) os << " e +";
 
-        for (uint32_t i = 0; i < collision.products.size(); ++i)
+        for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
         {
-            os << ' ' << *collision.products[i];
-            if (i < collision.products.size() - 1) os << " +";
+            os << ' ' << *collision.m_rhsHeavyStates[i];
+            if (i < collision.m_rhsHeavyStates.size() - 1) os << " +";
         }
         os << ", " << collision.typeAsString();
 
@@ -87,9 +95,9 @@ namespace loki {
         crossSection->interpolate(superElasticEnergies, result);
 
         if (getTarget()->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
-        if (products[0]->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
+        if (m_rhsHeavyStates[0]->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
 
-        const double swRatio = getTarget()->statisticalWeight / products[0]->statisticalWeight;
+        const double swRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
 
         uint32_t minIndex = 0;
 
@@ -132,7 +140,7 @@ namespace loki {
 
         if (isReverse)
         {
-            const double statWeightRatio = getTarget()->statisticalWeight / products[0]->statisticalWeight;
+            const double statWeightRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
 
             double supSum = 0;
 
@@ -142,7 +150,7 @@ namespace loki {
             }
 
             collPower.sup +=
-                    factor * statWeightRatio * products[0]->density * grid->step * grid->getNode(lmin) * supSum;
+                    factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->step * grid->getNode(lmin) * supSum;
         }
 
         return collPower;
@@ -258,10 +266,10 @@ namespace loki {
         if (isReverse)
         {
             const double tStatWeight = getTarget()->statisticalWeight;
-            const double pStatWeight = products[0]->statisticalWeight;
+            const double pStatWeight = m_rhsHeavyStates[0]->statisticalWeight;
 
             if (tStatWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
-            if (pStatWeight <= 0.) Log<NoStatWeight>::Error(*products[0]);
+            if (pStatWeight <= 0.) Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
 
             const double statWeightRatio = tStatWeight / pStatWeight;
 

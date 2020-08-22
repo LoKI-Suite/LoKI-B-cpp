@@ -57,8 +57,8 @@ namespace loki {
                 if (collision->isReverse) {
                     collision->superElastic(rawEnergies, crossSection);
 
-                    if (effectivePopulations.count(collision->products[0]) == 1)
-                        rawEl -= crossSection * effectivePopulations[collision->products[0]];
+                    if (effectivePopulations.count(collision->m_rhsHeavyStates[0]) == 1)
+                        rawEl -= crossSection * effectivePopulations[collision->m_rhsHeavyStates[0]];
                 }
             }
         }
@@ -144,8 +144,10 @@ namespace loki {
             for (auto *state : statesToUpdate)
             {
                 std::vector stateVector{state};
-                auto* collision = new EedfCollision(CollisionType::elastic, stateVector, stateVector,
-                                                    stoiCoeff, false);
+                auto* collision = new EedfCollision(CollisionType::elastic,
+                                                    stateVector, stoiCoeff,
+                                                    stateVector, stoiCoeff,
+                                                    false);
 
                 collision->crossSection.reset(elasticCS);
 
