@@ -50,73 +50,6 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
     return os;
 }
 
-void entriesFromStringOld(const std::string &statesString, std::vector<StateEntry>& entries,
-                              std::vector<uint16_t>* stoiCoeff = nullptr)
-{
-    static const std::regex reState(
-        R"((\d*)\s*([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w]+)\s*(?:,\s*v\s*=\s*([-\+\w]+))?\s*(?:,\s*J\s*=\s*([-\+\d]+))?\s*)");
-
-    std::regex_iterator<std::string::const_iterator> rit(statesString.begin(), statesString.end(), reState);
-    std::regex_iterator<std::string::const_iterator> rend;
-
-    if (rit == rend)
-    {
-        throw std::runtime_error("No entries found.");
-    }
-
-    while (rit != rend)
-    {
-    try {
-        StateType stateType;
-
-        if (rit->str(2).empty())
-        {
-            throw std::runtime_error("Empry gas name.");
-        }
-        if (rit->str(4).empty())
-        {
-            throw std::runtime_error("Electron state not specified.");
-        }
-
-        if (rit->str(5).empty())
-        {
-            stateType = electronic;
-        }
-        else if (rit->str(6).empty())
-        {
-            stateType = vibrational;
-        }
-        else
-        {
-            stateType = rotational;
-        }
-
-        if (stoiCoeff != nullptr)
-        {
-            if (rit->str(1).empty())
-            {
-                stoiCoeff->emplace_back(1);
-            }
-            else
-            {
-                std::stringstream ss(rit->str(1));
-                uint16_t coeff;
-
-                ss >> coeff;
-                stoiCoeff->emplace_back(coeff);
-            }
-        }
-
-        entries.emplace_back(stateType, rit->str(2), rit->str(3), rit->str(4), rit->str(5), rit->str(6));
-        ++rit;
-    }
-    catch(std::exception& exc)
-    {
-        throw std::runtime_error("While parsing particle '" + rit->str(0) + "':\n" + std::string{exc.what()});
-    }
-    }
-}
-
 namespace {
 
     // Parenthesize a string and return the result. This makes a regex group
@@ -125,7 +58,7 @@ namespace {
 
 }
 
-void entriesFromStringNew(const std::string stateString, std::vector<StateEntry>& entries, std::vector<uint16_t>* stoiCoeff)
+void entriesFromString(const std::string stateString, std::vector<StateEntry>& entries, std::vector<uint16_t>* stoiCoeff)
 {
     const std::string plus_sign = "\\+";
     const std::string ws = "\\s*";
@@ -375,10 +308,6 @@ bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
 {
     for (json_type::const_iterator i=cnf.begin(); i!=cnf.end(); ++i)
     {
-        if (i->at("particle").get<std::string>() == "e")
-        {
-            continue;
-        }
         /** \todo It appeaes that the present JSON simply repeats the particle
          *        object when it appears more than once. Then the stoichiometric
          *        coefficient of each entry will be one, and we hope that 'e + e'

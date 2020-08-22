@@ -1,21 +1,14 @@
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/GasBase.h"
 
-bool test_parser(const std::string stateString, bool new_parser)
+bool test_parser(const std::string stateString)
 {
     try {
         using namespace loki;
         std::vector<StateEntry> entries;
         std::vector<uint16_t> stoiCoeff;
         std::cout << "Testing: '" << stateString << "'." << std::endl;
-        if (new_parser)
-        {
-            loki::entriesFromStringNew(stateString, entries, &stoiCoeff);
-        }
-        else
-        {
-            loki::entriesFromStringOld(stateString, entries, &stoiCoeff);
-        }
+        loki::entriesFromString(stateString, entries, &stoiCoeff);
         assert(entries.size()==stoiCoeff.size());
         for (std::size_t ndx=0; ndx!=entries.size(); ++ndx)
         {
@@ -30,18 +23,11 @@ bool test_parser(const std::string stateString, bool new_parser)
     }
 }
 
-unsigned nerrors_old=0;
 unsigned nerrors_new=0;
 
 void test(const std::string& stateString, bool expected=true)
 {
-    if (test_parser(stateString,false)!=expected)
-    {
-        std::cout << "ERROR (OLD PARSER): Unexpected " << (expected ? "failure" : "pass")
-            << " for input " << stateString << std::endl;
-        ++nerrors_old;
-    }
-    if (test_parser(stateString,true)!=expected)
+    if (test_parser(stateString)!=expected)
     {
         std::cout << "ERROR (NEW PARSER): Unexpected result " << !expected << " for input " << stateString << std::endl;
         ++nerrors_new;
@@ -133,7 +119,6 @@ int main(int argc, const char* argv[])
     test("N2(X)+",false);
     test("N2(X) +",false);
 
-    std::cout << "Number of errors (old parser): " << nerrors_old << std::endl;
-    std::cout << "Number of errors (new parser): " << nerrors_new << std::endl;
+    std::cout << "Number of errors: " << nerrors_new << std::endl;
     return 0;
 }
