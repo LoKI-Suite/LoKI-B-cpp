@@ -47,7 +47,6 @@ namespace loki {
         EedfState *getTarget();
 
         void superElastic(const Vector &energyData, Vector &result) const;
-        bool is_same_as(CollisionType other_type, const State* other_target, const StateVector& other_products) const;
 
         friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
 
