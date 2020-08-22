@@ -60,10 +60,10 @@ namespace loki {
          */
         Collision* createCollision(
                 CollisionType entry_type,
-                const std::vector<StateEntry>& entry_lhsStates,
-                const std::vector <uint16_t>& entry_lhsCoeffs,
-                const std::vector<StateEntry>& entry_rhsStates,
-                const std::vector <uint16_t>& entry_rhsCoeffs,
+                std::vector<StateEntry> entry_lhsStates,
+                std::vector <uint16_t> entry_lhsCoeffs,
+                std::vector<StateEntry> entry_rhsStates,
+                std::vector <uint16_t> entry_rhsCoeffs,
                 bool reverse_also,
                 bool isExtra);
         /* -- loadCollisions --

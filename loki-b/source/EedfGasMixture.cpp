@@ -66,9 +66,8 @@ namespace loki {
         for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it)
         {
             const json_type& rcnf = it->at("reaction");
-            auto *collision = createCollision(rcnf,isExtra);
-            if (collision)
-            {
+            try {
+                auto *collision = createCollision(rcnf,isExtra);
                 const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
                                                collision->type == CollisionType::elastic);
                 const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
@@ -76,7 +75,11 @@ namespace loki {
                                                            isElasticOrEffective, *it));
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
             }
-
+            catch (std::exception &exc)
+            {
+                throw std::runtime_error("Error while parsing reaction from section '" + rcnf.dump() + "':\n"
+                    + std::string(exc.what()));
+            }
         }
     }
     void EedfGasMixture::loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra)
@@ -122,16 +125,21 @@ namespace loki {
                 Log<LXCatError>::Error(file);
             }
 
-            // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
-            auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4],isExtra);
-
-            if (collision)
+            try
             {
+                // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
+                auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4],isExtra);
+
                 const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
                                                collision->type == CollisionType::elastic);
                 collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                            isElasticOrEffective, in));
                 hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+            }
+            catch (std::exception &exc)
+            {
+                throw std::runtime_error("Error while parsing reaction from section '" + line + "':\n"
+                    + std::string(exc.what()));
             }
         }
         catch(std::exception& exc)
@@ -161,13 +169,61 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(
                 CollisionType entry_type,
-                const std::vector<StateEntry>& entry_lhsStates,
-                const std::vector <uint16_t>& entry_lhsCoeffs,
-                const std::vector<StateEntry>& entry_rhsStates,
-                const std::vector <uint16_t>& entry_rhsCoeffs,
+                std::vector<StateEntry> entry_lhsStates,
+                std::vector <uint16_t> entry_lhsCoeffs,
+                std::vector<StateEntry> entry_rhsStates,
+                std::vector <uint16_t> entry_rhsCoeffs,
                 bool reverse_also,
                 bool isExtra)
     {
+        // in the state/coefficient vectors, also electron states that participate
+        // in reactions are recognized and created. Since, at present, the
+        // EedfCollision class expects to receive only the heavies on both
+        // sides of the reaction, we remove the electrons from the state
+        // and coefficient arrays. For the left-hand side this is done in
+        // a special way, since we also need to check that the reaction is
+        // of the form 'e + X -> ...': it must be a binary encounter of an
+        // electron ans a heavy particle.
+
+        /** \todo It seems to make sense to do this stripping in the EedfCollision
+         *        constructor, since that class really decide that it only wants
+         *        to see the heavies. The Collision base class could then have
+         *        the full species/coefficient lists. However, this requires the
+         *        creation of an electron gas/state, which is at present problematic
+         *        for LoKI-B. (why?)
+         */
+
+        // for the left hand side we expect 'e + X' or 'X + e'.
+        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
+        if (entry_lhsStates.size() != 2
+            || entry_lhsCoeffs[0]!=1
+            || entry_lhsCoeffs[1]!=1
+            || (entry_lhsStates[0].gasName=="e" && entry_lhsStates[1].gasName=="e")
+            || (entry_lhsStates[0].gasName!="e" && entry_lhsStates[1].gasName!="e")
+        )
+        {
+            Log<Message>::Error("Expected a binary electron-heavy process.");
+        }
+        unsigned electron_ndx = entry_lhsStates[0].gasName=="e" ? 0 : 1;
+        // remove the electron entry, the present Eedf collision code only wants to see the target
+        entry_lhsStates.erase(entry_lhsStates.begin()+electron_ndx);
+        entry_lhsCoeffs.erase(entry_lhsCoeffs.begin()+electron_ndx);
+        assert(entry_lhsStates.size()==1);
+        assert(entry_lhsCoeffs.size()==1);
+        // now remove all electrons from the right-hand side (since EedfCollision wants that).
+        // beware of iterator invalidation
+        for (unsigned i=0; i!= entry_rhsStates.size(); /**/)
+        {
+            if (entry_rhsStates[i].gasName=="e")
+            {
+                entry_rhsStates.erase(entry_rhsStates.begin()+i);
+                entry_rhsCoeffs.erase(entry_rhsCoeffs.begin()+i);
+            }
+            else
+            {
+                ++i;
+            }
+        }
 
         std::vector<State*> lhsStates;
         std::vector<State*> rhsStates;
@@ -221,79 +277,15 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)
     {
-//#define LOKIB_USE_OLD_STATEENTRY_PARSER
-#ifdef LOKIB_USE_OLD_STATEENTRY_PARSER
         std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
         std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
 
         const CollisionType entry_type = getCollisionType(type);
         const bool entry_isReverse = (sep[0] == '<');
 
-        /// \todo Check that the stoichiometric coefficients are indeed 1 (or unspecified), since these are ignored.
-        entriesFromStringOld(lhs, entry_lhsStates, &entry_lhsCoeffs);
-        entriesFromStringOld(rhs, entry_rhsStates, &entry_rhsCoeffs);
-        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
-        if (entry_lhsStates.size() != 1 || entry_lhsCoeffs[0] != 1)
-        {
-            Log<Message>::Error("Expected one target in collision's left-hand side '" + lhs + "'.");
-        }
-#else
-        // if we use the new parser, also electron states that participate in
-        // reactions are recognized and created. Since, at present, the
-        // EedfCollision class expects to receive only the heavies on both
-        // sides of the reaction, we remove the electrons from the state
-        // and coefficient arrays. For the left-hand side this is done in
-        // a special way, since we also need to check that the reaction is
-        // of the form 'e + X -> ...': it must be a binary encounter of an
-        // electron ans a heavy particle.
+        entriesFromString(lhs, entry_lhsStates, &entry_lhsCoeffs);
+        entriesFromString(rhs, entry_rhsStates, &entry_rhsCoeffs);
 
-        /** \todo It seems to make sense to do this stripping in the EedfCollision
-         *        constructor, since that class really decide that it only wants
-         *        to see the heavies. The Collision base class could then have
-         *        the full species/coefficient lists.
-         */
-
-        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
-        std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
-
-        const CollisionType entry_type = getCollisionType(type);
-        const bool entry_isReverse = (sep[0] == '<');
-
-        entriesFromStringNew(lhs, entry_lhsStates, &entry_lhsCoeffs);
-        entriesFromStringNew(rhs, entry_rhsStates, &entry_rhsCoeffs);
-
-        // for the left hand side we expect 'e + X' or 'X + e'.
-        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
-        if (entry_lhsStates.size() != 2
-            || entry_lhsCoeffs[0]!=1
-            || entry_lhsCoeffs[1]!=1
-            || (entry_lhsStates[0].gasName=="e" && entry_lhsStates[1].gasName=="e")
-            || (entry_lhsStates[0].gasName!="e" && entry_lhsStates[1].gasName!="e")
-        )
-        {
-            Log<Message>::Error("Expected an electron-heavy process on left-hand side '" + lhs + "'.");
-        }
-        unsigned electron_ndx = entry_lhsStates[0].gasName=="e" ? 0 : 1;
-        // remove the electron entry, the present Eedf collision code only wants to see the target
-        entry_lhsStates.erase(entry_lhsStates.begin()+electron_ndx);
-        entry_lhsCoeffs.erase(entry_lhsCoeffs.begin()+electron_ndx);
-        assert(entry_lhsStates.size()==1);
-        assert(entry_lhsCoeffs.size()==1);
-        // now remove all electrons from the right-hand side (since EedfCollision wants that).
-        // beware of iterator invalidation
-        for (unsigned i=0; i!= entry_rhsStates.size(); /**/)
-        {
-            if (entry_rhsStates[i].gasName=="e")
-            {
-                entry_rhsStates.erase(entry_rhsStates.begin()+i);
-                entry_rhsCoeffs.erase(entry_rhsCoeffs.begin()+i);
-            }
-            else
-            {
-                ++i;
-            }
-        }
-#endif // LOKIB_USE_OLD_STATEENTRY_PARSER
         return createCollision(entry_type,entry_lhsStates,entry_lhsCoeffs,entry_rhsStates,entry_rhsCoeffs,entry_isReverse,isExtra);
     }
 
