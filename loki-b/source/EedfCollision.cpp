@@ -30,30 +30,6 @@ namespace loki {
     {
     }
 
-    /** \todo What is intended here? Should we not just compare the
-     *        lists of participants and the type below (after ordering),
-     *        as well as the type? It may be better to store the products
-     *        (and the LHS) as a map<name,stoich_coefficients> then. Then
-     *        the below could be implemented as:
-     *
-     *        type()=o.type() && lhs()=o.lhs() && rhs==o.rhs()
-     *
-     */
-    bool EedfCollision::is_same_as(CollisionType other_type, const EedfState* other_target, const StateVector& other_products) const
-    {
-        if (type != other_type) return false;
-        if (getTarget() != other_target) return false;
-
-        // Comparing pointers since there is only one instantiation of each state.
-        for (const auto *state : other_products)
-        {
-            if (std::find(m_rhsHeavyStates.begin(), m_rhsHeavyStates.end(), state) == m_rhsHeavyStates.end())
-                return false;
-        }
-
-        return true;
-    }
-
     const EedfCollision::EedfState *EedfCollision::getTarget() const
     {
         return m_lhsHeavyStates.front();

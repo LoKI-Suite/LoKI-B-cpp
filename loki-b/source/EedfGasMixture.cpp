@@ -240,9 +240,6 @@ namespace loki {
             targetGases.insert(&state->gas());
         }
 
-        if (targetGases.size() != 1)
-            Log<Message>::Error("Multiple target gases in a single collision.");
-
         for (auto &stateEntry : entry_rhsStates)
         {
             rhsStates.emplace_back(ensureState(stateEntry));
@@ -258,13 +255,11 @@ namespace loki {
 
         // Linking the newly created collision to the relevant states and gases
 
-        auto *target = lhsStates.front();
-
         // small change: before there were separate lists (extra / non-extra). Duplication
         // was not detected if the same collision would be added to both lists.
         for (const auto& c : m_collisions)
         {
-            if (c->is_same_as(entry_type, target, rhsStates))
+            if (c->is_same_as(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs))
             {
                 Log<DoubleCollision>::Warning(*c);
                 return nullptr;
