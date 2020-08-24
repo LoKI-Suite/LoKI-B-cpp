@@ -20,13 +20,29 @@ namespace loki {
             loadCollisions(setup.LXCatFilesExtra, grid, true);
 
         this->loadGasProperties(setup.gasProperties);
+        /// \todo Store the electron state pointer as a member? Does the state type matter?
+        GasBase::State* electron = ensureState(StateEntry::electronEntry());
+        /** For the electron, the root state has a population of 0 (the default),
+         *  other states in the hierarchy (which have no siblings) 1. This code
+         *  can be simplified once a final decision has been made how to represent
+         *  the electron State. As a charged state? An electronic state? Or just as
+         *  the root of the gas? At present, a charged state seems best, because the
+         *  charge of the electron gas is meaninful. If we move to a situation where
+         *  ionic varieties (such as N2^+) are made separate gases, and the gas itself
+         *  hosts the properties (such as charge), it makes more sens to let the
+         *  root be 'the' electronic state, since there is no need for additional structure.
+         */
+        for (State* s = electron; s->type != StateType::root; s = s->parent())
+        {
+            s->population = 1.0;
+        }
         this->loadStateProperties(setup.stateProperties, workingConditions);
         this->evaluateStateDensities();
 
         for (auto& gas : gases())
         {
             if (!gas->isDummy())
-                gas->checkElasticCollisions(grid);
+                gas->checkElasticCollisions(electron,grid);
         }
 
         this->addCARGases(setup.CARgases);
@@ -44,13 +60,21 @@ namespace loki {
             loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
 
         this->loadGasProperties(cnf.at("gasProperties"));
+        /// \todo Store the electron state pointer as a member? Does the state type matter?
+        GasBase::State* electron = ensureState(StateEntry::electronEntry());
+        /**
+         */
+        for (State* s = electron; s->type != StateType::root; s = s->parent())
+        {
+            s->population = 1.0;
+        }
         this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
         this->evaluateStateDensities();
 
         for (auto& gas : gases())
         {
             if (!gas->isDummy())
-                gas->checkElasticCollisions(grid);
+                gas->checkElasticCollisions(electron,grid);
         }
         if (cnf.contains("CARgases"))
         {
@@ -60,34 +84,12 @@ namespace loki {
 //        this->evaluateTotalAndElasticCS();
     }
 
-    void EedfGasMixture::loadCollisionsJSON(const json_type& cnf, Grid *energyGrid, bool isExtra)
-    {
-        unsigned ndx=0;
-        for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it)
-        {
-            const json_type& rcnf = it->at("reaction");
-            try {
-                auto *collision = createCollision(rcnf,isExtra);
-                if (collision)
-                {
-                    const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                                   collision->type == CollisionType::elastic);
-                    const double threshold = it->contains("threshold") ? it->at("threshold").get<double>() : 0.0;
-                    collision->crossSection.reset(new CrossSection(threshold, energyGrid,
-                                                               isElasticOrEffective, *it));
-                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
-                }
-            }
-            catch (std::exception &exc)
-            {
-                throw std::runtime_error("Error while parsing reaction from section '" + rcnf.dump() + "':\n"
-                    + std::string(exc.what()));
-            }
-        }
-    }
     void EedfGasMixture::loadCollisions(const std::string& file, Grid *energyGrid, bool isExtra)
     {
         const std::regex reParam(R"(PARAM\.:)");
+        /** \todo Valid doubles like 1.57e1 are not matched, in which case the threshold
+         *        specification will be ignored and 0 will be assumed.
+         */
         const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
         const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
         std::ifstream in(file);
@@ -102,7 +104,7 @@ namespace loki {
 
         /*  Expectations: we cycle throught the file and look for a line that has "PARAM.:".
          *  When we find that, we start parsing a process description.
-         *  1. Read the arguments of the parameter line, see if a threshold is specified ("E =  <double> eV"),
+         *  1. Read the arguments of the parameter line, see if a threshold is specified ("E = <double> eV"),
          *     Set the threshold to 0 otherwise.
          *  2. The next line should describe the process: it must be of the form [<lhs> -> <rhs>, <type>].
          *  3. A Collision is created from the process description information
@@ -113,8 +115,9 @@ namespace loki {
         {
         try {
             if (!std::regex_search(line, reParam))
+            {
                 continue;
-            // todo: warn if a threshold is specified, but isExtra==false? Then it will not be used, it seems.
+            }
             double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold))
             {
@@ -130,15 +133,28 @@ namespace loki {
 
             try
             {
-                // arguments: smth. like "He + e", "->" or "<->", "He + e", "Elastic"
-                auto *collision = createCollision(mProcess[1], mProcess[2],mProcess[3], mProcess[4],isExtra);
+                // mProcess[1...4] represent: lhs, separator, rhs and type, and could
+                // be something like:
+                //  1: "He + e"
+                //  2: "->" ("<->" for a two-way process)
+                //  3: "He + e"
+                //  4: "Elastic"
+
+                std::vector <StateEntry> lhsStates, rhsStates;
+                std::vector <uint16_t> lhsCoeffs,rhsCoeffs;
+
+                entriesFromString(mProcess[1].str(), lhsStates, &lhsCoeffs);
+                const bool isReverse = (mProcess[2].str()[0] == '<');
+                entriesFromString(mProcess[3].str(), rhsStates, &rhsCoeffs);
+                const CollisionType type = getCollisionType(mProcess[4].str());
+
+                EedfCollision* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
                 if (collision)
                 {
-                    const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
-                                                   collision->type == CollisionType::elastic);
+                    const bool isElasticOrEffective =
+                        type == CollisionType::effective || type == CollisionType::elastic;
                     collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                                isElasticOrEffective, in));
-                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
                 }
             }
             catch (std::exception &exc)
@@ -153,16 +169,19 @@ namespace loki {
         }
         }
     }
-    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra) {
-
+    void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra)
+    {
         std::cout << "Starting loading collisions" << std::endl;
         const std::string inputPath{"../Input/"};
         for (const std::string &file : files)
         {
             if (file.size()>=5 && file.substr(file.size()-5)==".json")
             {
-                json_type cnf = read_json_from_file(inputPath + file);
-                loadCollisionsJSON(cnf, energyGrid, isExtra);
+                const json_type cnf = read_json_from_file(inputPath + file);
+                for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it)
+                {
+                    createCollision(*it,energyGrid,isExtra);
+                }
             }
             else
             {
@@ -174,134 +193,90 @@ namespace loki {
 
     EedfGasMixture::Collision* EedfGasMixture::createCollision(
                 CollisionType entry_type,
-                std::vector<StateEntry> entry_lhsStates,
-                std::vector <uint16_t> entry_lhsCoeffs,
-                std::vector<StateEntry> entry_rhsStates,
-                std::vector <uint16_t> entry_rhsCoeffs,
+                const std::vector<StateEntry>& entry_lhsStates,
+                const std::vector <uint16_t>& entry_lhsCoeffs,
+                const std::vector<StateEntry>& entry_rhsStates,
+                const std::vector <uint16_t>& entry_rhsCoeffs,
                 bool reverse_also,
                 bool isExtra)
     {
-        // in the state/coefficient vectors, also electron states that participate
-        // in reactions are recognized and created. Since, at present, the
-        // EedfCollision class expects to receive only the heavies on both
-        // sides of the reaction, we remove the electrons from the state
-        // and coefficient arrays. For the left-hand side this is done in
-        // a special way, since we also need to check that the reaction is
-        // of the form 'e + X -> ...': it must be a binary encounter of an
-        // electron ans a heavy particle.
-
-        /** \todo It seems to make sense to do this stripping in the EedfCollision
-         *        constructor, since that class really decide that it only wants
-         *        to see the heavies. The Collision base class could then have
-         *        the full species/coefficient lists. However, this requires the
-         *        creation of an electron gas/state, which is at present problematic
-         *        for LoKI-B. (why?)
-         */
-
-        // for the left hand side we expect 'e + X' or 'X + e'.
-        assert(entry_lhsStates.size()==entry_lhsCoeffs.size());
-        if (entry_lhsStates.size() != 2
-            || entry_lhsCoeffs[0]!=1
-            || entry_lhsCoeffs[1]!=1
-            || (entry_lhsStates[0].gasName=="e" && entry_lhsStates[1].gasName=="e")
-            || (entry_lhsStates[0].gasName!="e" && entry_lhsStates[1].gasName!="e")
-        )
-        {
-            Log<Message>::Error("Expected a binary electron-heavy process.");
-        }
-        unsigned electron_ndx = entry_lhsStates[0].gasName=="e" ? 0 : 1;
-        // remove the electron entry, the present Eedf collision code only wants to see the target
-        entry_lhsStates.erase(entry_lhsStates.begin()+electron_ndx);
-        entry_lhsCoeffs.erase(entry_lhsCoeffs.begin()+electron_ndx);
-        assert(entry_lhsStates.size()==1);
-        assert(entry_lhsCoeffs.size()==1);
-        // now remove all electrons from the right-hand side (since EedfCollision wants that).
-        // beware of iterator invalidation
-        for (unsigned i=0; i!= entry_rhsStates.size(); /**/)
-        {
-            if (entry_rhsStates[i].gasName=="e")
-            {
-                entry_rhsStates.erase(entry_rhsStates.begin()+i);
-                entry_rhsCoeffs.erase(entry_rhsCoeffs.begin()+i);
-            }
-            else
-            {
-                ++i;
-            }
-        }
-
+        // 1. Create vectors of pointers to the states that appear
+        //    on the left and right-hand sides of the process.
+        //    Create the states when necessary.
         std::vector<State*> lhsStates;
         std::vector<State*> rhsStates;
-        std::set<GasBase*> targetGases;
-
         for (auto &stateEntry : entry_lhsStates)
         {
-            auto *state = lhsStates.emplace_back(ensureState(stateEntry));
-            targetGases.insert(&state->gas());
+            lhsStates.emplace_back(ensureState(stateEntry));
         }
-
         for (auto &stateEntry : entry_rhsStates)
         {
             rhsStates.emplace_back(ensureState(stateEntry));
         }
-        /// \todo Eliminate this cast at some moment
-        // reference to the one-and-only target gas for this collision
-        // (that there is only one has been established a few lines up).
-        EedfGas& eedfGas = static_cast<EedfGas&>(**targetGases.begin());
-
-        /** \todo Check if we have this process already without create a Collision object.
-         *        That also allows us to get rid of the EEDFCollision's operator==
-         */
-
-        // Linking the newly created collision to the relevant states and gases
-
-        // small change: before there were separate lists (extra / non-extra). Duplication
-        // was not detected if the same collision would be added to both lists.
-        for (const auto& c : m_collisions)
-        {
-            if (c->is_same_as(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs))
-            {
-                Log<DoubleCollision>::Warning(*c);
-                return nullptr;
-            }
-        }
+        // 2. Create the collision object (but do not configure a CrossSection
+        //    object yet).
         std::unique_ptr<Collision> collision{new Collision(entry_type,
                     lhsStates, entry_lhsCoeffs,
                     rhsStates, entry_rhsCoeffs,
                     reverse_also)};
         Log<Message>::Notify(*collision);
+        // 3. See if we already have a collision of the same type with the same lhs and rhs.
+        //    If we do, isue a warning, discard the newly created collision object and return
+        //    nullptr. (NOTE: collision is a unique_ptr and will delete the collision object,
+        //    since we do not release that before returning from this function..)
+        for (const auto& c : m_collisions)
+        {
+            if (c->is_same_as(*collision))
+            {
+                Log<DoubleCollision>::Warning(*c);
+                return nullptr;
+            }
+        }
+        // 4. Register the collision with the (single) gas that is the target of the
+        //    binary electron-heavy process, add it to out own list of collisions
+        //    and return the (released) pointer to our caller.
+        //    That the left-hand side of the process is indeed of the form 'e + X' is
+        //    checked by the EedfCollision constructor, and the target 'X' is returned
+        //    by its member getTarget().
+        /** \todo Eliminate the following cast at some moment: we can do
+         *        EedfGas& eedfGas = *ensureGas(collision->getTarget()->gas().name);
+         *        but could check/assert that the pointer is the same.
+         */
+        EedfGas& eedfGas = static_cast<EedfGas&>(collision->getTarget()->gas());
         eedfGas.addCollision(collision.get(), isExtra);
         m_collisions.push_back(collision.get());
+        hasCollisions[static_cast<uint8_t>(collision->type)] = true;
         return collision.release();
     }
 
-    EedfGasMixture::Collision* EedfGasMixture::createCollision(const std::string& lhs, const std::string& sep, const std::string& rhs, const std::string& type,bool isExtra)
+    void EedfGasMixture::createCollision(const json_type& pcnf, Grid *energyGrid, bool isExtra)
     {
-        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
-        std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
+        try {
+            const json_type& rcnf = pcnf.at("reaction");
 
-        const CollisionType entry_type = getCollisionType(type);
-        const bool entry_isReverse = (sep[0] == '<');
+            std::vector <StateEntry> lhsStates, rhsStates;
+            std::vector <uint16_t> lhsCoeffs, rhsCoeffs;
 
-        entriesFromString(lhs, entry_lhsStates, &entry_lhsCoeffs);
-        entriesFromString(rhs, entry_rhsStates, &entry_rhsCoeffs);
+            entriesFromJSON(rcnf.at("lhs"), lhsStates, &lhsCoeffs);
+            entriesFromJSON(rcnf.at("rhs"), rhsStates, &rhsCoeffs);
+            const CollisionType type = getCollisionType(rcnf.at("type"));
+            const bool isReverse = rcnf.at("superelastic");
 
-        return createCollision(entry_type,entry_lhsStates,entry_lhsCoeffs,entry_rhsStates,entry_rhsCoeffs,entry_isReverse,isExtra);
-    }
-
-    EedfGasMixture::Collision* EedfGasMixture::createCollision(const json_type& rcnf,bool isExtra)
-    {
-        std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
-        std::vector <uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
-
-        if (!entriesFromJSON(rcnf.at("lhs"), entry_lhsStates, &entry_lhsCoeffs))
-            Log<LXCatError>::Error(rcnf.at("lhs").dump(2));
-        if (!entriesFromJSON(rcnf.at("rhs"), entry_rhsStates, &entry_rhsCoeffs))
-            Log<LXCatError>::Error(rcnf.at("rhs").dump(2));
-        const CollisionType entry_type = getCollisionType(rcnf.at("type"));
-        const bool entry_isReverse = rcnf.at("superelastic");
-
-        return createCollision(entry_type,entry_lhsStates,entry_lhsCoeffs,entry_rhsStates,entry_rhsCoeffs,entry_isReverse,isExtra);
+            auto* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
+            if (collision)
+            {
+                const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                                                   collision->type == CollisionType::elastic);
+                const double threshold = pcnf.contains("threshold") ? pcnf.at("threshold").get<double>() : 0.0;
+                collision->crossSection.reset(new CrossSection(threshold, energyGrid,
+                                                           isElasticOrEffective, pcnf));
+            }
+        }
+        catch (std::exception &exc)
+        {
+            throw std::runtime_error("Error while parsing reaction from section '" + pcnf.dump() + "':\n"
+                + std::string(exc.what()));
+        }
     }
 
     void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)

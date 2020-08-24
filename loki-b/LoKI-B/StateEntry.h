@@ -23,6 +23,7 @@ public:
     StateEntry();
     StateEntry(StateType level, const std::string &gasName, const std::string &charge,
                const std::string &e, const std::string &v, const std::string &J);
+    static StateEntry electronEntry();
     bool hasWildCard();
 
     StateType level;
@@ -42,7 +43,7 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
 /// \todo Make this a StateEntry constructor
 StateEntry entryFromJSON(const json_type& cnf);
 
-bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
+void entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
                               std::vector<uint16_t> *stoiCoeff = nullptr);
 
 /** Extracts a StateEntry object from a given string and returns it. Note that this function

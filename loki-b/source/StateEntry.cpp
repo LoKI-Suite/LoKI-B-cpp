@@ -6,6 +6,12 @@
 
 namespace loki {
 
+StateEntry StateEntry::electronEntry()
+{
+    static StateEntry el{StateType::charge,"e","-",std::string{},std::string{},std::string{}};
+    return el;
+}
+
 StateEntry::StateEntry()
     : level(none)
 {
@@ -22,7 +28,7 @@ StateEntry::StateEntry(StateType level, const std::string &gasName, const std::s
 {
 }
 
-/// \todo Update: chare may also be a wildcard (?)
+/// \todo Update: charge may also be a wildcard (?)
 bool StateEntry::hasWildCard()
 {
     switch (level)
@@ -41,11 +47,21 @@ bool StateEntry::hasWildCard()
 
 std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
 {
+    // special handling of the electron. Just write "e".
+    if (entry.gasName=="e")
+    {
+        os << entry.gasName;
+        return os;
+    }
     os << entry.gasName << '(';
-
-    if (!entry.charge.empty()) os << entry.charge << ',';
-
-    os << entry.e << ",v=" << entry.v << ",J=" << entry.J << ')';
+    if (!entry.charge.empty())
+        os << entry.charge << ',';
+    os << entry.e;
+    if (!entry.v.empty())
+        os << ",v=" << entry.v;
+    if (!entry.J.empty())
+        os << ",J=" << entry.J;
+    os << ')';
 
     return os;
 }
@@ -174,7 +190,8 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
             {
                 throw std::logic_error("Expected 'e', found '" + g + ".");
             }
-            entries.push_back(StateEntry(charge,g,"-",std::string{},std::string{},std::string{}));
+            // special handling for the electron:
+            entries.push_back(StateEntry::electronEntry());
             if (stoiCoeff)
             {
                 stoiCoeff->push_back(c.empty() ? 1 : std::stoi(c));
@@ -210,6 +227,12 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
 StateEntry entryFromJSON(const json_type& cnf)
 {
         const std::string gasName = cnf.at("particle");
+        // this is how it is now done for the electron for legacy input
+        if (gasName=="e")
+        {
+            std::cout << "Warning: ignoring state attributes for electrons." << std::endl;
+            return StateEntry::electronEntry();
+        }
         const int charge_int = cnf.at("charge").get<int>();
         const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
         const json_type& descr = cnf.at("descriptor");
@@ -303,12 +326,12 @@ StateEntry entryFromJSON(const json_type& cnf)
         }
 }
 
-bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
+void entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
                               std::vector<uint16_t> *stoiCoeff)
 {
     for (json_type::const_iterator i=cnf.begin(); i!=cnf.end(); ++i)
     {
-        /** \todo It appeaes that the present JSON simply repeats the particle
+        /** \todo It appears that the present JSON simply repeats the particle
          *        object when it appears more than once. Then the stoichiometric
          *        coefficient of each entry will be one, and we hope that 'e + e'
          *        will be handled the same way as '2 e' (JvD).
@@ -319,7 +342,6 @@ bool entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
                 stoiCoeff->push_back(1);
         }
     }
-    return true;
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)

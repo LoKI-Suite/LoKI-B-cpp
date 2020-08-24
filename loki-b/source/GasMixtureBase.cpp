@@ -159,7 +159,6 @@ void GasMixtureBase::loadStateProperties(const json_type &cnf,
 
 void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
 {
-
     R_GAS_PROPERTY(m_gases,mass)
     GAS_PROPERTY(m_gases,harmonicFrequency)
     GAS_PROPERTY(m_gases,anharmonicFrequency)

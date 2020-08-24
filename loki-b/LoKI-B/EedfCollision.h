@@ -26,7 +26,6 @@ namespace loki {
         CoeffVector m_lhsHeavyCoeffs;
         StateVector m_rhsHeavyStates;
         CoeffVector m_rhsHeavyCoeffs;
-
         using EedfState = GasBase::State;
 
         // DONE: Inelastic and superelastic rate coefficient variables should be here
