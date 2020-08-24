@@ -10,6 +10,12 @@
 #include <chrono>
 #include <exception>
 
+//#define LOKIB_ENABLE_FPU_EXCEPTIONS
+
+#ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
+#include <cfenv>
+#endif
+
 // TODO: Cleanup
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
 //  [DONE] 2. Check attachment (with oxygen)
@@ -37,6 +43,14 @@ void plot(const std::string &title, const std::string &xlabel, const std::string
 
 int main(int argc, char **argv)
 {
+#ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
+    // see https://en.cppreference.com/w/cpp/numeric/fenv for making this portable. There are
+    // also other possibilities, like translating the FPU exception into a C++ exception that
+    // can then be handled gracefully by the program... so it seems.
+    // NOTE that division by zero (of a non-zero value) and overflows are not necessarily
+    //      problematic, since IEE754 describes clear semantics for thee cases.
+    std::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
     try
     {
         auto begin = std::chrono::high_resolution_clock::now();
