@@ -411,6 +411,10 @@ void ElectronKinetics::evaluateFieldOperator()
 
     Vector &cs = mixture.totalCrossSection;
 
+    /** \todo the follosing line produces a NaN for g_E[0] (as expected).
+     *        This is later set to 0, so everything is fine. However:
+     *        this will crash the code os FPU=exceptions are enabled...
+     */
     g_E = ((EoN * EoN / 3) * grid.getNodes()).array() /
           (cs.array() + (me * WoN * WoN / (2 * e)) / (grid.getNodes().cwiseProduct(cs)).array());
 
