@@ -130,6 +130,13 @@ std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
     }
 #endif
 
+    // the electron is handled specially. The logic here is the same as
+    // for in StateEntry's stream insertion operator.
+    if (state.gas().name=="e")
+    {
+        return os;
+    }
+
     os << '(';
 
     if (!state.charge.empty())

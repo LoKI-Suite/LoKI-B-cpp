@@ -41,7 +41,7 @@ namespace loki {
 
         void addCollision(EedfCollision *collision, bool isExtra);
 
-        void checkElasticCollisions(Grid *energyGrid);
+        void checkElasticCollisions(State* electron, Grid *energyGrid);
 
         void checkCARConditions();
 

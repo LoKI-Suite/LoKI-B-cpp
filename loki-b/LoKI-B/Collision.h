@@ -42,16 +42,6 @@ namespace loki {
                 && m_lhs == other.m_lhs
                 && m_rhs == other.m_rhs;
         }
-        bool is_same_as(CollisionType other_type,
-                const StateVector& lhsStates,
-                const CoeffVector& lhsCoeffs,
-                const StateVector& rhsStates,
-                const CoeffVector& rhsCoeffs) const
-        {
-            return type == other_type
-                && m_lhs == makeStoichMap(lhsStates,lhsCoeffs)
-                && m_rhs == makeStoichMap(rhsStates,rhsCoeffs);
-        }
 protected:
 
         /** Initializes the members of the Collision class, the vectors are initialized

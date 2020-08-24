@@ -5,8 +5,33 @@
 #include "LoKI-B/EedfCollision.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
+#include <cassert>
 
 namespace loki {
+
+namespace {
+
+void remove_electron_entries(Collision::StateVector& parts, Collision::CoeffVector& coefs)
+{
+    assert(parts.size()==coefs.size());
+    // now remove all electrons from the right-hand side (since EedfCollision wants that).
+    // beware of iterator invalidation
+    for (unsigned i=0; i!= parts.size(); /**/)
+    {
+        if (parts[i]->gas().name=="e")
+        {
+            parts.erase(parts.begin()+i);
+            coefs.erase(coefs.begin()+i);
+        }
+        else
+        {
+            ++i;
+        }
+    }
+}
+
+} // namespace
+
 
     EedfCollision::EedfCollision(CollisionType type,
         const StateVector &lhsStates,
@@ -20,10 +45,29 @@ namespace loki {
     m_rhsHeavyStates(rhsStates),
     m_rhsHeavyCoeffs(rhsCoeffs)
     {
-        if (lhsStates.size() != 1)
+        /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
+        // for the left hand side we expect 'e + X' or 'X + e'.
+        assert(lhsStates.size()==lhsCoeffs.size());
+        if (lhsStates.size() != 2
+            || lhsCoeffs[0]!=1
+            || lhsCoeffs[1]!=1
+            || (lhsStates[0]->gas().name=="e" && lhsStates[1]->gas().name=="e")
+            || (lhsStates[0]->gas().name!="e" && lhsStates[1]->gas().name!="e")
+        )
+        {
+            Log<Message>::Error("Expected a binary electron impact process.");
+        }
+
+        remove_electron_entries(m_lhsHeavyStates,m_lhsHeavyCoeffs);
+        remove_electron_entries(m_rhsHeavyStates,m_rhsHeavyCoeffs);
+
+        if (m_lhsHeavyCoeffs.size() != 1 || m_lhsHeavyCoeffs[0]!=1)
             Log<MultipleReactantInEedfCol>::Warning(*this);
-        if (isReverse && rhsStates.size() > 1)
-            Log<MultipleProductsInReverse>::Error(*this);
+        if (isReverse)
+        {
+            if (m_rhsHeavyStates.size() != 1 || m_rhsHeavyCoeffs[0]!=1)
+                Log<MultipleProductsInReverse>::Error(*this);
+        }
     }
 
     EedfCollision::~EedfCollision()

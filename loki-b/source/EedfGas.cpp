@@ -128,7 +128,7 @@ namespace loki {
         }
     }
 
-    void EedfGas::checkElasticCollisions(Grid *energyGrid)
+    void EedfGas::checkElasticCollisions(State* electron, Grid *energyGrid)
     {
         if (isDummy()) return;
 
@@ -139,11 +139,11 @@ namespace loki {
         if (!statesToUpdate.empty())
         {
             CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);
-            std::vector<uint16_t> stoiCoeff{1};
+            std::vector<uint16_t> stoiCoeff{1,1};
 
             for (auto *state : statesToUpdate)
             {
-                std::vector stateVector{state};
+                std::vector stateVector{electron,state};
                 auto* collision = new EedfCollision(CollisionType::elastic,
                                                     stateVector, stoiCoeff,
                                                     stateVector, stoiCoeff,
