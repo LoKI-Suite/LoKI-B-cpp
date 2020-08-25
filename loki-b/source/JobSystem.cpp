@@ -127,7 +127,7 @@ private:
     const double log_stop;
 };
 
-static Range* createLinLogRange(const std::string &rangeString)
+static Range* createLinLogRange(const std::string& rangeString)
 {
     try {
         static const std::regex r(
@@ -209,28 +209,29 @@ class JobManager::Parameter
 public:
     /** The callback function must accept a double and returns a void.
      */
-    Parameter(const std::string& _name, const callback_type _callback, const Range* _range)
-    : name(_name), callback(_callback), range(_range), active_ndx(0)
+    Parameter(const std::string& name, const callback_type callback, const Range* range)
+    : m_name(name), m_callback(callback), m_range(range), m_active_ndx(0)
     {
     }
 
-    std::string name;
+    const std::string& name() const { return m_name; }
     /** callback is the function that gets called by the JobManager when a
      *  new value in the range is activated.
      */
-    const callback_type callback;
-    Range::size_type size() const { return range->size(); }
-    double active_value() const { return range->value(active_ndx); }
-    void reset() { active_ndx = 0; }
-    bool advance() { return (range->size()-1) > active_ndx++; }
+    const callback_type m_callback;
+    Range::size_type size() const { return m_range->size(); }
+    double active_value() const { return m_range->value(m_active_ndx); }
+    void reset() { m_active_ndx = 0; }
+    bool advance() { return (m_range->size()-1) > m_active_ndx++; }
 private:
-    const std::unique_ptr<const Range> range;
-    Range::size_type active_ndx;
+    std::string m_name;
+    const std::unique_ptr<const Range> m_range;
+    Range::size_type m_active_ndx;
 };
 
 
 JobManager::JobManager()
- : jobIndex(0)
+ : m_jobIndex(0)
 {
 }
 
@@ -238,37 +239,42 @@ JobManager::~JobManager()
 {
 }
 
-void JobManager::addParameter(const std::string& _name, const callback_type _callback, const Range* range)
+void JobManager::addParameter(const std::string& name, const callback_type callback, const Range* range)
 {
-    Log<Message>::Notify("Adding simulation parameter '", _name, "'");
-    parameters.emplace_back(new Parameter{_name, _callback, range});
+    Log<Message>::Notify("Adding simulation parameter '", name, "'");
+    m_parameters.emplace_back(new Parameter{name, callback, range});
 }
 
 void JobManager::prepareFirstJob()
 {
-    for (const auto& p : parameters)
+    for (const auto& p : m_parameters)
     {
-        (p->callback)(p->active_value());
+        (p->m_callback)(p->active_value());
     }
 }
 
 bool JobManager::prepareNextJob()
 {
-    Parameter &p = *parameters[jobIndex];
+    Parameter& p = *m_parameters[m_jobIndex];
 
 
-    if (p.advance()) {
-        (p.callback)(p.active_value());
+    if (p.advance())
+    {
+        (p.m_callback)(p.active_value());
 
-        if (jobIndex != parameters.size() - 1)
-            ++jobIndex;
+        if (m_jobIndex != m_parameters.size() - 1)
+        {
+            ++m_jobIndex;
+        }
 
         return true;
-    } else {
-        if (jobIndex == 0) return false;
+    }
+    else
+    {
+        if (m_jobIndex == 0) return false;
 
         p.reset();
-        --jobIndex;
+        --m_jobIndex;
 
         return prepareNextJob();
     }
@@ -281,7 +287,7 @@ JobManager::size_type JobManager::njobs() const
         return 0;
     }
     size_type n=1;
-    for (const auto& p : parameters)
+    for (const auto& p : m_parameters)
     {
         n *= p->size();
     }
@@ -292,13 +298,13 @@ std::string JobManager::getCurrentJobFolder() const
 {
     std::stringstream ss;
 
-    for (const auto &p : parameters)
+    for (const auto& p : m_parameters)
     {
-        if (p!=parameters.front())
+        if (p!=m_parameters.front())
         {
             ss << '_';
         }
-        ss << p->name << "_" << p->active_value();
+        ss << p->name() << "_" << p->active_value();
     }
     return ss.str();
 }
