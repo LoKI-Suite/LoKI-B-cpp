@@ -20,13 +20,16 @@
 namespace loki
 {
 
-typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas*>,
+using ResultEvent = Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas*>,
               const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>,
-              const Vector>
-    ResultEvent;
+              const Vector>;
 
 class ElectronKinetics
 {
+    WorkingConditions *workingConditions;
+    Grid grid;
+    EedfGasMixture mixture;
+
     EedfType eedfType;
     uint8_t shapeParameter;
     double mixingParameter;
@@ -40,12 +43,6 @@ class ElectronKinetics
         hasSuperelastics{false};
 
     double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
-
-    WorkingConditions *workingConditions;
-
-    Grid grid;
-
-    EedfGasMixture mixture;
 
     Matrix inelasticMatrix,
         ionConservativeMatrix,
