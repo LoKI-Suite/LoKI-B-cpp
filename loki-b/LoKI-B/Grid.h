@@ -46,7 +46,7 @@ public:
     void updateMaxEnergy(double value);
 
     //Events
-    event updatedMaxEnergy1,
+    Event<> updatedMaxEnergy1,
         updatedMaxEnergy2;
 
     friend std::ostream &operator<<(std::ostream &, const Grid &);
