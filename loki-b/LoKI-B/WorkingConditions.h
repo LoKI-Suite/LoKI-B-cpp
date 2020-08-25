@@ -12,10 +12,10 @@
  * working conditions to the relevant classes.
  */
 
-#include "Event.h"
-#include "Setup.h"
-#include "Enumeration.h"
-#include "json.h"
+#include "LoKI-B/Event.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/json.h"
 #include <map>
 
 namespace loki {
@@ -52,7 +52,7 @@ namespace loki {
          */
 
         // Events
-        event updatedGasPressure,
+        Event<> updatedGasPressure,
               updatedGasTemperature1,
               updatedGasTemperature2,
               updatedGasDensity,
