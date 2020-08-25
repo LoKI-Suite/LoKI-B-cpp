@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "json.h"
+#include "LoKI-B/json.h"
 
 namespace loki {
 
@@ -113,16 +113,16 @@ namespace loki {
         ~JobManager();
         JobManager(const JobManager &other) = delete;
 
-        void addParameter(const std::string& _name, const callback_type _callback, const Range* range);
+        void addParameter(const std::string& name, const callback_type callback, const Range* range);
         void prepareFirstJob();
         bool prepareNextJob();
         std::string getCurrentJobFolder() const;
-        size_type dimension() const { return parameters.size(); }
+        size_type dimension() const { return m_parameters.size(); }
         size_type njobs() const;
     private:
         class Parameter;
-        std::vector<std::unique_ptr<Parameter>> parameters;
-        size_type jobIndex;
+        std::vector<std::unique_ptr<Parameter>> m_parameters;
+        size_type m_jobIndex;
     };
 
 } // namespace loki
