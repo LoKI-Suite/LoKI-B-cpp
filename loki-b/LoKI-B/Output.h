@@ -7,16 +7,16 @@
 
 #include <string>
 
-#include "Setup.h"
-#include "MacroscopicQuantities.h"
-#include "Power.h"
-#include "LinearAlgebra.h"
-#include "Grid.h"
-#include "Event.h"
-#include "WorkingConditions.h"
-#include "EedfGas.h"
-#include "JobSystem.h"
-#include "json.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/Power.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/Event.h"
+#include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/EedfGas.h"
+#include "LoKI-B/JobSystem.h"
+#include "LoKI-B/json.h"
 
 namespace loki {
     class Output {
