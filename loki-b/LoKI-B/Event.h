@@ -36,13 +36,13 @@ namespace loki {
 
 /** An event class is characterized by a list of types that define the signature
  *  of callback functions, or listeners, that accepts a compatible list of
- *  arguments and returns void. An event object is default-constructable but
- *  cannot be copied. An event object manages a vector of callback functions
- *  that can be inviked by calling member emit, passing a compatible list of
- *  arguments. Callback functions can be added with the help of one of the
- *  overloads of member addListener. When emit is called, the callback
+ *  arguments and returns void. An event object manages a vector of such
+ *  callback functions that can be invoked by calling member emit, passing a
+ *  compatible argument list. Callback functions can be added with the help of
+ *  one of the overloads of member addListener. When emit is called, the callback
  *  functions are guaranteed to be called in the order in which they were
  *  registered with the event.
+ *  An event object is default-constructable but non-copyable.
  *
  *  \author Daan Boer
  *  \date   13. May 2019
