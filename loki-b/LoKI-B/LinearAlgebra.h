@@ -6,7 +6,7 @@
 //
 
 #include <iostream>
-#include "Log.h"
+#include "LoKI-B/Log.h"
 
 #define EIGEN
 

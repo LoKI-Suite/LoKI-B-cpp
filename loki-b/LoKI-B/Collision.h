@@ -5,8 +5,8 @@
 #ifndef LOKI_CPP_COLLISION_H
 #define LOKI_CPP_COLLISION_H
 
-#include "Enumeration.h"
-#include "GasBase.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/GasBase.h"
 
 #include <vector>
 #include <map>

@@ -10,7 +10,7 @@
 #include <vector>
 #include <set>
 
-#include "Enumeration.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/json.h"
 
 namespace loki {
