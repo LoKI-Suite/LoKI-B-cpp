@@ -131,7 +131,7 @@ namespace loki {
          */
         virtual void loadGasProperties(const GasPropertiesSetup &setup);
         virtual void loadGasProperties(const json_type &cnf);
-  public:
+  protected:
         GasBase* addGas(GasBase* gas);
   private:
         Gases m_gases;
