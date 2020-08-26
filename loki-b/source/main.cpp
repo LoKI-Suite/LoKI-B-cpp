@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
-        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+        std::cerr << "Simulation finished, elapsed time = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
         // generate output
 
