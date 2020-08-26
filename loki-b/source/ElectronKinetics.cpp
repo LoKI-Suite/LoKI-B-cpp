@@ -8,6 +8,13 @@
 #include <iomanip>
 #include <cmath>
 
+//#define LOKIB_CREATE_SPARSITY_PICTURE
+#ifdef LOKIB_CREATE_SPARSITY_PICTURE
+
+#include "LoKI-B/Matrix2Picture.h"
+
+#endif
+
 // TODO [FUTURE]: Write a tridiagonal matrix class that stores the elements
 //  in three separate vectors. It is desirable to do this in an Eigen compliant way, such
 //  that these matrices can simply be added to dense matrices (the + and () operators are
@@ -276,6 +283,12 @@ void ElectronKinetics::solve()
 
     obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases(), swarmParameters,
                          mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
+
+#ifdef LOKIB_CREATE_SPARSITY_PICTURE
+    const std::string xpm_fname{"system_matrix.xpm"};
+    std::cout << "Creating '" << xpm_fname << "'." << std::endl;
+    writeXPM(boltzmannMatrix,xpm_fname);
+#endif
 }
 
 const Grid *ElectronKinetics::getGrid()
@@ -348,9 +361,17 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+    std::cerr << "Inverted matrix elapsed time = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
+    /** \todo It seems that the normaization is superfluous, since the normalization condition
+     *        is already part of the system (first row of A, first element of b). One could
+     *        decide to change the first equation into eedf[0] = 1 and do the normalization
+     *        afterwards. That prevents a fully populated first row of the system matrix
+     *        (better sparsity pattern).
+     */
+    //std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.step) << std::endl;
     eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
+
 }
 
 void ElectronKinetics::evaluateMatrix()
@@ -1026,6 +1047,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
+        std::cout << "Iteration " << iter << std::endl;
 
         totalCSI[0] = mixture.totalCrossSection[0];
 
