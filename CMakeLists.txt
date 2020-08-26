@@ -88,7 +88,7 @@ set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cp
 set(headers ${h}/WorkingConditions.h ${h}/Grid.h
         ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
         ${h}/Collision.h
-        ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h
+        ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h ${h}/Matrix2Picture.h
         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
