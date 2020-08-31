@@ -1,0 +1,296 @@
+[
+  {
+    "reaction": {
+      "lhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 2,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "v": [0, 0, 0]
+            }
+          }
+        }
+      ],
+      "rhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 2,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "v": [2, 0, 0]
+            }
+          }
+        }
+      ],
+      "reversible": false,
+      "type_tags": ["Vibrational"]
+    },
+    "threshold": 1.5,
+    "labels": ["Energy", "CrossSection"],
+    "units": ["eV", "m^2"],
+    "data": [
+      [0.339, 0],
+      [1.5, 0],
+      [1.95, 4.525e-25],
+      [2.5, 1e-23],
+      [3, 2.28571e-21],
+      [3.56, 4.93231e-21],
+      [4.1, 3.11579e-21],
+      [4.5, 1.47368e-21],
+      [5.06, 0],
+      [1000, 0]
+    ]
+  },
+  {
+    "reaction": {
+      "lhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 2,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "v": [0, 0, 0]
+            }
+          }
+        }
+      ],
+      "rhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 1,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "states": [
+                { "accuracy": 2, "v": [0, 0, 0] },
+                { "accuracy": 2, "v": [0, 5, 0] },
+                { "accuracy": 2, "v": [2, 1, 0] },
+                { "accuracy": 2, "v": [1, 3, 0] },
+                { "accuracy": 2, "v": [0, 2, 1] },
+                { "accuracy": 2, "v": [1, 0, 1] }
+              ]
+            }
+          }
+        }
+      ],
+      "reversible": false,
+      "type_tags": ["Vibrational"]
+    },
+    "threshold": 2.5,
+    "labels": ["Energy", "CrossSection"],
+    "units": ["eV", "m^2"],
+    "data": [
+      [0.422, 0],
+      [2.5, 0],
+      [3, 1.05e-21],
+      [3.56, 2.25e-21],
+      [4.1, 1e-21],
+      [4.5, 0],
+      [1000, 0]
+    ]
+  },
+  {
+    "reaction": {
+      "lhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 2,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "v": [0, 0, 0]
+            }
+          }
+        }
+      ],
+      "rhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 1,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "states": [
+                { "accuracy": 0, "v": "0,n,0" },
+                { "accuracy": 0, "v": "n,0,0" }
+              ]
+            }
+          }
+        }
+      ],
+      "reversible": false,
+      "type_tags": ["Vibrational"]
+    },
+    "threshold": 2.5,
+    "labels": ["Energy", "CrossSection"],
+    "units": ["eV", "m^2"],
+    "data": [
+      [2.5, 0],
+      [3, 1.8e-21],
+      [3.6, 2.5e-21],
+      [4.1, 1.8e-21],
+      [4.5, 0],
+      [1000, 0]
+    ]
+  },
+  {
+    "reaction": {
+      "lhs": [
+        { "count": 1, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 0,
+            "descriptor": {
+              "type": 1,
+              "accuracy": 2,
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "v": [0, 0, 0]
+            }
+          }
+        }
+      ],
+      "rhs": [
+        { "count": 2, "state": { "particle": "e", "charge": -1 } },
+        {
+          "count": 1,
+          "state": {
+            "particle": "CO2",
+            "charge": 1,
+            "descriptor": {
+              "type": 0,
+              "accuracy": 2,
+              "e": "X",
+              "S": 0.5,
+              "Lambda": 1,
+              "parity": "g"
+            }
+          }
+        }
+      ],
+      "reversible": false,
+      "type_tags": ["Ionization"]
+    },
+    "labels": ["Energy", "CrossSection"],
+    "units": ["eV", "m^2"],
+    "threshold": 13.8,
+    "data": [
+      [13.8, 0],
+      [14.5, 5.5e-22],
+      [15, 9.7e-22],
+      [15.5, 1.35e-21],
+      [16, 1.74e-21],
+      [16.5, 2.15e-21],
+      [17, 2.55e-21],
+      [17.5, 2.93e-21],
+      [18, 3.33e-21],
+      [18.5, 3.73e-21],
+      [19, 4.28e-21],
+      [19.5, 4.52e-21],
+      [21, 5.77e-21],
+      [21.5, 6.23e-21],
+      [22, 6.76e-21],
+      [22.5, 7.27e-21],
+      [23, 7.77e-21],
+      [23.5, 8.28e-21],
+      [24, 8.8e-21],
+      [25, 1.04e-20],
+      [30, 1.58e-20],
+      [35, 1.95e-20],
+      [40, 2.25e-20],
+      [45, 2.5e-20],
+      [50, 2.71e-20],
+      [55, 2.88e-20],
+      [60, 3.06e-20],
+      [65, 3.18e-20],
+      [70, 3.27e-20],
+      [75, 3.36e-20],
+      [80, 3.45e-20],
+      [85, 3.51e-20],
+      [90, 3.56e-20],
+      [95, 3.6e-20],
+      [100, 3.64e-20],
+      [110, 3.66e-20],
+      [120, 3.66e-20],
+      [140, 3.63e-20],
+      [160, 3.52e-20],
+      [180, 3.43e-20],
+      [200, 3.32e-20],
+      [225, 3.21e-20],
+      [250, 3.05e-20],
+      [275, 2.97e-20],
+      [300, 2.82e-20],
+      [350, 2.58e-20],
+      [400, 2.43e-20],
+      [450, 2.23e-20],
+      [500, 2.09e-20],
+      [550, 1.96e-20],
+      [600, 1.85e-20],
+      [650, 1.76e-20],
+      [700, 1.68e-20],
+      [750, 1.61e-20],
+      [800, 1.53e-20],
+      [850, 1.45e-20],
+      [900, 1.41e-20],
+      [950, 1.36e-20],
+      [1000, 1.3e-20]
+    ]
+  }
+]
