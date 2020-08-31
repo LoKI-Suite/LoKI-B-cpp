@@ -253,14 +253,20 @@ namespace loki {
     {
         try {
             const json_type& rcnf = pcnf.at("reaction");
+std::cout << rcnf.dump(1) << std::endl;
 
             std::vector <StateEntry> lhsStates, rhsStates;
             std::vector <uint16_t> lhsCoeffs, rhsCoeffs;
 
             entriesFromJSON(rcnf.at("lhs"), lhsStates, &lhsCoeffs);
             entriesFromJSON(rcnf.at("rhs"), rhsStates, &rhsCoeffs);
-            const CollisionType type = getCollisionType(rcnf.at("type"));
-            const bool isReverse = rcnf.at("superelastic");
+            /// \todo DB: How to get LoKI-B's type? There can be multiple tags, how do these map to LoKI-B's type?
+            if (rcnf.at("type_tags").size()!=1)
+            {
+                throw std::runtime_error("type_tags: expected exactly one type is this array.");
+            }
+            const CollisionType type = getCollisionType(rcnf.at("type_tags")[0]);
+            const bool isReverse = rcnf.at("reversible");
 
             auto* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
             if (collision)

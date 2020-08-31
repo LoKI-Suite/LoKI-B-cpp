@@ -226,16 +226,21 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
 
 StateEntry entryFromJSON(const json_type& cnf)
 {
-        const std::string gasName = cnf.at("particle");
+        const json_type& st = cnf.at("state");
+        const std::string gasName = st.at("particle");
         // this is how it is now done for the electron for legacy input
         if (gasName=="e")
         {
             std::cout << "Warning: ignoring state attributes for electrons." << std::endl;
             return StateEntry::electronEntry();
         }
-        const int charge_int = cnf.at("charge").get<int>();
+        const int charge_int = st.at("charge").get<int>();
         const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
-        const json_type& descr = cnf.at("descriptor");
+        const json_type& descr = st.at("descriptor");
+        /** \todo DB: How to generate the full excited state name from the various id's?
+         *  In addition to "e" there may be "S", "parity" and more. Update this code,
+         *  since the description now appears outside of the "states" section (since JSON v5).
+         */
         if (descr.contains("states"))
         {
             // We have an array of state objects, instead of a single one.
@@ -251,7 +256,8 @@ StateEntry entryFromJSON(const json_type& cnf)
             std::set<unsigned> J_vals;
             for (json_type::const_iterator s = descr.at("states").begin(); s!= descr.at("states").end(); ++s)
             {
-                e_vals.insert(s->at("e").get<std::string>());
+                // since JSON v5, the "e" id (and others) appear outside of the "states" section, in the "descriptor".
+                e_vals.insert(descr.at("e").get<std::string>());
                 if (s->contains("v"))
                 {
                     v_vals.insert(s->at("v").get<int>());
@@ -307,6 +313,9 @@ StateEntry entryFromJSON(const json_type& cnf)
         }
         else
         {
+            /** \todo DB: How to generate the full excited state name from the various id's?
+             *  In addition to "e" there may be "S", "parity" and more...
+             */
             const std::string e{descr.at("e").get<std::string>()};
             const std::string v{descr.contains("v") ? (
                 descr.at("v").type()==json_type::value_t::string
