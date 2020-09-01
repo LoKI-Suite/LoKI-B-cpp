@@ -7194,7 +7194,7 @@
           "state": {
             "particle": "N2",
             "charge": 0,
-            "descriptor": { "type": 0, "accuracy": 0, "specifier": "sing-sup" }
+            "descriptor": { "type": 0, "accuracy": 0, "e": "sing-sup" }
           },
           "count": 1
         }
