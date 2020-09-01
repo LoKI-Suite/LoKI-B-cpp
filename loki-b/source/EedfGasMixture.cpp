@@ -260,7 +260,10 @@ std::cout << rcnf.dump(1) << std::endl;
 
             entriesFromJSON(rcnf.at("lhs"), lhsStates, &lhsCoeffs);
             entriesFromJSON(rcnf.at("rhs"), rhsStates, &rhsCoeffs);
-            /// \todo DB: How to get LoKI-B's type? There can be multiple tags, how do these map to LoKI-B's type?
+            /** \todo DB: How to get LoKI-B's type? There can be multiple tags, how do these map to LoKI-B's type?
+             *  Example: e + N2(X) -> e + N2(A3Su+,v=1-4) has type 'Excitation' in v4, but
+             *  type_tags "Electronic", "Vibrational" in v4.
+             */
             if (rcnf.at("type_tags").size()!=1)
             {
                 throw std::runtime_error("type_tags: expected exactly one type is this array.");
