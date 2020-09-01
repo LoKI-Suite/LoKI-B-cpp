@@ -94,6 +94,13 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     if (!mixture.CARGases.empty())
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
+    /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
+     *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
+     *        Then the pattern-code below can be removed, only a resize needed. Question:
+     *        does Eigen optimize matrix addition and multiplication for such matrices? That
+     *        is not immediately clear to me.
+     *        Same for the other constructor, of course.
+     */
     std::vector<Eigen::Triplet<double>> diagPattern;
     diagPattern.reserve(grid.cellNumber);
 
@@ -300,6 +307,7 @@ void ElectronKinetics::invertLinearMatrix()
 {
     if (!mixture.CARGases.empty())
     {
+        /// \todo Document all the scalings ('1e20') in this file. Are these really needed?
         boltzmannMatrix =
             1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
                      attachmentConservativeMatrix);
@@ -646,6 +654,10 @@ void ElectronKinetics::evaluateIonizationOperator()
                             density * grid.step * grid.getCell(k) * cellCrossSection[k] * sum;
                     }
 
+                    /** \todo If k + numThreshold + 1 < grid.cellNumber, the term is ignored.
+                     *        Document (in the document, not necessarily here) what are the
+                     *        consequences of that.
+                     */
                     if (k + numThreshold + 1 < grid.cellNumber)
                     {
                         for (uint32_t i = k + numThreshold + 1; i < end; ++i)
@@ -656,6 +668,10 @@ void ElectronKinetics::evaluateIonizationOperator()
                                  (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
                         }
                     }
+
+                    /** \todo The following comment needs to be sorted out (possible index errors).
+                     *  \todo Document what is done here (algorithm) and how it is implemented.
+                     */
 
                     // This last section might need some adjustments because of indexing
                     // differences between Matlab and C++ (since indexes are multiplied here).
@@ -707,14 +723,22 @@ void ElectronKinetics::evaluateAttachmentOperator()
             if (threshold > grid.getNode(cellNumber))
                 continue;
 
+            /** \this should definitely not be in this (double) loop. Is this a constructor task?
+             *        Can this just be replaced with 'gas->collisions[CollisionType::attachment].size()'
+             *        in (other) places where this is now used?
+             */
             includeNonConservativeAttachment = true;
 
             const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
+            /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
+             *        in the two places where it is needed (one if the merger below can be done).
+             */
             Vector cellCrossSection(cellNumber);
 
             const double targetDensity = collision->getTarget()->density;
 
+            /// \todo Merge with the subsequent k-loop.
             for (uint32_t i = 0; i < cellNumber; ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
@@ -724,6 +748,10 @@ void ElectronKinetics::evaluateAttachmentOperator()
             if (numThreshold == 0)
                 continue;
 
+            /** Can we also merge with this loop?
+             *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
+             *  given the amount of work done.
+             */
             for (uint32_t k = 0; k < cellNumber; ++k)
             {
                 if (k < cellNumber - numThreshold)
