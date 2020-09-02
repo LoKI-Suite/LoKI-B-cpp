@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include "LoKI-B/json.h"
 
 namespace loki {
 
@@ -76,7 +77,8 @@ namespace loki {
         size,
         none
     };
-    CollisionType getCollisionType(const std::string &str);
+    CollisionType getCollisionType(const std::string& str);
+    CollisionType getCollisionTypeFromTypeTagArray(const json_type& type_tags);
 
 } // namespace loki
 
