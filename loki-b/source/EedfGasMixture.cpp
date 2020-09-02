@@ -188,6 +188,13 @@ namespace loki {
                 loadCollisions(inputPath + file, energyGrid, isExtra);
             }
         }
+#if 0
+        std::cout << "List of collisions" << std::endl;
+        for (const auto& c : m_collisions)
+        {
+            std::cout << *c << std::endl;
+        }
+#endif
         std::cout << "Finished loading collisions" << std::endl;
     }
 
@@ -253,22 +260,13 @@ namespace loki {
     {
         try {
             const json_type& rcnf = pcnf.at("reaction");
-std::cout << rcnf.dump(1) << std::endl;
 
             std::vector <StateEntry> lhsStates, rhsStates;
             std::vector <uint16_t> lhsCoeffs, rhsCoeffs;
 
             entriesFromJSON(rcnf.at("lhs"), lhsStates, &lhsCoeffs);
             entriesFromJSON(rcnf.at("rhs"), rhsStates, &rhsCoeffs);
-            /** \todo DB: How to get LoKI-B's type? There can be multiple tags, how do these map to LoKI-B's type?
-             *  Example: e + N2(X) -> e + N2(A3Su+,v=1-4) has type 'Excitation' in v4, but
-             *  type_tags "Electronic", "Vibrational" in v4.
-             */
-            if (rcnf.at("type_tags").size()!=1)
-            {
-                throw std::runtime_error("type_tags: expected exactly one type is this array.");
-            }
-            const CollisionType type = getCollisionType(rcnf.at("type_tags")[0]);
+            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
             const bool isReverse = rcnf.at("reversible");
 
             auto* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
@@ -283,7 +281,7 @@ std::cout << rcnf.dump(1) << std::endl;
         }
         catch (std::exception &exc)
         {
-            throw std::runtime_error("Error while parsing reaction from section '" + pcnf.dump() + "':\n"
+            throw std::runtime_error("Error while parsing reaction from section '" + pcnf.dump(1) + "':\n"
                 + std::string(exc.what()));
         }
     }
