@@ -237,10 +237,7 @@ StateEntry entryFromJSON(const json_type& cnf)
         const int charge_int = st.at("charge").get<int>();
         const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
         const json_type& descr = st.at("descriptor");
-        /** \todo DB: How to generate the full excited state name from the various id's?
-         *  In addition to "e" there may be "S", "parity" and more. Update this code,
-         *  since the description now appears outside of the "states" section (since JSON v5).
-         */
+        const std::string e_id = descr.at("e");
         if (descr.contains("states"))
         {
             // We have an array of state objects, instead of a single one.
@@ -257,7 +254,8 @@ StateEntry entryFromJSON(const json_type& cnf)
             for (json_type::const_iterator s = descr.at("states").begin(); s!= descr.at("states").end(); ++s)
             {
                 // since JSON v5, the "e" id (and others) appear outside of the "states" section, in the "descriptor".
-                e_vals.insert(descr.at("e").get<std::string>());
+                //e_vals.insert(descr.at("e").get<std::string>());
+                e_vals.insert(e_id);
                 if (s->contains("v"))
                 {
                     v_vals.insert(s->at("v").get<int>());
@@ -316,7 +314,7 @@ StateEntry entryFromJSON(const json_type& cnf)
             /** \todo DB: How to generate the full excited state name from the various id's?
              *  In addition to "e" there may be "S", "parity" and more...
              */
-            const std::string e{descr.at("e").get<std::string>()};
+            const std::string e{e_id};
             const std::string v{descr.contains("v") ? (
                 descr.at("v").type()==json_type::value_t::string
                     ? descr.at("v").get<std::string>()
