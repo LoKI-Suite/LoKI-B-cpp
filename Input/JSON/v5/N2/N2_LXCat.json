@@ -3792,7 +3792,7 @@
             "descriptor": {
               "type": 0,
               "accuracy": 2,
-              "e": "B",
+              "e": "B'",
               "Lambda": 0,
               "S": 1,
               "parity": "u",
@@ -4562,7 +4562,7 @@
             "descriptor": {
               "type": 0,
               "accuracy": 2,
-              "e": "a",
+              "e": "a'",
               "Lambda": 0,
               "S": 0,
               "parity": "u",
@@ -6856,7 +6856,7 @@
             "descriptor": {
               "type": 0,
               "accuracy": 2,
-              "e": "a",
+              "e": "a''",
               "Lambda": 0,
               "S": 0,
               "parity": "g",
