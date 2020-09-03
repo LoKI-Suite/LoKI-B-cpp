@@ -47,9 +47,8 @@ namespace loki {
         void evaluateRateCoefficients(const Vector &eedf);
 
     private:
-        void createCollision(const json_type& pcnf, Grid *energyGrid, bool isExtra);
-
-        /** This member contains the bits of the collision creation code
+        /** \todo Update docs, this now does ALL the work...
+         *  This member contains the bits of the collision creation code
          *  that are shared by the legacy and JSON set up code. It adds
          *  the states that are mentioned on the LHS and RHS of the equation,
          *  then creates the collision object. If an eqiuvalent object
@@ -63,14 +62,8 @@ namespace loki {
          *  object for this collision. That task is not part of this
          *  function since it depends on the input style legacy/JSON.
          */
-        Collision* createCollision(
-                CollisionType entry_type,
-                const std::vector<StateEntry>& entry_reactants,
-                const std::vector <uint16_t>& entry_reactants_stoiCoeff,
-                const std::vector<StateEntry>& entry_products,
-                const std::vector <uint16_t>& entry_products_stoiCoeff,
-                bool reverse_also,
-                bool isExtra);
+        void createCollision(const json_type& pcnf, Grid *energyGrid, bool isExtra);
+
         /* -- loadCollisions --
          * Loads the collisions from the file that is provided as first argument.
          * Furthermore, it needs a pointer to the energy grid and a boolean to indicate

@@ -140,21 +140,71 @@ namespace loki {
                 //  3: "He + e"
                 //  4: "Elastic"
 
-                std::vector <StateEntry> lhsStates, rhsStates;
-                std::vector <uint16_t> lhsCoeffs,rhsCoeffs;
+                std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
+                std::vector <uint16_t> entry_lhsCoeffs,entry_rhsCoeffs;
 
-                entriesFromString(mProcess[1].str(), lhsStates, &lhsCoeffs);
-                const bool isReverse = (mProcess[2].str()[0] == '<');
-                entriesFromString(mProcess[3].str(), rhsStates, &rhsCoeffs);
-                const CollisionType type = getCollisionType(mProcess[4].str());
+                entriesFromString(mProcess[1].str(), entry_lhsStates, &entry_lhsCoeffs);
+                const bool reverseAlso = (mProcess[2].str()[0] == '<');
+                entriesFromString(mProcess[3].str(), entry_rhsStates, &entry_rhsCoeffs);
+                const CollisionType entry_type = getCollisionType(mProcess[4].str());
 
-                EedfCollision* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
-                if (collision)
+
+
+                // 1. Create vectors of pointers to the states that appear
+                //    on the left and right-hand sides of the process.
+                //    Create the states when necessary.
+                std::vector<State*> lhsStates;
+                std::vector<State*> rhsStates;
+                for (auto &stateEntry : entry_lhsStates)
                 {
-                    const bool isElasticOrEffective =
-                        type == CollisionType::effective || type == CollisionType::elastic;
+                    lhsStates.emplace_back(ensureState(stateEntry));
+                }
+                for (auto &stateEntry : entry_rhsStates)
+                {
+                    rhsStates.emplace_back(ensureState(stateEntry));
+                }
+                // 2. Create the collision object (but do not configure a CrossSection
+                //    object yet).
+                std::unique_ptr<Collision> collision{new Collision(entry_type,
+                            lhsStates, entry_lhsCoeffs,
+                            rhsStates, entry_rhsCoeffs,
+                            reverseAlso)};
+                Log<Message>::Notify(*collision);
+                // 3. See if we already have a collision of the same type with the same lhs and rhs.
+                //    If we do, isue a warning, discard the newly created collision object and return
+                //    nullptr. (NOTE: collision is a unique_ptr and will delete the collision object,
+                //    since we do not release that before returning from this function..)
+                for (const auto& c : m_collisions)
+                {
+                    if (c->is_same_as(*collision))
+                    {
+                        Log<DoubleCollision>::Warning(*c);
+                        collision.release();
+                        break;
+                    }
+                }
+                // 4. Register the collision with the (single) gas that is the target of the
+                //    binary electron-heavy process, add it to out own list of collisions
+                //    and return the (released) pointer to our caller.
+                //    That the left-hand side of the process is indeed of the form 'e + X' is
+                //    checked by the EedfCollision constructor, and the target 'X' is returned
+                //    by its member getTarget().
+                /** \todo Eliminate the following cast at some moment: we can do
+                 *        EedfGas& eedfGas = *ensureGas(collision->getTarget()->gas().name);
+                 *        but could check/assert that the pointer is the same.
+                 */
+                if (collision.get())
+                {
+                    EedfGas& eedfGas = static_cast<EedfGas&>(collision->getTarget()->gas());
+                    eedfGas.addCollision(collision.get(), isExtra);
+                    m_collisions.push_back(collision.get());
+                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+
+                    const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
+                    collision->type == CollisionType::elastic);
                     collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                                isElasticOrEffective, in));
+                    collision.release();
                 }
             }
             catch (std::exception &exc)
@@ -198,85 +248,75 @@ namespace loki {
         std::cout << "Finished loading collisions" << std::endl;
     }
 
-    EedfGasMixture::Collision* EedfGasMixture::createCollision(
-                CollisionType entry_type,
-                const std::vector<StateEntry>& entry_lhsStates,
-                const std::vector <uint16_t>& entry_lhsCoeffs,
-                const std::vector<StateEntry>& entry_rhsStates,
-                const std::vector <uint16_t>& entry_rhsCoeffs,
-                bool reverse_also,
-                bool isExtra)
-    {
-        // 1. Create vectors of pointers to the states that appear
-        //    on the left and right-hand sides of the process.
-        //    Create the states when necessary.
-        std::vector<State*> lhsStates;
-        std::vector<State*> rhsStates;
-        for (auto &stateEntry : entry_lhsStates)
-        {
-            lhsStates.emplace_back(ensureState(stateEntry));
-        }
-        for (auto &stateEntry : entry_rhsStates)
-        {
-            rhsStates.emplace_back(ensureState(stateEntry));
-        }
-        // 2. Create the collision object (but do not configure a CrossSection
-        //    object yet).
-        std::unique_ptr<Collision> collision{new Collision(entry_type,
-                    lhsStates, entry_lhsCoeffs,
-                    rhsStates, entry_rhsCoeffs,
-                    reverse_also)};
-        Log<Message>::Notify(*collision);
-        // 3. See if we already have a collision of the same type with the same lhs and rhs.
-        //    If we do, isue a warning, discard the newly created collision object and return
-        //    nullptr. (NOTE: collision is a unique_ptr and will delete the collision object,
-        //    since we do not release that before returning from this function..)
-        for (const auto& c : m_collisions)
-        {
-            if (c->is_same_as(*collision))
-            {
-                Log<DoubleCollision>::Warning(*c);
-                return nullptr;
-            }
-        }
-        // 4. Register the collision with the (single) gas that is the target of the
-        //    binary electron-heavy process, add it to out own list of collisions
-        //    and return the (released) pointer to our caller.
-        //    That the left-hand side of the process is indeed of the form 'e + X' is
-        //    checked by the EedfCollision constructor, and the target 'X' is returned
-        //    by its member getTarget().
-        /** \todo Eliminate the following cast at some moment: we can do
-         *        EedfGas& eedfGas = *ensureGas(collision->getTarget()->gas().name);
-         *        but could check/assert that the pointer is the same.
-         */
-        EedfGas& eedfGas = static_cast<EedfGas&>(collision->getTarget()->gas());
-        eedfGas.addCollision(collision.get(), isExtra);
-        m_collisions.push_back(collision.get());
-        hasCollisions[static_cast<uint8_t>(collision->type)] = true;
-        return collision.release();
-    }
-
     void EedfGasMixture::createCollision(const json_type& pcnf, Grid *energyGrid, bool isExtra)
     {
         try {
             const json_type& rcnf = pcnf.at("reaction");
 
-            std::vector <StateEntry> lhsStates, rhsStates;
-            std::vector <uint16_t> lhsCoeffs, rhsCoeffs;
+            std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
+            std::vector <uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
 
-            entriesFromJSON(rcnf.at("lhs"), lhsStates, &lhsCoeffs);
-            entriesFromJSON(rcnf.at("rhs"), rhsStates, &rhsCoeffs);
-            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
-            const bool isReverse = rcnf.at("reversible");
+            entriesFromJSON(rcnf.at("lhs"), entry_lhsStates, &entry_lhsCoeffs);
+            entriesFromJSON(rcnf.at("rhs"), entry_rhsStates, &entry_rhsCoeffs);
+            const CollisionType entry_type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
+            const bool reverseAlso = rcnf.at("reversible");
 
-            auto* collision = createCollision(type,lhsStates,lhsCoeffs,rhsStates,rhsCoeffs,isReverse,isExtra);
-            if (collision)
+            // 1. Create vectors of pointers to the states that appear
+            //    on the left and right-hand sides of the process.
+            //    Create the states when necessary.
+            std::vector<State*> lhsStates;
+            std::vector<State*> rhsStates;
+            for (auto &stateEntry : entry_lhsStates)
             {
+                lhsStates.emplace_back(ensureState(stateEntry));
+            }
+            for (auto &stateEntry : entry_rhsStates)
+            {
+                rhsStates.emplace_back(ensureState(stateEntry));
+            }
+            // 2. Create the collision object (but do not configure a CrossSection
+            //    object yet).
+            std::unique_ptr<Collision> collision{new Collision(entry_type,
+                        lhsStates, entry_lhsCoeffs,
+                        rhsStates, entry_rhsCoeffs,
+                        reverseAlso)};
+            Log<Message>::Notify(*collision);
+            // 3. See if we already have a collision of the same type with the same lhs and rhs.
+            //    If we do, isue a warning, discard the newly created collision object and return
+            //    nullptr. (NOTE: collision is a unique_ptr and will delete the collision object,
+            //    since we do not release that before returning from this function..)
+            for (const auto& c : m_collisions)
+            {
+                if (c->is_same_as(*collision))
+                {
+                    Log<DoubleCollision>::Warning(*c);
+                    collision.release();
+                    break;
+                }
+            }
+            // 4. Register the collision with the (single) gas that is the target of the
+            //    binary electron-heavy process, add it to out own list of collisions
+            //    and return the (released) pointer to our caller.
+            //    That the left-hand side of the process is indeed of the form 'e + X' is
+            //    checked by the EedfCollision constructor, and the target 'X' is returned
+            //    by its member getTarget().
+            /** \todo Eliminate the following cast at some moment: we can do
+             *        EedfGas& eedfGas = *ensureGas(collision->getTarget()->gas().name);
+             *        but could check/assert that the pointer is the same.
+             */
+            if (collision.get())
+            {
+                EedfGas& eedfGas = static_cast<EedfGas&>(collision->getTarget()->gas());
+                eedfGas.addCollision(collision.get(), isExtra);
+                m_collisions.push_back(collision.get());
+                hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+
                 const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
                                                    collision->type == CollisionType::elastic);
                 const double threshold = pcnf.contains("threshold") ? pcnf.at("threshold").get<double>() : 0.0;
                 collision->crossSection.reset(new CrossSection(threshold, energyGrid,
                                                            isElasticOrEffective, pcnf));
+                collision.release();
             }
         }
         catch (std::exception &exc)
