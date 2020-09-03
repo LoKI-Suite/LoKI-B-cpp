@@ -1,6 +1,6 @@
 {
   "states": [
-    { "particle": "e", "charge": -1, "id": "e^-" },
+    { "particle": "e", "charge": -1, "id": "e" },
     {
       "particle": "N2",
       "charge": 0,
@@ -534,12 +534,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=0)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=0)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=2)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -665,12 +665,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=3)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -786,12 +786,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=4)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -897,12 +897,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=5)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -998,12 +998,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=6)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1089,12 +1089,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=7)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1170,12 +1170,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=6)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=8)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1241,12 +1241,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=7)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=9)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1302,12 +1302,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=8)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=10)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1353,12 +1353,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=9)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=11)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=11)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1409,12 +1409,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=10)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=12)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=12)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1464,12 +1464,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=11)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=11)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=13)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=13)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1518,12 +1518,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=12)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=12)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=14)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=14)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1571,12 +1571,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=13)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=13)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=15)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=15)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1623,12 +1623,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=14)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=14)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=16)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=16)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1674,12 +1674,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=15)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=15)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=17)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=17)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1724,12 +1724,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=16)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=16)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=18)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=18)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1773,12 +1773,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=17)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=17)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=19)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=19)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1821,12 +1821,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=18)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=18)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=20)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=20)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1877,12 +1877,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=19)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=19)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=21)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=21)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1932,12 +1932,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=20)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=20)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=22)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=22)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -1986,12 +1986,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=21)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=21)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=23)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=23)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2039,12 +2039,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=22)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=22)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=24)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=24)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2091,12 +2091,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=23)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=23)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=25)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=25)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2142,12 +2142,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=24)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=24)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=26)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=26)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2192,12 +2192,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=25)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=25)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=27)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=27)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2241,12 +2241,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=26)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=26)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=28)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=28)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2289,12 +2289,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=27)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=27)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=29)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=29)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2336,12 +2336,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=28)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=28)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=30)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=30)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2382,12 +2382,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=29)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=29)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=31)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=31)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]
@@ -2432,12 +2432,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=30)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=30)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=0,J=32)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=0,J=32)" }
         ],
         "reversible": true,
         "type_tags": ["Rotational"]

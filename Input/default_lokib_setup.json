@@ -20,8 +20,8 @@
 		"growthModelType": "temporal",
 		"includeEECollisions": false,
 		"LXCatFiles": [
-			"JSON/v5/N2/N2_LXCat.json",
-			"JSON/v5/N2/N2_rot_LXCat.json"
+			"JSON/v5/N2/with_ids/N2_LXCat.json",
+			"JSON/v5/N2/with_ids/N2_rot_LXCat.json"
 		],
 		"_LXCatFiles": [
 			"Nitrogen/N2_LXCat.txt",

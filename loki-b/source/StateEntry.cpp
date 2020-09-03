@@ -8,18 +8,19 @@ namespace loki {
 
 StateEntry StateEntry::electronEntry()
 {
-    static StateEntry el{StateType::charge,"e","-",std::string{},std::string{},std::string{}};
+    static StateEntry el{"e",StateType::charge,"e","-",std::string{},std::string{},std::string{}};
     return el;
 }
 
 StateEntry::StateEntry()
-    : level(none)
+    : m_id{std::string{}}, level(none)
 {
 }
 
-StateEntry::StateEntry(StateType level, const std::string &gasName, const std::string &charge,
+StateEntry::StateEntry(const std::string& id, StateType level, const std::string &gasName, const std::string &charge,
                    const std::string &e, const std::string &v, const std::string &J)
-    : level(level),
+    : m_id(id),
+    level(level),
     charge(charge),
     gasName(gasName),
     e(e),
@@ -107,6 +108,7 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
 
         // the stoichiometric coefficient (empty corresponds to 1).
         const std::string c = res[1];
+        const std::string id = res.str(2);
         std::string g,s;
         // state id components:
         std::string q, e, v, J;
@@ -171,7 +173,7 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
                 : v.empty()==false ? vibrational
                 : e.empty()==false ? electronic
                 : charge;
-            entries.push_back(StateEntry(stateType,g,q,e,v,J));
+            entries.push_back(StateEntry(id,stateType,g,q,e,v,J));
             if (stoiCoeff)
             {
                 stoiCoeff->push_back(c.empty() ? 1 : std::stoi(c));
@@ -226,17 +228,17 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry>& e
 
 StateEntry entryFromJSON(const json_type& cnf)
 {
-        const json_type& st = cnf.at("state");
-        const std::string gasName = st.at("particle");
+        const std::string gasName = cnf.at("particle");
+        const std::string id = cnf.at("id");
         // this is how it is now done for the electron for legacy input
         if (gasName=="e")
         {
             std::cout << "Warning: ignoring state attributes for electrons." << std::endl;
             return StateEntry::electronEntry();
         }
-        const int charge_int = st.at("charge").get<int>();
+        const int charge_int = cnf.at("charge").get<int>();
         const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
-        const json_type& descr = st.at("descriptor");
+        const json_type& descr = cnf.at("descriptor");
         const std::string e_id = descr.at("e");
         if (descr.contains("states"))
         {
@@ -307,7 +309,7 @@ StateEntry entryFromJSON(const json_type& cnf)
                 : v.empty()==false ? vibrational
                 : e.empty()==false ? electronic
                 : charge;
-            return StateEntry{stateType,gasName,charge_str,e,v,J};
+            return StateEntry{id,stateType,gasName,charge_str,e,v,J};
         }
         else
         {
@@ -329,26 +331,8 @@ StateEntry entryFromJSON(const json_type& cnf)
                 : descr.contains("v") ? vibrational
                 : descr.contains("e") ? electronic
                 : charge;
-            return StateEntry{stateType,gasName,charge_str,e,v,J};
+            return StateEntry{id,stateType,gasName,charge_str,e,v,J};
         }
-}
-
-void entriesFromJSON(const json_type& cnf, std::vector<StateEntry> &entries,
-                              std::vector<uint16_t> *stoiCoeff)
-{
-    for (json_type::const_iterator i=cnf.begin(); i!=cnf.end(); ++i)
-    {
-        /** \todo It appears that the present JSON simply repeats the particle
-         *        object when it appears more than once. Then the stoichiometric
-         *        coefficient of each entry will be one, and we hope that 'e + e'
-         *        will be handled the same way as '2 e' (JvD).
-         */
-        entries.push_back(entryFromJSON(*i));
-        if (stoiCoeff)
-        {
-                stoiCoeff->push_back(1);
-        }
-    }
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)
@@ -377,7 +361,7 @@ StateEntry propertyStateFromString(const std::string &propertyString)
     {
         stateType = rotational;
     }
-    return {stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
+    return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
 }
 
 bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)

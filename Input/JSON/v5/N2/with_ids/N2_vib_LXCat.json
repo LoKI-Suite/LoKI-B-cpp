@@ -1,6 +1,6 @@
 {
   "states": [
-    { "particle": "e", "charge": -1, "id": "e^-" },
+    { "particle": "e", "charge": -1, "id": "e" },
     {
       "particle": "N2",
       "charge": 0,
@@ -156,12 +156,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -503,12 +503,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -850,12 +850,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -1197,12 +1197,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -1543,12 +1543,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -1889,12 +1889,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -2235,12 +2235,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -2581,12 +2581,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -2927,12 +2927,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3273,12 +3273,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3316,12 +3316,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3359,12 +3359,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3402,12 +3402,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3445,12 +3445,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3488,12 +3488,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3531,12 +3531,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3574,12 +3574,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3617,12 +3617,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3656,12 +3656,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3695,12 +3695,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3734,12 +3734,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3773,12 +3773,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3812,12 +3812,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3851,12 +3851,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3890,12 +3890,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3927,12 +3927,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -3964,12 +3964,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4001,12 +4001,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4038,12 +4038,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4075,12 +4075,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4112,12 +4112,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4149,12 +4149,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=5)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=5)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4186,12 +4186,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=6)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=6)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4223,12 +4223,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4260,12 +4260,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4297,12 +4297,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4331,12 +4331,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4365,12 +4365,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=4)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=4)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4399,12 +4399,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=7)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=7)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4433,12 +4433,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=3)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=3)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4469,12 +4469,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=8)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=8)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4505,12 +4505,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4541,12 +4541,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=2)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=2)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4575,12 +4575,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=9)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=9)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
@@ -4609,12 +4609,12 @@
     {
       "reaction": {
         "lhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=1)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=1)" }
         ],
         "rhs": [
-          { "state": "e^-", "count": 1 },
-          { "state": "N2(X1Sg+,v=10)", "count": 1 }
+          { "state": "e" },
+          { "state": "N2(X1Sg+,v=10)" }
         ],
         "reversible": true,
         "type_tags": ["Vibrational"]
