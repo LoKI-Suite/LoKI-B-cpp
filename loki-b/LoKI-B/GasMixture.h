@@ -20,7 +20,7 @@
 #include "LoKI-B/json.h"
 
 #include <vector>
-#include <set>
+#include <map>
 #include <fstream>
 
 namespace loki {
@@ -45,10 +45,13 @@ namespace loki {
         const std::vector<Gas*>& gases() const { return m_gases; }
         /// \todo Still needed?
         Gas* findGas(const std::string& name) { return static_cast<Gas*>(GasMixtureBase::findGas(name)); }
-#if 0
         /// \todo Still needed?
         State* findState(const StateEntry& entry) { return static_cast<State*>(GasMixtureBase::findState(entry)); }
-#endif
+        GasBase::StateBase* findStateById(const std::string &stateId)
+        {
+            typename StateMap::iterator it = m_states.find(stateId);
+            return it==m_states.end() ? nullptr : it->second;
+        }
         /** Tries to add a new gas based on a given name and returns a pointer to it. If a
          *  gas with the same name already exists it returns a pointer to that gas.
          */
@@ -64,6 +67,7 @@ namespace loki {
             return gas;
         }
 
+        using StateMap = std::map<std::string,State*>;
         /** This overload accepts only a reference to a StateEntry object. This is the main
          *  function to call when a new state is to be added to the mixture. It will add the
          *  corresponding gas and ancestor states if the do not yet exist, before adding the
@@ -72,11 +76,19 @@ namespace loki {
          */
         State* ensureState(const StateEntry &entry)
         {
-            return ensureGas(entry.gasName)->ensureState(entry);
+            typename StateMap::iterator it = m_states.find(entry.m_id);
+            if (it!=m_states.end())
+            {
+                return it->second;
+            }
+            State* state = ensureGas(entry.gasName)->ensureState(entry);
+            m_states[entry.m_id] = state;
+            return state;
         }
     private:
         // Vector of pointers to all the gases in the mixture.
         std::vector<Gas*> m_gases;
+        StateMap m_states;
     };
 
 } // namespace loki

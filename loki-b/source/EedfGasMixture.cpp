@@ -228,7 +228,12 @@ namespace loki {
             if (file.size()>=5 && file.substr(file.size()-5)==".json")
             {
                 const json_type cnf = read_json_from_file(inputPath + file);
-                for (json_type::const_iterator it = cnf.begin(); it != cnf.end(); ++it)
+                for (json_type::const_iterator it = cnf.at("states").begin(); it != cnf.at("states").end(); ++it)
+                {
+                    const StateEntry entry{entryFromJSON(*it)};
+                    ensureState(entry);
+                }
+                for (json_type::const_iterator it = cnf.at("cross_sections").begin(); it != cnf.at("cross_sections").end(); ++it)
                 {
                     createCollision(*it,energyGrid,isExtra);
                 }
@@ -253,32 +258,44 @@ namespace loki {
         try {
             const json_type& rcnf = pcnf.at("reaction");
 
-            std::vector <StateEntry> entry_lhsStates, entry_rhsStates;
-            std::vector <uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
-
-            entriesFromJSON(rcnf.at("lhs"), entry_lhsStates, &entry_lhsCoeffs);
-            entriesFromJSON(rcnf.at("rhs"), entry_rhsStates, &entry_rhsCoeffs);
-            const CollisionType entry_type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
-            const bool reverseAlso = rcnf.at("reversible");
+            std::vector <uint16_t> lhsCoeffs, rhsCoeffs;
 
             // 1. Create vectors of pointers to the states that appear
             //    on the left and right-hand sides of the process.
             //    Create the states when necessary.
             std::vector<State*> lhsStates;
             std::vector<State*> rhsStates;
-            for (auto &stateEntry : entry_lhsStates)
+            for (const auto& t : rcnf.at("lhs"))
             {
-                lhsStates.emplace_back(ensureState(stateEntry));
+                const std::string& stateName(t.at("state"));
+                State* state = findStateById(stateName);
+                if (!state)
+                {
+                    throw std::runtime_error("Could not find state '" + stateName + "'.");
+                }
+                lhsStates.push_back(state);
+                lhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
             }
-            for (auto &stateEntry : entry_rhsStates)
+            for (const auto& t : rcnf.at("rhs"))
             {
-                rhsStates.emplace_back(ensureState(stateEntry));
+                const std::string& stateName(t.at("state"));
+                State* state = findStateById(stateName);
+                if (!state)
+                {
+                    throw std::runtime_error("Could not find state '" + stateName + "'.");
+                }
+                rhsStates.push_back(state);
+                rhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
             }
+
+            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
+            const bool reverseAlso = rcnf.at("reversible");
+
             // 2. Create the collision object (but do not configure a CrossSection
             //    object yet).
-            std::unique_ptr<Collision> collision{new Collision(entry_type,
-                        lhsStates, entry_lhsCoeffs,
-                        rhsStates, entry_rhsCoeffs,
+            std::unique_ptr<Collision> collision{new Collision(type,
+                        lhsStates, lhsCoeffs,
+                        rhsStates, rhsCoeffs,
                         reverseAlso)};
             Log<Message>::Notify(*collision);
             // 3. See if we already have a collision of the same type with the same lhs and rhs.
