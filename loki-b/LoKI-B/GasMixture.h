@@ -73,6 +73,9 @@ namespace loki {
          *  corresponding gas and ancestor states if the do not yet exist, before adding the
          *  state itself. If the state already exists, then a pointer to this state is
          *  returned instead.
+         *
+         *  Note tha this container only contains states that are actually present in the
+         *  mixture, not their parents that are crated implicitly.
          */
         State* ensureState(const StateEntry &entry)
         {

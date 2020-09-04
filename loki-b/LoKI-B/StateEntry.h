@@ -26,6 +26,12 @@ public:
     static StateEntry electronEntry();
     bool hasWildCard();
 
+    /** \todo Rethink m_id, or at least document this. id should only be associated with
+     *        the final state that is created, not with intermediate parents. This is not
+     *        a problem now, because id is only the in the map tha is managed by the mixture
+     *        in which only this final result is stored, but still: can an id be assigned
+     *        also to intermediate states in a reliable way?
+     */
     const std::string m_id;
     StateType level;
     std::string charge, gasName, e, v, J;
