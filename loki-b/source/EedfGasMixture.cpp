@@ -228,12 +228,15 @@ namespace loki {
             if (file.size()>=5 && file.substr(file.size()-5)==".json")
             {
                 const json_type cnf = read_json_from_file(inputPath + file);
-                for (json_type::const_iterator it = cnf.at("states").begin(); it != cnf.at("states").end(); ++it)
+                // 1. read the states
+                const json_type& scnf = cnf.at("states");
+                for (json_type::const_iterator it = scnf.begin(); it != scnf.end(); ++it)
                 {
                     const StateEntry entry{entryFromJSON(*it)};
                     ensureState(entry);
                 }
-                for (json_type::const_iterator it = cnf.at("cross_sections").begin(); it != cnf.at("cross_sections").end(); ++it)
+                // 2. read the processes
+                for (json_type::const_iterator it = cnf.at("processes").begin(); it != cnf.at("processes").end(); ++it)
                 {
                     createCollision(*it,energyGrid,isExtra);
                 }
@@ -262,7 +265,6 @@ namespace loki {
 
             // 1. Create vectors of pointers to the states that appear
             //    on the left and right-hand sides of the process.
-            //    Create the states when necessary.
             std::vector<State*> lhsStates;
             std::vector<State*> rhsStates;
             for (const auto& t : rcnf.at("lhs"))
@@ -330,9 +332,7 @@ namespace loki {
 
                 const bool isElasticOrEffective = (collision->type == CollisionType::effective ||
                                                    collision->type == CollisionType::elastic);
-                const double threshold = pcnf.contains("threshold") ? pcnf.at("threshold").get<double>() : 0.0;
-                collision->crossSection.reset(new CrossSection(threshold, energyGrid,
-                                                           isElasticOrEffective, pcnf));
+                collision->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
                 collision.release();
             }
         }

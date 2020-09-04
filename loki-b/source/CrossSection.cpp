@@ -10,8 +10,10 @@
 
 namespace loki {
 
-    CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf)
-            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective)
+    CrossSection::CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf)
+        : threshold(cnf.contains("threshold") ? cnf.at("threshold").get<double>() : 0.0),
+        energyGrid(energyGrid),
+        isElasticOrEffective(isElasticOrEffective)
     {
 
         using PairVector = std::vector<std::pair<double,double>>;
