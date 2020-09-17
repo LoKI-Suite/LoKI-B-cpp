@@ -7621,10 +7621,10 @@
               {
                 "e": "X",
                 "Lambda": 0,
-                "S": 0,
+                "S": 0.5,
                 "parity": "g",
                 "reflection": "+",
-                "summary": "X^1S_g^+"
+                "summary": "X^2S_g^+"
               }
             ],
             "id": "N2^+{X^1S_g^+}"
