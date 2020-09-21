@@ -238,51 +238,76 @@ StateEntry entryFromJSON(const json_type& cnf)
         }
         const int charge_int = cnf.at("charge").get<int>();
         const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
-        const json_type& descr = cnf.at("descriptor");
-        const std::string e_id = descr.at("e");
-        if (descr.contains("states"))
+        const json_type& el_cnf = cnf.at("electronic");
+        if (el_cnf.size()!=1)
         {
-            // We have an array of state objects, instead of a single one.
-            // loki-b expects a single string for "e", "v" and "J" (the latter
-            // can be empty. We need to 'pessimize' the input by canoncatenating
-            // the info into single string. The question here is what loki-b
-            // supports. Is it allowed, for example, that the "e" fields are
-            // different? For now we assume that everything is possible and we
-            // simply concatenate all unique "e"'s while for "v" and "J" we assume
-            // that the entries form a continuous value-range.
-            std::set<std::string> e_vals;
-            std::set<unsigned> v_vals;
-            std::set<unsigned> J_vals;
-            for (json_type::const_iterator s = descr.at("states").begin(); s!= descr.at("states").end(); ++s)
+                throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
+        }
+	// these are the strings that are passed to the
+        const std::string e = el_cnf[0].at("e");
+        std::string v,J;
+        if (el_cnf[0].contains("vibrational"))
+        {
+            const json_type& vib_cnf = el_cnf[0].at("vibrational");
+            if (vib_cnf.size()==0)
             {
-                // since JSON v5, the "e" id (and others) appear outside of the "states" section, in the "descriptor".
-                //e_vals.insert(descr.at("e").get<std::string>());
-                e_vals.insert(e_id);
-                if (s->contains("v"))
-                {
-                    v_vals.insert(s->at("v").get<int>());
-                }
-                if (s->contains("J"))
-                {
-                    J_vals.insert(s->at("J").get<int>());
-                }
+                throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
             }
-            std::string e;
-            if (e_vals.size()!=1)
+            else if (vib_cnf.size()==1)
             {
-                throw std::runtime_error("Expected a unique electronic state identifier.");
+                // we expect a number, but sometimes a string is encountered, like "10+"
+                v = vib_cnf[0].at("v").type()==json_type::value_t::string
+                    ? vib_cnf[0].at("v").get<std::string>()
+                    : std::to_string(vib_cnf[0].at("v").get<int>());
+                if (vib_cnf[0].contains("rotational"))
+                {
+                    const json_type& rot_cnf = vib_cnf[0].at("rotational");
+                    if (rot_cnf.size()==0)
+                    {
+                        throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
+                    }
+                    else if (rot_cnf.size()==1)
+                    {
+                        J = std::to_string(rot_cnf[0].at("J").get<int>());
+                    }
+                    else
+                    {
+                        // For "v" and "J" we assume that the entries form a continuous value-range.
+                        std::set<unsigned> J_vals;
+                        for (const auto& Jentry : rot_cnf)
+                        {
+                            J_vals.insert(Jentry.at("J").get<int>());
+                        }
+                        if (J_vals.size()!=rot_cnf.size())
+                        {
+                            throw std::runtime_error("Duplicate J entries encountered.");
+                        }
+                        int nJ = *J_vals.rbegin()+1-*J_vals.begin();
+                        if (nJ!=J_vals.size())
+                        {
+                            throw std::runtime_error("Expected a contiguous J-range.");
+                        }
+                        J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
+                    }
+                }
             }
             else
             {
-                e = *e_vals.begin();
-            }
-            std::string v;
-            if (v_vals.size()==1)
-            {
-                v = *v_vals.begin();
-            }
-            else if (v_vals.size()>1)
-            {
+                std::set<unsigned> v_vals;
+                for (const auto& ventry : vib_cnf)
+                {
+                    if (ventry.contains("rotational"))
+                    {
+                        throw std::runtime_error("Rotational states identifiers are not allowed when "
+					"multiple virbational states are specified.");
+                    }
+                    v_vals.insert(ventry.at("v").get<int>());
+                }
+                // For "v" and "J" we assume that the entries form a continuous value-range.
+                if (v_vals.size()!=vib_cnf.size())
+                {
+                    throw std::runtime_error("Duplicate v entries encountered.");
+                }
                 int nv = *v_vals.rbegin()+1-*v_vals.begin();
                 if (nv!=v_vals.size())
                 {
@@ -290,49 +315,13 @@ StateEntry entryFromJSON(const json_type& cnf)
                 }
                 v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
             }
-            std::string J;
-            if (J_vals.size()==1)
-            {
-                J = *J_vals.begin();
-            }
-            else if (J_vals.size()>1)
-            {
-                int nJ = *J_vals.rbegin()+1-*J_vals.begin();
-                if (nJ!=J_vals.size())
-                {
-                    throw std::runtime_error("Expected a contiguous J-range.");
-                }
-                J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
-            }
-            StateType stateType
-                = J.empty()==false ? rotational
-                : v.empty()==false ? vibrational
-                : e.empty()==false ? electronic
-                : charge;
-            return StateEntry{id,stateType,gasName,charge_str,e,v,J};
         }
-        else
-        {
-            /** \todo DB: How to generate the full excited state name from the various id's?
-             *  In addition to "e" there may be "S", "parity" and more...
-             */
-            const std::string e{e_id};
-            const std::string v{descr.contains("v") ? (
-                descr.at("v").type()==json_type::value_t::string
-                    ? descr.at("v").get<std::string>()
-                    : std::to_string(descr.at("v").get<int>())
-            ) : std::string{} };
-            const std::string J{descr.contains("J") ? std::to_string(descr.at("J").get<int>()) : std::string{} };
-            /** \todo Check the precise semantics of the next line. Is it possible that J
-             *        is specified, but not v? Is e always specified?
-             */
-            StateType stateType
-                = descr.contains("J") ? rotational
-                : descr.contains("v") ? vibrational
-                : descr.contains("e") ? electronic
-                : charge;
-            return StateEntry{id,stateType,gasName,charge_str,e,v,J};
-        }
+        StateType stateType
+            = J.empty()==false ? rotational
+            : v.empty()==false ? vibrational
+            : e.empty()==false ? electronic
+            : charge;
+        return StateEntry{id,stateType,gasName,charge_str,e,v,J};
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)
