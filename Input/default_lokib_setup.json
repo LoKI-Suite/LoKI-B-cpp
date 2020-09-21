@@ -20,6 +20,10 @@
 		"growthModelType": "temporal",
 		"includeEECollisions": false,
 		"LXCatFiles": [
+			"JSON/v6/N2/split/N2_LXCat.json",
+			"JSON/v6/N2/split/N2_rot_LXCat.json"
+		],
+		"_LXCatFiles": [
 			"JSON/v5/N2/with_ids/N2_LXCat.json",
 			"JSON/v5/N2/with_ids/N2_rot_LXCat.json"
 		],
