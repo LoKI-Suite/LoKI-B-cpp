@@ -1,0 +1,24 @@
+<html>
+   <head>
+      <!-- Load WebAssembly module -->
+      <script type="text/javascript" src="loki_bindings.js"></script>
+   </head>
+   <body>
+      <div>
+         Return value =
+         <span id="answer"/>
+      </div>
+      <script>
+         // Wait for module to initialize,
+         create_module().then(({run}) => {
+						try {
+           		const file_name = "Input/default_lokib_setup.json";
+					  	const ret = run(file_name);
+            	document.getElementById("answer").innerHTML = ret;
+						} catch(e) {
+							console.log(e/*.stack*/);
+						}
+         });
+      </script>
+   </body>
+</html>
