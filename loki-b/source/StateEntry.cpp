@@ -1,4 +1,5 @@
 #include "LoKI-B/StateEntry.h"
+#include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/StandardPaths.h"
 #include <fstream>
@@ -234,7 +235,7 @@ StateEntry entryFromJSON(const json_type &cnf)
     // this is how it is now done for the electron for legacy input
     if (gasName == "e")
     {
-        std::cout << "Warning: ignoring state attributes for electrons." << std::endl;
+        Log<Message>::Warning("Ignoring state attributes for electrons.");
         return StateEntry::electronEntry();
     }
     const int charge_int = cnf.at("charge").get<int>();
