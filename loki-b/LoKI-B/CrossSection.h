@@ -5,44 +5,45 @@
 #ifndef LOKI_CPP_CROSSSECTION_H
 #define LOKI_CPP_CROSSSECTION_H
 
-#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/json.h"
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
-namespace loki {
+namespace loki
+{
 
-    class CrossSection : public Vector
-    {
-//        std::vector<std::pair<double, double>> rawCrossSection;
-        Vector rawEnergyData, rawCrossSection;
-        Grid *energyGrid;
-        const bool isElasticOrEffective;
-    public:
-        const double threshold;
+class CrossSection : public Vector
+{
+    //        std::vector<std::pair<double, double>> rawCrossSection;
+    Vector rawEnergyData, rawCrossSection;
+    Grid *energyGrid;
+    const bool isElasticOrEffective;
 
-        CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type& cnf);
+  public:
+    const double threshold;
 
-        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
+    CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type &cnf);
 
-        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
-                     Vector rawCrossSection);
+    CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
 
-        void interpolate();
+    CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
+                 Vector rawCrossSection);
 
-        void interpolate(const Vector &energies, Vector &result);
+    void interpolate();
 
-        Vector &raw();
+    void interpolate(const Vector &energies, Vector &result);
 
-        Vector &energies();
+    Vector &raw();
 
-        const Grid *getGrid() const;
+    Vector &energies();
 
-//        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
+    const Grid *getGrid() const;
 
-    };
-}
+    //        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
+};
+} // namespace loki
 
-#endif //LOKI_CPP_CROSSSECTION_H
+#endif // LOKI_CPP_CROSSSECTION_H

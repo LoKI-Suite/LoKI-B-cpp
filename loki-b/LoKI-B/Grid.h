@@ -5,8 +5,8 @@
 #ifndef LOKI_CPP_GRID_H
 #define LOKI_CPP_GRID_H
 
-#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Event.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/json.h"
 
@@ -16,7 +16,7 @@ class Grid
 {
     Vector cells, nodes;
 
-public:
+  public:
     uint32_t cellNumber;
     double step;
 
@@ -45,12 +45,11 @@ public:
 
     void updateMaxEnergy(double value);
 
-    //Events
-    Event<> updatedMaxEnergy1,
-        updatedMaxEnergy2;
+    // Events
+    Event<> updatedMaxEnergy1, updatedMaxEnergy2;
 
     friend std::ostream &operator<<(std::ostream &, const Grid &);
 };
 } // namespace loki
 
-#endif //LOKI_CPP_GRID_H
+#endif // LOKI_CPP_GRID_H

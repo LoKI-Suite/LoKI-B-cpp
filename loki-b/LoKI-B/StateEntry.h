@@ -6,22 +6,23 @@
 #define LOKI_CPP_STATEENTRY_H
 
 #include <ostream>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/json.h"
 
-namespace loki {
+namespace loki
+{
 
-//using namespace Enumeration;
+// using namespace Enumeration;
 
 class StateEntry
 {
-public:
+  public:
     StateEntry();
-    StateEntry(const std::string& id, StateType level, const std::string &gasName, const std::string &charge,
+    StateEntry(const std::string &id, StateType level, const std::string &gasName, const std::string &charge,
                const std::string &e, const std::string &v, const std::string &J);
     static StateEntry electronEntry();
     bool hasWildCard();
@@ -45,10 +46,11 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry);
  * in which the stoichiometric coefficients of the states in this collision are
  * then stored. If a null pointer is passed, these coefficients are not stored.
  */
-void entriesFromString(const std::string stateString, std::vector<StateEntry>& entries, std::vector<uint16_t>* stoiCoeff);
+void entriesFromString(const std::string stateString, std::vector<StateEntry> &entries,
+                       std::vector<uint16_t> *stoiCoeff);
 
 /// \todo Make this a StateEntry constructor
-StateEntry entryFromJSON(const json_type& cnf);
+StateEntry entryFromJSON(const json_type &cnf);
 
 /** Extracts a StateEntry object from a given string and returns it. Note that this function
  *  is specifically used when loading state properties, since then the states can contain
@@ -63,4 +65,4 @@ bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
 
 } // namespace loki
 
-#endif //LOKI_CPP_STATEENTRY_H
+#endif // LOKI_CPP_STATEENTRY_H
