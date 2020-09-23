@@ -19,13 +19,14 @@ if(MSVC)
 
 else() # clang or g++
     # warning flags: -Wall -Wextra -Werror
-    message(STATUS "Using g++ or Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # specific to clang
+				message(STATUS "Using Clang")
     else()
         # extra for g++ (and compilers different to msvc and clang)
+    		message(STATUS "Using g++")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     endif()
 endif()
@@ -85,15 +86,15 @@ set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cp
         ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
         ${src}/StateEntry.cpp
         ${src}/JobSystem.cpp ${src}/json.cpp)
-set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-        ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
-        ${h}/Collision.h
-        ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h ${h}/Matrix2Picture.h
-        ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
-        ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
-        ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
-        ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
-        ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
+# set(headers ${h}/WorkingConditions.h ${h}/Grid.h
+#         ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
+#         ${h}/Collision.h
+#         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h ${h}/Matrix2Picture.h
+#         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
+#         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
+#         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
+#         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
+#         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 
 # Standard MKL directories on different operating systems. 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -112,8 +113,7 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 endif()
 
 # -- loki library -- #
-add_library(loki_l ${headers} ${cpp} ${property_functions})
-
+add_library(loki_l ${cpp} ${property_functions})
 target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki_l PRIVATE ${backend})
@@ -141,6 +141,29 @@ target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
 target_link_libraries(test_statecontainer PRIVATE loki_l ${backend})
 
+# -- WebAssembly -- #
+if(EMSCRIPTEN)
+	message(STATUS "Compiling to WebAssembly.")
+	add_executable(loki_bindings loki-b/web/bindings.cpp)
+	target_include_directories(loki_bindings PRIVATE loki-b ${inc} /usr/lib/emscripten/system/include)
+	target_link_libraries(loki_bindings PRIVATE loki_l)
+	set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
+		-s ASSERTIONS=1 \
+		-s ALLOW_MEMORY_GROWTH=1 \
+		-s MODULARIZE=1 \
+		-s EXPORT_NAME=create_module \
+		--bind \
+		--preload-file Input/default_lokib_setup.json \
+		--preload-file Input/N2_LXCat.json \
+		--preload-file Input/N2_rot_LXCat.json \
+		--preload-file Input/masses.txt \
+		--preload-file Input/harmonicFrequencies.txt \
+		--preload-file Input/rotationalConstants.txt \
+		--preload-file Input/N2_vibpop.txt \
+		--preload-file Input/OPBParameter.txt \
+		--preload-file Input/quadrupoleMoment.txt \
+		--preload-file Input/anharmonicFrequencies.txt")
+endif()
 
 # first we can indicate the documentation build as an option and set it to ON by default
 option(BUILD_DOC "Build documentation" ON)
@@ -163,5 +186,5 @@ if (DOXYGEN_FOUND)
         COMMENT "Generating API documentation with Doxygen"
         VERBATIM )
 else (DOXYGEN_FOUND)
-  message("Doxygen need to be installed to generate the doxygen documentation")
+  message("Doxygen needs to be installed to generate the doxygen documentation")
 endif (DOXYGEN_FOUND)
