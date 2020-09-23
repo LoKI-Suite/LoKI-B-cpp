@@ -1035,7 +1035,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
-        std::cout << "Iteration " << iter << std::endl;
+        Log<Message>::Notify("Iteration ", iter);
 
         totalCSI[0] = mixture.totalCrossSection[0];
 

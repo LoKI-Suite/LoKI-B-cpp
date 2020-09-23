@@ -24,7 +24,7 @@
 #define GAS_PROPERTY_TEMPL(GASLIST, PROPERTY, SEVERITY)                                                                \
     {                                                                                                                  \
         std::string fileBuffer;                                                                                        \
-        std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << setup.PROPERTY << "'."          \
+        std::cerr << "Configuring gas property '" << #PROPERTY << "', using file '" << setup.PROPERTY << "'."          \
                   << std::endl;                                                                                        \
         if (Parse::stringBufferFromFile(setup.PROPERTY, fileBuffer))                                                   \
         {                                                                                                              \
@@ -54,7 +54,7 @@
         std::string fileBuffer;                                                                                        \
         if (cnf_object.contains(#PROPERTY) && Parse::stringBufferFromFile(cnf_object.at(#PROPERTY), fileBuffer))       \
         {                                                                                                              \
-            std::cout << "Configuring gas property '" << #PROPERTY << "', using file '" << cnf_object.at(#PROPERTY)    \
+            std::cerr << "Configuring gas property '" << #PROPERTY << "', using file '" << cnf_object.at(#PROPERTY)    \
                       << "'." << std::endl;                                                                            \
             for (auto &gas : GASLIST)                                                                                  \
             {                                                                                                          \

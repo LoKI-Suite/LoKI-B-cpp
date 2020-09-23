@@ -4,6 +4,7 @@
 
 #include "LoKI-B/EedfGasMixture.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
 #include "LoKI-B/json.h"
 #include <iostream>
 #include <stdexcept>
@@ -218,7 +219,7 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
 }
 void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra)
 {
-    std::cout << "Starting loading collisions" << std::endl;
+    Log<Message>::Notify("Started loading collsions.");
 
 #ifdef EMSCRIPTEN
     const std::string inputPath{""};
@@ -256,7 +257,7 @@ void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid 
             std::cout << *c << std::endl;
         }
 #endif
-    std::cout << "Finished loading collisions" << std::endl;
+    Log<Message>::Notify("Finished loading collisions.");
 }
 
 void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bool isExtra)
