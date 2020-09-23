@@ -4,10 +4,12 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
+#include "emscripten/em_asm.h"
 #include <chrono>
 #include <exception>
 #include <sstream>
 
+#include <emscripten.h>
 #include <emscripten/bind.h>
 
 using loki::Log;
@@ -68,7 +70,8 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients, const loki::Vector &firstAnisotropy)
 {
-    plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+    // plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+    EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
 }
 
 void handleExistingOutputPath(std::string &folder)
