@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 #include <regex>
+#include <sstream>
 #include <string>
 
 #include "LoKI-B/Enumeration.h"
@@ -357,7 +358,6 @@ struct Parse
 
         return std::regex_match(str, reNum);
     }
-
 };
 
 /*
@@ -407,8 +407,7 @@ inline bool Parse::setField<bool>(const std::string &sectionContent, const std::
 }
 
 template <>
-inline bool Parse::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName,
-                                                   EedfType &value)
+inline bool Parse::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName, EedfType &value)
 {
 
     std::string valueBuffer;
@@ -420,9 +419,8 @@ inline bool Parse::setField<EedfType>(const std::string &sectionContent, const s
 }
 
 template <>
-inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionContent,
-                                                                 const std::string &fieldName,
-                                                                 IonizationOperatorType &value)
+inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionContent, const std::string &fieldName,
+                                                    IonizationOperatorType &value)
 {
 
     std::string valueBuffer;
@@ -434,9 +432,8 @@ inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionCo
 }
 
 template <>
-inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent,
-                                                          const std::string &fieldName,
-                                                          GrowthModelType &value)
+inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent, const std::string &fieldName,
+                                             GrowthModelType &value)
 {
 
     std::string valueBuffer;
