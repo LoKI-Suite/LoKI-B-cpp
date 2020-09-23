@@ -118,31 +118,31 @@ target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki_l PRIVATE ${backend})
 
-# -- loki default front end -- #
-add_executable(loki ${src}/main.cpp)
-target_include_directories(loki PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
-target_link_libraries(loki PRIVATE loki_l ${backend})
+# -- loki front ends -- #
+if(NOT EMSCRIPTEN)
+	# -- loki native default front end -- #
+	add_executable(loki ${src}/main.cpp)
+	target_include_directories(loki PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(loki PRIVATE loki_l ${backend})
 
-# -- loki tests -- #
-add_executable(test_statebase ${tests}/test_statebase.cpp)
-target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
-target_link_libraries(test_statebase PRIVATE loki_l ${backend})
-
-add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
-target_include_directories(test_reaction_format PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
-target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
-
-# -- loki tests -- #
-add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
-target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
-target_link_libraries(test_statecontainer PRIVATE loki_l ${backend})
-
-# -- WebAssembly -- #
-if(EMSCRIPTEN)
+	# -- loki tests -- #
+	add_executable(test_statebase ${tests}/test_statebase.cpp)
+	target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(test_statebase PRIVATE loki_l ${backend})
+	
+	add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
+	target_include_directories(test_reaction_format PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
+	
+	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
+	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(test_statecontainer PRIVATE loki_l ${backend})
+else()
+	# -- WebAssembly -- #
 	message(STATUS "Compiling to WebAssembly.")
 	add_executable(loki_bindings loki-b/web/bindings.cpp)
 	target_include_directories(loki_bindings PRIVATE loki-b ${inc} /usr/lib/emscripten/system/include)
