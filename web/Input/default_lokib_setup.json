@@ -75,7 +75,7 @@
 		"refreshFrequency": 1
 	},
 	"output": {
-		"isOn": true,
+		"isOn": false,
 		"folder": "simulation",
 		"dataFiles": [
 			"eedf",
