@@ -6,6 +6,7 @@
 #include "LoKI-B/Simulation.h"
 #include <chrono>
 #include <exception>
+#include <sstream>
 
 #include <emscripten/bind.h>
 
@@ -24,22 +25,18 @@ void handleExistingOutputPath(std::string &folder);
 void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel, const loki::Vector &x,
           const loki::Vector &y);
 
-int run(std::string file_name)
+int run(std::string file_contents)
 {
     try
     {
         auto begin = std::chrono::high_resolution_clock::now();
 
         std::unique_ptr<loki::Simulation> simulation;
-        if (file_name.size() >= 5 && file_name.substr(file_name.size() - 5) == ".json")
-        {
-            const loki::json_type cnf = loki::read_json_from_file(file_name);
-            simulation.reset(new loki::Simulation(cnf));
-        }
-        else
-        {
-            return 1;
-        }
+
+        std::stringstream ss(file_contents);
+        const loki::json_type cnf = loki::read_json_from_stream(ss);
+
+        simulation.reset(new loki::Simulation(cnf));
 
         simulation->obtainedResults.addListener(handleResults);
         simulation->outputPathExists.addListener(handleExistingOutputPath);
