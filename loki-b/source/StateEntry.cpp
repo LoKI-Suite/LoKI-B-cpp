@@ -243,7 +243,7 @@ StateEntry entryFromJSON(const json_type& cnf)
         {
                 throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
         }
-	// these are the strings that are passed to the
+	// e,v,J are the strings that are passed to the StateEntry constructor.
         const std::string e = el_cnf[0].at("e");
         std::string v,J;
         if (el_cnf[0].contains("vibrational"))
