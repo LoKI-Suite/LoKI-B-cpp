@@ -6,59 +6,56 @@
 #define LOKI_CPP_EEDFCOLLISION_H
 
 #include "LoKI-B/Collision.h"
-#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/CrossSection.h"
-#include "LoKI-B/Power.h"
-#include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/EedfGas.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/Power.h"
 #include <memory>
 
-namespace loki {
+namespace loki
+{
 
-    class EedfCollision : public Collision
-    {
+class EedfCollision : public Collision
+{
 
-        // The raw cross section data and threshold is stored in
-        // the CrossSection object
+    // The raw cross section data and threshold is stored in
+    // the CrossSection object
 
-        StateVector m_lhsHeavyStates;
-    public:
-        CoeffVector m_lhsHeavyCoeffs;
-        StateVector m_rhsHeavyStates;
-        CoeffVector m_rhsHeavyCoeffs;
-        using EedfState = GasBase::State;
+    StateVector m_lhsHeavyStates;
 
-        // DONE: Inelastic and superelastic rate coefficient variables should be here
-        double ineRateCoeff{0.};
-        double supRateCoeff{0.};
-        std::unique_ptr<CrossSection> crossSection;
+  public:
+    CoeffVector m_lhsHeavyCoeffs;
+    StateVector m_rhsHeavyStates;
+    CoeffVector m_rhsHeavyCoeffs;
+    using EedfState = GasBase::State;
 
-        EedfCollision(CollisionType type,
-                      const StateVector& lhsStates,
-                      const CoeffVector& lhsCoeffs,
-                      const StateVector& rhsStates,
-                      const CoeffVector& rhsCoeffs,
-                      bool isReverse);
+    // DONE: Inelastic and superelastic rate coefficient variables should be here
+    double ineRateCoeff{0.};
+    double supRateCoeff{0.};
+    std::unique_ptr<CrossSection> crossSection;
 
-        ~EedfCollision();
+    EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+                  const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse);
 
-        const EedfState *getTarget() const;
-        EedfState *getTarget();
+    ~EedfCollision();
 
-        void superElastic(const Vector &energyData, Vector &result) const;
+    const EedfState *getTarget() const;
+    EedfState *getTarget();
 
-        friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
+    void superElastic(const Vector &energyData, Vector &result) const;
 
-        CollPower evaluateConservativePower(const Vector &eedf);
+    friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
 
-        CollPower evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
-                                               const double OPBParameter);
+    CollPower evaluateConservativePower(const Vector &eedf);
 
-        RateCoefficient evaluateRateCoefficient(const Vector &eedf);
+    CollPower evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
+                                           const double OPBParameter);
 
-        std::string typeAsString() const;
-    };
-}
+    RateCoefficient evaluateRateCoefficient(const Vector &eedf);
 
+    std::string typeAsString() const;
+};
+} // namespace loki
 
-#endif //LOKI_CPP_EEDFCOLLISION_H
+#endif // LOKI_CPP_EEDFCOLLISION_H

@@ -29,10 +29,11 @@
 #ifndef LOKI_CPP_EVENT_H
 #define LOKI_CPP_EVENT_H
 
-#include <vector>
 #include <functional>
+#include <vector>
 
-namespace loki {
+namespace loki
+{
 
 /** An event class is characterized by a list of types that define the signature
  *  of callback functions, or listeners, that accepts a compatible list of
@@ -51,10 +52,10 @@ namespace loki {
  *        calling the registered callbacks should not modify the event object.
  *  \todo Allow constant member function callbacks and target object pointers.
  */
-template<typename ...T>
+template <typename... T>
 class Event
 {
-public:
+  public:
     /// The default constructor of the Event class is available
     Event() = default;
     /// Event objects are non-copyable, the default copy constructor is deleted.
@@ -65,13 +66,13 @@ public:
      *  be called with an argument list that is defined by the list of template
      *  arguments.
      */
-    using Callback = std::function<void(T&...)>;
+    using Callback = std::function<void(T &...)>;
 
     /** Call all registered callback functions with arguments \a args.
      *  The callbacks are called in the order of registration with the
      *  event object.
      */
-    void emit(T& ...args)
+    void emit(T &... args)
     {
         for (const auto &callback : m_callbacks)
         {
@@ -86,12 +87,13 @@ public:
     /** This overload adds a callback function that is created from a member
      *  function pointer \a f and the object \a c on which \a f is to be called.
      */
-    template<class C>
-    void addListener(void (C::*f)(T&... Args), C *c)
+    template <class C>
+    void addListener(void (C::*f)(T &... Args), C *c)
     {
-        m_callbacks.emplace_back([c, f](T&... t) -> void { (c->*f)(t...); });
+        m_callbacks.emplace_back([c, f](T &... t) -> void { (c->*f)(t...); });
     }
-private:
+
+  private:
     /** The container of registered callbacks.
      */
     std::vector<Callback> m_callbacks;
@@ -99,4 +101,4 @@ private:
 
 } // namespace loki
 
-#endif //LOKI_CPP_EVENT_H
+#endif // LOKI_CPP_EVENT_H

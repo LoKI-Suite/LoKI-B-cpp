@@ -26,17 +26,17 @@
  *  \author Daan Boer and Jan van Dijk (C++ version)
  */
 
-
+#include <cassert>
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
-#include <cassert>
 
 #include "LoKI-B/JobSystem.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 
-namespace loki {
+namespace loki
+{
 
 Range::~Range()
 {
@@ -44,7 +44,7 @@ Range::~Range()
 
 double Range::value(size_type ndx) const
 {
-    assert(ndx<size());
+    assert(ndx < size());
     return get_value(ndx);
 }
 
@@ -52,18 +52,19 @@ double Range::value(size_type ndx) const
  */
 class RangeSingleValue : public Range
 {
-public:
-    RangeSingleValue(double value)
-        : Range(1), m_value(value)
+  public:
+    RangeSingleValue(double value) : Range(1), m_value(value)
     {
         Log<Message>::Notify("Creating single-value range, value = ", value);
     }
-protected:
+
+  protected:
     virtual double get_value(size_type ndx) const override
     {
         return m_value;
     }
-private:
+
+  private:
     const double m_value;
 };
 
@@ -72,26 +73,25 @@ private:
  */
 class RangeLinSpace : public Range
 {
-public:
-    RangeLinSpace(double start, double stop, size_type size)
-        : Range(size), start(start), stop(stop)
+  public:
+    RangeLinSpace(double start, double stop, size_type size) : Range(size), start(start), stop(stop)
     {
         Log<Message>::Notify("Creating linspace range"
-            ", start = ", start,
-            ", stop = ", stop,
-            ", size = ", size
-        );
-        if (size<2)
+                             ", start = ",
+                             start, ", stop = ", stop, ", size = ", size);
+        if (size < 2)
         {
             throw std::runtime_error("Range(linspace): at least two points required.");
         }
     }
-protected:
+
+  protected:
     virtual double get_value(size_type ndx) const override
     {
         return start + ndx * (stop - start) / (size() - 1);
     }
-private:
+
+  private:
     const double start;
     const double stop;
 };
@@ -102,34 +102,35 @@ private:
  */
 class RangeLogSpace : public Range
 {
-public:
+  public:
     RangeLogSpace(double log_start, double log_stop, size_type size)
         : Range(size), log_start(log_start), log_stop(log_stop)
     {
         Log<Message>::Notify("Creating logspace range"
-            ", log_start = ", log_start,
-            ", log_stop = ", log_stop,
-            ", size = ", size
-        );
-        if (size<2)
+                             ", log_start = ",
+                             log_start, ", log_stop = ", log_stop, ", size = ", size);
+        if (size < 2)
         {
             throw std::runtime_error("Range(logspace): at least two points required.");
         }
     }
-protected:
+
+  protected:
     virtual double get_value(size_type ndx) const override
     {
         const double log_value = log_start + ndx * (log_stop - log_start) / (size() - 1);
-        return std::pow(10.,log_value);
+        return std::pow(10., log_value);
     }
-private:
+
+  private:
     const double log_start;
     const double log_stop;
 };
 
-static Range* createLinLogRange(const std::string& rangeString)
+static Range *createLinLogRange(const std::string &rangeString)
 {
-    try {
+    try
+    {
         static const std::regex r(
             R"(\s*((?:logspace)|(?:linspace))\(\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
         std::smatch m;
@@ -155,27 +156,27 @@ static Range* createLinLogRange(const std::string& rangeString)
         ss << m[4];
         ss >> nvalues;
 
-        if (function=="linspace")
+        if (function == "linspace")
             return new RangeLinSpace(start, stop, nvalues);
-        else if (function=="logspace")
+        else if (function == "logspace")
             return new RangeLogSpace(start, stop, nvalues);
         else
             throw std::runtime_error("Unknown function '" + function + "'.");
     }
-    catch (std::exception& exc)
+    catch (std::exception &exc)
     {
-        throw std::runtime_error("Error creating range from string '" + rangeString + ":\n"
-            + std::string(exc.what()));
+        throw std::runtime_error("Error creating range from string '" + rangeString + ":\n" + std::string(exc.what()));
     }
 }
 
-Range* Range::create(const std::string& str)
+Range *Range::create(const std::string &str)
 {
     if (Parse::isNumerical(str))
     {
         double value;
-        bool success = Parse::getValue(str,value);
-        if (!success) {
+        bool success = Parse::getValue(str, value);
+        if (!success)
+        {
             throw std::runtime_error("Invalid value/range specification '" + str + "'.");
         }
         return new RangeSingleValue{value};
@@ -186,9 +187,9 @@ Range* Range::create(const std::string& str)
     }
 }
 
-Range* Range::create(const json_type& cnf)
+Range *Range::create(const json_type &cnf)
 {
-    if (cnf.type()==json_type::value_t::string)
+    if (cnf.type() == json_type::value_t::string)
     {
         return createLinLogRange(cnf);
     }
@@ -206,32 +207,46 @@ Range* Range::create(const json_type& cnf)
  */
 class JobManager::Parameter
 {
-public:
+  public:
     /** The callback function must accept a double and returns a void.
      */
-    Parameter(const std::string& name, const callback_type callback, const Range* range)
-    : m_name(name), m_callback(callback), m_range(range), m_active_ndx(0)
+    Parameter(const std::string &name, const callback_type callback, const Range *range)
+        : m_name(name), m_callback(callback), m_range(range), m_active_ndx(0)
     {
     }
 
-    const std::string& name() const { return m_name; }
+    const std::string &name() const
+    {
+        return m_name;
+    }
     /** callback is the function that gets called by the JobManager when a
      *  new value in the range is activated.
      */
     const callback_type m_callback;
-    Range::size_type size() const { return m_range->size(); }
-    double active_value() const { return m_range->value(m_active_ndx); }
-    void reset() { m_active_ndx = 0; }
-    bool advance() { return (m_range->size()-1) > m_active_ndx++; }
-private:
+    Range::size_type size() const
+    {
+        return m_range->size();
+    }
+    double active_value() const
+    {
+        return m_range->value(m_active_ndx);
+    }
+    void reset()
+    {
+        m_active_ndx = 0;
+    }
+    bool advance()
+    {
+        return (m_range->size() - 1) > m_active_ndx++;
+    }
+
+  private:
     std::string m_name;
     const std::unique_ptr<const Range> m_range;
     Range::size_type m_active_ndx;
 };
 
-
-JobManager::JobManager()
- : m_jobIndex(0)
+JobManager::JobManager() : m_jobIndex(0)
 {
 }
 
@@ -239,7 +254,7 @@ JobManager::~JobManager()
 {
 }
 
-void JobManager::addParameter(const std::string& name, const callback_type callback, const Range* range)
+void JobManager::addParameter(const std::string &name, const callback_type callback, const Range *range)
 {
     Log<Message>::Notify("Adding simulation parameter '", name, "'");
     m_parameters.emplace_back(new Parameter{name, callback, range});
@@ -247,7 +262,7 @@ void JobManager::addParameter(const std::string& name, const callback_type callb
 
 void JobManager::prepareFirstJob()
 {
-    for (const auto& p : m_parameters)
+    for (const auto &p : m_parameters)
     {
         (p->m_callback)(p->active_value());
     }
@@ -255,8 +270,7 @@ void JobManager::prepareFirstJob()
 
 bool JobManager::prepareNextJob()
 {
-    Parameter& p = *m_parameters[m_jobIndex];
-
+    Parameter &p = *m_parameters[m_jobIndex];
 
     if (p.advance())
     {
@@ -271,7 +285,8 @@ bool JobManager::prepareNextJob()
     }
     else
     {
-        if (m_jobIndex == 0) return false;
+        if (m_jobIndex == 0)
+            return false;
 
         p.reset();
         --m_jobIndex;
@@ -282,12 +297,12 @@ bool JobManager::prepareNextJob()
 
 JobManager::size_type JobManager::njobs() const
 {
-    if (dimension()==0)
+    if (dimension() == 0)
     {
         return 0;
     }
-    size_type n=1;
-    for (const auto& p : m_parameters)
+    size_type n = 1;
+    for (const auto &p : m_parameters)
     {
         n *= p->size();
     }
@@ -298,9 +313,9 @@ std::string JobManager::getCurrentJobFolder() const
 {
     std::stringstream ss;
 
-    for (const auto& p : m_parameters)
+    for (const auto &p : m_parameters)
     {
-        if (p!=m_parameters.front())
+        if (p != m_parameters.front())
         {
             ss << '_';
         }

@@ -7,21 +7,23 @@
 #include "LoKI-B/Log.h"
 #include <cassert>
 
-namespace loki {
-
-namespace {
-
-void remove_electron_entries(Collision::StateVector& parts, Collision::CoeffVector& coefs)
+namespace loki
 {
-    assert(parts.size()==coefs.size());
+
+namespace
+{
+
+void remove_electron_entries(Collision::StateVector &parts, Collision::CoeffVector &coefs)
+{
+    assert(parts.size() == coefs.size());
     // now remove all electrons from the right-hand side (since EedfCollision wants that).
     // beware of iterator invalidation
-    for (unsigned i=0; i!= parts.size(); /**/)
+    for (unsigned i = 0; i != parts.size(); /**/)
     {
-        if (parts[i]->gas().name=="e")
+        if (parts[i]->gas().name == "e")
         {
-            parts.erase(parts.begin()+i);
-            coefs.erase(coefs.begin()+i);
+            parts.erase(parts.begin() + i);
+            coefs.erase(coefs.begin() + i);
         }
         else
         {
@@ -32,296 +34,296 @@ void remove_electron_entries(Collision::StateVector& parts, Collision::CoeffVect
 
 } // namespace
 
-
-    EedfCollision::EedfCollision(CollisionType type,
-        const StateVector &lhsStates,
-        const CoeffVector &lhsCoeffs,
-        const StateVector &rhsStates,
-        const CoeffVector &rhsCoeffs,
-        bool isReverse)
-    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
-    m_lhsHeavyStates(lhsStates),
-    m_lhsHeavyCoeffs(lhsCoeffs),
-    m_rhsHeavyStates(rhsStates),
-    m_rhsHeavyCoeffs(rhsCoeffs)
+EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+                             const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
+    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse), m_lhsHeavyStates(lhsStates),
+      m_lhsHeavyCoeffs(lhsCoeffs), m_rhsHeavyStates(rhsStates), m_rhsHeavyCoeffs(rhsCoeffs)
+{
+    /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
+    // for the left hand side we expect 'e + X' or 'X + e'.
+    assert(lhsStates.size() == lhsCoeffs.size());
+    if (lhsStates.size() != 2 || lhsCoeffs[0] != 1 || lhsCoeffs[1] != 1 ||
+        (lhsStates[0]->gas().name == "e" && lhsStates[1]->gas().name == "e") ||
+        (lhsStates[0]->gas().name != "e" && lhsStates[1]->gas().name != "e"))
     {
-        /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
-        // for the left hand side we expect 'e + X' or 'X + e'.
-        assert(lhsStates.size()==lhsCoeffs.size());
-        if (lhsStates.size() != 2
-            || lhsCoeffs[0]!=1
-            || lhsCoeffs[1]!=1
-            || (lhsStates[0]->gas().name=="e" && lhsStates[1]->gas().name=="e")
-            || (lhsStates[0]->gas().name!="e" && lhsStates[1]->gas().name!="e")
-        )
-        {
-            Log<Message>::Error("Expected a binary electron impact process.");
-        }
-
-        remove_electron_entries(m_lhsHeavyStates,m_lhsHeavyCoeffs);
-        remove_electron_entries(m_rhsHeavyStates,m_rhsHeavyCoeffs);
-
-        if (m_lhsHeavyCoeffs.size() != 1 || m_lhsHeavyCoeffs[0]!=1)
-            Log<MultipleReactantInEedfCol>::Warning(*this);
-        if (isReverse)
-        {
-            if (m_rhsHeavyStates.size() != 1 || m_rhsHeavyCoeffs[0]!=1)
-                Log<MultipleProductsInReverse>::Error(*this);
-        }
+        Log<Message>::Error("Expected a binary electron impact process.");
     }
 
-    EedfCollision::~EedfCollision()
+    remove_electron_entries(m_lhsHeavyStates, m_lhsHeavyCoeffs);
+    remove_electron_entries(m_rhsHeavyStates, m_rhsHeavyCoeffs);
+
+    if (m_lhsHeavyCoeffs.size() != 1 || m_lhsHeavyCoeffs[0] != 1)
+        Log<MultipleReactantInEedfCol>::Warning(*this);
+    if (isReverse)
     {
+        if (m_rhsHeavyStates.size() != 1 || m_rhsHeavyCoeffs[0] != 1)
+            Log<MultipleProductsInReverse>::Error(*this);
+    }
+}
+
+EedfCollision::~EedfCollision()
+{
+}
+
+const EedfCollision::EedfState *EedfCollision::getTarget() const
+{
+    return m_lhsHeavyStates.front();
+}
+EedfCollision::EedfState *EedfCollision::getTarget()
+{
+    return m_lhsHeavyStates.front();
+}
+
+std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
+{
+    os << "e + " << *collision.getTarget() << (collision.isReverse ? " <->" : " ->");
+
+    if (collision.type != CollisionType::attachment)
+        os << " e +";
+    if (collision.type == CollisionType::ionization)
+        os << " e +";
+
+    for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
+    {
+        os << ' ' << *collision.m_rhsHeavyStates[i];
+        if (i < collision.m_rhsHeavyStates.size() - 1)
+            os << " +";
+    }
+    os << ", " << collision.typeAsString();
+
+    return os;
+}
+
+void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
+{
+    if (!isReverse)
+    {
+        Log<SuperElasticForNonReverse>::Error(*this);
     }
 
-    const EedfCollision::EedfState *EedfCollision::getTarget() const
+    result.resize(energyData.size());
+
+    Vector superElasticEnergies = energyData.array() + crossSection->threshold;
+
+    crossSection->interpolate(superElasticEnergies, result);
+
+    if (getTarget()->statisticalWeight <= 0.)
+        Log<NoStatWeight>::Error(*getTarget());
+    if (m_rhsHeavyStates[0]->statisticalWeight <= 0.)
+        Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
+
+    const double swRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
+
+    uint32_t minIndex = 0;
+
+    if (energyData[0] == 0)
+        ++minIndex;
+
+    for (uint32_t i = minIndex; i < result.size(); ++i)
     {
-        return m_lhsHeavyStates.front();
+        result[i] *= swRatio * (1 + (crossSection->threshold / energyData[i]));
     }
-    EedfCollision::EedfState *EedfCollision::getTarget()
+    if (energyData[0] == 0)
+        result[0] = 0;
+}
+
+CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
+{
+    const Grid *grid = crossSection->getGrid();
+    const uint32_t n = grid->cellNumber;
+
+    CollPower collPower;
+
+    Vector cellCrossSection(n);
+
+    for (uint32_t i = 0; i < n; ++i)
     {
-        return m_lhsHeavyStates.front();
-    }
-
-    std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
-    {
-        os << "e + " << *collision.getTarget()
-           << (collision.isReverse ? " <->" : " ->");
-
-        if (collision.type != CollisionType::attachment) os << " e +";
-        if (collision.type == CollisionType::ionization) os << " e +";
-
-        for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
-        {
-            os << ' ' << *collision.m_rhsHeavyStates[i];
-            if (i < collision.m_rhsHeavyStates.size() - 1) os << " +";
-        }
-        os << ", " << collision.typeAsString();
-
-        return os;
-    }
-
-    void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
-    {
-        if (!isReverse)
-        {
-            Log<SuperElasticForNonReverse>::Error(*this);
-        }
-
-        result.resize(energyData.size());
-
-        Vector superElasticEnergies = energyData.array() + crossSection->threshold;
-
-        crossSection->interpolate(superElasticEnergies, result);
-
-        if (getTarget()->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
-        if (m_rhsHeavyStates[0]->statisticalWeight <= 0.) Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
-
-        const double swRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
-
-        uint32_t minIndex = 0;
-
-        if (energyData[0] == 0)
-            ++minIndex;
-
-        for (uint32_t i = minIndex; i < result.size(); ++i)
-        {
-            result[i] *= swRatio * (1 + (crossSection->threshold / energyData[i]));
-        }
-        if (energyData[0] == 0) result[0] = 0;
+        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
+    auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+
+    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
+
+    double ineSum = 0;
+
+    for (uint32_t i = lmin; i < n; ++i)
     {
-        const Grid *grid = crossSection->getGrid();
-        const uint32_t n = grid->cellNumber;
+        ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
+    }
 
-        CollPower collPower;
+    collPower.ine = -factor * getTarget()->density * grid->step * grid->getNode(lmin) * ineSum;
 
-        Vector cellCrossSection(n);
+    if (isReverse)
+    {
+        const double statWeightRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
 
-        for (uint32_t i = 0; i < n; ++i)
-        {
-            cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
-        }
-
-        auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
-
-        const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
-
-        double ineSum = 0;
+        double supSum = 0;
 
         for (uint32_t i = lmin; i < n; ++i)
         {
-            ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
+            supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.ine = -factor * getTarget()->density * grid->step * grid->getNode(lmin) * ineSum;
-
-        if (isReverse)
-        {
-            const double statWeightRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
-
-            double supSum = 0;
-
-            for (uint32_t i = lmin; i < n; ++i)
-            {
-                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
-            }
-
-            collPower.sup +=
-                    factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->step * grid->getNode(lmin) * supSum;
-        }
-
-        return collPower;
+        collPower.sup +=
+            factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->step * grid->getNode(lmin) * supSum;
     }
 
-    CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
-                                                          const IonizationOperatorType ionizationOperatorType,
-                                                          const double OPBParameter) {
-        const Grid *grid = crossSection->getGrid();
-        const uint32_t n = grid->cellNumber;
+    return collPower;
+}
 
-        CollPower collPower;
+CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
+                                                      const IonizationOperatorType ionizationOperatorType,
+                                                      const double OPBParameter)
+{
+    const Grid *grid = crossSection->getGrid();
+    const uint32_t n = grid->cellNumber;
 
-        const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
+    CollPower collPower;
 
-        Vector cellCrossSection(n);
+    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
-        for (uint32_t i = 0; i < n; ++i)
+    Vector cellCrossSection(n);
+
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+    }
+
+    auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+
+    if (type == CollisionType::ionization)
+    {
+
+        if (ionizationOperatorType == IonizationOperatorType::equalSharing)
         {
-            cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+            double sumOne = 0., sumTwo = 0., sumThree = 0.;
+
+            for (uint32_t i = lmin - 1; i < n; ++i)
+            {
+                sumOne += grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * eedf[i];
+            }
+
+            for (uint32_t i = 1 + lmin; i < n; i += 2)
+            {
+                const double term = grid->getCell(i) * cellCrossSection[i] * eedf[i];
+
+                sumTwo += term;
+                sumThree += grid->getCell(i) * term;
+            }
+
+            collPower.ine = -factor * getTarget()->density * grid->step *
+                            (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
-
-        auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
-
-        if (type == CollisionType::ionization)
-        {
-
-            if (ionizationOperatorType == IonizationOperatorType::equalSharing)
-            {
-                double sumOne = 0., sumTwo = 0., sumThree = 0.;
-
-                for (uint32_t i = lmin - 1; i < n; ++i)
-                {
-                    sumOne += grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * eedf[i];
-                }
-
-                for (uint32_t i = 1 + lmin; i < n; i += 2)
-                {
-                    const double term = grid->getCell(i) * cellCrossSection[i] * eedf[i];
-
-                    sumTwo += term;
-                    sumThree += grid->getCell(i) * term;
-                }
-
-                collPower.ine = -factor * getTarget()->density * grid->step *
-                                (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
-
-            }
-            else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
-            {
-                double sum = 0.;
-
-                for (uint32_t i = lmin - 1; i < n; ++i) {
-                    sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
-                }
-
-                collPower.ine = -factor * getTarget()->density * grid->step * grid->getCell(lmin - 1) * sum;
-            }
-            else if (ionizationOperatorType == IonizationOperatorType::sdcs)
-            {
-                double w = OPBParameter;
-
-                if (w == 0) w = crossSection->threshold;
-
-                Vector TICS = Vector::Zero(grid->cellNumber);
-                Vector auxVec = 1. / (1. + (grid->getCells().cwiseAbs2().array() / (w * w)));
-
-                for (int64_t k = 1; k < n; ++k) {
-                    auxVec[k] = auxVec[k] + auxVec[k - 1];
-                    int64_t kmax = (k + 1 - lmin) / 2;
-
-                    if (kmax > 0)
-                        TICS[k] += cellCrossSection[k] * auxVec[kmax-1] /
-                                   (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold) / (2 * w)));
-                }
-
-                collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->step *
-                                eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->step * TICS)).sum();
-            }
-        }
-        else if (type == CollisionType::attachment)
+        else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
         {
             double sum = 0.;
 
-            for (uint32_t i = lmin; i < n; ++i)
+            for (uint32_t i = lmin - 1; i < n; ++i)
             {
-                sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
+                sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->step * sum;
+            collPower.ine = -factor * getTarget()->density * grid->step * grid->getCell(lmin - 1) * sum;
         }
-        /// \todo For other Collision types, collPower is unitialized at this point
-
-        return collPower;
-    }
-
-    RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
-    {
-        const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
-        const Grid *grid = crossSection->getGrid();
-
-        const uint32_t nNodes = grid->cellNumber + 1;
-        const uint32_t nCells = grid->cellNumber;
-
-        const auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
-
-        const Vector cellCrossSection =
-                .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
-
-        ineRateCoeff = factor * grid->step * cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(
-                eedf.tail(nCells - lmin));
-
-        if (isReverse)
+        else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
-            const double tStatWeight = getTarget()->statisticalWeight;
-            const double pStatWeight = m_rhsHeavyStates[0]->statisticalWeight;
+            double w = OPBParameter;
 
-            if (tStatWeight <= 0.) Log<NoStatWeight>::Error(*getTarget());
-            if (pStatWeight <= 0.) Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
+            if (w == 0)
+                w = crossSection->threshold;
 
-            const double statWeightRatio = tStatWeight / pStatWeight;
+            Vector TICS = Vector::Zero(grid->cellNumber);
+            Vector auxVec = 1. / (1. + (grid->getCells().cwiseAbs2().array() / (w * w)));
 
-            supRateCoeff = factor * statWeightRatio * grid->step *
-                          cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(
-                                  eedf.head(nCells - lmin));
+            for (int64_t k = 1; k < n; ++k)
+            {
+                auxVec[k] = auxVec[k] + auxVec[k - 1];
+                int64_t kmax = (k + 1 - lmin) / 2;
+
+                if (kmax > 0)
+                    TICS[k] +=
+                        cellCrossSection[k] * auxVec[kmax - 1] /
+                        (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold) / (2 * w)));
+            }
+
+            collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->step *
+                            eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->step * TICS)).sum();
         }
-
-        return {this, ineRateCoeff, supRateCoeff};
     }
-
-    std::string EedfCollision::typeAsString() const
+    else if (type == CollisionType::attachment)
     {
-        switch(type)
+        double sum = 0.;
+
+        for (uint32_t i = lmin; i < n; ++i)
         {
-            case CollisionType::effective:
-                return "Effective";
-            case CollisionType::elastic:
-                return "Elastic";
-            case CollisionType::excitation:
-                return "Excitation";
-            case CollisionType::vibrational:
-                return "Vibrational";
-            case CollisionType::rotational:
-                return "Rotational";
-            case CollisionType::ionization:
-                return "Ionization";
-            case CollisionType::attachment:
-                return "Attachment";
-            default:
-                return "";
+            sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
+
+        collPower.ine = -factor * getTarget()->density * grid->step * sum;
     }
+    /// \todo For other Collision types, collPower is unitialized at this point
+
+    return collPower;
+}
+
+RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
+{
+    const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
+    const Grid *grid = crossSection->getGrid();
+
+    const uint32_t nNodes = grid->cellNumber + 1;
+    const uint32_t nCells = grid->cellNumber;
+
+    const auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+
+    const Vector cellCrossSection =
+        .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
+
+    ineRateCoeff = factor * grid->step *
+                   cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
+
+    if (isReverse)
+    {
+        const double tStatWeight = getTarget()->statisticalWeight;
+        const double pStatWeight = m_rhsHeavyStates[0]->statisticalWeight;
+
+        if (tStatWeight <= 0.)
+            Log<NoStatWeight>::Error(*getTarget());
+        if (pStatWeight <= 0.)
+            Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
+
+        const double statWeightRatio = tStatWeight / pStatWeight;
+
+        supRateCoeff =
+            factor * statWeightRatio * grid->step *
+            cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
+    }
+
+    return {this, ineRateCoeff, supRateCoeff};
+}
+
+std::string EedfCollision::typeAsString() const
+{
+    switch (type)
+    {
+    case CollisionType::effective:
+        return "Effective";
+    case CollisionType::elastic:
+        return "Elastic";
+    case CollisionType::excitation:
+        return "Excitation";
+    case CollisionType::vibrational:
+        return "Vibrational";
+    case CollisionType::rotational:
+        return "Rotational";
+    case CollisionType::ionization:
+        return "Ionization";
+    case CollisionType::attachment:
+        return "Attachment";
+    default:
+        return "";
+    }
+}
 
 } // namespace loki

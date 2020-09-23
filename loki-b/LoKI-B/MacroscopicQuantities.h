@@ -5,20 +5,22 @@
 #ifndef LOKI_CPP_MACROSCOPICQUANTITIES_H
 #define LOKI_CPP_MACROSCOPICQUANTITIES_H
 
-namespace loki {
-    struct SwarmParameters {
-        double redDiffCoeff{0.}, redMobCoeff{0.}, redTownsendCoeff{0.},
-                redAttCoeff{0.}, meanEnergy{0.}, characEnergy{0.},
-                Te{0.}, driftVelocity{0.};
-    };
+namespace loki
+{
+struct SwarmParameters
+{
+    double redDiffCoeff{0.}, redMobCoeff{0.}, redTownsendCoeff{0.}, redAttCoeff{0.}, meanEnergy{0.}, characEnergy{0.},
+        Te{0.}, driftVelocity{0.};
+};
 
-    // Forward declaration
-    class EedfCollision;
+// Forward declaration
+class EedfCollision;
 
-    struct RateCoefficient {
-        EedfCollision * collision;
-        double inelastic, superelastic;
-    };
-}
+struct RateCoefficient
+{
+    EedfCollision *collision;
+    double inelastic, superelastic;
+};
+} // namespace loki
 
-#endif //LOKI_CPP_MACROSCOPICQUANTITIES_H
+#endif // LOKI_CPP_MACROSCOPICQUANTITIES_H
