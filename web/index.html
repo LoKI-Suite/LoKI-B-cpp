@@ -5,20 +5,39 @@
    </head>
    <body>
       <div>
-         Return value =
-         <span id="answer"/>
+        Return value =
+        <span id="answer"/>
       </div>
+			<div>
+				<input type="file" id="file-input" accept=".json">
+			</div>
+			<div>
+				<button type="button" id="run-button">Run</button>
+			</div>
       <script>
-         // Wait for module to initialize,
-         create_module().then(({run}) => {
+				const file_input = document.getElementById("file-input");
+				let file = "";
+
+				const run_button = document.getElementById("run-button");
+
+				file_input.addEventListener("change", (event) => {
+					const list = event.target.files;
+					file = event.target.files[0];
+					console.log(file);
+				});
+				run_button.addEventListener("click", (event) => {
+        	// Wait for module to initialize,
+        	create_module().then(({run}) => {
 						try {
-           		const file_name = "Input/default_lokib_setup.json";
-					  	const ret = run(file_name);
-            	document.getElementById("answer").innerHTML = ret;
+							file.text().then((contents) => {
+					  		const ret = run(contents);
+        	   		document.getElementById("answer").innerHTML = ret;
+							});
 						} catch(e) {
 							console.log(e/*.stack*/);
 						}
-         });
+        	});
+				});
       </script>
    </body>
 </html>
