@@ -219,7 +219,7 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
 }
 void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra)
 {
-    Log<Message>::Notify("Started loading collsions.");
+    Log<Message>::Notify("Started loading collisions.");
 
 #ifdef EMSCRIPTEN
     const std::string inputPath{""};
