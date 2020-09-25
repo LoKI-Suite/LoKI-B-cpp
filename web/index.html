@@ -29,15 +29,27 @@
 				file_input.addEventListener("change", (event) => {
 					const list = event.target.files;
 					file = event.target.files[0];
-					console.log(file);
 				});
+				function lxcat_get(input) {
+					for (const [i, file] of input.electronKinetics.LXCatFiles.entries()) {
+						if (file.substr(0, 5) == "http:") {
+							const http = new XMLHttpRequest();
+							http.open("GET", file, false);
+							http.send(null);
+							input.electronKinetics.LXCatFiles[i] = "/" + i + ".json"
+							module.FS.writeFile("/" + i + ".json", http.responseText, { flags: "w+" });
+						}
+					}
+				}
 				run_button.addEventListener("click", (event) => {
         	// Wait for module to initialize,
         	create_module().then((_module) => {
 						module = _module;
 						try {
 							file.text().then((contents) => {
-					  		const ret = module.run(contents);
+								let input = JSON.parse(contents);
+								lxcat_get(input);
+					  		const ret = module.run(JSON.stringify(input));
         	   		document.getElementById("answer").innerHTML = ret;
 							});
 						} catch(e) {
@@ -50,10 +62,6 @@
 					const x_arr = new Float64Array(module.HEAPF64.buffer, x_ptr, x_size);
 					const y_arr = new Float64Array(module.HEAPF64.buffer, y_ptr, y_size);
 					const data = new Array(x_size).fill().map((_, index) => {return {x: x_arr[index], y: y_arr[index]}});
-					console.log(data);
-					// console.log(x_arr);
-					// console.log(y_arr);
-					// console.log(x_ptr, x_size, y_ptr, y_size);
 					const spec = {
         	  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         	  "width": 800,
@@ -63,7 +71,7 @@
         	  },
         	  "encoding": {
         	    "x": {"field": "x", "type": "quantitative", "title": "Energy (eV)"},
-							"y": {"field": "y", "scale": {"type": "log"}, "title": "Eedf"}
+							"y": {"field": "y", "type": "quantitative", "scale": {"type": "log"}, "title": "Eedf"}
         	  },
         	  "mark": {
         	    "type": "circle",

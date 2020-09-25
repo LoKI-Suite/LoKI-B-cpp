@@ -152,6 +152,7 @@ else()
 		-s ALLOW_MEMORY_GROWTH=1 \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME=create_module \
+		-s EXTRA_EXPORTED_RUNTIME_METHODS=[\"FS\"] \
 		--bind \
 		--preload-file Input/default_lokib_setup.json \
 		--preload-file Input/N2_LXCat.json \
