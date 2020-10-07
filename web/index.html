@@ -5,6 +5,8 @@
 			<script src="https://cdn.jsdelivr.net/npm/vega@5.13.0"></script>
     	<script src="https://cdn.jsdelivr.net/npm/vega-lite@4.13.0"></script>
     	<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.8.0"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/6.12.5/ajv.min.js" integrity="sha512-v+DrKhONdNwvXhUvYpWe19i7LwLFScyo7TWxKNWVGcE9mf3/MKpChgTrlG7yDQnystwC+772/v1AuXw3vVMV5w==" crossorigin="anonymous"></script>
+			<script type="text/javascript" src="schema.js"></script>
    </head>
    <body>
 			<div>
@@ -25,6 +27,7 @@
 				const run_button = document.getElementById("run-button");
 				
 				let module;
+				const validate = (new Ajv()).compile(schema);
 
 				file_input.addEventListener("change", (event) => {
 					const list = event.target.files;
@@ -36,7 +39,9 @@
 							const http = new XMLHttpRequest();
 							http.open("GET", file, false);
 							http.send(null);
-							input.electronKinetics.LXCatFiles[i] = "/" + i + ".json"
+							const valid = validate(JSON.parse(http.responseText));
+							if (!valid) console.log("AJV error: ", validate.errors);
+							input.electronKinetics.LXCatFiles[i] = "/" + i + ".json";
 							module.FS.writeFile("/" + i + ".json", http.responseText, { flags: "w+" });
 						}
 					}
@@ -57,6 +62,8 @@
 						}
         	});
 				});
+      </script>
+			<script>
 				function plot(x_ptr, x_size, y_ptr, y_size) {
 					// Map sections of the emscripten heap onto contiguous arrays of doubles.
 					const x_arr = new Float64Array(module.HEAPF64.buffer, x_ptr, x_size);
@@ -83,6 +90,6 @@
         	};
 					vegaEmbed(document.getElementById("plotting-area"), spec);
 				}
-      </script>
+			</script>
    </body>
 </html>
