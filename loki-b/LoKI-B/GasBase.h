@@ -1,30 +1,74 @@
 #ifndef LOKI_CPP_GASBASE_H
 #define LOKI_CPP_GASBASE_H
 
-#include "LoKI-B/InputStructures.h"
 #include "LoKI-B/Enumeration.h"
+#include "LoKI-B/StateEntry.h"
+#include <iostream>
+#include <memory>
+#include <vector>
 
-namespace loki {
+namespace loki
+{
 
 class GasBase
 {
-public:
+  public:
     class StateBase
     {
-    public:
-        using StateType = Enumeration::StateType;
-        StateBase(const StateEntry &entry, StateType type, GasBase* gas, StateBase* parent);
-        StateBase(StateType type, std::string e, std::string v, std::string J, std::string charge, GasBase* gas);
+      public:
+        using ChildContainer = std::vector<StateBase *>;
+        StateBase(const StateEntry &entry, GasBase *gas, StateBase &parent);
+        StateBase(GasBase *gas);
         virtual ~StateBase();
-        const StateType type;
-        const std::string e, v, J, charge;
-        void printChildren(std::ostream& os) const;
+
+        const GasBase &gas() const
+        {
+            return *m_gas_base;
+        }
+        GasBase &gas()
+        {
+            return *m_gas_base;
+        }
+
+        const StateBase *parent() const
+        {
+            return m_parent_base;
+        }
+        StateBase *parent()
+        {
+            return m_parent_base;
+        }
+
+        const ChildContainer &children() const
+        {
+            return m_children;
+        }
+        ChildContainer &children()
+        {
+            return m_children;
+        }
+
+        void printChildren(std::ostream &os) const;
         /* Allows to search the children in order to find a state that is equal
          * to or an ancestor of the state as described by the passed StateEntry
          * object. If this state is present, it will be returned, otherwise a
          * null pointer is returned.
          */
-        StateBase* find(const StateEntry &entry);
+        StateBase *find(const StateEntry &entry);
+
+        /* Returns a vector containing the sibling states of the current state.
+         * In case this state is electronic, this vector is obtained via the
+         * gas, otherwise it is obtained via the parent.
+         */
+        const ChildContainer &siblings() const
+        {
+            if (!parent())
+            {
+                throw std::runtime_error("Cannot call siblings on the root node.");
+            }
+            return parent()->m_children;
+        }
+
         /** Verifies that the populations of all child states add up to 1. It also
          *  calls the checkPopulation function on all these states to recursively check
          *  populations.
@@ -39,48 +83,50 @@ public:
          * evaluate all densities in the state tree.
          */
         void evaluateDensity();
-
-        const GasBase& gas() const { return *m_gas_base; }
-        GasBase& gas() { return *m_gas_base; }
-        const StateBase* parent() const { return m_parent_base; }
-        StateBase* parent() { return m_parent_base; }
-        /* Returns a vector containing the sibling states of the current state.
-         * In case this state is electronic, this vector is obtained via the
-         * gas, otherwise it is obtained via the parent.
-         */
-        const std::vector<StateBase*> &siblings() const
+        StateBase *ensure_state(const StateEntry &entry)
         {
-            if (type == electronic)
+            StateBase *state = find(entry);
+            if (state)
             {
-                return charge.empty() ? gas().stateBaseTree : gas().ionicBaseStates;
+                return state;
             }
-            /// \todo assert/test the parent exists
-            return parent()->m_children;
+            state = new StateBase(entry, &gas(), *this);
+            add_child(state);
+            return state;
         }
-        const std::vector<StateBase *>& children() const { return m_children; }
-        std::vector<StateBase *>& children() { return m_children; }
-    protected:
-        void add_child(StateBase* child) { m_children.push_back(child); }
-    private:
+
+      protected:
+        void add_child(StateBase *child)
+        {
+            m_children.emplace_back(child);
+        }
+
+      private:
         /// \todo Make const?
-        GasBase* m_gas_base;
+        GasBase *m_gas_base;
         /// \todo Make const?
-        StateBase* m_parent_base;
-    public:
+        StateBase *m_parent_base;
+
+      public:
         /// \todo make private
-        std::vector<StateBase *> m_children;
-    public:
+        ChildContainer m_children;
+
+      public:
+        const StateType type;
+        const std::string charge, e, v, J;
         double population;
         double energy;
         double statisticalWeight;
         double density;
     };
+    /// \todo Get rid of StateBase, use State exclusively here and elsewhere.
+    using State = StateBase;
     explicit GasBase(std::string name);
-    virtual ~GasBase(){}
+    virtual ~GasBase();
     /** Prints the (first non-ionic then ionic) electronic states and their
      *  children.
      */
-    void print(std::ostream& os) const;
+    void print(std::ostream &os) const;
     /* Verifies that the populations of all electronic states adds up to 1. It also
      * calls the checkPopulation function on all these states to recursively check
      * populations.
@@ -89,12 +135,6 @@ public:
     /* Calls evaluateDensity on all electronic states for this gas.
      */
     void evaluateStateDensities();
-    /* Allows to search the electronic states in order to find a state that
-     * is equal to or an ancestor of the state as described by the passed
-     * StateEntry object. If this state is present, it will be returned,
-     * otherwise a null pointer is returned.
-     */
-    StateBase* find(const StateEntry& entry);
     /** This member is the State part of the member findState that was previously
      *  completely in GasMixture.h. It differs from member find, which also takes
      *  an Entry and returns a State pointer, but the semantics are not documented
@@ -102,11 +142,29 @@ public:
      *  \todo Document the semantics of this function, describe the differences
      *        with find, see if these members can be merged somehow.
      */
-    StateBase* findState(const StateEntry& entry);
+    StateBase *findState(const StateEntry &entry);
+    State *ensureState(const StateEntry &entry)
+    {
+        auto *state = get_root().ensure_state(entry);
+        // state is now a 'charge state' (container)
+        for (uint8_t lvl = StateType::charge; lvl < entry.level; ++lvl)
+        {
+            state = state->ensure_state(entry);
+        }
+        return state;
+    }
 
-    // The stateTree vector stores pointers to the electronic non-ionic states.
-    // The ionicStates vector stores pointers to the electronic ionic states.
-    std::vector<StateBase*> stateBaseTree, ionicBaseStates;
+    State &get_root()
+    {
+        return *m_root;
+    }
+    const State &get_root() const
+    {
+        return *m_root;
+    }
+
+  public:
+    std::unique_ptr<StateBase> m_root;
 
     const std::string name;
     double mass;
@@ -117,7 +175,6 @@ public:
     double electricQuadrupoleMoment;
     double polarizability;
     double fraction;
-
 };
 
 std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state);
@@ -125,4 +182,3 @@ std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state);
 } // namespace loki
 
 #endif // LOKI_CPP_GASBASE_H
-

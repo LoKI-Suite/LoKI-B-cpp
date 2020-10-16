@@ -5,64 +5,67 @@
 #ifndef LOKI_CPP_EEDFGAS_H
 #define LOKI_CPP_EEDFGAS_H
 
-#include "LoKI-B/Enumeration.h"
-#include "LoKI-B/Gas.h"
-#include "LoKI-B/EedfCollision.h"
 #include "LoKI-B/CrossSection.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/GasBase.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Power.h"
 
-#include <vector>
 #include <map>
+#include <vector>
 
 // TODO: Allow loading of effective populations from a file.
 // TODO: comment EedfGas class
 
-namespace loki {
-    class EedfGas : public Gas<Boltzmann> {
-    public:
-        using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
-        // We need to store the collisions per Gas since we need to calculate
-        // the mass ratio when evaluating the total and elastic cross-sections.
-        std::vector<CollisionVector> collisions, collisionsExtra;
-        std::map<EedfState *, double> effectivePopulations;
-        double OPBParameter = 0.;
+namespace loki
+{
 
-        std::map<GasBase::StateBase *,std::vector<EedfCollision*>> m_state_collisions;
-        std::map<GasBase::StateBase *,std::vector<EedfCollision*>> m_state_collisionsExtra;
+class EedfCollision;
 
-        explicit EedfGas(const std::string &name);
+class EedfGas : public GasBase
+{
+  public:
+    using EedfState = StateBase;
+    using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
+    // We need to store the collisions per Gas since we need to calculate
+    // the mass ratio when evaluating the total and elastic cross-sections.
+    std::vector<CollisionVector> collisions, collisionsExtra;
+    std::map<EedfState *, double> effectivePopulations;
+    double OPBParameter = 0.;
 
-        ~EedfGas();
+    std::map<EedfState *, std::vector<EedfCollision *>> m_state_collisions;
+    std::map<EedfState *, std::vector<EedfCollision *>> m_state_collisionsExtra;
 
-        void addCollision(EedfCollision *collision, bool isExtra);
+    explicit EedfGas(const std::string &name);
 
-        void checkElasticCollisions(Grid *energyGrid);
+    ~EedfGas();
 
-        void checkCARConditions();
+    void addCollision(EedfCollision *collision, bool isExtra);
 
-        bool isDummy();
+    void checkElasticCollisions(State *electron, Grid *energyGrid);
 
-        const GasPower &getPower() const;
+    void checkCARConditions();
 
-        void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const;
+    bool isDummy();
 
-    private:
-        GasPower power;
+    const GasPower &getPower() const;
 
-        void findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
-                                std::vector<EedfState *> &statesToUpdate);
+    void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const;
 
-        CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
+  private:
+    GasPower power;
 
-        void setDefaultEffPop(EedfState *ground);
+    void findStatesToUpdate(const std::vector<EedfState *> &stateStructure, std::vector<EedfState *> &statesToUpdate);
 
-        CollPower evaluateConservativePower(const CollisionVector& collisionVector, const Vector &eedf) const;
+    CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
 
-        CollPower evaluateNonConservativePower(const CollisionVector& collisionVector,
-                                               const IonizationOperatorType ionType, const Vector &eedf) const;
-    };
-}
+    void setDefaultEffPop(EedfState *ground);
 
+    CollPower evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
 
-#endif //LOKI_CPP_EEDFGAS_H
+    CollPower evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
+                                           const Vector &eedf) const;
+};
+} // namespace loki
+
+#endif // LOKI_CPP_EEDFGAS_H

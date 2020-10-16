@@ -8,6 +8,13 @@
 #include <cmath>
 #include <iomanip>
 
+//#define LOKIB_CREATE_SPARSITY_PICTURE
+#ifdef LOKIB_CREATE_SPARSITY_PICTURE
+
+#include "LoKI-B/Matrix2Picture.h"
+
+#endif
+
 // TODO [FUTURE]: Write a tridiagonal matrix class that stores the elements
 //  in three separate vectors. It is desirable to do this in an Eigen compliant way, such
 //  that these matrices can simply be added to dense matrices (the + and () operators are
@@ -17,7 +24,7 @@ namespace loki
 {
 
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid),
+    : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid, setup, workingConditions),
       attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber), boltzmannMatrix(grid.cellNumber, grid.cellNumber),
       elasticMatrix(grid.cellNumber, grid.cellNumber), fieldMatrix(grid.cellNumber, grid.cellNumber),
       attachmentMatrix(grid.cellNumber, grid.cellNumber), ionSpatialGrowthD(grid.cellNumber, grid.cellNumber),
@@ -25,9 +32,6 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber), ionTemporalGrowth(grid.cellNumber, grid.cellNumber),
       g_c(grid.cellNumber), eedf(grid.cellNumber)
 {
-
-    mixture.initialize(setup, workingConditions);
-
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
@@ -52,7 +56,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+    {
         ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    }
 
     A.setZero(grid.cellNumber);
     B.setZero(grid.cellNumber);
@@ -80,6 +86,13 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     if (!mixture.CARGases.empty())
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
+    /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
+     *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
+     *        Then the pattern-code below can be removed, only a resize needed. Question:
+     *        does Eigen optimize matrix addition and multiplication for such matrices? That
+     *        is not immediately clear to me.
+     *        Same for the other constructor, of course.
+     */
     std::vector<Eigen::Triplet<double>> diagPattern;
     diagPattern.reserve(grid.cellNumber);
 
@@ -89,7 +102,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     }
 
     if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+    }
 
     if (growthModelType == GrowthModelType::spatial)
     {
@@ -107,27 +122,24 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 }
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions), grid(cnf.at("numerics").at("energyGrid")), mixture(&grid),
-      attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber), boltzmannMatrix(grid.cellNumber, grid.cellNumber),
-      elasticMatrix(grid.cellNumber, grid.cellNumber), fieldMatrix(grid.cellNumber, grid.cellNumber),
-      attachmentMatrix(grid.cellNumber, grid.cellNumber), ionSpatialGrowthD(grid.cellNumber, grid.cellNumber),
-      ionSpatialGrowthU(grid.cellNumber, grid.cellNumber), fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber),
-      fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber), ionTemporalGrowth(grid.cellNumber, grid.cellNumber),
-      g_c(grid.cellNumber), eedf(grid.cellNumber)
+    : workingConditions(workingConditions), grid(cnf.at("numerics").at("energyGrid")),
+      mixture(&grid, cnf, workingConditions), attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
+      boltzmannMatrix(grid.cellNumber, grid.cellNumber), elasticMatrix(grid.cellNumber, grid.cellNumber),
+      fieldMatrix(grid.cellNumber, grid.cellNumber), attachmentMatrix(grid.cellNumber, grid.cellNumber),
+      ionSpatialGrowthD(grid.cellNumber, grid.cellNumber), ionSpatialGrowthU(grid.cellNumber, grid.cellNumber),
+      fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber), fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber),
+      ionTemporalGrowth(grid.cellNumber, grid.cellNumber), g_c(grid.cellNumber), eedf(grid.cellNumber)
 {
-
-    mixture.initialize(cnf, workingConditions);
-
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
-    this->eedfType = Enumeration::getEedfType(cnf.at("eedfType"));
+    this->eedfType = getEedfType(cnf.at("eedfType"));
     this->shapeParameter = cnf.contains("shapeParameter") ? cnf.at("shapeParameter").get<unsigned>() : 0;
     this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
-    this->ionizationOperatorType = Enumeration::getIonizationOperatorType(cnf.at("ionizationOperatorType"));
-    this->growthModelType = Enumeration::getGrowthModelType(cnf.at("growthModelType"));
+    this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
+    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     this->includeEECollisions = cnf.at("includeEECollisions");
     this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
 
@@ -142,7 +154,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+    {
         ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    }
 
     A.setZero(grid.cellNumber);
     B.setZero(grid.cellNumber);
@@ -179,7 +193,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     }
 
     if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
+    }
 
     if (growthModelType == GrowthModelType::spatial)
     {
@@ -258,6 +274,12 @@ void ElectronKinetics::solve()
 
     obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases(), swarmParameters,
                          mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
+
+#ifdef LOKIB_CREATE_SPARSITY_PICTURE
+    const std::string xpm_fname{"system_matrix.xpm"};
+    std::cout << "Creating '" << xpm_fname << "'." << std::endl;
+    writeXPM(boltzmannMatrix, xpm_fname);
+#endif
 }
 
 const Grid *ElectronKinetics::getGrid()
@@ -269,6 +291,7 @@ void ElectronKinetics::invertLinearMatrix()
 {
     if (!mixture.CARGases.empty())
     {
+        /// \todo Document all the scalings ('1e20') in this file. Are these really needed?
         boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
                                    attachmentConservativeMatrix);
     }
@@ -330,8 +353,16 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+    std::cerr << "Inverted matrix elapsed time = "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
+    /** \todo It seems that the normaization is superfluous, since the normalization condition
+     *        is already part of the system (first row of A, first element of b). One could
+     *        decide to change the first equation into eedf[0] = 1 and do the normalization
+     *        afterwards. That prevents a fully populated first row of the system matrix
+     *        (better sparsity pattern).
+     */
+    // std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.step) << std::endl;
     eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
 }
 
@@ -393,6 +424,10 @@ void ElectronKinetics::evaluateFieldOperator()
 
     Vector &cs = mixture.totalCrossSection;
 
+    /** \todo the follosing line produces a NaN for g_E[0] (as expected).
+     *        This is later set to 0, so everything is fine. However:
+     *        this will crash the code os FPU=exceptions are enabled...
+     */
     g_E = ((EoN * EoN / 3) * grid.getNodes()).array() /
           (cs.array() + (me * WoN * WoN / (2 * e)) / (grid.getNodes().cwiseProduct(cs)).array());
 
@@ -487,9 +522,9 @@ void ElectronKinetics::evaluateInelasticOperators()
 
                     if (collision->isReverse)
                     {
-                        const double swRatio =
-                            collision->getTarget()->statisticalWeight / collision->products[0]->statisticalWeight;
-                        const double productDensity = collision->products[0]->density;
+                        const double swRatio = collision->getTarget()->statisticalWeight /
+                                               collision->m_rhsHeavyStates[0]->statisticalWeight;
+                        const double productDensity = collision->m_rhsHeavyStates[0]->density;
 
                         if (productDensity == 0)
                             continue;
@@ -599,6 +634,10 @@ void ElectronKinetics::evaluateIonizationOperator()
                         ionizationMatrix(k, k) -= density * grid.step * grid.getCell(k) * cellCrossSection[k] * sum;
                     }
 
+                    /** \todo If k + numThreshold + 1 < grid.cellNumber, the term is ignored.
+                     *        Document (in the document, not necessarily here) what are the
+                     *        consequences of that.
+                     */
                     if (k + numThreshold + 1 < grid.cellNumber)
                     {
                         for (uint32_t i = k + numThreshold + 1; i < end; ++i)
@@ -608,6 +647,10 @@ void ElectronKinetics::evaluateIonizationOperator()
                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
                         }
                     }
+
+                    /** \todo The following comment needs to be sorted out (possible index errors).
+                     *  \todo Document what is done here (algorithm) and how it is implemented.
+                     */
 
                     // This last section might need some adjustments because of indexing
                     // differences between Matlab and C++ (since indexes are multiplied here).
@@ -658,14 +701,22 @@ void ElectronKinetics::evaluateAttachmentOperator()
             if (threshold > grid.getNode(cellNumber))
                 continue;
 
+            /** \this should definitely not be in this (double) loop. Is this a constructor task?
+             *        Can this just be replaced with 'gas->collisions[CollisionType::attachment].size()'
+             *        in (other) places where this is now used?
+             */
             includeNonConservativeAttachment = true;
 
             const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
 
+            /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
+             *        in the two places where it is needed (one if the merger below can be done).
+             */
             Vector cellCrossSection(cellNumber);
 
             const double targetDensity = collision->getTarget()->density;
 
+            /// \todo Merge with the subsequent k-loop.
             for (uint32_t i = 0; i < cellNumber; ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
@@ -675,6 +726,10 @@ void ElectronKinetics::evaluateAttachmentOperator()
             if (numThreshold == 0)
                 continue;
 
+            /** Can we also merge with this loop?
+             *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
+             *  given the amount of work done.
+             */
             for (uint32_t k = 0; k < cellNumber; ++k)
             {
                 if (k < cellNumber - numThreshold)
@@ -980,6 +1035,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
+        Log<Message>::Notify("Iteration ", iter);
 
         totalCSI[0] = mixture.totalCrossSection[0];
 
@@ -1031,7 +1087,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         CIEffNew = eedf.dot(integrandCI);
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        if (((CIEffNew == 0 || abs(CIEffNew - CIEffOld) / CIEffOld < 1.e-10) &&
+        if (((CIEffNew == 0 || abs(CIEffNew - CIEffOld) / CIEffOld < 1.e10) &&
              ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) ||
             iter > 150)
         {

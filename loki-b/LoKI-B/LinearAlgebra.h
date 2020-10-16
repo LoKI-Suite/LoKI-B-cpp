@@ -5,8 +5,8 @@
 // Created by daan on 15-5-19.
 //
 
+#include "LoKI-B/Log.h"
 #include <iostream>
-#include "Log.h"
 
 #define EIGEN
 
@@ -34,7 +34,7 @@ typedef Eigen::VectorXd Vector;
 
 class LinAlg
 {
-public:
+  public:
     static void givens(double a, double b, double &c, double &s)
     {
         const double root = std::sqrt(a * a + b * b);
@@ -104,8 +104,7 @@ public:
         return true;
     }
 
-    static void reduce(double *A, uint32_t first, const uint32_t second, const uint32_t start,
-                       const uint32_t n)
+    static void reduce(double *A, uint32_t first, const uint32_t second, const uint32_t start, const uint32_t n)
     {
 
         if (A[start * n + first] == 0)
@@ -126,8 +125,7 @@ public:
         }
     }
 
-    static void reduceRowToHess(double *A, const uint32_t a, const uint32_t b, const uint32_t start,
-                                const uint32_t n)
+    static void reduceRowToHess(double *A, const uint32_t a, const uint32_t b, const uint32_t start, const uint32_t n)
     {
         for (uint32_t i = a; i < b; ++i)
         {
@@ -136,33 +134,33 @@ public:
     }
 
     /* TODO: [Optional] Update Hessenberg reduction such that it also alters the b vector.
-         *
-         * Idea: Use the 'bandgap' between superelastic diagonals to optimize the algorithm.
-         *
-         * 1. c[i] - c[i-1] determines the maximum number of subtractions to be saved by subtracting
-         * any lower row from c[i].
-         *
-         * Now let k > i
-         *
-         * 2. c[k] - c[k-1] determines the maximum number of subtractions that can be saved by
-         * subtracting with c[k].
-         * 3. c[k+1] - c[k] determines the number of rows j, for c[i]<=j<c[i+1], following c[i]
-         * that subtraction with c[k]+j can be applied to.
-         *
-         * Thus for each c[i] we would like to find the most optimal row to subtract. Thus we
-         * want to choose a block c[k] -- c[k+1] to be subtracted that skips the maximum number
-         * of subtractions possible. This value can be calculated by multiplying the number of
-         * subtractions that we skip per subtraction with the number of subtractions that can
-         * be applied, hence:
-         *
-         * The optimality factor 'of' can be calculated through:
-         *
-         * (min(c[i] - c[i-1], c[k] - c[k-1]) - 1) * min(c[i+1] - c[i], c[k+1] - c[k])
-         *
-         * or
-         *
-         * (min(g[i-1], g[k-1]) - 1) * min(g[i], g[k])
-         */
+     *
+     * Idea: Use the 'bandgap' between superelastic diagonals to optimize the algorithm.
+     *
+     * 1. c[i] - c[i-1] determines the maximum number of subtractions to be saved by subtracting
+     * any lower row from c[i].
+     *
+     * Now let k > i
+     *
+     * 2. c[k] - c[k-1] determines the maximum number of subtractions that can be saved by
+     * subtracting with c[k].
+     * 3. c[k+1] - c[k] determines the number of rows j, for c[i]<=j<c[i+1], following c[i]
+     * that subtraction with c[k]+j can be applied to.
+     *
+     * Thus for each c[i] we would like to find the most optimal row to subtract. Thus we
+     * want to choose a block c[k] -- c[k+1] to be subtracted that skips the maximum number
+     * of subtractions possible. This value can be calculated by multiplying the number of
+     * subtractions that we skip per subtraction with the number of subtractions that can
+     * be applied, hence:
+     *
+     * The optimality factor 'of' can be calculated through:
+     *
+     * (min(c[i] - c[i-1], c[k] - c[k-1]) - 1) * min(c[i+1] - c[i], c[k+1] - c[k])
+     *
+     * or
+     *
+     * (min(g[i-1], g[k-1]) - 1) * min(g[i], g[k])
+     */
 
     static void hessenbergReductionOptimal(double *A, const uint32_t *c, uint32_t n, uint32_t cn)
     {
@@ -311,8 +309,7 @@ public:
             if (iMax != col + 1)
             {
                 swapRows(p, iMax, col + 1);
-                std::cerr << "swapping\n"
-                          << std::endl;
+                std::cerr << "swapping\n" << std::endl;
             }
 
             reduce(A, p[i], p[b], col, n);
@@ -387,7 +384,7 @@ public:
 };
 } // namespace loki
 
-#endif //LOKI_CPP_LINEARALGEBRA_H
+#endif // LOKI_CPP_LINEARALGEBRA_H
 
 // OLD
 /*

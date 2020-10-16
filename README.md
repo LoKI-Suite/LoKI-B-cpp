@@ -5,6 +5,12 @@ The clean branch only contains the files needed to compile the loki-b project (a
 
 Note that when compiling loki with a non-default backend, currently MKL or OpenBLAS, the relevant files should be available to the compiler. The standard paths to the MKL in Linux and Windows have been added to the CMakeLists.txt file, you should edit them if the library is found in a different location. Alternatively they can be added to the PATH.
 
+## Clang format
+
+A Clang format style file is present at the root of this repository (`.clang-format`). To format all the source files, you can issue the following command from the repository root.
+
+ - `clang-format -i -style=file loki-b/source/*.cpp loki-b/LoKI-B/*.h`
+
 ## Compilation instructions:
 
 1. Make sure Git and CMake are installed on your system as well as a suitable C/C++ compiler (i.e. gcc/g++ on Linux, MSVC on Windows and Clang on Mac OS).
