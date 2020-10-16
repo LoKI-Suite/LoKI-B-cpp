@@ -1,0 +1,71 @@
+{
+  "reaction": {
+    "lhs": [
+      { "state": { "particle": "e", "charge": -1 }, "count": 1 },
+      {
+        "state": {
+          "particle": "H2",
+          "charge": 0,
+          "electronic": [
+            {
+              "e": "X",
+              "Lambda": 0,
+              "S": 0,
+              "parity": "g",
+              "reflection": "+",
+              "summary": "X^1S_g^+",
+              "vibrational": [{ "v": 4, "summary": "v=4" }]
+            }
+          ],
+          "id": "H2{X^1S_g^+{v=4}}"
+        },
+        "count": 1
+      }
+    ],
+    "rhs": [
+      { "state": { "particle": "e", "charge": -1 }, "count": 1 },
+      {
+        "state": {
+          "particle": "H2",
+          "charge": 0,
+          "electronic": [
+            {
+              "e": "d",
+              "Lambda": 1,
+              "S": 1,
+              "parity": "u",
+              "summary": "d^3P_u",
+              "vibrational": [{ "v": 16, "summary": "v=16" }]
+            }
+          ],
+          "id": "H2{d^3P_u{v=16}}"
+        },
+        "count": 1
+      }
+    ],
+    "type_tags": ["Electronic", "Vibrational"],
+    "reversible": false
+  },
+  "threshold": 14.6274,
+  "data": [
+    [14.6274, 0],
+    [15, 1.75049e-6],
+    [16, 9.65874e-7],
+    [17, 1.666e-7],
+    [18, 1.45969e-7],
+    [19, 1.38367e-7],
+    [20, 1.37281e-7],
+    [22, 1.73307e-7],
+    [25, 3.10483e-7],
+    [30, 4.83685e-7],
+    [40, 2.60731e-7],
+    [50, 2.06629e-7],
+    [60, 1.94409e-7],
+    [70, 1.34864e-7],
+    [80, 6.82673e-8],
+    [100, 3.67228e-8],
+    [120, 2.95003e-8],
+    [140, 2.18552e-8],
+    [160, 1.63045e-8]
+  ]
+}

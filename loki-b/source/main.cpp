@@ -4,11 +4,17 @@
 
 #include <iostream>
 
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
-#include "LoKI-B/LinearAlgebra.h"
 #include <chrono>
 #include <exception>
+
+//#define LOKIB_ENABLE_FPU_EXCEPTIONS
+
+#ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
+#include <cfenv>
+#endif
 
 // TODO: Cleanup
 //  [DONE] 1. Check the equal sharing and one takes all ionization routines
@@ -24,7 +30,7 @@
 //  5. [DONE] Separate backend and front end
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas*>& gases,
+                   const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
                    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
@@ -32,11 +38,19 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
 
 void handleExistingOutputPath(std::string &folder);
 
-void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-          const loki::Vector &x, const loki::Vector &y);
+void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel, const loki::Vector &x,
+          const loki::Vector &y);
 
 int main(int argc, char **argv)
 {
+#ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
+    // see https://en.cppreference.com/w/cpp/numeric/fenv for making this portable. There are
+    // also other possibilities, like translating the FPU exception into a C++ exception that
+    // can then be handled gracefully by the program... so it seems.
+    // NOTE that division by zero (of a non-zero value) and overflows are not necessarily
+    //      problematic, since IEE754 describes clear semantics for thee cases.
+    std::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
     try
     {
         auto begin = std::chrono::high_resolution_clock::now();
@@ -47,7 +61,7 @@ int main(int argc, char **argv)
 
         std::unique_ptr<loki::Simulation> simulation;
         std::string fileName(argv[1]);
-        if (fileName.size()>=5 && fileName.substr(fileName.size()-5)==".json")
+        if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
         {
             const loki::json_type cnf = loki::read_json_from_file(fileName);
             simulation.reset(new loki::Simulation(cnf));
@@ -63,7 +77,8 @@ int main(int argc, char **argv)
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
-        std::cerr << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+        std::cerr << "Simulation finished, elapsed time = "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
         // generate output
 
@@ -77,16 +92,17 @@ int main(int argc, char **argv)
 }
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas*>& gases,
+                   const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
-                   const std::vector<loki::RateCoefficient> &extraRateCoefficients,
-                   const loki::Vector &firstAnisotropy)
+                   const std::vector<loki::RateCoefficient> &extraRateCoefficients, const loki::Vector &firstAnisotropy)
 {
     plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
-    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(), *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
+    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(),
+    // *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
 
-    // loki::Vector *nodeCrossSection = gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
+    // loki::Vector *nodeCrossSection =
+    // gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
     // loki::Vector cellCrossSection(grid.cellNumber);
 
@@ -111,8 +127,8 @@ void handleExistingOutputPath(std::string &folder)
     //    std::cin >> folder;
 }
 
-void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel,
-          const loki::Vector &x, const loki::Vector &y)
+void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel, const loki::Vector &x,
+          const loki::Vector &y)
 {
     std::cout << "unset key" << std::endl;
     std::cout << "set xlabel \"" << xlabel << "\"" << std::endl;

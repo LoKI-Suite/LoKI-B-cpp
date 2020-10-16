@@ -12,60 +12,46 @@
  * working conditions to the relevant classes.
  */
 
-#include "Event.h"
-#include "Setup.h"
-#include "Enumeration.h"
-#include "json.h"
+#include "LoKI-B/Enumeration.h"
+#include "LoKI-B/Event.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/json.h"
 #include <map>
 
-namespace loki {
-    class WorkingConditions {
-    public:
-        double gasPressure,
-               gasTemperature,
-               gasDensity,
-               electronDensity,
-               electronTemperature{0},
-               chamberLength,
-               chamberRadius,
-               reducedField{0},
-               reducedFieldSI,
-               excitationFrequency,
-               reducedExcFreqSI;
+namespace loki
+{
+class WorkingConditions
+{
+  public:
+    double gasPressure, gasTemperature, gasDensity, electronDensity, electronTemperature{0}, chamberLength,
+        chamberRadius, reducedField{0}, reducedFieldSI, excitationFrequency, reducedExcFreqSI;
 
-        std::map<std::string, double *> argumentMap;
+    std::map<std::string, double *> argumentMap;
 
-        WorkingConditions(const WorkingConditionsSetup &setup);
-        WorkingConditions(const json_type &cnf);
-        ~WorkingConditions() = default;
+    WorkingConditions(const WorkingConditionsSetup &setup);
+    WorkingConditions(const json_type &cnf);
+    ~WorkingConditions() = default;
 
-        // Copying this object is not allowed.
-        WorkingConditions(const WorkingConditions &other) = delete;
+    // Copying this object is not allowed.
+    WorkingConditions(const WorkingConditions &other) = delete;
 
-        void updateReducedField(double value);
+    void updateReducedField(double value);
 
-        void updateElectronTemperature(double value);
+    void updateElectronTemperature(double value);
 
-        /*
-         * Technically we only need one 'updatedGasTemperature' event, since we can control
-         * the order of the listeners.
-         */
+    /*
+     * Technically we only need one 'updatedGasTemperature' event, since we can control
+     * the order of the listeners.
+     */
 
-        // Events
-        event updatedGasPressure,
-              updatedGasTemperature1,
-              updatedGasTemperature2,
-              updatedGasDensity,
-              updatedElectronDensity,
-              updatedElectronTemperature,
-              updatedChamberLength,
-              updatedReducedField,
-              updatedExcitationFrequency;
+    // Events
+    Event<> updatedGasPressure, updatedGasTemperature1, updatedGasTemperature2, updatedGasDensity,
+        updatedElectronDensity, updatedElectronTemperature, updatedChamberLength, updatedReducedField,
+        updatedExcitationFrequency;
 
-    private:
-        void linkToArgumentMap();
-    };
-}
+  private:
+    void linkToArgumentMap();
+};
+} // namespace loki
 
-
-#endif //LOKI_CPP_WORKINGCONDITIONS_H
+#endif // LOKI_CPP_WORKINGCONDITIONS_H

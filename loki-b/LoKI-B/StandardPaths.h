@@ -7,10 +7,10 @@
 
 #include <string>
 
-namespace loki {
+namespace loki
+{
 #define INPUT "../Input"
 #define OUTPUT "Output"
-}
+} // namespace loki
 
-
-#endif //LOKI_CPP_STANDARDPATHS_H
+#endif // LOKI_CPP_STANDARDPATHS_H

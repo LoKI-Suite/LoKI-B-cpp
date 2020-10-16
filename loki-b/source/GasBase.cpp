@@ -1,43 +1,57 @@
 #include "LoKI-B/GasBase.h"
 #include "LoKI-B/Log.h"
-#include <cassert>
-#include <limits>
 #include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <limits>
 
-namespace loki {
-
-GasBase::StateBase::StateBase(const StateEntry &entry, StateType type, GasBase* gas, StateBase* parent)
-: type(type), e(entry.e), v(entry.v), J(entry.J), charge(entry.charge), m_gas_base(gas), m_parent_base(parent),
-  population(0), energy(-1), statisticalWeight(-1), density(0)
+namespace loki
 {
+
+GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &parent)
+    : m_gas_base(gas), m_parent_base(&parent), type(static_cast<StateType>(parent.type + 1)),
+      charge(type == StateType::charge ? entry.charge : parent.charge),
+      e(type == StateType::electronic ? entry.e : parent.e), v(type == StateType::vibrational ? entry.v : parent.v),
+      J(type == StateType::rotational ? entry.J : parent.J), population(0), energy(-1), statisticalWeight(-1),
+      density(0)
+{
+    switch (type)
+    {
+    case StateType::electronic:
+        if (e.empty())
+            throw std::runtime_error("Electronic state not specified.");
+        break;
+    case StateType::vibrational:
+        if (v.empty())
+            throw std::runtime_error("Vibrational state not specified.");
+        break;
+    case StateType::rotational:
+        if (J.empty())
+            throw std::runtime_error("Rotational state not specified.");
+        break;
+    }
+    /** \todo if multiple ionization levels are present, we set the population of the
+     *        neutral state to 1 (the others remain at 0).
+     */
+    if (type == StateType::charge && charge.empty())
+    {
+        population = 1;
+    }
     assert(m_gas_base);
 #if 0
-    std::cout << "StateBase::StateBase from entry: " << std::endl
-	<< " type = " << static_cast<int>(type) << std::endl
-	<< " gas  = " << gas->name << std::endl
-	<< " e    = " << e << std::endl
-	<< " v    = " << v << std::endl
-	<< " J    = " << J << std::endl
-	<< " q    = " << charge << std::endl
-        << std::endl;
+    std::cout << "Created state: " << *this << ", type = " << type << std::endl;
+    std::cout << " - entry: " << entry << std::endl;
+    std::cout << " - parent: " << parent << ", type = " << parent.type << std::endl;
 #endif
 }
 
-GasBase::StateBase::StateBase(StateType type, std::string e, std::string v, std::string J, std::string charge, GasBase* gas)
-: type(type), e(e), v(v), J(J), charge(charge), m_gas_base(gas), m_parent_base(nullptr),
-  population(0), energy(-1), statisticalWeight(-1), density(0)
+GasBase::StateBase::StateBase(GasBase *gas)
+    : m_gas_base(gas), m_parent_base(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
+      v(std::string{}), J(std::string{}), population(1), energy(-1), statisticalWeight(-1), density(0)
 {
     assert(m_gas_base);
 #if 0
-    std::cout << "StateBase::StateBase from entry: " << std::endl
-	<< " type = " << static_cast<int>(type) << std::endl
-	<< " gas  = " << gas->name << std::endl
-	<< " e    = " << e << std::endl
-	<< " v    = " << v << std::endl
-	<< " J    = " << J << std::endl
-	<< " q    = " << charge << std::endl
-        << std::endl;
+    std::cout << "StateBase::StateBase" << ", type = " << type << std::endl;
 #endif
 }
 
@@ -47,57 +61,84 @@ GasBase::StateBase::~StateBase()
 
 bool GasBase::StateBase::operator>=(const StateEntry &entry)
 {
+    if (type > entry.level)
+        return false;
+
+    if (charge == entry.charge)
     {
-        if (type > entry.level || charge != entry.charge)
-            return false;
-
-        if (e == entry.e)
-        {
-            if (type == Enumeration::electronic)
-                return true;
-        }
-        else
-        {
-            return false;
-        }
-
-        if (v == entry.v)
-        {
-            if (type == Enumeration::vibrational)
-                return true;
-        }
-        else
-        {
-            return false;
-        }
-
-        if (J == entry.J)
-        {
-            if (type == Enumeration::rotational)
-                return true;
-        }
-        else
-        {
-            return false;
-        }
-
-        return true;
+        if (type == StateType::charge)
+            return true;
     }
+    else
+    {
+        return false;
+    }
+    if (e == entry.e)
+    {
+        if (type == StateType::electronic)
+            return true;
+    }
+    else
+    {
+        return false;
+    }
+
+    if (v == entry.v)
+    {
+        if (type == StateType::vibrational)
+            return true;
+    }
+    else
+    {
+        return false;
+    }
+
+    if (J == entry.J)
+    {
+        if (type == StateType::rotational)
+            return true;
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
 }
 
 std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
 {
-    os << state.gas().name << '(';
+    os << state.gas().name;
+#if 0
+    // write N2+(...) instead of N2(+,...) ?
+    /// \todo this does not work: when reading legacy input, the charge is smth. like '+', not a number.
+    if (!state.charge.empty())
+    {
+        const int c=std::stoi(state.charge);
+        os << std::string( std::abs(c), c > 0 ? '+' : '-');
+    }
+#endif
+
+    // the electron is handled specially. The logic here is the same as
+    // for in StateEntry's stream insertion operator.
+    if (state.gas().name == "e")
+    {
+        return os;
+    }
+
+    os << '(';
 
     if (!state.charge.empty())
+    {
         os << state.charge << ',';
+    }
 
     os << state.e;
 
-    if (state.type >= Enumeration::vibrational)
+    if (state.type >= StateType::vibrational)
         os << ",v=" << state.v;
 
-    if (state.type == Enumeration::rotational)
+    if (state.type == StateType::rotational)
         os << ",J=" << state.J;
 
     os << ')';
@@ -105,7 +146,7 @@ std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
     return os;
 }
 
-void GasBase::StateBase::printChildren(std::ostream& os) const
+void GasBase::StateBase::printChildren(std::ostream &os) const
 {
     std::string space = "  ";
 
@@ -142,14 +183,17 @@ void GasBase::StateBase::checkPopulations() const
     }
     else
     {
-        if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon())
+        if (std::abs(totalPopulation - 1.) > 100. * std::numeric_limits<double>::epsilon())
             Log<ChildrenPopulationError>::Error(*this);
     }
 }
 
 void GasBase::StateBase::evaluateDensity()
 {
-    if (type == electronic)
+    /* \todo This old implementation appears to assign the (neutral) gas density to the charged species.
+     *       Setting that to zero for now...
+     */
+    if (type == StateType::root)
         density = population * gas().fraction;
     else
         density = population * parent()->density;
@@ -158,99 +202,61 @@ void GasBase::StateBase::evaluateDensity()
         state->evaluateDensity();
 }
 
-GasBase::StateBase* GasBase::StateBase::find(const StateEntry &entry)
+GasBase::StateBase *GasBase::StateBase::find(const StateEntry &entry)
 {
-    auto it = std::find_if(m_children.begin(), m_children.end(),
-                           [&entry](StateBase *child) { return *child >= entry; });
+    auto it =
+        std::find_if(m_children.begin(), m_children.end(), [&entry](StateBase *child) { return *child >= entry; });
     return it == m_children.end() ? nullptr : *it;
 }
 
-GasBase:: GasBase(std::string name)
-    : name{name},
-    mass{-1},
-    harmonicFrequency{-1},
-    anharmonicFrequency{-1},
-    rotationalConstant{-1},
-    electricDipoleMoment{-1},
-    electricQuadrupoleMoment{-1},
-    polarizability{-1},
-    fraction{0}
+GasBase::GasBase(std::string name)
+    : m_root(new State(this)), name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
+      rotationalConstant{-1}, electricDipoleMoment{-1}, electricQuadrupoleMoment{-1}, polarizability{-1}, fraction{0}
 {
 }
 
-void GasBase::print(std::ostream& os) const
+GasBase::~GasBase()
 {
-    for (const auto& s : stateBaseTree)
-    {
-        os << *s << std::endl;
-        s->printChildren(os);
-    }
-    for (const auto& s : ionicBaseStates)
-    {
-        os << *s << std::endl;
-        s->printChildren(os);
-    }
+}
+
+void GasBase::print(std::ostream &os) const
+{
+    m_root->printChildren(os);
 }
 
 void GasBase::checkPopulations()
 {
-    double totalPopulation = 0.;
-
-    for (auto *state : stateBaseTree) {
-        totalPopulation += state->population;
-        state->checkPopulations();
-    }
-    for (auto *state : ionicBaseStates) {
-        totalPopulation += state->population;
-        state->checkPopulations();
-    }
-
-    if (fraction == 0) {
-        if (totalPopulation != 0)
-            Log<ZeroFractionPopulationError>::Error(name);
-    } else if (std::abs(totalPopulation - 1.) > 10. * std::numeric_limits<double>::epsilon()) {
-        Log<ChildrenPopulationError>::Error(name);
-    }
+    m_root->checkPopulations();
 }
 
 void GasBase::evaluateStateDensities()
 {
-    for (auto *state : stateBaseTree)
-        state->evaluateDensity();
-    for (auto *state : ionicBaseStates)
-        state->evaluateDensity();
+    m_root->evaluateDensity();
 }
 
-GasBase::StateBase* GasBase::find(const StateEntry& entry)
+GasBase::StateBase *GasBase::findState(const StateEntry &entry)
 {
-    auto &childStates = (entry.charge.empty() ? stateBaseTree : ionicBaseStates);
+    // Find charge state.
 
-    auto it = std::find_if(childStates.begin(), childStates.end(),
-                           [&entry](StateBase* state) {
-                               return *state >= entry;
-                           });
+    auto state = m_root->find(entry);
 
-    if (it == childStates.end()) {
+    if (state == nullptr)
         return nullptr;
-    }
 
-    return *it;
-}
+    if (entry.level == charge)
+        return state;
 
-GasBase::StateBase* GasBase::findState(const StateEntry &entry)
-{
-    if (entry.e == "*" && entry.level == electronic) {
-        auto &states = entry.charge.empty() ? stateBaseTree : ionicBaseStates;
-
-        if (states.empty())
+    if (entry.e == "*" && entry.level == electronic)
+    {
+        if (state->m_children.empty())
             return nullptr;
 
-        return states[0];
+        return state->m_children[0];
     }
 
     // Find electronic state.
 
-    auto * state = find(entry);
+    state = state->find(entry);
 
     if (state == nullptr)
         return nullptr;
@@ -258,7 +264,8 @@ GasBase::StateBase* GasBase::findState(const StateEntry &entry)
     if (entry.level == electronic)
         return state;
 
-    if (entry.v == "*" && entry.level == vibrational) {
+    if (entry.v == "*" && entry.level == vibrational)
+    {
         if (state->m_children.empty())
             return nullptr;
 
@@ -267,7 +274,7 @@ GasBase::StateBase* GasBase::findState(const StateEntry &entry)
 
     // Find vibrational state.
 
-    state = state->find(entry);// findState(state, entry);
+    state = state->find(entry); // findState(state, entry);
 
     if (state == nullptr)
         return nullptr;
@@ -275,7 +282,8 @@ GasBase::StateBase* GasBase::findState(const StateEntry &entry)
     if (entry.level == vibrational)
         return state;
 
-    if (entry.J == "*" && entry.level == rotational) {
+    if (entry.J == "*" && entry.level == rotational)
+    {
         if (state->m_children.empty())
             return nullptr;
 
@@ -284,7 +292,7 @@ GasBase::StateBase* GasBase::findState(const StateEntry &entry)
 
     // Find rotational state
 
-    state = state->find(entry);//findState(state, entry);
+    state = state->find(entry); // findState(state, entry);
 
     if (state == nullptr)
         return nullptr;

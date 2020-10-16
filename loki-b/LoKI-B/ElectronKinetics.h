@@ -5,29 +5,31 @@
 #ifndef LOKI_CPP_ELECTRONKINETICS_H
 #define LOKI_CPP_ELECTRONKINETICS_H
 
-#include "LoKI-B/Setup.h"
-#include "LoKI-B/EedfGasMixture.h"
 #include "LoKI-B/EedfCollision.h"
-#include "LoKI-B/Grid.h"
-#include "LoKI-B/WorkingConditions.h"
-#include "LoKI-B/LinearAlgebra.h"
-#include "LoKI-B/Power.h"
-#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/EedfGasMixture.h"
 #include "LoKI-B/Event.h"
+#include "LoKI-B/Grid.h"
+#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/MacroscopicQuantities.h"
+#include "LoKI-B/Power.h"
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/WorkingConditions.h"
 
 // TODO: comment ElectronKinetics class
 
 namespace loki
 {
-using namespace Enumeration;
 
-typedef Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas*>,
-              const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>,
-              const Vector>
-    ResultEvent;
+using ResultEvent =
+    Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas *>,
+          const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>, const Vector>;
 
 class ElectronKinetics
 {
+    WorkingConditions *workingConditions;
+    Grid grid;
+    EedfGasMixture mixture;
+
     EedfType eedfType;
     uint8_t shapeParameter;
     double mixingParameter;
@@ -35,35 +37,16 @@ class ElectronKinetics
     double maxPowerBalanceRelError;
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
-    bool includeEECollisions{false},
-        includeNonConservativeIonization{false},
-        includeNonConservativeAttachment{false},
+    bool includeEECollisions{false}, includeNonConservativeIonization{false}, includeNonConservativeAttachment{false},
         hasSuperelastics{false};
 
     double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
 
-    WorkingConditions *workingConditions;
-
-    Grid grid;
-
-    EedfGasMixture mixture;
-
-    Matrix inelasticMatrix,
-        ionConservativeMatrix,
-        ionizationMatrix,
-        attachmentConservativeMatrix,
-        BAee,
+    Matrix inelasticMatrix, ionConservativeMatrix, ionizationMatrix, attachmentConservativeMatrix, BAee,
         boltzmannMatrix;
 
-    SparseMatrix elasticMatrix,
-        fieldMatrix,
-        CARMatrix,
-        attachmentMatrix,
-        ionSpatialGrowthD,
-        ionSpatialGrowthU,
-        fieldMatrixSpatGrowth,
-        fieldMatrixTempGrowth,
-        ionTemporalGrowth;
+    SparseMatrix elasticMatrix, fieldMatrix, CARMatrix, attachmentMatrix, ionSpatialGrowthD, ionSpatialGrowthU,
+        fieldMatrixSpatGrowth, fieldMatrixTempGrowth, ionTemporalGrowth;
 
     Vector g_c, g_E, g_CAR, g_fieldSpatialGrowth, g_fieldTemporalGrowth, A, B;
 
@@ -75,7 +58,7 @@ class ElectronKinetics
 
     std::vector<uint32_t> superElasticThresholds;
 
-public:
+  public:
     ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
 
@@ -90,7 +73,7 @@ public:
 
     const Grid *getGrid();
 
-private:
+  private:
     void evaluateMatrix();
 
     void invertLinearMatrix();
@@ -125,4 +108,4 @@ private:
 };
 } // namespace loki
 
-#endif //LOKI_CPP_ELECTRONKINETICS_H
+#endif // LOKI_CPP_ELECTRONKINETICS_H
