@@ -9,12 +9,18 @@
 
 using json_type = nlohmann::json;
 
+/** Make all characters in \a s uppercase; return a reference to the
+ *  modified string.
+ */
 std::string& to_upper_inplace(std::string& s)
 {
     for (auto& c : s) c = std::toupper(c);
     return s;
 }
 
+/** Make a copy of string \a s, make all characters of the copy
+ *  uppercase and return the result (\a s is not modified).
+ */
 std::string to_upper_copy(const std::string& s)
 {
     std::string tmp(s);
@@ -22,21 +28,14 @@ std::string to_upper_copy(const std::string& s)
     return tmp;
 }
 
-/// \todo Check that no second target is present
-std::string get_target(const json_type& sa)
-{
-    for (const auto& s: sa)
-    {
-        const json_type& state = s.at("state");
-        if (state.get<std::string>()!="e")
-        {
-            return state;
-        }
-    }
-    throw std::runtime_error("Could not identify target state while parsing array '"
-            + sa.dump() + "'.");
-}
-
+/** This function is used only by the implementation of string_to<T>.
+ *  It is called after an item of type T is extracted from the stream \a ss
+ *  and checks that the stream is not in the fail state and that the eof
+ *  is reached. This means that conversion happened, and that no trailing
+ *  characters are left. If any of these conditions is not met, a runtime
+ *  error is thrown that contains the offending string and the reason
+ *  of failure.
+ */
 void check_conversion(std::istream& ss, const std::string& str, const std::string& type)
 {
     if (ss.fail())
@@ -57,6 +56,10 @@ void check_conversion(std::istream& ss, const std::string& str, const std::strin
     }
 }
 
+/** Convert \a str to a variable of type T and return the result.
+ *  A std::runtime_error is thrown if the conversion failed or is
+ *  incomplete.
+ */
 template <class T>
 T string_to(const std::string& str)
 {
@@ -67,6 +70,31 @@ T string_to(const std::string& str)
     return val;
 }
 
+
+/** Find and return the name of the first state other than "e" that appears
+ *  in a stochiometric array \a sa ('one side of a reaction equation').
+ *
+ *  \todo Check that no second target is present
+ */
+std::string get_target(const json_type& sa)
+{
+    for (const auto& s: sa)
+    {
+        const json_type& state = s.at("state");
+        if (state.get<std::string>()!="e")
+        {
+            return state;
+        }
+    }
+    throw std::runtime_error("Could not identify target state while parsing array '"
+            + sa.dump() + "'.");
+}
+
+/** In the array \a par_array of strings, locate the first entry that starts with
+ *  the string \a par_array and return the result. When \a strip is true, the
+ *  leading pattern substring is removed from the result. If no matching entry is
+ *  found, a std::runtime_error is thrown.
+ */
 std::string get_parameter(const json_type& par_array, const std::string& pattern, bool strip)
 {
     for (const auto& p : par_array)
@@ -80,36 +108,78 @@ std::string get_parameter(const json_type& par_array, const std::string& pattern
     throw std::runtime_error("Parameter starting with '" + pattern + "' not found.");
 }
 
+/** Call function get_parameter to get the first entry of the \a par_array that
+ *  starts with \a pattern, then convert the remainder of that parameter string
+ *  to a double and return the result. If no match is found, or the conversion
+ *  fails, a std::runtime_error is thrown.
+ *  Example: if the array contains params = [ "A=2","B=3.14" ], the call
+ *  get_parameter_value(params,"B=") results in the value 3.14.
+ */
 double get_parameter_value(const json_type& par_array, const std::string& pattern)
 {
     return string_to<double>(get_parameter(par_array,pattern,true));
 }
 
+/** The strings that identify process types in LXCat files. The order that
+ *  is used here defines a priority order, see the documentation of get_type().
+ *
+ *  \todo types VIBRATIONAL, ROTATIONAL are not announced in the LXCat headers.
+ *  \todo Bolsig+ also appears to support MOMENTUM, the alternative spelling
+ *        IONISATION and perhaps more, no idea if we should be prepared for
+ *        those as well when parsing LXCat files.
+ */
 const std::vector<std::string>& process_types()
 {
-    /// \todo types VIBRATIONAL, ROTATIONAL are not announced in the header.
     static const std::vector<std::string> types{
         "ELASTIC",
         "EFFECTIVE",
-        "ATTACHMENT"
+        "ATTACHMENT",
         "IONIZATION",
         "EXCITATION",
         "VIBRATIONAL",
-        "ROTATIONAL",
+        "ROTATIONAL"
     };
     return types;
 }
 
+/** Check that \a type equals one of the values in process_types().
+ *  If this is the case, a reference to \a type is returned, otherwise
+ *  a std::runtime_error is thrown.
+ */
+const std::string& check_type(const std::string& type)
+{
+    if (std::find(process_types().begin(),process_types().end(),type)==process_types().end())
+    {
+        throw std::runtime_error("Unknown process type '" + type + "'.");
+    }
+    return type;
+}
+
+/** Select a type from the \a type_tags array and use that in the LXCat file,
+ *  do translation if necessary and write the result in uppercase.
+ *
+ *  Note that JSON files allow for more than one tag, e.g. [ "Electronic",
+ *  "Vibrational" ]. This function will then prefer the type that appears
+ *  first in the list of allowed strings that is returned by process_types().
+ *  As a special rule, the string Electronic, which identifies an electronic
+ *  excitation, is translated into EXCITATION.
+ *
+ *  \todo establish and document a clear set of rules.
+ */
 std::string get_type(const json_type& type_tags)
 {
     std::set<std::string> tags;
     for (const auto& t : type_tags)
     {
-        tags.insert(to_upper_copy(t));
+        tags.insert(t=="Electronic" ? "EXCITATION" : to_upper_copy(t));
     }
-    if (tags.size()==1)
+    if (tags.size()==0)
     {
-        return *tags.begin();
+        throw std::runtime_error("At least one process tag must be specified.");
+    }
+    else if (tags.size()==1)
+    {
+        return check_type(*tags.begin());
     }
     else
     {
@@ -133,7 +203,12 @@ std::string get_type(const json_type& type_tags)
     }
 }
 
-/** Emit the cross section table.
+/** Write a cross section table that is defined by the JSON object \a table
+ *  to the stream \a os. The two axis lables and units are obtained from
+ *  arrays "labels" and "units" in \a table, each must contain two strings.
+ *  This information is used to produce the "COLUMNS:" line in the LXCat file.
+ *  the xy-data are obtained from the array "data" in \a table, which must
+ *  contain arrays of two doubles that each represent a data point.
  */
 void emit_table(const json_type& table, std::ostream& os)
 {
@@ -165,22 +240,17 @@ void emit_table(const json_type& table, std::ostream& os)
     os << "------" << '\n';
 }
 
-/* 
- * EFFECTIVE
- * N2
- *  1.959210e-5
- * SPECIES: e / N2
- * PROCESS: E + N2 -> E + N2, Effective
- * PARAM.:  m/M = 0.0000195921, complete set
- * COMMENT: [e + N2(X) -> e + N2(X), Effective] Pitchford L C and Phelps A V 1982 Bull. Am. Phys.
- * COMMENT: Soc. 27 109 Tachibana K and Phelps A V 1979 JCP 71 3544.
- * UPDATED: 2017-11-14 10:24:49
- * COLUMNS: Energy (eV) | Cross section (m2)
- * -----------------------------
- *  0.000000e+0    1.100000e-20
- *     ...
- * -----------------------------
+/** Write one side of a reaction equation, as defined by the object \a sa,
+ *  to the stream \a os. The object \a sa must be an array of objects, each
+ *  containing "state" (string) and "count" (int) values, representing the
+ *  name and occurrence of a particular state in the format. As an example,
+ *  the state array
  *
+ *    [ { "state": "Ar+", "count": 1 }, { "state": "e", "count": 2 } ]
+ *
+ *  would result in the output "Ar+ + 2 e". Note that coefficient values
+ *  equal to unity are not written. When \a skip_e is true, entries
+ *  with "state" equal to "e" (representing an electron) are skipped.
  */
 void emit_stoich_array(const json_type& sa, std::ostream& os, bool skip_e)
 {
@@ -210,6 +280,16 @@ void emit_stoich_array(const json_type& sa, std::ostream& os, bool skip_e)
     }
 }
 
+/** write the reaction equation that is defined by \a fmt to \a os.
+ *  This produces the output "<LHS> <SEP> <RHS>", where the sides
+ *  LHS and RHS are produced by calling emit_stoich_array on the
+ *  objects "lhs" and "rhs" of \a fmt, respectively. The separator
+ *  is "<->" when "reversible" has value true, "->" otherwise.
+ *  The argument \a skip_e is passed on to the calls to emit_stoich_array,
+ *  when equal to true the electron entries are skipped for both the
+ *  left and right-hand side of the reaction equation.
+ *  The function returns the value of "reversible".
+ */
 bool emit_format(const json_type& fmt, std::ostream& os, bool skip_e)
 {
     emit_stoich_array(fmt.at("lhs"),os,skip_e);
@@ -225,6 +305,14 @@ bool emit_format(const json_type& fmt, std::ostream& os, bool skip_e)
     return reversible;
 }
 
+/** Write information that is particular for a process of \a type ELASTIC
+ *  or EFFECTIVE, defined by the object \a pnode, to \a os.
+ *
+ *  For a process "e + X -> e + X", the code writes the collision target
+ *  (here) X, followed by a line contain the mass ratio m_e/m_x. The latter
+ *  is extracted from the parameter in the "parameters" string list that is
+ *  of the form "m/M = <value>".
+ */
 void emit_elastic_effective(const json_type& pnode, const std::string& type, std::ostream& os)
 {
     const json_type& rnode = pnode.at("reaction");
@@ -235,6 +323,8 @@ void emit_elastic_effective(const json_type& pnode, const std::string& type, std
     os << ' ' << get_parameter_value(pnode.at("parameters"),"m/M = ") << '\n';
 }
 
+/** \todo document me.
+ */
 void emit_inelastic(const json_type& pnode, const std::string& type, std::ostream& os)
 {
     const bool skip_e = true;
@@ -266,6 +356,8 @@ void emit_inelastic(const json_type& pnode, const std::string& type, std::ostrea
     os << '\n';
 }
 
+/** \todo document me.
+ */
 void emit_process(const json_type& pnode, std::ostream& os)
 {
     const json_type& rnode = pnode.at("reaction");
@@ -302,11 +394,22 @@ void emit_process(const json_type& pnode, std::ostream& os)
     os << '\n';
 }
 
+/** \todo document me.
+ */
 void json2lxcat(const json_type& src, std::ostream& os)
 {
+    unsigned ndx=0;
     for (const auto& pcnf: src.at("processes"))
     {
-        emit_process(pcnf,os);
+        try {
+            emit_process(pcnf,os);
+            ++ndx;
+        }
+        catch (std::exception& exc)
+        {
+            throw std::runtime_error("While parsing process #"
+		+ std::to_string(ndx) + ": " + std::string(exc.what()));
+        }
     }
 }
 
@@ -317,7 +420,7 @@ int main()
             std::istreambuf_iterator<char>(std::cin),
             std::istreambuf_iterator<char>());
         const json_type src(json_type::parse(str));
-        json2lxcat(src,std::cout); 
+        json2lxcat(src,std::cout);
         return 0;
     }
     catch (std::exception& exc)
