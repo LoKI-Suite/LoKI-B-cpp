@@ -141,6 +141,11 @@ if(NOT EMSCRIPTEN)
 	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(test_statecontainer PRIVATE loki_l ${backend})
+
+	add_executable(json2lxcat ${ideas}/json2lxcat.cpp)
+	target_include_directories(json2lxcat PRIVATE ${inc})
+	target_link_directories(json2lxcat PRIVATE build)
+	target_link_libraries(json2lxcat)
 else()
 	# -- WebAssembly -- #
 	message(STATUS "Compiling to WebAssembly.")
