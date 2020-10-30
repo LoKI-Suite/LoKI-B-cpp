@@ -323,7 +323,21 @@ void emit_elastic_effective(const json_type& pnode, const std::string& type, std
     os << ' ' << get_parameter_value(pnode.at("parameters"),"m/M = ") << '\n';
 }
 
-/** \todo document me.
+/** Write information that is particular for inelastic processes (electronic,
+ *  vibrational and rotational excitation).
+ *
+ *  Firstly, the reaction format is written, but without the electrons. For an excitation
+ *  or ionization process this results in something like "X -> X*" or "X -> X+". The
+ *  subsequent line contains the energy threshold of the process in eV (just the number,
+ *  without the units). When the process is marked to be reversible in the JSON file
+ *  and the process is an electronic excitation, '<->' is written instead of '->' and
+ *  the ratio of the electronic statistical weights is written on the line following
+ *  that containing the threshold. The value is obtained from the paramater string that
+ *  starts with "g1/g0 = ".
+ *
+ *  \todo Other processes, like attachment, perhaps need different handling? Check.
+ *  \todo Are parameters available for every inelastic process? Should we implement
+ *        the handling of parameters differently for each process type?
  */
 void emit_inelastic(const json_type& pnode, const std::string& type, std::ostream& os)
 {
@@ -333,27 +347,12 @@ void emit_inelastic(const json_type& pnode, const std::string& type, std::ostrea
     /** \todo When is the g1/g0 required? In the N2 files there are processes
      *        that have <->, also have the g-ration in the parameter list, but
      *        not on 'line 3' (after the energy threshold). Is this needed
-     *        only for electronic exceitation?
+     *        only for electronic excitation?
      */
     if (reversible && type=="EXCITATION")
     {
         os << ' ' << get_parameter_value(pnode.at("parameters"),"g1/g0 = ") << '\n';
     }
-    os << "PARAM.: ";
-    bool first=true;
-    for (const auto& p : pnode.at("parameters"))
-    {
-        if (first)
-        {
-            first = false;
-        }
-        else
-        {
-            os << ", ";
-        }
-        os << p.get<std::string>();
-    }
-    os << '\n';
 }
 
 /** \todo document me.
@@ -380,8 +379,47 @@ void emit_process(const json_type& pnode, std::ostream& os)
     }
 
     // 3. Emit common information:
+    //    - parameters
     //    - references
     //    - the cross section table
+
+    /** Generic handling of parameters. Produce a line that starts
+     *  with the word "PARAM. ", followed by a comma-separated list
+     *  of the parameter string values. Depending on the process type,
+     *  the parameter info also ends up elswhere in the LXCat output
+     *  (m/M for elastic processes, g1/g0 for reversible electron
+     *  excitation, etc.).
+     *
+     *  \todo Find out and document which information must be declared
+     *        for each process type, and make it so.
+     *  \todo Some databases have systematic ways of providing additional
+     *        information in the form of comments. As an example, the IST
+     *        databases have the full reaction with detailed state info
+     *        in addition to the simplified format. We may need a program
+     *        option like "--style=IST" to announce that an IST file is
+     *        being processed, so we can add thos extras as well. This may
+     *        require us to read the state list as well, because that can
+     *        give us things like v,J quantum numbers for a state that we
+     *        know only by name otherwise.
+     */
+    if (pnode.contains("parameters"))
+    {
+        os << "PARAM.: ";
+        bool first=true;
+        for (const auto& p : pnode.at("parameters"))
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                os << ", ";
+            }
+            os << p.get<std::string>();
+        }
+        os << '\n';
+    }
 
     /** \todo Are there any limits on the line size? Should lines be,
      *   clipped to 80 characters, for example?
@@ -394,7 +432,30 @@ void emit_process(const json_type& pnode, std::ostream& os)
     os << '\n';
 }
 
-/** \todo document me.
+/** Write the JSON (v6) document \a src to \a os in LXCat format.
+ *
+ *  \todo The general LXCat header is not yet written.
+ *  \todo That header is incomplete, it seems. In the IST LXCat file
+ *        the types VIBRATIONAL and ROTATIONAL are not mentioned. What
+ *        is supported, and what are the process-specific expectations.
+ *  \todo The database-specific header is not written. As an example,
+ *        take the file Nitrogen/N2_LXCat.txt. There we see that this
+ *        comes in two parts: at the top we have "RECOMMENDED REFERENCE
+ *        FORMAT", followed by an IST-block. Then we have, after the
+ *        line with xxxxxxx the DATABASE, PERMLINK, DESCRIPTION, CONTACT
+ *        and HOW TO REFERENCE lines (are these really standard?), then
+ *        there is the data set specific (?) info in the form of
+ *        COMMENT lines *after the *****. This is different in the
+ *        vib and rot files, so we cannot speak of a common "IST"
+ *        block.
+ *  \todo In an LXCat file, you would find, for example, N2 as name
+ *        for the ground state of nitrogen, in the JSON files we now
+ *        have N2{X^1S_g^+}. is that a problem? It definitely is not
+ *        compatiable. Should we (optionally) translate the latter in
+ *        the former?
+ *  \todo In LXCat you typically see Gas(State), in JSON we have Gas{State}.
+ *        Existing users may rely on parentheses being used to announce
+ *        a state.
  */
 void json2lxcat(const json_type& src, std::ostream& os)
 {
