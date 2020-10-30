@@ -192,13 +192,13 @@ std::string get_type(const json_type& type_tags)
         std::cout << std::endl;
 #endif
         /// \todo What is the 'preferred' process type if more are given?
-    for (const auto& t : process_types())
-    {
+        for (const auto& t : process_types())
+        {
             if (tags.find(t)!=tags.end())
             {
                 return t;
             }
-    }
+        }
         throw std::runtime_error("Unknoqn process type(s).");
     }
 }
@@ -309,7 +309,7 @@ bool emit_format(const json_type& fmt, std::ostream& os, bool skip_e)
  *  or EFFECTIVE, defined by the object \a pnode, to \a os.
  *
  *  For a process "e + X -> e + X", the code writes the collision target
- *  (here) X, followed by a line contain the mass ratio m_e/m_x. The latter
+ *  (here X), followed by a line contain the mass ratio m_e/m_x. The latter
  *  is extracted from the parameter in the "parameters" string list that is
  *  of the form "m/M = <value>".
  */
@@ -330,7 +330,7 @@ void emit_elastic_effective(const json_type& pnode, const std::string& type, std
  *  or ionization process this results in something like "X -> X*" or "X -> X+". The
  *  subsequent line contains the energy threshold of the process in eV (just the number,
  *  without the units). When the process is marked to be reversible in the JSON file
- *  and the process is an electronic excitation, '<->' is written instead of '->' and
+ *  '<->' is written instead of '->'. If a reversible process is an electronic excitation,
  *  the ratio of the electronic statistical weights is written on the line following
  *  that containing the threshold. The value is obtained from the paramater string that
  *  starts with "g1/g0 = ".
