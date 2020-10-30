@@ -91,7 +91,7 @@ std::string get_target(const json_type& sa)
 }
 
 /** In the array \a par_array of strings, locate the first entry that starts with
- *  the string \a par_array and return the result. When \a strip is true, the
+ *  the string \a pattern and return the result. When \a strip is true, the
  *  leading pattern substring is removed from the result. If no matching entry is
  *  found, a std::runtime_error is thrown.
  */
