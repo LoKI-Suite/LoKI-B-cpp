@@ -7,6 +7,7 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
+#include "LoKI-B/Gnuplot.h"
 #include <chrono>
 #include <exception>
 
@@ -33,13 +34,39 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
                    const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
                    const loki::SwarmParameters &swarmParameters,
                    const std::vector<loki::RateCoefficient> &rateCoefficients,
-                   const std::vector<loki::RateCoefficient> &extraRateCoefficients,
-                   const loki::Vector &firstAnisotropy);
+                   const std::vector<loki::RateCoefficient> &extraRateCoefficients, const loki::Vector &firstAnisotropy)
+{
+    using namespace loki;
+    writeGnuplot(std::cout, "Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
+    // writeGnuplot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(),
+    // *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
 
-void handleExistingOutputPath(std::string &folder);
+    // loki::Vector *nodeCrossSection =
+    // gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
-void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel, const loki::Vector &x,
-          const loki::Vector &y);
+    // loki::Vector cellCrossSection(grid.cellNumber);
+
+    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    //     cellCrossSection[i] = 0.5 * ((*nodeCrossSection)[i] + (*nodeCrossSection)[i + 1]);
+
+    // writeGnuplot("Cell Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getCells(), cellCrossSection);
+
+    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    // {
+    //     if (cellCrossSection[i] != 0.)
+    //         std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
+    // }
+
+    //    writeGnuplot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
+}
+
+void handleExistingOutputPath(std::string &folder)
+{
+    std::cerr << "Please enter a new destination for the output files (keep empty for unaltered).\nOutput/";
+    std::getline(std::cin, folder);
+    //    std::cin >> folder;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -91,56 +118,3 @@ int main(int argc, char **argv)
     }
 }
 
-void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
-                   const loki::SwarmParameters &swarmParameters,
-                   const std::vector<loki::RateCoefficient> &rateCoefficients,
-                   const std::vector<loki::RateCoefficient> &extraRateCoefficients, const loki::Vector &firstAnisotropy)
-{
-    plot("Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
-    // plot("Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getNodes(),
-    // *gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection);
-
-    // loki::Vector *nodeCrossSection =
-    // gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
-
-    // loki::Vector cellCrossSection(grid.cellNumber);
-
-    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
-    //     cellCrossSection[i] = 0.5 * ((*nodeCrossSection)[i] + (*nodeCrossSection)[i + 1]);
-
-    // plot("Cell Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getCells(), cellCrossSection);
-
-    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
-    // {
-    //     if (cellCrossSection[i] != 0.)
-    //         std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
-    // }
-
-    //    this->plot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
-}
-
-void handleExistingOutputPath(std::string &folder)
-{
-    std::cerr << "Please enter a new destination for the output files (keep empty for unaltered).\nOutput/";
-    std::getline(std::cin, folder);
-    //    std::cin >> folder;
-}
-
-void plot(const std::string &title, const std::string &xlabel, const std::string &ylabel, const loki::Vector &x,
-          const loki::Vector &y)
-{
-    std::cout << "unset key" << std::endl;
-    std::cout << "set xlabel \"" << xlabel << "\"" << std::endl;
-    std::cout << "set ylabel \"" << ylabel << "\"" << std::endl;
-    std::cout << "set title \"" << title << "\"" << std::endl;
-    std::cout << "set xrange [" << x[0] << ":" << x[x.size() - 1] << "]" << std::endl;
-    std::cout << "set logscale y" << std::endl;
-    // std::cout << "set format y '%g'" << std::endl;
-    std::cout << "plot '-' w l" << std::endl;
-    for (uint32_t i = 0; i < x.size(); ++i)
-    {
-        std::cout << x[i] << "\t" << y[i] << '\n';
-    }
-    std::cout << "e" << std::endl;
-}

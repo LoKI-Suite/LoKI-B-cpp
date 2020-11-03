@@ -78,14 +78,24 @@ else()
   set(backend )
 endif()
 
-set(cpp ${src}/WorkingConditions.cpp ${src}/GasBase.cpp ${src}/GasMixtureBase.cpp
-        ${src}/Grid.cpp ${src}/EedfGas.cpp ${src}/Enumeration.cpp
+set(cpp ${src}/WorkingConditions.cpp
+        ${src}/GasBase.cpp
+        ${src}/GasMixtureBase.cpp
+        ${src}/Gnuplot.cpp
+        ${src}/Grid.cpp
+        ${src}/EedfGas.cpp
+        ${src}/Enumeration.cpp
         ${src}/Setup.cpp
-        ${src}/Simulation.cpp ${src}/ElectronKinetics.cpp
-        ${src}/CrossSection.cpp ${src}/EedfGasMixture.cpp
-        ${src}/EedfCollision.cpp ${src}/Power.cpp ${src}/Output.cpp
+        ${src}/Simulation.cpp
+        ${src}/ElectronKinetics.cpp
+        ${src}/CrossSection.cpp
+        ${src}/EedfGasMixture.cpp
+        ${src}/EedfCollision.cpp
+        ${src}/Power.cpp
+        ${src}/Output.cpp
         ${src}/StateEntry.cpp
-        ${src}/JobSystem.cpp ${src}/json.cpp)
+        ${src}/JobSystem.cpp
+        ${src}/json.cpp)
 # set(headers ${h}/WorkingConditions.h ${h}/Grid.h
 #         ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
 #         ${h}/Collision.h
