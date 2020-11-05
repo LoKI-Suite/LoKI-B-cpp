@@ -30,7 +30,7 @@ class Simulation
 
   public:
     explicit Simulation(const Setup &setup);
-    explicit Simulation(const json_type &cnf);
+    Simulation(const json_type &cnf, json_type* data);
     // Copying this object is not allowed.
     Simulation(const Simulation &other) = delete;
     ~Simulation();

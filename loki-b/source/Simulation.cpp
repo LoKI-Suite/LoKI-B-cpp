@@ -23,7 +23,7 @@ Simulation::Simulation(const loki::Setup &setup) : workingConditions(setup.worki
 
         if (setup.output.isOn)
         {
-            output.reset(new Output(setup, &workingConditions, &jobManager));
+            output.reset(new FileOutput(setup, &workingConditions, &jobManager));
 
             electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
             output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
@@ -32,7 +32,7 @@ Simulation::Simulation(const loki::Setup &setup) : workingConditions(setup.worki
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", jobManager.dimension(),
                          ", number of jobs = ", jobManager.njobs());
 }
-Simulation::Simulation(const json_type &cnf) : workingConditions(cnf.at("workingConditions")), jobManager()
+Simulation::Simulation(const json_type &cnf, json_type* data) : workingConditions(cnf.at("workingConditions")), jobManager()
 {
     if (getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
     {
@@ -48,8 +48,14 @@ Simulation::Simulation(const json_type &cnf) : workingConditions(cnf.at("working
 
         if (cnf.at("output").at("isOn"))
         {
-            output.reset(new Output(cnf, &workingConditions, &jobManager));
-
+            if (data)
+            {
+                output.reset(new JsonOutput(*data, cnf, &workingConditions, &jobManager));
+            }
+            else
+            {
+                output.reset(new FileOutput(cnf, &workingConditions, &jobManager));
+            }
             electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
             output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
         }

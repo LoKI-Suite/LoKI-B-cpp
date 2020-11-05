@@ -80,6 +80,17 @@ int main(int argc, char **argv)
 #endif
     try
     {
+        /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JsonOutput object will
+         * be set up instead of af FileOutput object. The variable data_out will
+         * act as its output root object.
+         */
+//#define WRITE_OUTPUT_TO_JSON_OBJECT
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+        loki::json_type data_out;
+        loki::json_type* data_out_ptr = &data_out;
+#else
+        loki::json_type* data_out_ptr = nullptr;
+#endif
         auto begin = std::chrono::high_resolution_clock::now();
         if (argc != 2)
         {
@@ -91,7 +102,7 @@ int main(int argc, char **argv)
         if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
         {
             const loki::json_type cnf = loki::read_json_from_file(fileName);
-            simulation.reset(new loki::Simulation(cnf));
+            simulation.reset(new loki::Simulation(cnf,data_out_ptr));
         }
         else
         {
@@ -107,7 +118,10 @@ int main(int argc, char **argv)
         std::cerr << "Simulation finished, elapsed time = "
                   << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
-        // generate output
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+        std::cout << "Output data:" << std::endl;
+        std::cout << data_out.dump(2) << std::endl;
+#endif
 
         return 0;
     }
