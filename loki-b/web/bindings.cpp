@@ -42,7 +42,15 @@ int run(std::string file_contents)
         std::stringstream ss(file_contents);
         const loki::json_type cnf = loki::read_json_from_stream(ss);
 
-        simulation.reset(new loki::Simulation(cnf));
+        /* when non-null, a JSonOutput object will be created to produce output,
+         * rather than a FileOutput object. For the web version this is not (yet)
+         * used. In the console app (source/main.cpp), this is controlled by the
+         * define WRITE_OUTPUT_TO_JSON_OBJECT. Note that not all output types
+         * are implemented yet in JSONOutput, only "setup" and "eedf" sections
+         * are produced at present (see source/Output.cpp).
+         */
+        loki::json_type data_out* data_out_ptr = nullptr;
+        simulation.reset(new loki::Simulation(cnf, data_out_ptr));
 
         simulation->obtainedResults.addListener(handleResults);
         simulation->outputPathExists.addListener(handleExistingOutputPath);

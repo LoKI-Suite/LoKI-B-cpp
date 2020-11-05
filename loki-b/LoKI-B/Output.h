@@ -22,46 +22,73 @@ namespace loki
 {
 class Output
 {
+protected:
     const WorkingConditions *workingConditions;
-
-    std::string folder, subFolder;
+private:
 
     const JobManager *jobManager;
 
     bool saveEedf{false}, savePower{false}, saveSwarm{false}, saveRates{false}, saveTable{false};
 
-    bool initTable{true};
-
-    std::string inputFile;
-
   public:
     Event<std::string> simPathExists;
-
   public:
-    explicit Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    explicit Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
-
-    void createPath();
-
+    virtual ~Output();
     void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                    const std::vector<EedfGas *> &gases, const SwarmParameters &swarmParameters,
                    const std::vector<RateCoefficient> &rateCoefficients,
                    const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
-
+  protected:
+    Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    virtual void setDestination(const std::string& subFolder)=0;
+    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const=0;
+    virtual void writeSwarm(const SwarmParameters &swarmParameters) const=0;
+    virtual void writePower(const Power &power, const std::vector<EedfGas *> &gases) const=0;
+    virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                               const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
+    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
+    mutable bool initTable{true};
   private:
-    void writeInputFile(const std::string &fname);
-
-    void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies);
-
-    void writeSwarm(const SwarmParameters &swarmParameters);
-
-    void writePower(const Power &power, const std::vector<EedfGas *> &gases);
-
-    void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
-                               const std::vector<RateCoefficient> &extraRateCoefficients);
-
-    void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters);
 };
+
+class FileOutput : public Output
+{
+public:
+    FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+protected:
+    virtual void setDestination(const std::string& subFolder);
+    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
+    virtual void writePower(const Power &power, const std::vector<EedfGas *> &gases) const;
+    virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                               const std::vector<RateCoefficient> &extraRateCoefficients) const;
+    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+private:
+    void createPath();
+    std::string m_folder;
+    std::string m_subFolder;
+};
+
+class JsonOutput : public Output
+{
+public:
+    JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+protected:
+    virtual void setDestination(const std::string& subFolder);
+    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
+    virtual void writePower(const Power &power, const std::vector<EedfGas *> &gases) const;
+    virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                               const std::vector<RateCoefficient> &extraRateCoefficients) const;
+    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+private:
+    json_type& m_root;
+    json_type* m_active;
+};
+
 } // namespace loki
 
 #endif // LOKI_CPP_OUTPUT_H

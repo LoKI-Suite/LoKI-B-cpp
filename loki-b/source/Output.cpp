@@ -8,15 +8,19 @@
 #include "LoKI-B/StandardPaths.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 
 namespace loki
 {
 namespace fs = std::filesystem;
 
+Output::~Output()
+{
+}
+
 Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), folder(OUTPUT "/" + s.output.folder), jobManager(jobManager),
-      inputFile(s.fileContent)
+    : workingConditions(workingConditions), jobManager(jobManager)
 {
 
     for (const auto &entry : s.output.dataFiles)
@@ -42,13 +46,11 @@ Output::Output(const Setup &s, const WorkingConditions *workingConditions, const
             saveTable = true;
         }
     }
-    createPath();
-    writeInputFile("setup.in");
 }
 
 Output::Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>()),
-      jobManager(jobManager), inputFile(cnf.dump(1, '\t'))
+    : workingConditions(workingConditions),
+      jobManager(jobManager)
 {
 
     for (const auto &entry : cnf.at("output").at("dataFiles"))
@@ -74,34 +76,6 @@ Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
             saveTable = true;
         }
     }
-    createPath();
-    writeInputFile("setup.json");
-}
-
-void Output::createPath()
-{
-    fs::path path(folder);
-
-    if (fs::exists(path))
-    {
-        Log<Message>::Warning("The output folder \"" + folder + "\" already exists, results might be overriden.");
-
-        std::string newFolder;
-
-        simPathExists.emit(newFolder);
-
-        if (!newFolder.empty())
-        {
-            folder = OUTPUT "/" + newFolder;
-            path = fs::path(folder);
-
-            fs::create_directories(path);
-        }
-    }
-    else
-    {
-        fs::create_directories(path);
-    }
 }
 
 void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
@@ -109,12 +83,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
                        const std::vector<RateCoefficient> &rateCoefficients,
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy)
 {
-
-    subFolder = jobManager->getCurrentJobFolder();
-
-    fs::path subPath(folder + '/' + subFolder);
-    fs::create_directory(subPath);
-
+    setDestination(jobManager->getCurrentJobFolder());
     if (saveEedf)
         writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
     if (saveSwarm)
@@ -127,21 +96,32 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeLookuptable(power, swarmParameters);
 }
 
-void Output::writeInputFile(const std::string &fname)
+FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
 {
-    auto *file = std::fopen((folder + "/" + fname).c_str(), "w");
-
-    fprintf(file, "%s", inputFile.c_str());
-
-    fclose(file);
-
-    // erase input file buffer since it only needs to be saved once.
-    inputFile.clear();
+    createPath();
+    std::ofstream ofs{m_folder + "/setup.in"};
+    ofs << setup.fileContent << std::endl;
 }
 
-void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies)
+FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/eedf.txt").c_str(), "w");
+    createPath();
+    std::ofstream ofs{m_folder + "/setup.json"};
+    ofs << cnf.dump(1, '\t') << std::endl;
+}
+
+void FileOutput::setDestination(const std::string& subFolder)
+{
+    m_subFolder = subFolder;
+    fs::path subPath(m_folder + '/' + m_subFolder);
+    fs::create_directory(subPath);
+}
+
+void FileOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+{
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/eedf.txt").c_str(), "w");
 
     fprintf(file, "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy\n");
 
@@ -153,9 +133,9 @@ void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const 
     fclose(file);
 }
 
-void Output::writeSwarm(const SwarmParameters &swarmParameters)
+void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/swarm_parameters.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/swarm_parameters.txt").c_str(), "w");
 
     fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField);
     fprintf(file, "  Reduced diffusion coefficient = %#.14e (1/(ms))\n", swarmParameters.redDiffCoeff);
@@ -170,9 +150,9 @@ void Output::writeSwarm(const SwarmParameters &swarmParameters)
     fclose(file);
 }
 
-void Output::writePower(const Power &power, const std::vector<EedfGas *> &gases)
+void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/power_balance.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/power_balance.txt").c_str(), "w");
 
     fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
     fprintf(file, "           Elastic collisions (gain) = %#+.14e (eVm3/s)\n", power.elasticGain);
@@ -261,10 +241,10 @@ void Output::writePower(const Power &power, const std::vector<EedfGas *> &gases)
     fclose(file);
 }
 
-void Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
-                                   const std::vector<RateCoefficient> &extraRateCoefficients)
+void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                                   const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/rate_coefficients.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/rate_coefficients.txt").c_str(), "w");
 
     fprintf(file, "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description\n");
 
@@ -297,13 +277,13 @@ void Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoeff
     fclose(file);
 }
 
-void Output::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters)
+void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
     std::FILE *file;
 
     if (initTable)
     {
-        file = std::fopen((folder + "/lookup_table.txt").c_str(), "w");
+        file = std::fopen((m_folder + "/lookup_table.txt").c_str(), "w");
 
         fprintf(file, "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
                       "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
@@ -313,7 +293,7 @@ void Output::writeLookuptable(const Power &power, const SwarmParameters &swarmPa
         initTable = false;
     }
 
-    file = std::fopen((folder + "/lookup_table.txt").c_str(), "a");
+    file = std::fopen((m_folder + "/lookup_table.txt").c_str(), "a");
 
     fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
             workingConditions->reducedField, swarmParameters.redDiffCoeff, swarmParameters.redMobCoeff,
@@ -323,4 +303,83 @@ void Output::writeLookuptable(const Power &power, const SwarmParameters &swarmPa
 
     fclose(file);
 }
+
+void FileOutput::createPath()
+{
+    fs::path path(m_folder);
+
+    if (fs::exists(path))
+    {
+        Log<Message>::Warning("The output folder \"" + m_folder + "\" already exists, results might be overriden.");
+
+        std::string newFolder;
+
+        simPathExists.emit(newFolder);
+
+        if (!newFolder.empty())
+        {
+            m_folder = OUTPUT "/" + newFolder;
+            path = fs::path(m_folder);
+
+            fs::create_directories(path);
+        }
+    }
+    else
+    {
+        fs::create_directories(path);
+    }
+}
+
+JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(setup,workingConditions,jobManager), m_root(root), m_active(nullptr)
+{
+    m_root["setup"] = setup.fileContent;
+}
+
+JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(cnf,workingConditions,jobManager), m_root(root), m_active(nullptr)
+{
+    m_root["setup"] = cnf;
+}
+
+void JsonOutput::setDestination(const std::string& subFolder)
+{
+    m_active = &m_root[subFolder];
+}
+
+void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+{
+    json_type& out = (*m_active)["eedf"];
+    out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
+    out["units"] = { "eV", "eV^-(3/2)", "1"};
+    json_type& data = out["data"];
+    for (uint32_t i = 0; i < energies.size(); ++i)
+    {
+        data.push_back(json_type{energies[i], eedf[i], firstAnisotropy[i]});
+    }
+
+}
+
+void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
+{
+    json_type& out = (*m_active)["swarm_parameters"];
+}
+
+void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
+{
+    json_type& out = (*m_active)["power_balance"];
+}
+
+void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                   const std::vector<RateCoefficient> &extraRateCoefficients) const
+{
+    json_type& out = (*m_active)["rate_coefficients"];
+}
+
+void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+{
+    json_type& out = (*m_active)["lookup_table"];
+}
+
+
 } // namespace loki
