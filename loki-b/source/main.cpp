@@ -82,7 +82,8 @@ int main(int argc, char **argv)
     {
         /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JsonOutput object will
          * be set up instead of af FileOutput object. The variable data_out will
-         * act as its output root object.
+         * act as its output root object. Note that support is incomplete, see
+         * Output.cpp.
          */
 //#define WRITE_OUTPUT_TO_JSON_OBJECT
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
