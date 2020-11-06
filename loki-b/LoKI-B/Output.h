@@ -85,6 +85,13 @@ protected:
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
 private:
+    /** This produces a member of the form: name: { "value": value, "unit": unit }.
+     *  As an example, makeQuantity("Te", 2.0, "eV") produces and returns an object that contains
+     *  \verbatim
+          "Te": { "value": = 2.0, "unit": "eV" }. \endverbatim
+     *
+     */
+    static json_type makeQuantity(const std::string& name, double value, const std::string unit);
     json_type& m_root;
     json_type* m_active;
 };

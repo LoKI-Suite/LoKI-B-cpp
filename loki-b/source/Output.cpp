@@ -346,6 +346,11 @@ void JsonOutput::setDestination(const std::string& subFolder)
     m_active = &m_root[subFolder];
 }
 
+json_type JsonOutput::makeQuantity(const std::string& name, double value, const std::string unit)
+{
+    return { { name, { { "value", value }, { "unit", unit } } } };
+}
+
 void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
 {
     json_type& out = (*m_active)["eedf"];
