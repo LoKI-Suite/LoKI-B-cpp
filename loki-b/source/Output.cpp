@@ -279,26 +279,25 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 
 void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
-    std::FILE *file;
-
+    std::FILE* file = std::fopen((m_folder + "/lookup_table.txt").c_str(), initTable ? "w" : "a");
     if (initTable)
     {
-        file = std::fopen((m_folder + "/lookup_table.txt").c_str(), "w");
-
         fprintf(file, "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
                       "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
                       "DriftVelocity(m/s)   RelativePowerBalance\n");
-
-        fclose(file);
         initTable = false;
     }
 
-    file = std::fopen((m_folder + "/lookup_table.txt").c_str(), "a");
-
     fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
-            workingConditions->reducedField, swarmParameters.redDiffCoeff, swarmParameters.redMobCoeff,
-            swarmParameters.redTownsendCoeff, swarmParameters.redAttCoeff, swarmParameters.meanEnergy,
-            swarmParameters.characEnergy, swarmParameters.Te, swarmParameters.driftVelocity,
+            workingConditions->reducedField,
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
             power.relativeBalance * 100);
 
     fclose(file);
