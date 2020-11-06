@@ -6,9 +6,9 @@
 #define LOKI_CPP_OUTPUT_H
 
 #include <string>
+#include <functional>
 
 #include "LoKI-B/EedfGas.h"
-#include "LoKI-B/Event.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/JobSystem.h"
 #include "LoKI-B/LinearAlgebra.h"
@@ -47,9 +47,11 @@ private:
 class FileOutput : public Output
 {
 public:
-    FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    loki::Event<std::string> m_outputPathExists;
+    using PathExistsHandler = std::function<void(std::string&)>;
+    FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler);
+    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler);
 protected:
     virtual void setDestination(const std::string& subFolder);
     virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
@@ -59,10 +61,9 @@ protected:
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
 private:
-    void createPath();
+    void createPath(const PathExistsHandler& handler);
     std::string m_folder;
     std::string m_subFolder;
-    Event<std::string> m_simPathExists;
     mutable bool m_initTable;
 };
 

@@ -106,22 +106,22 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeLookuptable(power, swarmParameters);
 }
 
-FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
+FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler)
  : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
 {
-    m_simPathExists.addListener(&loki::Event<std::string>::emit, &m_outputPathExists);
     m_initTable = true;
-    createPath();
+    createPath(handler);
     std::ofstream ofs{m_folder + "/setup.in"};
     ofs << setup.fileContent << std::endl;
 }
 
-FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
+FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler)
  : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
-    m_simPathExists.addListener(&loki::Event<std::string>::emit, &m_outputPathExists);
     m_initTable = true;
-    createPath();
+    createPath(handler);
     std::ofstream ofs{m_folder + "/setup.json"};
     ofs << cnf.dump(1, '\t') << std::endl;
 }
@@ -317,7 +317,7 @@ void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     fclose(file);
 }
 
-void FileOutput::createPath()
+void FileOutput::createPath(const PathExistsHandler& handler)
 {
     fs::path path(m_folder);
 
@@ -327,7 +327,7 @@ void FileOutput::createPath()
 
         std::string newFolder;
 
-        m_simPathExists.emit(newFolder);
+        handler(newFolder);
 
         if (!newFolder.empty())
         {
