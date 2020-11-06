@@ -103,12 +103,15 @@ int main(int argc, char **argv)
             simulation.reset(new loki::Simulation(cnf));
             if (cnf.at("output").at("isOn"))
             {
+                loki::Output* output =
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-                simulation->configureOutput(new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions, &simulation->m_jobManager));
+                    new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions,
+                            &simulation->m_jobManager);
 #else
-                loki::FileOutput* output = new loki::FileOutput(cnf, &simulation->m_workingConditions, &simulation->m_jobManager, &handleExistingOutputPath);
-                simulation->configureOutput(output);
+                    new loki::FileOutput(cnf, &simulation->m_workingConditions,
+                            &simulation->m_jobManager, &handleExistingOutputPath);
 #endif
+                simulation->configureOutput(output);
             }
         }
         else
@@ -117,7 +120,8 @@ int main(int argc, char **argv)
             simulation.reset(new loki::Simulation(setup));
             if (setup.output.isOn)
             {
-                loki::FileOutput* output = new loki::FileOutput(setup, &simulation->m_workingConditions, &simulation->m_jobManager, &handleExistingOutputPath);
+                loki::Output* output = new loki::FileOutput(setup, &simulation->m_workingConditions,
+                        &simulation->m_jobManager, &handleExistingOutputPath);
                 simulation->configureOutput(output);
             }
         }
@@ -127,7 +131,8 @@ int main(int argc, char **argv)
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
         std::cerr << "Simulation finished, elapsed time = "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
+                  << "mus" << std::endl;
 
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
         std::cout << "Output data:" << std::endl;
