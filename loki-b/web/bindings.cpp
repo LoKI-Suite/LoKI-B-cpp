@@ -12,8 +12,10 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
+/// \todo Explain why it is not possible to just use smth. like loki::json_type in the code.
 using loki::Log;
 using loki::Message;
+using loki::json_type;
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
                    const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
@@ -49,7 +51,7 @@ int run(std::string file_contents)
          * are implemented yet in JSONOutput, only "setup" and "eedf" sections
          * are produced at present (see source/Output.cpp).
          */
-        loki::json_type data_out* data_out_ptr = nullptr;
+        json_type* data_out_ptr = nullptr;
         simulation.reset(new loki::Simulation(cnf, data_out_ptr));
 
         simulation->obtainedResults.addListener(handleResults);
