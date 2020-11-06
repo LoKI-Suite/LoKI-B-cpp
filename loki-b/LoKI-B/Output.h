@@ -22,23 +22,13 @@ namespace loki
 {
 class Output
 {
-protected:
-    const WorkingConditions *workingConditions;
-private:
-
-    const JobManager *jobManager;
-
-    bool saveEedf{false}, savePower{false}, saveSwarm{false}, saveRates{false}, saveTable{false};
-
-  public:
-    Event<std::string> simPathExists;
-  public:
+public:
     virtual ~Output();
     void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                    const std::vector<EedfGas *> &gases, const SwarmParameters &swarmParameters,
                    const std::vector<RateCoefficient> &rateCoefficients,
                    const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy);
-  protected:
+protected:
     Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
     Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
     virtual void setDestination(const std::string& subFolder)=0;
@@ -48,8 +38,10 @@ private:
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
-    mutable bool initTable{true};
-  private:
+    const WorkingConditions *workingConditions;
+private:
+    const JobManager *jobManager;
+    bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
 
 class FileOutput : public Output
@@ -57,6 +49,7 @@ class FileOutput : public Output
 public:
     FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
     FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    loki::Event<std::string> m_outputPathExists;
 protected:
     virtual void setDestination(const std::string& subFolder);
     virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
@@ -69,6 +62,8 @@ private:
     void createPath();
     std::string m_folder;
     std::string m_subFolder;
+    Event<std::string> m_simPathExists;
+    mutable bool m_initTable;
 };
 
 class JsonOutput : public Output

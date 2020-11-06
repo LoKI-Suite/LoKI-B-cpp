@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 #endif
     try
     {
-        /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JsonOutput object will
+        /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
          * be set up instead of af FileOutput object. The variable data_out will
          * act as its output root object. Note that support is incomplete, see
          * Output.cpp.
@@ -88,9 +88,6 @@ int main(int argc, char **argv)
 //#define WRITE_OUTPUT_TO_JSON_OBJECT
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
         loki::json_type data_out;
-        loki::json_type* data_out_ptr = &data_out;
-#else
-        loki::json_type* data_out_ptr = nullptr;
 #endif
         auto begin = std::chrono::high_resolution_clock::now();
         if (argc != 2)
@@ -103,16 +100,31 @@ int main(int argc, char **argv)
         if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
         {
             const loki::json_type cnf = loki::read_json_from_file(fileName);
-            simulation.reset(new loki::Simulation(cnf,data_out_ptr));
+            simulation.reset(new loki::Simulation(cnf));
+            if (cnf.at("output").at("isOn"))
+            {
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+                simulation->configureOutput(new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions, &simulation->m_jobManager));
+#else
+                loki::FileOutput* output = new loki::FileOutput(cnf, &simulation->m_workingConditions, &simulation->m_jobManager);
+		output->m_outputPathExists.addListener(handleExistingOutputPath);
+                simulation->configureOutput(output);
+#endif
+            }
         }
         else
         {
             const loki::Setup setup(argv[1]);
             simulation.reset(new loki::Simulation(setup));
+            if (setup.output.isOn)
+            {
+                loki::FileOutput* output = new loki::FileOutput(setup, &simulation->m_workingConditions, &simulation->m_jobManager);
+		output->m_outputPathExists.addListener(handleExistingOutputPath);
+                simulation->configureOutput(output);
+            }
         }
 
-        simulation->obtainedResults.addListener(handleResults);
-        simulation->outputPathExists.addListener(handleExistingOutputPath);
+        simulation->m_obtainedResults.addListener(handleResults);
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
