@@ -106,8 +106,7 @@ int main(int argc, char **argv)
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
                 simulation->configureOutput(new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions, &simulation->m_jobManager));
 #else
-                loki::FileOutput* output = new loki::FileOutput(cnf, &simulation->m_workingConditions, &simulation->m_jobManager);
-		output->m_outputPathExists.addListener(handleExistingOutputPath);
+                loki::FileOutput* output = new loki::FileOutput(cnf, &simulation->m_workingConditions, &simulation->m_jobManager, &handleExistingOutputPath);
                 simulation->configureOutput(output);
 #endif
             }
@@ -118,8 +117,7 @@ int main(int argc, char **argv)
             simulation.reset(new loki::Simulation(setup));
             if (setup.output.isOn)
             {
-                loki::FileOutput* output = new loki::FileOutput(setup, &simulation->m_workingConditions, &simulation->m_jobManager);
-		output->m_outputPathExists.addListener(handleExistingOutputPath);
+                loki::FileOutput* output = new loki::FileOutput(setup, &simulation->m_workingConditions, &simulation->m_jobManager, &handleExistingOutputPath);
                 simulation->configureOutput(output);
             }
         }
