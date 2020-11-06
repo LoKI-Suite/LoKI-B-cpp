@@ -361,28 +361,140 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, co
     {
         data.push_back(json_type{energies[i], eedf[i], firstAnisotropy[i]});
     }
-
 }
 
 void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     json_type& out = (*m_active)["swarm_parameters"];
+    out.push_back( makeQuantity("Reduced electric field", workingConditions->reducedField, "Td") );
+    out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
+    out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
+    out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
+    out.push_back( makeQuantity("Reduced attachment coefficient", swarmParameters.redAttCoeff, "m^2") );
+    out.push_back( makeQuantity("Mean energy", swarmParameters.meanEnergy, "eV") );
+    out.push_back( makeQuantity("Characteristic energy", swarmParameters.characEnergy, "eV") );
+    out.push_back( makeQuantity("Electron temperature", swarmParameters.Te, "eV") );
+    out.push_back( makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s") );
 }
 
 void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
 {
     json_type& out = (*m_active)["power_balance"];
+    out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
+    //out.push_back( { "Field", "eV*m^3/s", power.field });
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Ionization collisions", power.ionizationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Attachment collisions", power.attachmentIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s") );
+    out.push_back( makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%") );
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (net)", power.carNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation collisions (net)", power.excitationNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrationalNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational collisions (net)", power.rotationalNet, "eV*m^3/s") );
+
+    for (const auto &gas : gases)
+    {
+        const GasPower &gasPower = gas->getPower();
+	json_type gas_out;
+        gas_out.push_back( { { "name", gas->name } } );
+        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitationIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitationSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitationNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrationalIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrationalSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrationalNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotationalIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotationalSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotationalNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionizationIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachmentIne, "eV*m^3/s") );
+
+        out.push_back( { "gas", gas_out } );
+    }
 }
 
 void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                    const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    json_type& out = (*m_active)["rate_coefficients"];
+    if (rateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : rateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+    /** \todo See if we can merge this or re-use code: the code block is identical
+     *        to that above, except for extraRateCoefficients instead of rateCoefficients.
+     */
+    if (extraRateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients_extra"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : extraRateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
 }
 
 void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
-    json_type& out = (*m_active)["lookup_table"];
+    json_type* out = m_root.contains("lookup_table")
+                ? &m_root["lookup_table"]
+                : nullptr;
+    if (!out)
+    {
+        // make the section, and set up the labels and units
+        out = &m_root["lookup_table"];
+        /// \todo It would be nice to be able to add the quantities and units as pairs.
+        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow" "RedAtt","MeanE", "CharE", "EleTemp",
+                      "DriftVelocity", "RelativePowerBalance" };
+        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2" "m^2", "eV", "eV", "eV", "m/s", "1" };
+    }
+    assert(out);
+
+    (*out)["data"].push_back( {
+            workingConditions->reducedField,
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
+            power.relativeBalance * 100
+    } );
 }
 
 
