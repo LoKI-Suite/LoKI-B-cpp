@@ -22,6 +22,11 @@ Output::~Output()
 Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
     : workingConditions(workingConditions), jobManager(jobManager)
 {
+    saveEedf = false;
+    savePower = false;
+    saveSwarm = false;
+    saveRates = false;
+    saveTable = false;
 
     for (const auto &entry : s.output.dataFiles)
     {
@@ -52,6 +57,11 @@ Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
     : workingConditions(workingConditions),
       jobManager(jobManager)
 {
+    saveEedf = false;
+    savePower = false;
+    saveSwarm = false;
+    saveRates = false;
+    saveTable = false;
 
     for (const auto &entry : cnf.at("output").at("dataFiles"))
     {
@@ -99,6 +109,8 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
 FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
  : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
 {
+    m_simPathExists.addListener(&loki::Event<std::string>::emit, &m_outputPathExists);
+    m_initTable = true;
     createPath();
     std::ofstream ofs{m_folder + "/setup.in"};
     ofs << setup.fileContent << std::endl;
@@ -107,6 +119,8 @@ FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingCondi
 FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
  : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
+    m_simPathExists.addListener(&loki::Event<std::string>::emit, &m_outputPathExists);
+    m_initTable = true;
     createPath();
     std::ofstream ofs{m_folder + "/setup.json"};
     ofs << cnf.dump(1, '\t') << std::endl;
@@ -279,13 +293,13 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 
 void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
-    std::FILE* file = std::fopen((m_folder + "/lookup_table.txt").c_str(), initTable ? "w" : "a");
-    if (initTable)
+    std::FILE* file = std::fopen((m_folder + "/lookup_table.txt").c_str(), m_initTable ? "w" : "a");
+    if (m_initTable)
     {
         fprintf(file, "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
                       "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
                       "DriftVelocity(m/s)   RelativePowerBalance\n");
-        initTable = false;
+        m_initTable = false;
     }
 
     fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
@@ -313,7 +327,7 @@ void FileOutput::createPath()
 
         std::string newFolder;
 
-        simPathExists.emit(newFolder);
+        m_simPathExists.emit(newFolder);
 
         if (!newFolder.empty())
         {

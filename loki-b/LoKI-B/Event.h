@@ -31,6 +31,7 @@
 
 #include <functional>
 #include <vector>
+#include <iostream>
 
 namespace loki
 {

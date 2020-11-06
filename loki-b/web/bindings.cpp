@@ -27,35 +27,29 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
     EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
 }
 
-void handleExistingOutputPath(std::string &folder)
-{
-    std::cerr << "Please enter a new destination for the output files (keep empty for unaltered).\nOutput/";
-    std::getline(std::cin, folder);
-}
-
 int run(std::string file_contents)
 {
     try
     {
         auto begin = std::chrono::high_resolution_clock::now();
 
-        std::unique_ptr<loki::Simulation> simulation;
-
         std::stringstream ss(file_contents);
         const loki::json_type cnf = loki::read_json_from_stream(ss);
 
-        /* when non-null, a JSonOutput object will be created to produce output,
-         * rather than a FileOutput object. For the web version this is not (yet)
-         * used. In the console app (source/main.cpp), this is controlled by the
-         * define WRITE_OUTPUT_TO_JSON_OBJECT. Note that not all output types
-         * are implemented yet in JSONOutput, only "setup" and "eedf" sections
-         * are produced at present (see source/Output.cpp).
-         */
-        json_type* data_out_ptr = nullptr;
-        simulation.reset(new loki::Simulation(cnf, data_out_ptr));
-
-        simulation->obtainedResults.addListener(handleResults);
-        simulation->outputPathExists.addListener(handleExistingOutputPath);
+        std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(cnf));
+#define WRITE_OUTPUT_TO_JSON_OBJECT
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+        if (cnf.at("output").at("isOn"))
+        {
+            /* Create a json object that holds the output and set up a JSONOutput
+             * object that will populate the JSON data object.
+             */
+            json_type data_out;
+            simulation->configureOutput(new loki::JsonOutput(data_out, cnf,
+                            &simulation->m_workingConditions, &simulation->m_jobManager));
+        }
+#endif
+        simulation->m_obtainedResults.addListener(handleResults);
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
