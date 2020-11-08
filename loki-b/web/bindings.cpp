@@ -37,14 +37,14 @@ int run(std::string file_contents)
         const loki::json_type cnf = loki::read_json_from_stream(ss);
 
         std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(cnf));
+        /* Create a json object that holds the output and set up a JSONOutput
+         * object that will populate the JSON data object.
+         */
+        json_type data_out;
 #define WRITE_OUTPUT_TO_JSON_OBJECT
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-        if (cnf.at("output").at("isOn"))
+        //if (cnf.at("output").at("isOn"))
         {
-            /* Create a json object that holds the output and set up a JSONOutput
-             * object that will populate the JSON data object.
-             */
-            json_type data_out;
             simulation->configureOutput(new loki::JsonOutput(data_out, cnf,
                             &simulation->m_workingConditions, &simulation->m_jobManager));
         }
@@ -57,6 +57,8 @@ int run(std::string file_contents)
                              std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count(), "mus");
 
         // generate output
+        const std::string msg=data_out.dump();
+        EM_ASM({ handleJsonOutput($0, $1); }, msg.data(), msg.size());
 
         return 0;
     }

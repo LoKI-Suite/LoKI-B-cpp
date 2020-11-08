@@ -20,6 +20,7 @@
         Return value =
         <span id="answer"/>
       </div>
+	<div id="json-results"></div>
       <script>
 				const file_input = document.getElementById("file-input");
 				let file = "";
@@ -90,6 +91,14 @@
         	};
 					vegaEmbed(document.getElementById("plotting-area"), spec);
 				}
+			</script>
+			<script>
+				function handleJsonOutput(msg_ptr, msg_size) {
+				  const msg = new Uint8Array(module.HEAPU8.buffer, msg_ptr, msg_size);
+                                  const str = String.fromCharCode.apply(null,msg);
+                                  console.log(str);
+                                  document.getElementById("json-results").innerHTML = str;
+                                };
 			</script>
    </body>
 </html>
