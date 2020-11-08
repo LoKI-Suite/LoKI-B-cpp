@@ -41,14 +41,14 @@ int run(std::string file_contents)
          * object that will populate the JSON data object.
          */
         json_type data_out;
-#define WRITE_OUTPUT_TO_JSON_OBJECT
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-        //if (cnf.at("output").at("isOn"))
-        {
-            simulation->configureOutput(new loki::JsonOutput(data_out, cnf,
+        simulation->configureOutput(new loki::JsonOutput(data_out, cnf,
                             &simulation->m_workingConditions, &simulation->m_jobManager));
-        }
-#endif
+        /** \todo Perhaps the above should be controlled by cnf.at("output").at("isOn").
+         *  \todo Now that JsonOutput works, we have two ouput mechanisms in place: handleResults
+         *        and handleJSONOutput. I think we need only one. It may be useful to
+         *        send intermediate/incremental output to JS, and let that concatenate
+         *        the bits and pieces.
+         */
         simulation->m_obtainedResults.addListener(handleResults);
 
         simulation->run();
