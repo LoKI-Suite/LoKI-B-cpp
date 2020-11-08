@@ -16,7 +16,7 @@
     <div> <button type="button" id="run-button">Run</button> </div>
     <div id="plotting-area"> </div>
     <div> Return value = <span id="answer"/> </div>
-    <div id="json-results"></div>
+    <pre id="json-results"></pre>
 
     <script>
         const file_input = document.getElementById("file-input");
@@ -107,8 +107,9 @@
         function handleJsonOutput(msg_ptr, msg_size) {
             const msg = new Uint8Array(module.HEAPU8.buffer, msg_ptr, msg_size);
             const str = String.fromCharCode.apply(null,msg);
-            console.log(str);
-            document.getElementById("json-results").innerHTML = str;
+            const json = JSON.parse(str);
+            console.log(json);
+            document.getElementById("json-results").innerHTML = JSON.stringify(json, {}, 2);
         };
     </script>
 </body>

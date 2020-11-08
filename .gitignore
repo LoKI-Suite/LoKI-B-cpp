@@ -10,6 +10,7 @@ build/
 
 # Vim specific (clangd)
 
+.cache/
 .clangd/
 compile_commands.json
 
