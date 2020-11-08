@@ -1,104 +1,115 @@
 <html>
-   <head>
-      <!-- Load WebAssembly module -->
-      <script type="text/javascript" src="loki_bindings.js"></script>
-			<script src="https://cdn.jsdelivr.net/npm/vega@5.13.0"></script>
-    	<script src="https://cdn.jsdelivr.net/npm/vega-lite@4.13.0"></script>
-    	<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.8.0"></script>
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/6.12.5/ajv.min.js" integrity="sha512-v+DrKhONdNwvXhUvYpWe19i7LwLFScyo7TWxKNWVGcE9mf3/MKpChgTrlG7yDQnystwC+772/v1AuXw3vVMV5w==" crossorigin="anonymous"></script>
-			<script type="text/javascript" src="schema.js"></script>
-   </head>
-   <body>
-			<div>
-				<input type="file" id="file-input" accept=".json">
-			</div>
-			<div>
-				<button type="button" id="run-button">Run</button>
-			</div>
-			<div id="plotting-area"></div>
-      <div>
-        Return value =
-        <span id="answer"/>
-      </div>
-	<div id="json-results"></div>
-      <script>
-				const file_input = document.getElementById("file-input");
-				let file = "";
+<head>
+    <!-- Load WebAssembly module -->
+    <script type="text/javascript" src="loki_bindings.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.13.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@4.13.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.8.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/6.12.5/ajv.min.js"
+        integrity="sha512-v+DrKhONdNwvXhUvYpWe19i7LwLFScyo7TWxKNWVGcE9mf3/MKpChgTrlG7yDQnystwC+772/v1AuXw3vVMV5w=="
+        crossorigin="anonymous">
+    </script>
+    <script type="text/javascript" src="schema.js"></script>
+</head>
+<body>
+    <div> <input type="file" id="file-input" accept=".json"> </div>
+    <div> <button type="button" id="run-button">Run</button> </div>
+    <div id="plotting-area"> </div>
+    <div> Return value = <span id="answer"/> </div>
+    <div id="json-results"></div>
 
-				const run_button = document.getElementById("run-button");
+    <script>
+        const file_input = document.getElementById("file-input");
+        let file = "";
+
+        const run_button = document.getElementById("run-button");
 				
-				let module;
-				const validate = (new Ajv()).compile(schema);
+        let module;
+        const validate = (new Ajv()).compile(schema);
 
-				file_input.addEventListener("change", (event) => {
-					const list = event.target.files;
-					file = event.target.files[0];
-				});
-				function lxcat_get(input) {
-					for (const [i, file] of input.electronKinetics.LXCatFiles.entries()) {
-						if (file.substr(0, 5) == "http:") {
-							const http = new XMLHttpRequest();
-							http.open("GET", file, false);
-							http.send(null);
-							const valid = validate(JSON.parse(http.responseText));
-							if (!valid) console.log("AJV error: ", validate.errors);
-							input.electronKinetics.LXCatFiles[i] = "/" + i + ".json";
-							module.FS.writeFile("/" + i + ".json", http.responseText, { flags: "w+" });
-						}
-					}
-				}
-				run_button.addEventListener("click", (event) => {
-        	// Wait for module to initialize,
-        	create_module().then((_module) => {
-						module = _module;
-						try {
-							file.text().then((contents) => {
-								let input = JSON.parse(contents);
-								lxcat_get(input);
-					  		const ret = module.run(JSON.stringify(input));
-        	   		document.getElementById("answer").innerHTML = ret;
-							});
-						} catch(e) {
-							console.log(e/*.stack*/);
-						}
-        	});
-				});
-      </script>
-			<script>
-				function plot(x_ptr, x_size, y_ptr, y_size) {
-					// Map sections of the emscripten heap onto contiguous arrays of doubles.
-					const x_arr = new Float64Array(module.HEAPF64.buffer, x_ptr, x_size);
-					const y_arr = new Float64Array(module.HEAPF64.buffer, y_ptr, y_size);
-					const data = new Array(x_size).fill().map((_, index) => {return {x: x_arr[index], y: y_arr[index]}});
-					const spec = {
-        	  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
-        	  "width": 800,
-        	  "height": 600,
-        	  "data": {
-        	    "values": data
-        	  },
-        	  "encoding": {
-        	    "x": {"field": "x", "type": "quantitative", "title": "Energy (eV)"},
-							"y": {"field": "y", "type": "quantitative", "scale": {"type": "log"}, "title": "Eedf (eV^{-3/2})"}
-						},
-        	  "mark": {
-        	    "type": "circle",
-        	    // Enable tooltip so on mouseover it shows all data of that iteration
-        	    "tooltip": {"content": "data"}
-        	  },
-        	  // Enable zooming and panning
-        	  "selection": {"grid": {"type": "interval", "bind": "scales"}}
-        	};
-					vegaEmbed(document.getElementById("plotting-area"), spec);
-				}
-			</script>
-			<script>
-				function handleJsonOutput(msg_ptr, msg_size) {
-				  const msg = new Uint8Array(module.HEAPU8.buffer, msg_ptr, msg_size);
-                                  const str = String.fromCharCode.apply(null,msg);
-                                  console.log(str);
-                                  document.getElementById("json-results").innerHTML = str;
-                                };
-			</script>
-   </body>
+        file_input.addEventListener("change", (event) => {
+            const list = event.target.files;
+            file = event.target.files[0];
+        });
+        function lxcat_get(input) {
+            for (const [i, file] of input.electronKinetics.LXCatFiles.entries()) {
+                if (file.substr(0, 5) == "http:") {
+                    const http = new XMLHttpRequest();
+                    http.open("GET", file, false);
+                    http.send(null);
+                    const valid = validate(JSON.parse(http.responseText));
+                    if (!valid) console.log("AJV error: ", validate.errors);
+                    input.electronKinetics.LXCatFiles[i] = "/" + i + ".json";
+                    module.FS.writeFile("/" + i + ".json", http.responseText, { flags: "w+" });
+                }
+            }
+        }
+        run_button.addEventListener("click", (event) => {
+            // Wait for module to initialize,
+            create_module().then((_module) => {
+                module = _module;
+                try {
+                    file.text().then((contents) => {
+                        let input = JSON.parse(contents);
+                        lxcat_get(input);
+                        const ret = module.run(JSON.stringify(input));
+                        document.getElementById("answer").innerHTML = ret;
+                    });
+                } catch(e) {
+                    console.log(e/*.stack*/);
+                }
+            });
+        });
+    </script>
+
+    <script>
+        /* This function is called by the C++ function handleResults
+         * (see loki-b/web/bindings.cpp). The arguments are the addresses
+         * and sizes of two double-valued arrays that represent the energies
+         * of LoKI-B's energy grid and the corresponsing values of the
+         * EEDF in these points.
+         *
+         * NOTE: both arrays must have equal lengths.
+         */
+        function plot(x_ptr, x_size, y_ptr, y_size) {
+            // Map sections of the emscripten heap onto contiguous arrays of doubles.
+            const x_arr = new Float64Array(module.HEAPF64.buffer, x_ptr, x_size);
+            const y_arr = new Float64Array(module.HEAPF64.buffer, y_ptr, y_size);
+            const data = new Array(x_size).fill().map((_, index) => {return {x: x_arr[index], y: y_arr[index]}});
+            const spec = {
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+                "width": 800,
+                "height": 600,
+                "data": {
+                "values": data
+                },
+                "encoding": {
+                    "x": {"field": "x", "type": "quantitative", "title": "Energy (eV)"},
+                    "y": {"field": "y", "type": "quantitative", "scale": {"type": "log"}, "title": "Eedf (eV^{-3/2})"}
+                },
+                "mark": {
+                    "type": "circle",
+                    // Enable tooltip so on mouseover it shows all data of that iteration
+                    "tooltip": {"content": "data"}
+                },
+                // Enable zooming and panning
+                "selection": {"grid": {"type": "interval", "bind": "scales"}}
+            };
+            vegaEmbed(document.getElementById("plotting-area"), spec);
+        }
+    </script>
+
+    <script>
+        /* This function is called at the end of run. The arguments are a C-style string
+         * (a character array) and its length. It represents the results of calling dump()
+         * on the JSON object that is used in the C++ code to hold the output data.
+         */
+        function handleJsonOutput(msg_ptr, msg_size) {
+            const msg = new Uint8Array(module.HEAPU8.buffer, msg_ptr, msg_size);
+            const str = String.fromCharCode.apply(null,msg);
+            console.log(str);
+            document.getElementById("json-results").innerHTML = str;
+        };
+    </script>
+</body>
 </html>
