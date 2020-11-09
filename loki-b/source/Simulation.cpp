@@ -7,7 +7,9 @@
 namespace loki
 {
 
-Simulation::Simulation(const loki::Setup &setup) : workingConditions(setup.workingConditions), jobManager()
+Simulation::Simulation(const loki::Setup &setup)
+    : m_workingConditions(setup.workingConditions),
+    m_jobManager()
 {
     if (setup.electronKinetics.eedfType != EedfType::boltzmann)
     {
@@ -18,21 +20,16 @@ Simulation::Simulation(const loki::Setup &setup) : workingConditions(setup.worki
     {
         initializeJobs(setup.workingConditions);
 
-        electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &workingConditions);
-        electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
-
-        if (setup.output.isOn)
-        {
-            output.reset(new Output(setup, &workingConditions, &jobManager));
-
-            electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
-            output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
-        }
+        m_electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &m_workingConditions);
+        m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
-    Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", jobManager.dimension(),
-                         ", number of jobs = ", jobManager.njobs());
+    Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
+                         ", number of jobs = ", m_jobManager.njobs());
 }
-Simulation::Simulation(const json_type &cnf) : workingConditions(cnf.at("workingConditions")), jobManager()
+
+Simulation::Simulation(const json_type &cnf)
+    : m_workingConditions(cnf.at("workingConditions")),
+    m_jobManager()
 {
     if (getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
     {
@@ -43,30 +40,31 @@ Simulation::Simulation(const json_type &cnf) : workingConditions(cnf.at("working
     {
         initializeJobs(cnf.at("workingConditions"));
 
-        electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &workingConditions);
-        electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &obtainedResults);
-
-        if (cnf.at("output").at("isOn"))
-        {
-            output.reset(new Output(cnf, &workingConditions, &jobManager));
-
-            electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, output.get());
-            output->simPathExists.addListener(&Event<std::string>::emit, &outputPathExists);
-        }
+        m_electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &m_workingConditions);
+        m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
-    Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", jobManager.dimension(),
-                         ", number of jobs = ", jobManager.njobs());
+    Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
+                         ", number of jobs = ", m_jobManager.njobs());
+}
+
+void Simulation::configureOutput(Output* output)
+{
+    m_output.reset(output);
+    if (m_electronKinetics.get())
+    {
+        m_electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, m_output.get());
+    }
 }
 
 void Simulation::run()
 {
-    if (electronKinetics.get())
+    if (m_electronKinetics.get())
     {
-        jobManager.prepareFirstJob();
+        m_jobManager.prepareFirstJob();
         do
         {
-            electronKinetics->solve();
-        } while (jobManager.prepareNextJob());
+            m_electronKinetics->solve();
+        } while (m_jobManager.prepareNextJob());
     }
 }
 
@@ -80,9 +78,9 @@ void Simulation::initializeJobs(const WorkingConditionsSetup &setup)
     // Repeat this for any other fields that can be declared as a range.
     try
     {
-        jobManager.addParameter(
+        m_jobManager.addParameter(
             "Reduced Field",
-            std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+            std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
             Range::create(setup.reducedField));
     }
     catch (std::exception &exc)
@@ -90,15 +88,16 @@ void Simulation::initializeJobs(const WorkingConditionsSetup &setup)
         Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
     }
 }
+
 void Simulation::initializeJobs(const json_type &cnf)
 {
 
     // Repeat this for any other fields that can be declared as a range.
     try
     {
-        jobManager.addParameter(
+        m_jobManager.addParameter(
             "Reduced Field",
-            std::bind(&WorkingConditions::updateReducedField, std::ref(workingConditions), std::placeholders::_1),
+            std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
             Range::create(cnf.at("reducedField")));
     }
     catch (std::exception &exc)

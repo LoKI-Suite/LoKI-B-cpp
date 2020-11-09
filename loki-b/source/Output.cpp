@@ -8,16 +8,25 @@
 #include "LoKI-B/StandardPaths.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 
 namespace loki
 {
 namespace fs = std::filesystem;
 
-Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), folder(OUTPUT "/" + s.output.folder), jobManager(jobManager),
-      inputFile(s.fileContent)
+Output::~Output()
 {
+}
+
+Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
+    : workingConditions(workingConditions), jobManager(jobManager)
+{
+    saveEedf = false;
+    savePower = false;
+    saveSwarm = false;
+    saveRates = false;
+    saveTable = false;
 
     for (const auto &entry : s.output.dataFiles)
     {
@@ -42,14 +51,17 @@ Output::Output(const Setup &s, const WorkingConditions *workingConditions, const
             saveTable = true;
         }
     }
-    createPath();
-    writeInputFile("setup.in");
 }
 
 Output::Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>()),
-      jobManager(jobManager), inputFile(cnf.dump(1, '\t'))
+    : workingConditions(workingConditions),
+      jobManager(jobManager)
 {
+    saveEedf = false;
+    savePower = false;
+    saveSwarm = false;
+    saveRates = false;
+    saveTable = false;
 
     for (const auto &entry : cnf.at("output").at("dataFiles"))
     {
@@ -74,34 +86,6 @@ Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
             saveTable = true;
         }
     }
-    createPath();
-    writeInputFile("setup.json");
-}
-
-void Output::createPath()
-{
-    fs::path path(folder);
-
-    if (fs::exists(path))
-    {
-        Log<Message>::Warning("The output folder \"" + folder + "\" already exists, results might be overriden.");
-
-        std::string newFolder;
-
-        simPathExists.emit(newFolder);
-
-        if (!newFolder.empty())
-        {
-            folder = OUTPUT "/" + newFolder;
-            path = fs::path(folder);
-
-            fs::create_directories(path);
-        }
-    }
-    else
-    {
-        fs::create_directories(path);
-    }
 }
 
 void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
@@ -109,12 +93,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
                        const std::vector<RateCoefficient> &rateCoefficients,
                        const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy)
 {
-
-    subFolder = jobManager->getCurrentJobFolder();
-
-    fs::path subPath(folder + '/' + subFolder);
-    fs::create_directory(subPath);
-
+    setDestination(jobManager->getCurrentJobFolder());
     if (saveEedf)
         writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
     if (saveSwarm)
@@ -127,21 +106,36 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeLookuptable(power, swarmParameters);
 }
 
-void Output::writeInputFile(const std::string &fname)
+FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler)
+ : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
 {
-    auto *file = std::fopen((folder + "/" + fname).c_str(), "w");
-
-    fprintf(file, "%s", inputFile.c_str());
-
-    fclose(file);
-
-    // erase input file buffer since it only needs to be saved once.
-    inputFile.clear();
+    m_initTable = true;
+    createPath(handler);
+    std::ofstream ofs{m_folder + "/setup.in"};
+    ofs << setup.fileContent << std::endl;
 }
 
-void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies)
+FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+        const PathExistsHandler& handler)
+ : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/eedf.txt").c_str(), "w");
+    m_initTable = true;
+    createPath(handler);
+    std::ofstream ofs{m_folder + "/setup.json"};
+    ofs << cnf.dump(1, '\t') << std::endl;
+}
+
+void FileOutput::setDestination(const std::string& subFolder)
+{
+    m_subFolder = subFolder;
+    fs::path subPath(m_folder + '/' + m_subFolder);
+    fs::create_directory(subPath);
+}
+
+void FileOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+{
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/eedf.txt").c_str(), "w");
 
     fprintf(file, "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy\n");
 
@@ -153,9 +147,9 @@ void Output::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const 
     fclose(file);
 }
 
-void Output::writeSwarm(const SwarmParameters &swarmParameters)
+void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/swarm_parameters.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/swarm_parameters.txt").c_str(), "w");
 
     fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField);
     fprintf(file, "  Reduced diffusion coefficient = %#.14e (1/(ms))\n", swarmParameters.redDiffCoeff);
@@ -170,9 +164,9 @@ void Output::writeSwarm(const SwarmParameters &swarmParameters)
     fclose(file);
 }
 
-void Output::writePower(const Power &power, const std::vector<EedfGas *> &gases)
+void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/power_balance.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/power_balance.txt").c_str(), "w");
 
     fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
     fprintf(file, "           Elastic collisions (gain) = %#+.14e (eVm3/s)\n", power.elasticGain);
@@ -261,10 +255,10 @@ void Output::writePower(const Power &power, const std::vector<EedfGas *> &gases)
     fclose(file);
 }
 
-void Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
-                                   const std::vector<RateCoefficient> &extraRateCoefficients)
+void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                                   const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    auto *file = std::fopen((folder + "/" + subFolder + "/rate_coefficients.txt").c_str(), "w");
+    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/rate_coefficients.txt").c_str(), "w");
 
     fprintf(file, "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description\n");
 
@@ -297,30 +291,225 @@ void Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoeff
     fclose(file);
 }
 
-void Output::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters)
+void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
-    std::FILE *file;
-
-    if (initTable)
+    std::FILE* file = std::fopen((m_folder + "/lookup_table.txt").c_str(), m_initTable ? "w" : "a");
+    if (m_initTable)
     {
-        file = std::fopen((folder + "/lookup_table.txt").c_str(), "w");
-
         fprintf(file, "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
                       "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
                       "DriftVelocity(m/s)   RelativePowerBalance\n");
-
-        fclose(file);
-        initTable = false;
+        m_initTable = false;
     }
 
-    file = std::fopen((folder + "/lookup_table.txt").c_str(), "a");
-
     fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
-            workingConditions->reducedField, swarmParameters.redDiffCoeff, swarmParameters.redMobCoeff,
-            swarmParameters.redTownsendCoeff, swarmParameters.redAttCoeff, swarmParameters.meanEnergy,
-            swarmParameters.characEnergy, swarmParameters.Te, swarmParameters.driftVelocity,
+            workingConditions->reducedField,
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
             power.relativeBalance * 100);
 
     fclose(file);
 }
+
+void FileOutput::createPath(const PathExistsHandler& handler)
+{
+    fs::path path(m_folder);
+
+    if (fs::exists(path))
+    {
+        Log<Message>::Warning("The output folder \"" + m_folder + "\" already exists, results might be overriden.");
+
+        std::string newFolder;
+
+        handler(newFolder);
+
+        if (!newFolder.empty())
+        {
+            m_folder = OUTPUT "/" + newFolder;
+            path = fs::path(m_folder);
+
+            fs::create_directories(path);
+        }
+    }
+    else
+    {
+        fs::create_directories(path);
+    }
+}
+
+JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(setup,workingConditions,jobManager), m_root(root), m_active(nullptr)
+{
+    m_root["setup"] = setup.fileContent;
+}
+
+JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
+ : Output(cnf,workingConditions,jobManager), m_root(root), m_active(nullptr)
+{
+    m_root["setup"] = cnf;
+}
+
+void JsonOutput::setDestination(const std::string& subFolder)
+{
+    m_active = &m_root[subFolder];
+}
+
+json_type JsonOutput::makeQuantity(const std::string& name, double value, const std::string unit)
+{
+    return { { name, { { "value", value }, { "unit", unit } } } };
+}
+
+void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+{
+    json_type& out = (*m_active)["eedf"];
+    out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
+    out["units"] = { "eV", "eV^-(3/2)", "1"};
+    json_type& data = out["data"];
+    for (uint32_t i = 0; i < energies.size(); ++i)
+    {
+        data.push_back(json_type{energies[i], eedf[i], firstAnisotropy[i]});
+    }
+}
+
+void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
+{
+    json_type& out = (*m_active)["swarm_parameters"];
+    out.push_back( makeQuantity("Reduced electric field", workingConditions->reducedField, "Td") );
+    out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
+    out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
+    out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
+    out.push_back( makeQuantity("Reduced attachment coefficient", swarmParameters.redAttCoeff, "m^2") );
+    out.push_back( makeQuantity("Mean energy", swarmParameters.meanEnergy, "eV") );
+    out.push_back( makeQuantity("Characteristic energy", swarmParameters.characEnergy, "eV") );
+    out.push_back( makeQuantity("Electron temperature", swarmParameters.Te, "eV") );
+    out.push_back( makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s") );
+}
+
+void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
+{
+    json_type& out = (*m_active)["power_balance"];
+    out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
+    //out.push_back( { "Field", "eV*m^3/s", power.field });
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Ionization collisions", power.ionizationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Attachment collisions", power.attachmentIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s") );
+    out.push_back( makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%") );
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (net)", power.carNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation collisions (net)", power.excitationNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrationalNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational collisions (net)", power.rotationalNet, "eV*m^3/s") );
+
+    for (const auto &gas : gases)
+    {
+        const GasPower &gasPower = gas->getPower();
+	json_type gas_out;
+        gas_out.push_back( { { "name", gas->name } } );
+        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitationIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitationSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitationNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrationalIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrationalSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrationalNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotationalIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotationalSup, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotationalNet, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionizationIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachmentIne, "eV*m^3/s") );
+
+        out.push_back( { "gas", gas_out } );
+    }
+}
+
+void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                   const std::vector<RateCoefficient> &extraRateCoefficients) const
+{
+    if (rateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : rateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+    /** \todo See if we can merge this or re-use code: the code block is identical
+     *        to that above, except for extraRateCoefficients instead of rateCoefficients.
+     */
+    if (extraRateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients_extra"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : extraRateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+}
+
+void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+{
+    json_type* out = m_root.contains("lookup_table")
+                ? &m_root["lookup_table"]
+                : nullptr;
+    if (!out)
+    {
+        // make the section, and set up the labels and units
+        out = &m_root["lookup_table"];
+        /// \todo It would be nice to be able to add the quantities and units as pairs.
+        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow" "RedAtt","MeanE", "CharE", "EleTemp",
+                      "DriftVelocity", "RelativePowerBalance" };
+        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2" "m^2", "eV", "eV", "eV", "m/s", "1" };
+    }
+    assert(out);
+
+    (*out)["data"].push_back( {
+            workingConditions->reducedField,
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
+            power.relativeBalance * 100
+    } );
+}
+
+
 } // namespace loki

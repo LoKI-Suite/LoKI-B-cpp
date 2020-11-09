@@ -125,9 +125,10 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
         else
         {
             std::vector<std::pair<StateEntry, double>> entries;
+            const std::string fileName = INPUT "/" + valueString;
 
-            if (!statePropertyFile(valueString, entries))
-                Log<FileError>::Error(valueString);
+            if (!statePropertyFile(fileName, entries))
+                Log<FileError>::Error(fileName);
 
             for (auto &entry : entries)
             {

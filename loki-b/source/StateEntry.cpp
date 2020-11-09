@@ -353,9 +353,7 @@ StateEntry propertyStateFromString(const std::string &propertyString)
 
 bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)
 {
-    const std::string inputPath = INPUT "/";
-
-    std::ifstream in(inputPath + fileName);
+    std::ifstream in(fileName);
 
     if (!in.is_open())
         return false;
