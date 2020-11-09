@@ -19,26 +19,29 @@ namespace loki
 
 class Simulation
 {
-    WorkingConditions workingConditions;
-    std::unique_ptr<ElectronKinetics> electronKinetics;
-    std::unique_ptr<Output> output;
-    JobManager jobManager;
-
+public:
+    WorkingConditions m_workingConditions;
+    JobManager m_jobManager;
   public:
-    ResultEvent obtainedResults;
-    Event<std::string> outputPathExists;
-
+    ResultEvent m_obtainedResults;
   public:
     explicit Simulation(const Setup &setup);
-    explicit Simulation(const json_type &cnf);
+    Simulation(const json_type &cnf);
     // Copying this object is not allowed.
     Simulation(const Simulation &other) = delete;
     ~Simulation();
+    /** Configure an output object. The Simulation object takes ownerwhip
+     *  of the pointer.
+     */
+    void configureOutput(Output* output);
 
     /// \todo document run
     void run();
 
   private:
+    std::unique_ptr<ElectronKinetics> m_electronKinetics;
+    std::unique_ptr<Output> m_output;
+
     void initializeJobs(const WorkingConditionsSetup &setup);
     void initializeJobs(const json_type &cnf);
 };
