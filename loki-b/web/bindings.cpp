@@ -12,17 +12,15 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
-/// \todo Explain why it is not possible to just use smth. like loki::json_type in the code.
-using loki::Log;
-using loki::Message;
-using loki::json_type;
+namespace loki {
+namespace web {
 
-void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
-                   const loki::SwarmParameters &swarmParameters,
-                   const std::vector<loki::RateCoefficient> &rateCoefficients,
-                   const std::vector<loki::RateCoefficient> &extraRateCoefficients,
-                   const loki::Vector &firstAnisotropy)
+void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc,
+                   const Power &power, const std::vector<EedfGas *> &gases,
+                   const SwarmParameters &swarmParameters,
+                   const std::vector<RateCoefficient> &rateCoefficients,
+                   const std::vector<RateCoefficient> &extraRateCoefficients,
+                   const Vector &firstAnisotropy)
 {
     EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
 }
@@ -34,14 +32,14 @@ int run(std::string file_contents)
         auto begin = std::chrono::high_resolution_clock::now();
 
         std::stringstream ss(file_contents);
-        const loki::json_type cnf = loki::read_json_from_stream(ss);
+        const json_type cnf = read_json_from_stream(ss);
 
-        std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(cnf));
+        std::unique_ptr<Simulation> simulation(new Simulation(cnf));
         /* Create a json object that holds the output and set up a JSONOutput
          * object that will populate the JSON data object.
          */
         json_type data_out;
-        simulation->configureOutput(new loki::JsonOutput(data_out, cnf,
+        simulation->configureOutput(new JsonOutput(data_out, cnf,
                             &simulation->m_workingConditions, &simulation->m_jobManager));
         /** \todo Perhaps the above should be controlled by cnf.at("output").at("isOn").
          *  \todo Now that JsonOutput works, we have two ouput mechanisms in place: handleResults
@@ -69,8 +67,11 @@ int run(std::string file_contents)
     }
 }
 
+} // namespace web
+} // namespace loki
+
 EMSCRIPTEN_BINDINGS(loki)
 {
-    emscripten::function("run", &run);
+    emscripten::function("run", &loki::web::run);
 }
 
