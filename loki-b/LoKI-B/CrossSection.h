@@ -17,33 +17,27 @@ namespace loki
 
 class CrossSection : public Vector
 {
-    //        std::vector<std::pair<double, double>> rawCrossSection;
-    Vector rawEnergyData, rawCrossSection;
-    Grid *energyGrid;
-    const bool isElasticOrEffective;
-
-  public:
-    const double threshold;
-
+public:
     CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type &cnf);
-
     CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
-
     CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                  Vector rawCrossSection);
 
     void interpolate();
+    void interpolate(const Vector &energies, Vector &result) const;
+    const Grid *getGrid() const { return m_energyGrid; }
+    double threshold() const { return m_threshold; }
 
-    void interpolate(const Vector &energies, Vector &result);
-
-    Vector &raw();
-
-    Vector &energies();
-
-    const Grid *getGrid() const;
-
-    //        CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective);
+    const Vector &rawEnergies() const { return m_rawEnergyData; }
+    const Vector &rawCrossSection() const { return m_rawCrossSection; }
+private:
+    using Index = Vector::Index;
+    const double m_threshold;
+    Vector m_rawEnergyData, m_rawCrossSection;
+    const Grid *m_energyGrid;
+    const bool m_isElasticOrEffective;
 };
+
 } // namespace loki
 
 #endif // LOKI_CPP_CROSSSECTION_H
