@@ -495,7 +495,7 @@ void ElectronKinetics::evaluateInelasticOperators()
 
             for (const auto &collision : gas->collisions[vecIndex])
             {
-                const double threshold = collision->crossSection->threshold;
+                const double threshold = collision->crossSection->threshold();
 
                 if (threshold < grid.step || threshold > grid.getNodes()[grid.cellNumber])
                     continue;
@@ -565,7 +565,7 @@ void ElectronKinetics::evaluateIonizationOperator()
     {
         for (const auto &collision : gas->collisions[static_cast<uint8_t>(CollisionType::ionization)])
         {
-            const double threshold = collision->crossSection->threshold;
+            const double threshold = collision->crossSection->threshold();
 
             if (threshold > grid.getNode(grid.cellNumber))
                 continue;
@@ -696,7 +696,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
     {
         for (const auto &collision : gas->collisions[static_cast<uint8_t>(CollisionType::attachment)])
         {
-            const double threshold = collision->crossSection->threshold;
+            const double threshold = collision->crossSection->threshold();
 
             if (threshold > grid.getNode(cellNumber))
                 continue;

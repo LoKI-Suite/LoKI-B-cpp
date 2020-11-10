@@ -103,7 +103,7 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 
     result.resize(energyData.size());
 
-    Vector superElasticEnergies = energyData.array() + crossSection->threshold;
+    Vector superElasticEnergies = energyData.array() + crossSection->threshold();
 
     crossSection->interpolate(superElasticEnergies, result);
 
@@ -121,7 +121,7 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 
     for (uint32_t i = minIndex; i < result.size(); ++i)
     {
-        result[i] *= swRatio * (1 + (crossSection->threshold / energyData[i]));
+        result[i] *= swRatio * (1 + (crossSection->threshold() / energyData[i]));
     }
     if (energyData[0] == 0)
         result[0] = 0;
@@ -141,7 +141,7 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
 
     const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
@@ -190,7 +190,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
 
     if (type == CollisionType::ionization)
     {
@@ -231,7 +231,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             double w = OPBParameter;
 
             if (w == 0)
-                w = crossSection->threshold;
+                w = crossSection->threshold();
 
             Vector TICS = Vector::Zero(grid->cellNumber);
             Vector auxVec = 1. / (1. + (grid->getCells().cwiseAbs2().array() / (w * w)));
@@ -244,7 +244,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 if (kmax > 0)
                     TICS[k] +=
                         cellCrossSection[k] * auxVec[kmax - 1] /
-                        (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold) / (2 * w)));
+                        (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
             collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->step *
@@ -275,7 +275,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const uint32_t nNodes = grid->cellNumber + 1;
     const uint32_t nCells = grid->cellNumber;
 
-    const auto lmin = static_cast<uint32_t>(crossSection->threshold / grid->step);
+    const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
