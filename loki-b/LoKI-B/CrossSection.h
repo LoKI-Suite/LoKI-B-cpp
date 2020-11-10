@@ -8,6 +8,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/LookupTable.h"
 
 #include <iostream>
 #include <vector>
@@ -28,14 +29,13 @@ public:
     const Grid *getGrid() const { return m_energyGrid; }
     double threshold() const { return m_threshold; }
 
-    const Vector &rawEnergies() const { return m_rawEnergyData; }
-    const Vector &rawCrossSection() const { return m_rawCrossSection; }
+    const LookupTable& lookupTable() const { return m_lut; }
 private:
     using Index = Vector::Index;
     const double m_threshold;
-    Vector m_rawEnergyData, m_rawCrossSection;
     const Grid *m_energyGrid;
     const bool m_isElasticOrEffective;
+    LookupTable m_lut;
 };
 
 } // namespace loki

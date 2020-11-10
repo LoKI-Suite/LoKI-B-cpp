@@ -37,8 +37,8 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
         Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
     EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0].get();
-    const Vector &rawEff = eff->crossSection->rawCrossSection();
-    const Vector &rawEnergies = eff->crossSection->rawEnergies();
+    const Vector &rawEnergies = eff->crossSection->lookupTable().x();
+    const Vector &rawEff = eff->crossSection->lookupTable().y();
 
     Vector rawEl = rawEff; // copy raw effective into raw elastic
 
