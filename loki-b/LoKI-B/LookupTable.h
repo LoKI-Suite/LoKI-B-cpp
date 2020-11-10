@@ -32,6 +32,7 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/json.h"
 #include <iostream>
+#include <cassert>
 
 namespace loki {
 
@@ -46,6 +47,11 @@ namespace loki {
  *  Lookup table objects can also be created with the static member function
  *  create. Overloads exist for a JSON specification of the data and for the
  *  traditional LXCat format.
+ *
+ *  \todo Support interpolation for a series of ascending values at once,
+ *        for performance reasons (getIndexL can be made faster then). Such
+ *        functionality was present in the CrossSection.cpp implementation,
+ *        and should be restored.
  *
  *  \author Jan van Dijk and Daan Boer
  *  \date November 2020
