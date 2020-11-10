@@ -55,7 +55,7 @@ void CrossSection::interpolate(const Vector &energies, Vector &result) const
     /** \todo Like in the old code, sigma is set to zero if the energy is
      *        exactly equal to the threshold. This choice should be documented.
      */
-    /** \todo Could we also use if(threshold<=0) instead of if (!m_isElasticOrEffective)?
+    /** \todo Could we also use if(threshold>0) instead of if (!m_isElasticOrEffective)?
      *        In that case, data member m_isElasticOrEffective and the constructor
      *        argument isElasticOrEffective) are no longer needed.
      */
