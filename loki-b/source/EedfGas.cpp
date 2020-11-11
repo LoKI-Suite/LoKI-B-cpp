@@ -37,8 +37,8 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
         Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
     EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0].get();
-    Vector &rawEff = eff->crossSection->raw();
-    Vector &rawEnergies = eff->crossSection->energies();
+    const Vector &rawEnergies = eff->crossSection->lookupTable().x();
+    const Vector &rawEff = eff->crossSection->lookupTable().y();
 
     Vector rawEl = rawEff; // copy raw effective into raw elastic
 
@@ -250,7 +250,7 @@ CollPower EedfGas::evaluateConservativePower(const CollisionVector &collisionVec
     {
         const Grid *grid = collision->crossSection->getGrid();
 
-        if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+        if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
             continue;
 
         collPower += collision->evaluateConservativePower(eedf);
@@ -267,7 +267,7 @@ CollPower EedfGas::evaluateNonConservativePower(const CollisionVector &collision
     {
         const Grid *grid = collision->crossSection->getGrid();
 
-        if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+        if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
             continue;
 
         collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);

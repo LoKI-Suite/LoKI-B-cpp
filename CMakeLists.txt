@@ -82,6 +82,7 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/GasBase.cpp
         ${src}/GasMixtureBase.cpp
         ${src}/Gnuplot.cpp
+        ${src}/LookupTable.cpp
         ${src}/Grid.cpp
         ${src}/EedfGas.cpp
         ${src}/Enumeration.cpp
@@ -147,6 +148,11 @@ if(NOT EMSCRIPTEN)
 	target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
 	
+	add_executable(test_lut ${tests}/test_lut.cpp)
+	target_include_directories(test_lut PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(test_lut PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(test_lut PRIVATE loki_l ${backend})
+
 	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
 	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})

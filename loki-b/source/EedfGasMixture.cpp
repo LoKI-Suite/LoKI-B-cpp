@@ -422,7 +422,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
                     continue;
                 rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
@@ -432,7 +432,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             for (auto &collision : collVec)
             {
 
-                if (collision->crossSection->threshold > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
                     continue;
                 rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }

@@ -1,5 +1,3 @@
-#include <utility>
-
 //
 // Created by daan on 15-5-19.
 //
@@ -7,148 +5,76 @@
 #include "LoKI-B/CrossSection.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
+#include <utility>
 
 namespace loki
 {
 
 CrossSection::CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type &cnf)
-    : threshold(cnf.contains("threshold") ? cnf.at("threshold").get<double>() : 0.0), energyGrid(energyGrid),
-      isElasticOrEffective(isElasticOrEffective)
+    : m_threshold(cnf.contains("threshold") ? cnf.at("threshold").get<double>() : 0.0),
+    m_energyGrid(energyGrid),
+    m_isElasticOrEffective(isElasticOrEffective),
+    m_lut(LookupTable::create(cnf))
 {
-
-    using PairVector = std::vector<std::pair<double, double>>;
-    const PairVector tmp(cnf.at("data"));
-    rawEnergyData.resize(tmp.size());
-    rawCrossSection.resize(tmp.size());
-    for (PairVector::size_type i = 0; i != tmp.size(); ++i)
-    {
-        rawEnergyData[i] = tmp[i].first;
-        rawCrossSection[i] = tmp[i].second;
-    }
-#if 0
-std::cout << "isElasticOrEffective: " << isElasticOrEffective << std::endl;
-std::cout << "THRESHOLD: " << threshold << std::endl;
-for (unsigned i=0; i!=rawEnergyData.size(); ++i)
-{
-  std::cout << rawEnergyData[i] << " " << rawCrossSection[i] << std::endl;
-}
-#endif
     this->interpolate();
-    this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
 }
-
-//    CrossSection::CrossSection(const double threshold, Grid *energyGrid, bool isElasticOrEffective)
-//            : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective) {}
 
 CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
-    : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective)
+    : m_threshold(threshold),
+    m_energyGrid(energyGrid),
+    m_isElasticOrEffective(isElasticOrEffective),
+    m_lut(LookupTable::create(in))
 {
-    std::vector<double> rawEnergyVector, rawCrossSectionVector;
-
-    Parse::rawCrossSectionFromStream(rawEnergyVector, rawCrossSectionVector, in);
-
-    rawEnergyData = Vector::Map(rawEnergyVector.data(), rawEnergyVector.size());
-    rawCrossSection = Vector::Map(rawCrossSectionVector.data(), rawCrossSectionVector.size());
-#if 0
-std::cout << "isElasticOrEffective: " << isElasticOrEffective << std::endl;
-std::cout << "THRESHOLD: " << threshold << std::endl;
-for (unsigned i=0; i!=rawEnergyData.size(); ++i)
-{
-  std::cout << rawEnergyData[i] << " " << rawCrossSection[i] << std::endl;
-}
-#endif
-
     this->interpolate();
-    this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
 }
 
 CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                            Vector rawCrossSection)
-    : threshold(threshold), energyGrid(energyGrid), isElasticOrEffective(isElasticOrEffective),
-      rawEnergyData(std::move(rawEnergyData)), rawCrossSection(std::move(rawCrossSection))
+    : m_threshold(threshold),
+    m_energyGrid(energyGrid),
+    m_isElasticOrEffective(isElasticOrEffective),
+    m_lut(rawEnergyData,rawCrossSection)
 {
     this->interpolate();
-    this->energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
 }
 
 void CrossSection::interpolate()
 {
-
-    interpolate(energyGrid->getNodes(), *this);
+    interpolate(m_energyGrid->getNodes(), *this);
 }
 
-void CrossSection::interpolate(const Vector &energies, Vector &result)
+void CrossSection::interpolate(const Vector &energies, Vector &result) const
 {
-    const auto &gridSize = energies.size();
+    const Index nEnergies = energies.size();
+    result.resize(nEnergies);
+    Index gridIndex = 0;
 
-    result.resize(gridSize);
-    result.setZero(gridSize);
-
-    uint32_t csIndex = 0, gridIndex = 0;
-
-    if (!isElasticOrEffective)
+    /** \todo Like in the old code, sigma is set to zero if the energy is
+     *        exactly equal to the threshold. This choice should be documented.
+     */
+    /** \todo Could we also use if(threshold>0) instead of if (!m_isElasticOrEffective)?
+     *        In that case, data member m_isElasticOrEffective and the constructor
+     *        argument isElasticOrEffective) are no longer needed.
+     */
+    // if this is an inelastic process (with a threshold energy), set
+    // the cross section values for energies up to the threshold to zero.
+    if (!m_isElasticOrEffective)
     {
-        for (uint32_t i = 0; i < gridSize; ++i)
+        for (; gridIndex!=nEnergies && energies[gridIndex]<=m_threshold; ++gridIndex)
         {
-            if (energies[i] > threshold)
-            {
-                gridIndex = i;
-                break;
-            }
+            result[gridIndex] = 0.0;
         }
     }
-
-    for (; gridIndex < gridSize; ++gridIndex)
+    for (; gridIndex != nEnergies; ++gridIndex)
     {
-        while (csIndex < rawCrossSection.size() && rawEnergyData[csIndex] < energies[gridIndex])
-        {
-
-            ++csIndex;
-        }
-
-        if (csIndex >= rawCrossSection.size())
-        {
-            //                (*this)[gridIndex] = rawCrossSection.back().second;
-            result[gridIndex] = 0.;
-            continue;
-        }
-
-        if (csIndex == 0)
-        {
-            if (rawEnergyData[csIndex] == energies[gridIndex])
-            {
-                result[gridIndex] = rawCrossSection[csIndex];
-            }
-            else
-            {
-                result[gridIndex] = 0.;
-            }
-            continue;
-        }
-
-        const double prevEnergy = rawEnergyData[csIndex - 1];
-        const double nextEnergy = rawEnergyData[csIndex];
-        const double prevCS = rawCrossSection[csIndex - 1];
-        const double nextCS = rawCrossSection[csIndex];
-        const double alpha = (energies[gridIndex] - prevEnergy) / (nextEnergy - prevEnergy);
-
-        result[gridIndex] = (1. - alpha) * prevCS + alpha * nextCS;
+        /* 0.0, 0.0: these are the values that are assumed if the enery is not
+         * in the range of the table.
+         */
+	result[gridIndex] = m_lut.interpolate_or_set(energies[gridIndex],0.0,0.0);
     }
-}
-
-Vector &CrossSection::raw()
-{
-    return rawCrossSection;
-}
-
-Vector &CrossSection::energies()
-{
-    return rawEnergyData;
-}
-
-const Grid *CrossSection::getGrid() const
-{
-    return energyGrid;
 }
 
 } // namespace loki
