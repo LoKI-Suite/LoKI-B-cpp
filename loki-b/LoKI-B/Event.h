@@ -48,10 +48,6 @@ namespace loki
  *
  *  \author Daan Boer
  *  \date   13. May 2019
- *
- *  \todo It should be possible to mark member emit as a constant member, since
- *        calling the registered callbacks should not modify the event object.
- *  \todo Allow constant member function callbacks and target object pointers.
  */
 template <typename... T>
 class Event
@@ -73,7 +69,7 @@ class Event
      *  The callbacks are called in the order of registration with the
      *  event object.
      */
-    void emit(T &... args)
+    void emit(T &... args) const
     {
         for (const auto &callback : m_callbacks)
         {
@@ -90,6 +86,12 @@ class Event
      */
     template <class C>
     void addListener(void (C::*f)(T &... Args), C *c)
+    {
+        m_callbacks.emplace_back([c, f](T &... t) -> void { (c->*f)(t...); });
+    }
+    /// an overload of addListener that accepts a constant object and member function
+    template <class C>
+    void addListener(void (C::*f)(T &... Args) const, const C *c)
     {
         m_callbacks.emplace_back([c, f](T &... t) -> void { (c->*f)(t...); });
     }
