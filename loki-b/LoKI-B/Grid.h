@@ -72,7 +72,7 @@ class Grid
     using Index = uint32_t;
     //using Index = Vector::Index;
 
-    // constructorion and desrtuction:
+    // constructorion and destruction:
 
     explicit Grid(const EnergyGridSetup &gridSetup);
     explicit Grid(const json_type &cnf);
@@ -115,7 +115,9 @@ class Grid
         const uint16_t minEedfDecay;
         const uint16_t maxEedfDecay;
         const double updateFactor;
-        /// \todo Obsolete. when !isSmart, we will simply not create the smartGrid ptr.
+    private:
+        friend class Grid;
+        /// \todo Obsolete. when !isSmart, we should simply not create the smartGrid ptr.
         const bool isSmart;
     };
     const SmartGridParameters* smartGrid() const { return m_smartGrid.get(); }
