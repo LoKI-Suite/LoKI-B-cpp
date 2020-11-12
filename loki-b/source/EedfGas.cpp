@@ -250,7 +250,7 @@ CollPower EedfGas::evaluateConservativePower(const CollisionVector &collisionVec
     {
         const Grid *grid = collision->crossSection->getGrid();
 
-        if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+        if (collision->crossSection->threshold() > grid->uMax())
             continue;
 
         collPower += collision->evaluateConservativePower(eedf);
@@ -267,7 +267,7 @@ CollPower EedfGas::evaluateNonConservativePower(const CollisionVector &collision
     {
         const Grid *grid = collision->crossSection->getGrid();
 
-        if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+        if (collision->crossSection->threshold() > grid->uMax())
             continue;
 
         collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);

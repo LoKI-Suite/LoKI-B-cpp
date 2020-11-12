@@ -364,8 +364,8 @@ void EedfGasMixture::loadGasProperties(const json_type &cnf)
 
 void EedfGasMixture::evaluateTotalAndElasticCS()
 {
-    elasticCrossSection.setZero(grid->cellNumber + 1);
-    totalCrossSection.setZero(grid->cellNumber + 1);
+    elasticCrossSection.setZero(grid->nCells() + 1);
+    totalCrossSection.setZero(grid->nCells() + 1);
 
     for (auto &gas : gases())
     {
@@ -422,7 +422,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->uMax())
                     continue;
                 rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
@@ -432,7 +432,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             for (auto &collision : collVec)
             {
 
-                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->uMax())
                     continue;
                 rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }

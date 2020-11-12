@@ -26,10 +26,10 @@ Grid::SmartGridParameters::SmartGridParameters(const json_type& cnf)
 }
 
 Grid::Grid(const EnergyGridSetup &gridSetup)
-    : cellNumber(gridSetup.cellNumber),
-      step(gridSetup.maxEnergy / gridSetup.cellNumber),
-      m_nodes(Vector::LinSpaced(cellNumber + 1, 0, gridSetup.maxEnergy)),
-      m_cells(Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step)
+    : m_nCells(gridSetup.cellNumber),
+      m_du(gridSetup.maxEnergy/m_nCells),
+      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, gridSetup.maxEnergy)),
+      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
 {
     /// \todo Set up m_smartGrid only if a smartGrid section has been specified
     m_smartGrid.reset(new SmartGridParameters(gridSetup.smartGrid));
@@ -46,10 +46,10 @@ Grid::Grid(const EnergyGridSetup &gridSetup)
 /// \todo Use get<T>() everywhere, do not rely on implicit conversion
 /// \todo See if the elements for smartGrid support can be bundled in some way
 Grid::Grid(const json_type &cnf)
-    : cellNumber(cnf.at("cellNumber")),
-      step(cnf.at("maxEnergy").get<double>() / cnf.at("cellNumber").get<unsigned>()),
-      m_nodes(Vector::LinSpaced(cellNumber + 1, 0, cnf.at("maxEnergy"))),
-      m_cells(Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step)
+    : m_nCells(cnf.at("cellNumber")),
+      m_du(cnf.at("maxEnergy").get<double>()/m_nCells),
+      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, cnf.at("maxEnergy"))),
+      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
 {
     if (cnf.contains("smartGrid"))
     {
@@ -67,9 +67,9 @@ Grid::Grid(const json_type &cnf)
 
 void Grid::updateMaxEnergy(double uMax)
 {
-    step = uMax / cellNumber;
-    m_nodes = Vector::LinSpaced(cellNumber + 1, 0, uMax);
-    m_cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
+    m_du = uMax / nCells();
+    m_nodes = Vector::LinSpaced(nCells() + 1, 0, uMax);
+    m_cells = Vector::LinSpaced(nCells(), .5, nCells() - .5) * m_du;
 
     updatedMaxEnergy1.emit();
     updatedMaxEnergy2.emit();

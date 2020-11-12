@@ -25,12 +25,12 @@ namespace loki
 
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
     : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid, setup, workingConditions),
-      attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber), boltzmannMatrix(grid.cellNumber, grid.cellNumber),
-      elasticMatrix(grid.cellNumber, grid.cellNumber), fieldMatrix(grid.cellNumber, grid.cellNumber),
-      attachmentMatrix(grid.cellNumber, grid.cellNumber), ionSpatialGrowthD(grid.cellNumber, grid.cellNumber),
-      ionSpatialGrowthU(grid.cellNumber, grid.cellNumber), fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber),
-      fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber), ionTemporalGrowth(grid.cellNumber, grid.cellNumber),
-      g_c(grid.cellNumber), eedf(grid.cellNumber)
+      attachmentConservativeMatrix(grid.nCells(), grid.nCells()), boltzmannMatrix(grid.nCells(), grid.nCells()),
+      elasticMatrix(grid.nCells(), grid.nCells()), fieldMatrix(grid.nCells(), grid.nCells()),
+      attachmentMatrix(grid.nCells(), grid.nCells()), ionSpatialGrowthD(grid.nCells(), grid.nCells()),
+      ionSpatialGrowthU(grid.nCells(), grid.nCells()), fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
+      fieldMatrixTempGrowth(grid.nCells(), grid.nCells()), ionTemporalGrowth(grid.nCells(), grid.nCells()),
+      g_c(grid.nCells()), eedf(grid.nCells())
 {
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
@@ -48,35 +48,35 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
     // mixture.grid->getNodes(), mixture.totalCrossSection);
 
-    inelasticMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
-    ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    ionConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
-    attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
     {
-        ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+        ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
 
-    A.setZero(grid.cellNumber);
-    B.setZero(grid.cellNumber);
+    A.setZero(grid.nCells());
+    B.setZero(grid.nCells());
 
     boltzmannMatrix.setZero();
 
     // SPARSE INITIALIZATION
     std::vector<Eigen::Triplet<double>> tridiagPattern;
-    tridiagPattern.reserve(3 * grid.cellNumber - 2);
+    tridiagPattern.reserve(3 * grid.nCells() - 2);
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         if (k > 0)
             tridiagPattern.emplace_back(k - 1, k, 0.);
 
         tridiagPattern.emplace_back(k, k, 0.);
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             tridiagPattern.emplace_back(k + 1, k, 0.);
     }
 
@@ -94,9 +94,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
      *        Same for the other constructor, of course.
      */
     std::vector<Eigen::Triplet<double>> diagPattern;
-    diagPattern.reserve(grid.cellNumber);
+    diagPattern.reserve(grid.nCells());
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         diagPattern.emplace_back(k, k, 0.);
     }
@@ -123,12 +123,12 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
     : workingConditions(workingConditions), grid(cnf.at("numerics").at("energyGrid")),
-      mixture(&grid, cnf, workingConditions), attachmentConservativeMatrix(grid.cellNumber, grid.cellNumber),
-      boltzmannMatrix(grid.cellNumber, grid.cellNumber), elasticMatrix(grid.cellNumber, grid.cellNumber),
-      fieldMatrix(grid.cellNumber, grid.cellNumber), attachmentMatrix(grid.cellNumber, grid.cellNumber),
-      ionSpatialGrowthD(grid.cellNumber, grid.cellNumber), ionSpatialGrowthU(grid.cellNumber, grid.cellNumber),
-      fieldMatrixSpatGrowth(grid.cellNumber, grid.cellNumber), fieldMatrixTempGrowth(grid.cellNumber, grid.cellNumber),
-      ionTemporalGrowth(grid.cellNumber, grid.cellNumber), g_c(grid.cellNumber), eedf(grid.cellNumber)
+      mixture(&grid, cnf, workingConditions), attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
+      boltzmannMatrix(grid.nCells(), grid.nCells()), elasticMatrix(grid.nCells(), grid.nCells()),
+      fieldMatrix(grid.nCells(), grid.nCells()), attachmentMatrix(grid.nCells(), grid.nCells()),
+      ionSpatialGrowthD(grid.nCells(), grid.nCells()), ionSpatialGrowthU(grid.nCells(), grid.nCells()),
+      fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()), fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
+      ionTemporalGrowth(grid.nCells(), grid.nCells()), g_c(grid.nCells()), eedf(grid.nCells())
 {
     grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
 
@@ -146,35 +146,35 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
     // mixture.grid->getNodes(), mixture.totalCrossSection);
 
-    inelasticMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
-    ionConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    ionConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
-    attachmentConservativeMatrix.setZero(grid.cellNumber, grid.cellNumber);
+    attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
         mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
     {
-        ionizationMatrix.setZero(grid.cellNumber, grid.cellNumber);
+        ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
 
-    A.setZero(grid.cellNumber);
-    B.setZero(grid.cellNumber);
+    A.setZero(grid.nCells());
+    B.setZero(grid.nCells());
 
     boltzmannMatrix.setZero();
 
     // SPARSE INITIALIZATION
     std::vector<Eigen::Triplet<double>> tridiagPattern;
-    tridiagPattern.reserve(3 * grid.cellNumber - 2);
+    tridiagPattern.reserve(3 * grid.nCells() - 2);
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         if (k > 0)
             tridiagPattern.emplace_back(k - 1, k, 0.);
 
         tridiagPattern.emplace_back(k, k, 0.);
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             tridiagPattern.emplace_back(k + 1, k, 0.);
     }
 
@@ -185,9 +185,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
     std::vector<Eigen::Triplet<double>> diagPattern;
-    diagPattern.reserve(grid.cellNumber);
+    diagPattern.reserve(grid.nCells());
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         diagPattern.emplace_back(k, k, 0.);
     }
@@ -226,7 +226,7 @@ void ElectronKinetics::solve()
     if (grid.smartGrid())
     {
         const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
-        double decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+        double decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
 
         while (decades < smartGrid.minEedfDecay)
         {
@@ -241,7 +241,7 @@ void ElectronKinetics::solve()
                 this->invertLinearMatrix();
             }
 
-            decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+            decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
         }
 
         while (decades > smartGrid.maxEedfDecay)
@@ -257,11 +257,11 @@ void ElectronKinetics::solve()
                 this->invertLinearMatrix();
             }
 
-            decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
+            decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
         }
     }
 
-    //        for (uint32_t i = 0; i < eedf.size(); ++i) {
+    //        for (Grid::Index i = 0; i < eedf.size(); ++i) {
     //            printf("%.16e\n", eedf[i]);
     //        }
 
@@ -308,7 +308,7 @@ void ElectronKinetics::invertLinearMatrix()
 void ElectronKinetics::invertMatrix(Matrix &matrix)
 {
     // Induce normalization condition
-    //        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
+    //        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
     //        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMatrix = matrix;
 
     auto begin = std::chrono::high_resolution_clock::now();
@@ -318,38 +318,38 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
         eedf.setZero();
         eedf[0] = 1.;
 
-        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
+        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
 
-        LinAlg::hessenberg(matrix.data(), eedf.data(), grid.cellNumber);
+        LinAlg::hessenberg(matrix.data(), eedf.data(), grid.nCells());
     }
     else
     {
         // TODO: Find a way to distinguish when to use LU and when to use Hessenberg reduction.
 
         // HESSENBERG WITH PARTIAL PIVOTING
-        //            auto *p = new uint32_t[grid.cellNumber];
+        //            auto *p = new uint32_t[grid.nCells()];
         //
-        //            for (uint32_t i = 0; i < grid.cellNumber; ++i)
+        //            for (Grid::Index i = 0; i < grid.nCells(); ++i)
         //                p[i] = i;
         //
         //            LinAlg::hessenbergReductionPartialPiv(matrix.data(), &superElasticThresholds[0], p,
-        //            grid.cellNumber,
+        //            grid.nCells(),
         //                                                  superElasticThresholds.size());
         //
         //            eedf.setZero();
         //            eedf[0] = 1.;
         //
-        //            matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
+        //            matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
         //
-        //            LinAlg::hessenberg(matrix.data(), eedf.data(), grid.cellNumber);
+        //            LinAlg::hessenberg(matrix.data(), eedf.data(), grid.nCells());
         //
         //            delete[] p;
 
         // LU DECOMPOSITION
-        Vector b = Vector::Zero(grid.cellNumber);
+        Vector b = Vector::Zero(grid.nCells());
         b[0] = 1;
 
-        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.step;
+        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
         eedf = matrix.partialPivLu().solve(b);
     }
 
@@ -363,8 +363,8 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
      *        afterwards. That prevents a fully populated first row of the system matrix
      *        (better sparsity pattern).
      */
-    // std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.step) << std::endl;
-    eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.step);
+    // std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.du()) << std::endl;
+    eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.du());
 }
 
 void ElectronKinetics::evaluateMatrix()
@@ -396,22 +396,22 @@ void ElectronKinetics::evaluateElasticOperator()
 {
     const double Tg = workingConditions->gasTemperature;
 
-    const double factor1 = (Constant::kBeV * Tg / grid.step + 0.5) / grid.step;
-    const double factor2 = (Constant::kBeV * Tg / grid.step - 0.5) / grid.step;
+    const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
+    const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
 
     g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.elasticCrossSection) * 2;
 
     g_c[0] = 0.;
     g_c[g_c.size() - 1] = 0.;
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         elasticMatrix.coeffRef(k, k) = -(g_c[k] * factor1 + g_c[k + 1] * factor2);
 
         if (k > 0)
             elasticMatrix.coeffRef(k, k - 1) = g_c[k] * factor2;
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             elasticMatrix.coeffRef(k, k + 1) = g_c[k + 1] * factor1;
     }
 }
@@ -435,16 +435,16 @@ void ElectronKinetics::evaluateFieldOperator()
     g_E[0] = 0.;
     g_E[g_E.size() - 1] = 0.;
 
-    const double sqStep = grid.step * grid.step;
+    const double sqStep = grid.du() * grid.du();
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         fieldMatrix.coeffRef(k, k) = -(g_E[k] + g_E[k + 1]) / sqStep;
 
         if (k > 0)
             fieldMatrix.coeffRef(k, k - 1) = g_E[k] / sqStep;
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             fieldMatrix.coeffRef(k, k + 1) = g_E[k + 1] / sqStep;
     }
 }
@@ -453,8 +453,8 @@ void ElectronKinetics::evaluateCAROperator()
 {
     const double Tg = workingConditions->gasTemperature;
 
-    const double factor1 = (Constant::kBeV * Tg / grid.step + 0.5) / grid.step;
-    const double factor2 = (Constant::kBeV * Tg / grid.step - 0.5) / grid.step;
+    const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
+    const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
 
     double sigma0B = 0.;
 
@@ -468,23 +468,23 @@ void ElectronKinetics::evaluateCAROperator()
 
     // Boundary conditions
     g_CAR[0] = 0.;
-    g_CAR[grid.cellNumber] = 0.;
+    g_CAR[grid.nCells()] = 0.;
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         CARMatrix.coeffRef(k, k) = -(g_CAR[k] * factor1 + g_CAR[k + 1] * factor2);
 
         if (k > 0)
             CARMatrix.coeffRef(k, k - 1) = g_CAR[k] * factor2;
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             CARMatrix.coeffRef(k, k + 1) = g_CAR[k + 1] * factor1;
     }
 }
 
 void ElectronKinetics::evaluateInelasticOperators()
 {
-    const uint32_t cellNumber = grid.cellNumber;
+    const Grid::Index cellNumber = grid.nCells();
 
     inelasticMatrix.setZero();
 
@@ -498,21 +498,21 @@ void ElectronKinetics::evaluateInelasticOperators()
             {
                 const double threshold = collision->crossSection->threshold();
 
-                if (threshold < grid.step || threshold > grid.getNodes()[grid.cellNumber])
+                if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
                     continue;
 
                 const double targetDensity = collision->getTarget()->density;
 
                 if (targetDensity != 0)
                 {
-                    const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
+                    const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
                     Vector cellCrossSection(cellNumber);
 
-                    for (uint32_t i = 0; i < cellNumber; ++i)
+                    for (Grid::Index i = 0; i < cellNumber; ++i)
                         cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
-                    for (uint32_t k = 0; k < cellNumber; ++k)
+                    for (Grid::Index k = 0; k < cellNumber; ++k)
                     {
                         if (k < cellNumber - numThreshold)
                             inelasticMatrix(k, k + numThreshold) +=
@@ -536,7 +536,7 @@ void ElectronKinetics::evaluateInelasticOperators()
                         if (numThreshold != 1)
                             hasSuperelastics = true;
 
-                        for (uint32_t k = 0; k < cellNumber; ++k)
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
                             if (k >= numThreshold)
                                 inelasticMatrix(k, k - numThreshold) +=
@@ -568,17 +568,17 @@ void ElectronKinetics::evaluateIonizationOperator()
         {
             const double threshold = collision->crossSection->threshold();
 
-            if (threshold > grid.getNode(grid.cellNumber))
+            if (threshold > grid.getNode(grid.nCells()))
                 continue;
 
             hasValidCollisions = true;
 
             const double density = collision->getTarget()->density;
-            const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
+            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
-            Vector cellCrossSection(grid.cellNumber);
+            Vector cellCrossSection(grid.nCells());
 
-            for (uint32_t i = 0; i < grid.cellNumber; ++i)
+            for (Grid::Index i = 0; i < grid.nCells(); ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
             switch (ionizationOperatorType)
@@ -587,9 +587,9 @@ void ElectronKinetics::evaluateIonizationOperator()
                 break;
 
             case IonizationOperatorType::oneTakesAll:
-                for (uint32_t k = 0; k < grid.cellNumber; ++k)
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
-                    if (k < grid.cellNumber - numThreshold)
+                    if (k < grid.nCells() - numThreshold)
                         ionizationMatrix(k, k + numThreshold) +=
                             density * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
@@ -601,13 +601,13 @@ void ElectronKinetics::evaluateIonizationOperator()
                 break;
 
             case IonizationOperatorType::equalSharing:
-                for (uint32_t k = 0; k < grid.cellNumber; ++k)
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
                     ionizationMatrix(k, k) -= density * grid.getCell(k) * cellCrossSection[k];
 
-                    if (k < (grid.cellNumber - numThreshold) / 2)
+                    if (k < (grid.nCells() - numThreshold) / 2)
                     {
-                        const uint32_t i = 2 * (k + 1) + numThreshold - 1;
+                        const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
 
                         ionizationMatrix(k, i) += 4 * density * grid.getCell(i) * cellCrossSection(i);
                     }
@@ -619,31 +619,31 @@ void ElectronKinetics::evaluateIonizationOperator()
                 if (W < 0)
                     W = threshold;
 
-                for (uint32_t k = 0; k < grid.cellNumber; ++k)
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
-                    const uint32_t end = std::min(2 * (k + 1) + numThreshold, grid.cellNumber);
+                    const Grid::Index end = std::min(2 * (k + 1) + numThreshold, grid.nCells());
 
                     if (k > numThreshold)
                     {
-                        const uint32_t half = (k + 1 - numThreshold) / 2;
+                        const Grid::Index half = (k + 1 - numThreshold) / 2;
                         const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
                         double sum = 0.;
 
-                        for (uint32_t i = 0; i < half; ++i)
+                        for (Grid::Index i = 0; i < half; ++i)
                             sum += numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
 
-                        ionizationMatrix(k, k) -= density * grid.step * grid.getCell(k) * cellCrossSection[k] * sum;
+                        ionizationMatrix(k, k) -= density * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
                     }
 
-                    /** \todo If k + numThreshold + 1 < grid.cellNumber, the term is ignored.
+                    /** \todo If k + numThreshold + 1 < grid.nCells(), the term is ignored.
                      *        Document (in the document, not necessarily here) what are the
                      *        consequences of that.
                      */
-                    if (k + numThreshold + 1 < grid.cellNumber)
+                    if (k + numThreshold + 1 < grid.nCells())
                     {
-                        for (uint32_t i = k + numThreshold + 1; i < end; ++i)
+                        for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
                         {
-                            ionizationMatrix(k, i) += density * grid.step * grid.getCell(i) * cellCrossSection[i] /
+                            ionizationMatrix(k, i) += density * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                       (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
                         }
@@ -656,9 +656,9 @@ void ElectronKinetics::evaluateIonizationOperator()
                     // This last section might need some adjustments because of indexing
                     // differences between Matlab and C++ (since indexes are multiplied here).
 
-                    for (uint32_t i = 2 * (k + 1) + numThreshold - 1; i < grid.cellNumber; ++i)
+                    for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
                     {
-                        ionizationMatrix(k, i) += density * grid.step * grid.getCell(i) * cellCrossSection[i] /
+                        ionizationMatrix(k, i) += density * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                   (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                    (W + std::pow(grid.getCell(k), 2) / W));
                     }
@@ -671,9 +671,9 @@ void ElectronKinetics::evaluateIonizationOperator()
             if (numThreshold == 0)
                 continue;
 
-            for (uint32_t k = 0; k < grid.cellNumber; ++k)
+            for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
-                if (k < grid.cellNumber - numThreshold)
+                if (k < grid.nCells() - numThreshold)
                     ionConservativeMatrix(k, k + numThreshold) +=
                         density * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
@@ -691,7 +691,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
     attachmentMatrix.setZero();
     attachmentConservativeMatrix.setZero();
 
-    const uint32_t cellNumber = grid.cellNumber;
+    const Grid::Index cellNumber = grid.nCells();
 
     for (const auto &gas : mixture.gases())
     {
@@ -708,7 +708,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
              */
             includeNonConservativeAttachment = true;
 
-            const auto numThreshold = static_cast<uint32_t>(std::floor(threshold / grid.step));
+            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
             /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
              *        in the two places where it is needed (one if the merger below can be done).
@@ -718,10 +718,10 @@ void ElectronKinetics::evaluateAttachmentOperator()
             const double targetDensity = collision->getTarget()->density;
 
             /// \todo Merge with the subsequent k-loop.
-            for (uint32_t i = 0; i < cellNumber; ++i)
+            for (Grid::Index i = 0; i < cellNumber; ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
-            for (uint32_t k = 0; k < cellNumber; ++k)
+            for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
             if (numThreshold == 0)
@@ -731,7 +731,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
              *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
              *  given the amount of work done.
              */
-            for (uint32_t k = 0; k < cellNumber; ++k)
+            for (Grid::Index k = 0; k < cellNumber; ++k)
             {
                 if (k < cellNumber - numThreshold)
                     attachmentConservativeMatrix(k, k + numThreshold) +=
@@ -747,7 +747,7 @@ void ElectronKinetics::mixingDirectSolutions()
 {
     invertLinearMatrix();
 
-    const uint32_t numCells = grid.cellNumber;
+    const Grid::Index numCells = grid.nCells();
 
     //        solveEEColl();
     //        return;
@@ -824,9 +824,9 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 {
     const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI;
 
-    Vector cellTotalCrossSection(grid.cellNumber);
+    Vector cellTotalCrossSection(grid.nCells());
 
-    for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    for (Grid::Index i = 0; i < grid.nCells(); ++i)
         cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection[i] + mixture.totalCrossSection[i + 1]);
 
     if (!mixture.CARGases.empty())
@@ -839,26 +839,26 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
         boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
     }
 
-    Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
+    Vector baseDiag(grid.nCells()), baseSubDiag(grid.nCells()), baseSupDiag(grid.nCells());
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         baseDiag[k] = boltzmannMatrix(k, k);
 
         if (k > 0)
             baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
     if (includeEECollisions)
     {
-        A = alphaEE / grid.step * (BAee.transpose() * eedf);
-        B = alphaEE / grid.step * (BAee * eedf);
+        A = alphaEE / grid.du() * (BAee.transpose() * eedf);
+        B = alphaEE / grid.du() * (BAee * eedf);
     }
 
-    Vector integrandCI = (sqrt(2. * e / m) * grid.step) * Vector::Ones(grid.cellNumber).transpose() *
+    Vector integrandCI = (sqrt(2. * e / m) * grid.du()) * Vector::Ones(grid.nCells()).transpose() *
                          (ionizationMatrix + attachmentMatrix);
 
     double CIEffNew = eedf.dot(integrandCI);
@@ -873,23 +873,23 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
     Vector tempVector = grid.getCells().array() / (3. * cellTotalCrossSection).array();
 
-    Vector D0 = tempVector, U0sup(grid.cellNumber), U0inf(grid.cellNumber);
+    Vector D0 = tempVector, U0sup(grid.nCells()), U0inf(grid.nCells());
 
     U0sup[0] = 0.;
-    U0inf[grid.cellNumber - 1] = 0.;
+    U0inf[grid.nCells() - 1] = 0.;
 
-    for (uint32_t j = 0; j < grid.cellNumber; ++j)
+    for (Grid::Index j = 0; j < grid.nCells(); ++j)
     {
         if (j != 0)
-            U0sup[j] = EoN / (2. * grid.step) * tempVector[j - 1];
+            U0sup[j] = EoN / (2. * grid.du()) * tempVector[j - 1];
 
-        if (j != grid.cellNumber - 1)
-            U0inf[j] = -EoN / (2. * grid.step) * tempVector[j + 1];
+        if (j != grid.nCells() - 1)
+            U0inf[j] = -EoN / (2. * grid.du()) * tempVector[j + 1];
     }
 
     Vector U0 = U0sup + U0inf;
 
-    double ND = sqrt(2 * e / m) * grid.step * D0.dot(eedf), muE = -sqrt(2 * e / m) * grid.step * U0.dot(eedf);
+    double ND = sqrt(2 * e / m) * grid.du() * D0.dot(eedf), muE = -sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
 
     double alphaRedEffNew, alphaRedEffOld = 0.;
 
@@ -911,31 +911,31 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     {
         g_fieldSpatialGrowth = alphaRedEffNew * g_fieldSpatialBase;
         g_fieldSpatialGrowth[0] = 0.;
-        g_fieldSpatialGrowth[grid.cellNumber] = 0.;
+        g_fieldSpatialGrowth[grid.nCells()] = 0.;
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
-            fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid.step;
+            fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid.du();
 
             if (k > 0)
-                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid.step;
+                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid.du();
 
-            if (k < grid.cellNumber - 1)
-                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid.step;
+            if (k < grid.nCells() - 1)
+                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid.du();
         }
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
 
             if (k > 0)
                 ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
 
-            if (k < grid.cellNumber - 1)
+            if (k < grid.nCells() - 1)
                 ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
         }
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k) - (A[k] + B[k]));
@@ -944,7 +944,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k - 1) +
                                                                       ionSpatialGrowthU.coeff(k, k - 1) + A[k - 1]);
 
-            if (k < grid.cellNumber - 1)
+            if (k < grid.nCells() - 1)
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k + 1) +
                                                                       ionSpatialGrowthU.coeff(k, k + 1) + B[k + 1]);
         }
@@ -958,8 +958,8 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        ND = sqrt(2 * e / m) * grid.step * D0.dot(eedf);
-        muE = -sqrt(2 * e / m) * grid.step * U0.dot(eedf);
+        ND = sqrt(2 * e / m) * grid.du() * D0.dot(eedf);
+        muE = -sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
 
         const double discriminant = muE * muE - 4 * CIEffNew * ND;
 
@@ -1001,26 +1001,26 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
     }
 
-    Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
+    Vector baseDiag(grid.nCells()), baseSubDiag(grid.nCells()), baseSupDiag(grid.nCells());
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         baseDiag[k] = boltzmannMatrix(k, k);
 
         if (k > 0)
             baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
     if (includeEECollisions)
     {
-        A = alphaEE / grid.step * (BAee.transpose() * eedf);
-        B = alphaEE / grid.step * (BAee * eedf);
+        A = alphaEE / grid.du() * (BAee.transpose() * eedf);
+        B = alphaEE / grid.du() * (BAee * eedf);
     }
 
-    Vector integrandCI = (sqrt(2. * e / m) * grid.step) * Vector::Ones(grid.cellNumber).transpose() *
+    Vector integrandCI = (sqrt(2. * e / m) * grid.du()) * Vector::Ones(grid.nCells()).transpose() *
                          (ionizationMatrix + attachmentMatrix);
     ;
 
@@ -1029,7 +1029,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-    Vector totalCSI(grid.cellNumber + 1), eedfNew(grid.cellNumber);
+    Vector totalCSI(grid.nCells() + 1), eedfNew(grid.nCells());
 
     bool hasConverged = false;
     uint32_t iter = 0;
@@ -1042,33 +1042,33 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
         const long double growthFactor = CIEffNew * sqrt(m / (2 * e));
 
-        for (uint32_t i = 1; i <= grid.cellNumber; ++i)
+        for (Grid::Index i = 1; i <= grid.nCells(); ++i)
         {
-            totalCSI[i] = mixture.totalCrossSection[i] + growthFactor / sqrt(i * grid.step);
+            totalCSI[i] = mixture.totalCrossSection[i] + growthFactor / sqrt(i * grid.du());
         }
 
         g_fieldTemporalGrowth =
             ((EoN * EoN / 3) * grid.getNodes()).array() /
             (totalCSI.array() + (m * WoN * WoN / (2 * e)) / (grid.getNodes().cwiseProduct(totalCSI)).array());
         g_fieldTemporalGrowth[0] = 0.;
-        g_fieldTemporalGrowth[grid.cellNumber] = 0.;
+        g_fieldTemporalGrowth[grid.nCells()] = 0.;
 
-        const double sqrStep = grid.step * grid.step;
+        const double sqrStep = grid.du() * grid.du();
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
 
             if (k > 0)
                 fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
 
-            if (k < grid.cellNumber - 1)
+            if (k < grid.nCells() - 1)
                 fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
 
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * sqrt(grid.getCell(k));
         }
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k) +
                                                            ionTemporalGrowth.coeff(k, k) - (A[k] + B[k]));
@@ -1076,7 +1076,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
             if (k > 0)
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + A[k - 1]);
 
-            if (k < grid.cellNumber - 1)
+            if (k < grid.nCells() - 1)
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + B[k + 1]);
         }
 
@@ -1161,47 +1161,47 @@ void ElectronKinetics::solveEEColl()
     // This allows us to skip the usage of 'matrixAux', saving a good amount of
     // memory for bigger matrices.
 
-    Vector baseDiag(grid.cellNumber), baseSubDiag(grid.cellNumber), baseSupDiag(grid.cellNumber);
+    Vector baseDiag(grid.nCells()), baseSubDiag(grid.nCells()), baseSupDiag(grid.nCells());
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         baseDiag[k] = boltzmannMatrix(k, k);
 
         if (k > 0)
             baseSubDiag[k] = boltzmannMatrix(k, k - 1);
 
-        if (k < grid.cellNumber - 1)
+        if (k < grid.nCells() - 1)
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    BAee.setZero(grid.cellNumber, grid.cellNumber);
+    BAee.setZero(grid.nCells(), grid.nCells());
 
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt()),
-                 energyArray = -(grid.step / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
+                 energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
 
-    for (uint32_t j = 0; j < grid.cellNumber - 1; ++j)
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
     {
 
-        for (uint32_t i = 1; i <= j; ++i)
+        for (Grid::Index i = 1; i <= j; ++i)
             BAee(i, j) = energyArray[i];
 
         const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
 
-        for (uint32_t i = j + 1; i < grid.cellNumber; ++i)
+        for (Grid::Index i = j + 1; i < grid.nCells(); ++i)
             BAee(i, j) = value;
     }
 
     // detailed balance condition
 
-    for (uint32_t j = 0; j < grid.cellNumber - 1; ++j)
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
     {
-        for (uint32_t i = 1; i < grid.cellNumber; ++i)
+        for (Grid::Index i = 1; i < grid.nCells(); ++i)
         {
             BAee(i, j) = sqrt(BAee(i, j) * BAee(j + 1, i - 1));
         }
     }
 
-    double meanEnergy = grid.step * cellsThreeOverTwo.dot(eedf), Te = 2. / 3. * meanEnergy,
+    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf), Te = 2. / 3. * meanEnergy,
            logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne)),
            alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
 
@@ -1211,23 +1211,23 @@ void ElectronKinetics::solveEEColl()
     bool hasConverged = false;
     uint32_t iter = 0;
 
-    //        Vector MeeDiag(grid.cellNumber), MeeSub(grid.cellNumber), MeeSup(grid.cellNumber);
+    //        Vector MeeDiag(grid.nCells()), MeeSub(grid.nCells()), MeeSup(grid.nCells());
 
     // In this implementation we completely skip the Mee matrix, saving both memory and time.
 
     while (!hasConverged)
     {
-        A = (alpha / grid.step) * (BAee.transpose() * eedf);
-        B = (alpha / grid.step) * (BAee * eedf);
+        A = (alpha / grid.du()) * (BAee.transpose() * eedf);
+        B = (alpha / grid.du()) * (BAee * eedf);
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] - 1.e20 * (A[k] + B[k]);
 
             if (k > 0)
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * A[k - 1];
 
-            if (k < grid.cellNumber - 1)
+            if (k < grid.nCells() - 1)
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * B[k + 1];
         }
 
@@ -1265,14 +1265,14 @@ void ElectronKinetics::solveEEColl()
 
             eedf = eedfNew - (ratioNew / (ratioNew - ratioOld)) * (eedfNew - eedfOld);
 
-            for (uint32_t i = 0; i < grid.cellNumber; ++i)
+            for (Grid::Index i = 0; i < grid.nCells(); ++i)
             {
                 if (eedf[i] < 0)
                     eedf[i] = abs(eedf[i]);
             }
         }
 
-        meanEnergy = grid.step * cellsThreeOverTwo.dot(eedf);
+        meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
         Te = 2. / 3. * meanEnergy;
         logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
         alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
@@ -1289,14 +1289,14 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
 {
     const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass),
                  kTg = Constant::kBeV * workingConditions->gasTemperature,
-                 auxHigh = kTg + grid.step * .5, // aux1
-        auxLow = kTg - grid.step * .5;           // aux2
+                 auxHigh = kTg + grid.du() * .5, // aux1
+        auxLow = kTg - grid.du() * .5;           // aux2
 
     power = Power();
 
     double elasticNet = 0., elasticGain = 0.;
 
-    for (uint32_t k = 0; k < grid.cellNumber; ++k)
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxHigh);
         elasticGain += eedf[k] * (g_c[k + 1] - g_c[k]);
@@ -1310,7 +1310,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     {
         double carNet = 0., carGain = 0.;
 
-        for (uint32_t k = 0; k < grid.cellNumber - 1; ++k)
+        for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
         {
             carNet += eedf[k] * (g_CAR[k + 1] * auxLow - g_CAR[k] * auxHigh);
             carGain += eedf[k] * (g_CAR[k + 1] - g_CAR[k]);
@@ -1327,21 +1327,21 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
         {
             double field = 0., growthModel = 0.;
 
-            for (uint32_t k = 0; k < grid.cellNumber; ++k)
+            for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
                 field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
                 growthModel += eedf[k] * grid.getCell(k) * sqrt(grid.getCell(k));
             }
 
             power.field = factor * field;
-            power.eDensGrowth = -CIEff * grid.step * growthModel;
+            power.eDensGrowth = -CIEff * grid.du() * growthModel;
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
             double field = 0., correction = 0., powerDiffusion = 0., powerMobility = 0.;
-            Vector cellCrossSection(grid.cellNumber);
+            Vector cellCrossSection(grid.nCells());
 
-            for (uint32_t k = 0; k < grid.cellNumber; ++k)
+            for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
                 field += eedf[k] * (g_E[k + 1] - g_E[k]);
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
@@ -1350,19 +1350,19 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
                 cellCrossSection[k] = .5 * (mixture.totalCrossSection[k] + mixture.totalCrossSection[k + 1]);
                 powerDiffusion += grid.getCell(k) * grid.getCell(k) * eedf[k] / cellCrossSection[k];
 
-                if (k > 0 && k < grid.cellNumber - 1)
+                if (k > 0 && k < grid.nCells() - 1)
                 {
                     powerMobility +=
                         grid.getCell(k) * grid.getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
                 }
             }
 
-            power.field = factor * (field + grid.step * correction);
-            power.eDensGrowth = alphaRedEff * alphaRedEff * factor * grid.step / 3. * powerDiffusion +
+            power.field = factor * (field + grid.du() * correction);
+            power.eDensGrowth = alphaRedEff * alphaRedEff * factor * grid.du() / 3. * powerDiffusion +
                                 factor * alphaRedEff * (workingConditions->reducedFieldSI / 6.) *
                                     (grid.getCell(0) * grid.getCell(0) * eedf[1] / cellCrossSection[0] -
-                                     grid.getCell(grid.cellNumber - 1) * grid.getCell(grid.cellNumber - 1) *
-                                         eedf[grid.cellNumber - 2] / cellCrossSection[grid.cellNumber - 1] +
+                                     grid.getCell(grid.nCells() - 1) * grid.getCell(grid.nCells() - 1) *
+                                         eedf[grid.nCells() - 2] / cellCrossSection[grid.nCells() - 1] +
                                      powerMobility);
         }
     }
@@ -1370,7 +1370,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     {
         double field = 0;
 
-        for (uint32_t k = 0; k < grid.cellNumber; ++k)
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             field += eedf[k] * (g_E[k + 1] - g_E[k]);
         }
@@ -1380,7 +1380,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
 
     if (includeEECollisions)
     {
-        power.electronElectron = (-factor * grid.step * grid.step) * (A - B).dot(eedf);
+        power.electronElectron = (-factor * grid.du() * grid.du()) * (A - B).dot(eedf);
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
@@ -1422,7 +1422,7 @@ void ElectronKinetics::evaluateSwarmParameters()
 {
     const double me = Constant::electronMass, e = Constant::electronCharge;
 
-    const uint32_t n = grid.cellNumber;
+    const Grid::Index n = grid.nCells();
 
     const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
 
@@ -1431,11 +1431,11 @@ void ElectronKinetics::evaluateSwarmParameters()
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
 
-        tCS.tail(grid.cellNumber).array() +=
+        tCS.tail(grid.nCells()).array() +=
             CIEff * std::sqrt(me / (2 * e)) / grid.getNodes().tail(n).cwiseSqrt().array();
     }
 
-    swarmParameters.redDiffCoeff = 2. / 3. * std::sqrt(2. * e / me) * grid.step *
+    swarmParameters.redDiffCoeff = 2. / 3. * std::sqrt(2. * e / me) * grid.du() *
                                    grid.getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
 
     swarmParameters.redMobCoeff = -std::sqrt(2. * e / me) / 3. *
@@ -1473,7 +1473,7 @@ void ElectronKinetics::evaluateSwarmParameters()
     swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
     swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
-    swarmParameters.meanEnergy = grid.step * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
+    swarmParameters.meanEnergy = grid.du() * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
 
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
@@ -1485,17 +1485,17 @@ void ElectronKinetics::evaluateSwarmParameters()
 
 void ElectronKinetics::evaluateFirstAnisotropy()
 {
-    firstAnisotropy.setZero(grid.cellNumber);
+    firstAnisotropy.setZero(grid.nCells());
 
     const double e = Constant::electronCharge, me = Constant::electronMass, EoN = workingConditions->reducedFieldSI,
                  WoN = workingConditions->reducedExcFreqSI;
 
-    const uint32_t n = grid.cellNumber;
+    const Grid::Index n = grid.nCells();
 
-    firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid.step;
-    firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid.step;
+    firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid.du();
+    firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid.du();
 
-    firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid.step);
+    firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid.du());
 
     Vector cellCrossSection = (mixture.totalCrossSection.segment(0, n) + mixture.totalCrossSection.segment(1, n)) / 2.;
 
@@ -1536,11 +1536,11 @@ void ElectronKinetics::evaluateFirstAnisotropy()
 } // namespace loki
 
 // Code to print a matrix
-//            for (uint32_t i = 0; i < grid.cellNumber; ++i) {
-//                for (uint32_t j = 0; j < grid.cellNumber; ++j) {
+//            for (Grid::Index i = 0; i < grid.nCells(); ++i) {
+//                for (Grid::Index j = 0; j < grid.nCells(); ++j) {
 //                    printf("%.16e", matrix(i, j));
 //
-//                    if (j < grid.cellNumber - 1) {
+//                    if (j < grid.nCells() - 1) {
 //                        printf("\t");
 //                    }
 //                }

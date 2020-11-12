@@ -83,9 +83,9 @@ class Grid
 
     // accessors:
 
-    double uMax() const { return m_nodes[cellNumber]; }
-    Index nCells() const { return cellNumber; }
-    double du() const { return step; }
+    double uMax() const { return m_nodes[nCells()]; }
+    Index nCells() const { return m_nCells; }
+    double du() const { return m_du; }
     const Vector &getNodes() const { return m_nodes; }
     const Vector &getCells() const { return m_cells; }
     double getNode(Index index) const { return m_nodes[index]; }
@@ -113,21 +113,17 @@ class Grid
         SmartGridParameters(const json_type& cnf);
         /// \todo We don't we use a more straighforward type here, like unsigned?
         const uint16_t minEedfDecay;
-        const uint16_t minEedfDecay;
+        const uint16_t maxEedfDecay;
         const double updateFactor;
         /// \todo Obsolete. when !isSmart, we will simply not create the smartGrid ptr.
         const bool isSmart;
     };
     const SmartGridParameters* smartGrid() const { return m_smartGrid.get(); }
 
-    // deprecated members:
-
-    // deprecated: use nCells() instead outside of this class
-    Index cellNumber;
-    // deprecated: use du() instead outside of this class
-    double step;
-
 private:
+    const Index m_nCells;
+    // the energy spacing
+    double m_du;
     /// energies at the nodes (cell boundaries)
     Vector m_nodes;
     /// energies at the cell centers

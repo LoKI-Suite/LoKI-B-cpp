@@ -44,14 +44,14 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
     // loki::Vector *nodeCrossSection =
     // gases[0]->collisions[(uint8_t)loki::Enumeration::CollisionType::excitation][0]->crossSection;
 
-    // loki::Vector cellCrossSection(grid.cellNumber);
+    // loki::Vector cellCrossSection(grid.nCells());
 
-    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    // for (uint32_t i = 0; i < grid.nCells(); ++i)
     //     cellCrossSection[i] = 0.5 * ((*nodeCrossSection)[i] + (*nodeCrossSection)[i + 1]);
 
     // writeGnuplot("Cell Cross Section", "Energy (eV)", "Cross Section (m^{-2})", grid.getCells(), cellCrossSection);
 
-    // for (uint32_t i = 0; i < grid.cellNumber; ++i)
+    // for (uint32_t i = 0; i < grid.nCells(); ++i)
     // {
     //     if (cellCrossSection[i] != 0.)
     //         std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
