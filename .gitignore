@@ -17,3 +17,12 @@ compile_commands.json
 # profiler
 
 profiler/
+
+# autotools
+Makefile.in
+aclocal.m4
+autodir/
+autom4te.cache/
+config.h.in
+config.h.in~
+configure
