@@ -223,13 +223,14 @@ void ElectronKinetics::solve()
         this->invertLinearMatrix();
     }
 
-    if (grid.isSmart)
+    if (grid.smartGrid())
     {
+        const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
         double decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
 
-        while (decades < grid.minEedfDecay)
+        while (decades < smartGrid.minEedfDecay)
         {
-            grid.updateMaxEnergy(grid.lastNode() * (1 + grid.updateFactor));
+            grid.updateMaxEnergy(grid.uMax() * (1 + smartGrid.updateFactor));
 
             if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
             {
@@ -243,9 +244,9 @@ void ElectronKinetics::solve()
             decades = log10(eedf[0]) - log10(eedf[grid.cellNumber - 1]);
         }
 
-        while (decades > grid.maxEedfDecay)
+        while (decades > smartGrid.maxEedfDecay)
         {
-            grid.updateMaxEnergy(grid.lastNode() / (1 + grid.updateFactor));
+            grid.updateMaxEnergy(grid.uMax() / (1 + smartGrid.updateFactor));
 
             if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
             {
