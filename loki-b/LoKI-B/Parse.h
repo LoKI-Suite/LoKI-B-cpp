@@ -266,38 +266,6 @@ struct Parse
         return true;
     }
 
-    /* -- rawCrossSectionFromStream --
-     * Accepts a reference to an input file stream of an LXCat file. This stream should be
-     * at a position just after reading a collision description from the LXCat file, since
-     * this function searches for the line containing solely dashes, indicating that a
-     * cross section follows. The raw cross section is then stored as a vector of pairs of
-     * doubles, which the user passes by reference.
-     */
-
-    static void rawCrossSectionFromStream(std::vector<double> &rawEnergyData, std::vector<double> &rawCrossSection,
-                                          std::istream &in)
-    {
-        std::string line;
-
-        while (std::getline(in, line))
-        {
-            if (line.substr(0, 2) == "--")
-                break;
-        }
-
-        double energy = 0., value = 0.;
-
-        while (std::getline(in, line))
-        {
-            std::stringstream ss(line);
-            if (!((ss >> energy) && (ss >> value)))
-                break;
-
-            rawEnergyData.emplace_back(energy);
-            rawCrossSection.emplace_back(value);
-        }
-    }
-
     /* -- stringBufferFromFile --
      * Loads the complete content of a specified file into the given std::string.
      */
