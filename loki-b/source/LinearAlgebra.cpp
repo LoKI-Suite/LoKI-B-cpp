@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
+#include <vector>
 
 namespace loki {
 namespace LinAlg {
@@ -14,15 +14,19 @@ namespace LinAlg {
     {
         const double root = std::sqrt(a * a + b * b);
 
-        c = a / root;
+        c =  a / root;
         s = -b / root;
     }
 
-    double *hessenberg(const double *A, double *b, uint32_t n)
+    double *hessenberg(const double *A, double *b, uint32_t n, HessenbergWorkspace& hws)
     {
-        auto *c = new double[n];
-        auto *s = new double[n];
-        auto *v = new double[n];
+        if (hws.size()<n)
+        {
+            Log<Message>::Error("hessenberg: workspace is too small.");
+        }
+        auto *c = hws.c.data();
+        auto *s = hws.s.data();
+        auto *v = hws.v.data();
         double *x = b;
 
         // Matrix A is column major
@@ -55,11 +59,12 @@ namespace LinAlg {
 
         x[n - 1] = t1;
 
-        delete[] c;
-        delete[] s;
-        delete[] v;
-
         return x;
+    }
+    double *hessenberg(const double *A, double *b, uint32_t n)
+    {
+        HessenbergWorkspace hws(n);
+        return hessenberg(A,b,n,hws);
     }
 
     inline bool isUpperHessenberg(const double *A, const uint32_t n)
@@ -70,7 +75,7 @@ namespace LinAlg {
             {
                 if (A[k * n + l] != 0.)
                 {
-                    std::cerr << l << ", " << k << std::endl;
+                    //std::cerr << l << ", " << k << std::endl;
                     return false;
                 }
             }
@@ -85,6 +90,7 @@ namespace LinAlg {
         if (A[start * n + first] == 0)
             Log<Message>::Error("Could not solve using Hessenberg, please use the LU decomposition.");
 
+        /// \todo Should this result in an exception? Now this is ignored.
         if (second == first)
             std::cerr << "cannot perform reduction on the same row" << std::endl;
 
@@ -141,7 +147,8 @@ namespace LinAlg {
     {
         // Array storing the gaps between two subsequent bands in band array (c),
         // such that g[i] stores c[i+1] - c[i].
-        auto *g = new uint32_t[cn - 1];
+        std::vector<uint32_t> gv(cn-1);
+        auto *g = gv.data();
 
         for (uint32_t k = 0; k < cn - 1; ++k)
         {
@@ -221,8 +228,6 @@ namespace LinAlg {
         {
             reduceRowToHess(A, i - lastRow + 1, i, i - lastRow, n);
         }
-
-        delete[] g;
     }
 
     inline void hessenbergReduction(double *A, const uint32_t *c, uint32_t n, uint32_t cn)
@@ -312,11 +317,15 @@ namespace LinAlg {
         }
     }
 
-    inline double *hessenberg(double *A, double *b, const uint32_t *p, uint32_t n)
+    inline double *hessenberg(double *A, double *b, const uint32_t *p, uint32_t n, HessenbergWorkspace& hws)
     {
-        auto *c = new double[n];
-        auto *s = new double[n];
-        auto *v = new double[n];
+        if (hws.size()<n)
+        {
+            Log<Message>::Error("hessenberg: workspace is too small.");
+        }
+        auto *c = hws.c.data();
+        auto *s = hws.s.data();
+        auto *v = hws.v.data();
         double *x = b;
 
         std::memcpy(v, A + (n - 1) * n, n * sizeof(double));
@@ -350,11 +359,13 @@ namespace LinAlg {
 
         x[n - 1] = t1;
 
-        delete[] c;
-        delete[] s;
-        delete[] v;
-
         return x;
+    }
+
+    inline double *hessenberg(double *A, double *b, const uint32_t *p, uint32_t n)
+    {
+        HessenbergWorkspace hws(n);
+        return hessenberg(A,b,p,n,hws);
     }
 
 /** \todo [FUTURE]: Implement an optimized version of the LU decomposition algorithm (taking into account

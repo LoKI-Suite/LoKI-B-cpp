@@ -30,7 +30,26 @@ using SparseMatrix = Eigen::SparseMatrix<double>;
 namespace loki {
 namespace LinAlg {
 
+struct HessenbergWorkspace
+{
+    HessenbergWorkspace(Vector::Index n)
+     : c(n), s(n), v(n)
+    {
+    }
+    Vector::Index size() const { return c.size(); }
+    void resize(Vector::Index n)
+    {
+        c.resize(n);
+        s.resize(n);
+        v.resize(n);
+    }
+    Vector c;
+    Vector s;
+    Vector v;
+};
+
 double *hessenberg(const double *A, double *b, uint32_t n);
+double *hessenberg(const double *A, double *b, uint32_t n, HessenbergWorkspace& hws);
 
 } // namespace LinAlg
 } // namespace loki
