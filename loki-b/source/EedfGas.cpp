@@ -5,6 +5,7 @@
 #include "LoKI-B/EedfGas.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfCollision.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {
