@@ -92,6 +92,7 @@ set(cpp ${src}/WorkingConditions.cpp
         ${src}/CrossSection.cpp
         ${src}/EedfGasMixture.cpp
         ${src}/EedfCollision.cpp
+        ${src}/LinearAlgebra.cpp
         ${src}/Power.cpp
         ${src}/Output.cpp
         ${src}/StateEntry.cpp
