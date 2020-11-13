@@ -32,7 +32,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       fieldMatrixTempGrowth(grid.nCells(), grid.nCells()), ionTemporalGrowth(grid.nCells(), grid.nCells()),
       g_c(grid.nCells()), eedf(grid.nCells())
 {
-    grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
+    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
@@ -130,7 +130,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
       fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()), fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
       ionTemporalGrowth(grid.nCells(), grid.nCells()), g_c(grid.nCells()), eedf(grid.nCells())
 {
-    grid.updatedMaxEnergy2.addListener(&ElectronKinetics::evaluateMatrix, this);
+    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
 
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 

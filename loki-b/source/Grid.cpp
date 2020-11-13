@@ -72,8 +72,7 @@ void Grid::updateMaxEnergy(double uMax)
     m_nodes = Vector::LinSpaced(nCells() + 1, 0, uMax);
     m_cells = Vector::LinSpaced(nCells(), .5, nCells() - .5) * m_du;
 
-    updatedMaxEnergy1.emit();
-    updatedMaxEnergy2.emit();
+    updatedMaxEnergy.emit();
 }
 
 } // namespace loki

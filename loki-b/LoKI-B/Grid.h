@@ -71,11 +71,9 @@ namespace loki
  *
  *  When the grid is changed during the simulation, various actions may
  *  need to be undertaken. This can be achieved by registering listeners to
- *  the events updatedMaxEnergy1 or updatedMaxEnergy2. Those functions
- *  will be invoked at the end of a call to updateMaxEnergy().
+ *  the event object updatedMaxEnergy. Those functions will be invoked at
+ *  the end of a call to updateMaxEnergy().
  *
- *  \todo Why do we need to event objects (updatedMaxEnergy1 and updatedMaxEnergy2).
- *        Doesn't one suffice?
  *  \todo investigate the usage of the word node for a
  *        cell boundary, that sounds odd.
  *
@@ -117,14 +115,13 @@ public:
 
     /** Reconfigure the grid, using \a uMax as the new maximum energy.
      *  This function recalculates the energy values in the nodes and cells,
-     *  then fires the events updatedMaxEnergy1 and updatedMaxEnergy2,
-     *  in that order.
+     *  then fires the event updatedMaxEnergy.
      */
     void updateMaxEnergy(double uMax);
 
     /** Events
      */
-    Event<> updatedMaxEnergy1, updatedMaxEnergy2;
+    Event<> updatedMaxEnergy;
 
     /** Smart grid parameters.
      */
