@@ -872,13 +872,14 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     ionSpatialGrowthD.setZero();
     ionSpatialGrowthU.setZero();
 
-    Vector tempVector = grid.getCells().array() / (3. * cellTotalCrossSection).array();
+    const Vector tempVector = grid.getCells().array() / (3. * cellTotalCrossSection).array();
+    /// \todo What is the meaning of D0? Do we really need this copy of tempVector?
+    const Vector D0 = tempVector;
 
-    Vector D0 = tempVector, U0sup(grid.nCells()), U0inf(grid.nCells());
-
+    Vector U0sup(grid.nCells());
+    Vector U0inf(grid.nCells());
     U0sup[0] = 0.;
     U0inf[grid.nCells() - 1] = 0.;
-
     for (Grid::Index j = 0; j < grid.nCells(); ++j)
     {
         if (j != 0)
@@ -887,8 +888,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
         if (j != grid.nCells() - 1)
             U0inf[j] = -EoN / (2. * grid.du()) * tempVector[j + 1];
     }
-
-    Vector U0 = U0sup + U0inf;
+    const Vector U0 = U0sup + U0inf;
 
     double ND = sqrt(2 * e / m) * grid.du() * D0.dot(eedf), muE = -sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
 
