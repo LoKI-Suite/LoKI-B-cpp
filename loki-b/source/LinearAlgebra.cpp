@@ -41,7 +41,7 @@ namespace LinAlg {
 
 inline void givens(double a, double b, double &c, double &s)
 {
-    const double root = std::sqrt(a * a + b * b);
+    const double root = std::hypot(a,b);
 
     c =  a / root;
     s = -b / root;
