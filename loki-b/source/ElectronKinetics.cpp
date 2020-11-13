@@ -312,10 +312,11 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
         eedf[0] = 1.;
 
         matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
-        /** We can also just make f(0)=0 by implementing the above and:
+        /** We can also just make eedf[0]=1 by implementing the above and:
          *  matrix.row(0).setZero(); matrix(0,0)=1.0;
          *  The advantage is that the first row only has the diagonal,
          *  over-all the matrix has a better sparsity pattern.
+         *  Then we can do the normalization afterwards.
          */
 
         LinAlg::hessenberg(matrix.data(), eedf.data(), grid.nCells());
