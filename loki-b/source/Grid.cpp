@@ -10,19 +10,29 @@ namespace loki
 
 Grid::SmartGridParameters::SmartGridParameters(const SmartGridSetup& smartGrid)
     : minEedfDecay(smartGrid.minEedfDecay),
-      maxEedfDecay(smartGrid.maxEedfDecay), updateFactor(smartGrid.updateFactor),
-      isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
+      maxEedfDecay(smartGrid.maxEedfDecay), updateFactor(smartGrid.updateFactor)
 {
-    /// \todo Check parameters and throw in case of an error
+    checkConfiguration();
 }
 
 Grid::SmartGridParameters::SmartGridParameters(const json_type& cnf)
     : minEedfDecay(cnf.at("minEedfDecay").get<unsigned>()),
       maxEedfDecay(cnf.at("maxEedfDecay").get<unsigned>()),
-      updateFactor(cnf.at("updateFactor").get<double>()),
-      isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
+      updateFactor(cnf.at("updateFactor").get<double>())
 {
-    /// \todo Check parameters and throw in case of an error
+    checkConfiguration();
+}
+
+void Grid::SmartGridParameters::checkConfiguration() const
+{
+    if (updateFactor<=0)
+    {
+        Log<Message>::Error("Smart grid: update factor must be positive.");
+    }
+    if (minEedfDecay > maxEedfDecay)
+    {
+        Log<Message>::Error("Smart grid: minEedfDecay exceeds maxEedfDecay.");
+    }
 }
 
 Grid::Grid(const EnergyGridSetup &gridSetup)
@@ -31,22 +41,20 @@ Grid::Grid(const EnergyGridSetup &gridSetup)
       m_nodes(Vector::LinSpaced(m_nCells + 1, 0, gridSetup.maxEnergy)),
       m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
 {
-    /// \todo Set up m_smartGrid only if a smartGrid section has been specified
-    m_smartGrid.reset(new SmartGridParameters(gridSetup.smartGrid));
-    /** \todo Avoid creation of the structure in the first place
-     *        Require valid parameters when any are specified.
+    const SmartGridSetup& sg = gridSetup.smartGrid;
+    /* Try to set up the smartGrid only if any of the configuration
+     * parameters does not have the default value (see Setup.h).
+     * We use that to test that a configuration has been read from file.
      */
-    if (!m_smartGrid->isSmart)
+    if (sg.minEedfDecay!=0 || sg.maxEedfDecay!=0 || sg.updateFactor !=0.0)
     {
-        m_smartGrid.reset(nullptr);
+        m_smartGrid.reset(new SmartGridParameters(gridSetup.smartGrid));
     }
     Log<Message>::Notify("Created the energy grid.");
 }
 
-/// \todo Use get<T>() everywhere, do not rely on implicit conversion
-/// \todo See if the elements for smartGrid support can be bundled in some way
 Grid::Grid(const json_type &cnf)
-    : m_nCells(cnf.at("cellNumber")),
+    : m_nCells(cnf.at("cellNumber").get<unsigned>()),
       m_du(cnf.at("maxEnergy").get<double>()/m_nCells),
       m_nodes(Vector::LinSpaced(m_nCells + 1, 0, cnf.at("maxEnergy"))),
       m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
@@ -54,13 +62,6 @@ Grid::Grid(const json_type &cnf)
     if (cnf.contains("smartGrid"))
     {
         m_smartGrid.reset(new SmartGridParameters(cnf.at("smartGrid")));
-    }
-    /** \todo Avoid creation of the structure in the first place
-     *        Require valid parameters when any are specified.
-     */
-    if (m_smartGrid.get() && !m_smartGrid->isSmart)
-    {
-        m_smartGrid.reset(nullptr);
     }
     Log<Message>::Notify("Created the energy grid.");
 }

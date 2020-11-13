@@ -39,42 +39,66 @@
 namespace loki
 {
 
-/** The (energy) Grid spans an energy interval [0,u_max].
- *  This region is divided into Nc cells of size du, where
- *  du = u_max/Nc. The positions (energies) u_i of cell i
- *  is the central energy of cell i and is given by
- *  (i+0.5)*du, where i is in the interval [0,Nc-1].
- *  The cells are bounded by Nc+1 nodes at locations
- *  u_i^node = i*du, where i is in the interval [0,Nc];
+/** The (energy) Grid spans an energy interval [0,u_max]. This region is
+ *  divided into Nc cells of size du, where du = u_max/Nc. The positions
+ *  (energies) u_i of cell i is the central energy of cell i and is given by
+ *  (i+0.5)*du, where i is in the interval [0,Nc-1]. The cells are bounded by
+ *  Nc+1 nodes at locations u_i^node = i*du, where i is in the interval [0,Nc].
  *
- *  Below: | indicates a node, x a cell. The index values
- *  of the first and last nodes and cells are also indicated.
+ *  The grid can be viewed schematically as
+ *  \verbatim
+        | x | x | ... | x | \endverbatim
  *
- *  node index: 0                 Nc+1
- *              v                 v
- *              | x | x | ... | x |
- *                ^             ^
- *  cell index:   0             Nc
+ *  where the | indicate nodes and the x cells.
  *
+ *  The Grid class stores the energies in the nodes and cells in vectors.
+ *  Constant references to these vectors can be retrieved with the members
+ *  getNodes() and getCells(), respectively. In addition, members getNode
+ *  and getCell allow the retrievel of the energy of a particlar node or
+ *  cell for a given index. Members nCells() and uMax() return the number
+ *  of cells and the energy of the last node.
+ *
+ *  Whereas the number of cells is fixed at construction time, the upper
+ *  energy boundary can be modified later on, by passing a new value to
+ *  a call to the member function updateMaxEnergy. This functionality
+ *  is used to implement the 'smart grid' functionality, in which the
+ *  grid is adjusted to achieve a minimal or maximal dynamic range of the
+ *  EEDF. The smart grid functionality is configured at construction time
+ *  when a smartGrid section is present in the grid configuration. Access
+ *  to the smart grid configuration is provided by the member function
+ *  smartGrid(), which returns a pointer to the SmartGridParameters, or
+ *  nullptr if no smart grid has been configured.
+ *
+ *  When the grid is changed during the simulation, various actions may
+ *  need to be undertaken. This can be achieved by registering listeners to
+ *  the events updatedMaxEnergy1 or updatedMaxEnergy2. Those functions
+ *  will be invoked at the end of a call to updateMaxEnergy().
+ *
+ *  \todo Why do we need to event objects (updatedMaxEnergy1 and updatedMaxEnergy2).
+ *        Doesn't one suffice?
  *  \todo investigate the usage of the word node for a
  *        cell boundary, that sounds odd.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   2. May 2019
  */
 class Grid
 {
-  public:
+public:
 
+    /// The type of the vectors that hold the energy values
     using Vector = loki::Vector;
-    /** \todo IMHO, Index should be defined as Vector::Index for
-     *        reasons of consistency; this also requires
-     *        changes in other places where uint32_t is used
-     *        at present.
-     */
-    using Index = uint32_t;
-    //using Index = Vector::Index;
+    /// The type of the index of elements of the energy vectors
+    using Index = Vector::Index;
 
     // constructorion and destruction:
 
     explicit Grid(const EnergyGridSetup &gridSetup);
+    /** Construct a Grid from the parameters "maxEnergy" (double)
+     *  and "cellNumber" (unsigned) in the json object \a cnf.
+     *  When an element "smartGrid" is present, a SmartGridParameters
+     *  object will be created, see smartGrid().
+     */
     explicit Grid(const json_type &cnf);
     /// The default constructor is used for Grid objects
     ~Grid() = default;
@@ -91,7 +115,7 @@ class Grid
     double getNode(Index index) const { return m_nodes[index]; }
     double getCell(Index index) const { return m_cells[index]; }
 
-    /** Reconfigure the grid, using \a uMax is the new maximum energy.
+    /** Reconfigure the grid, using \a uMax as the new maximum energy.
      *  This function recalculates the energy values in the nodes and cells,
      *  then fires the events updatedMaxEnergy1 and updatedMaxEnergy2,
      *  in that order.
@@ -99,8 +123,6 @@ class Grid
     void updateMaxEnergy(double uMax);
 
     /** Events
-     *  \todo Why do we need two? Is it possible to let the names of the
-     *        objects reflect the reason (if we really need two).
      */
     Event<> updatedMaxEnergy1, updatedMaxEnergy2;
 
@@ -116,9 +138,7 @@ class Grid
         const uint16_t maxEedfDecay;
         const double updateFactor;
     private:
-        friend class Grid;
-        /// \todo Obsolete. when !isSmart, we should simply not create the smartGrid ptr.
-        const bool isSmart;
+        void checkConfiguration() const;
     };
     const SmartGridParameters* smartGrid() const { return m_smartGrid.get(); }
 
