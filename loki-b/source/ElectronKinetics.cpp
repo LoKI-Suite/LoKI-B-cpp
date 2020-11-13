@@ -304,10 +304,6 @@ void ElectronKinetics::invertLinearMatrix()
 
 void ElectronKinetics::invertMatrix(Matrix &matrix)
 {
-    // Induce normalization condition
-    //        matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
-    //        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMatrix = matrix;
-
     auto begin = std::chrono::high_resolution_clock::now();
 
     if (!hasSuperelastics)
@@ -316,11 +312,19 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
         eedf[0] = 1.;
 
         matrix.row(0) = grid.getCells().cwiseSqrt() * grid.du();
+        /** We can also just make f(0)=0 by implementing the above and:
+         *  matrix.row(0).setZero(); matrix(0,0)=1.0;
+         *  The advantage is that the first row only has the diagonal,
+         *  over-all the matrix has a better sparsity pattern.
+         */
 
         LinAlg::hessenberg(matrix.data(), eedf.data(), grid.nCells());
     }
     else
     {
+        /** \todo Explain the idea that is outlined below. Is it correct that p is not used
+         *        after the call to LinAlg::hessenbergReductionPartialPiv? Is this icomplete?
+         */
         // TODO: Find a way to distinguish when to use LU and when to use Hessenberg reduction.
 
         // HESSENBERG WITH PARTIAL PIVOTING
@@ -330,8 +334,7 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
         //                p[i] = i;
         //
         //            LinAlg::hessenbergReductionPartialPiv(matrix.data(), &superElasticThresholds[0], p,
-        //            grid.nCells(),
-        //                                                  superElasticThresholds.size());
+        //              grid.nCells(), superElasticThresholds.size());
         //
         //            eedf.setZero();
         //            eedf[0] = 1.;
@@ -350,10 +353,6 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
         eedf = matrix.partialPivLu().solve(b);
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << "Inverted matrix elapsed time = "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
-
     /** \todo It seems that the normaization is superfluous, since the normalization condition
      *        is already part of the system (first row of A, first element of b). One could
      *        decide to change the first equation into eedf[0] = 1 and do the normalization
@@ -362,6 +361,11 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
      */
     // std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.du()) << std::endl;
     eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.du());
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cerr << "Inverted matrix elapsed time = "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+
 }
 
 void ElectronKinetics::evaluateMatrix()
