@@ -60,7 +60,12 @@
 		"numerics": {
 			"energyGrid": {
 				"maxEnergy": 20,
-				"cellNumber": 1000
+				"cellNumber": 1000,
+				"smartGrid": {
+					"minEedfDecay": 10,
+					"maxEedfDecay": 25,
+					"updateFactor": 0.05
+				}
 			},
 			"maxPowerBalanceRelError": 1e-9,
 			"nonLinearRoutines": {
