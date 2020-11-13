@@ -16,37 +16,29 @@
 #include "LoKI-B/StandardPaths.h"
 #include "LoKI-B/json.h"
 
-namespace loki
-{
-struct Parse
-{
-    /*
-     * The setField function extracts a value from a field in the input file,
-     * casts it to the appropriate type and assigns it to the 'value' argument
-     * which is passed by reference. It returns a boolean to give an indication
-     * whether the operation was successful.
-     *
-     * Note that this is a template function, and the type of 'value' is arbitrary,
-     * a standard string can be converted to most basic types using a stringstream.
-     * However, for some basic types (e.g. bool) and custom types, such as enums,
-     * we can specialize this function to alter its behaviour.
-     *
-     * The definitions of these specializations can be found below the Parse struct.
-     */
+namespace loki {
+namespace Parse {
 
-    template <typename T>
-    static bool setField(const std::string &sectionContent, const std::string &fieldName, T &value)
+    inline bool isNumerical(const std::string &str)
     {
+        static const std::regex reNum(R"(\s*\d*\.?\d+\s*)");
 
-        std::string valueBuffer;
+        return std::regex_match(str, reNum);
+    }
 
-        if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-            return false;
+    /** Parse \a valueString into double \a value. The boolean return
+     *  value returns tru if the conversion was successful, false otherwise.
+     */
+    inline bool getValue(const std::string &valueString, double &value)
+    {
+        //            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
+        //            std::smatch m;
+        //
+        //            if (!std::regex_match(valueString, r)) return false;
 
-        std::stringstream s(valueBuffer);
-        s >> value;
+        std::stringstream ss(valueString);
 
-        return true;
+        return static_cast<bool>(ss >> value);
     }
 
     /*
@@ -62,7 +54,7 @@ struct Parse
      * "isOn" when "sectionContent" contains the contents of the "electronKinetics"
      * section.
      */
-    static bool getFieldValue(const std::string &sectionContent, const std::string &fieldName, std::string &valueBuffer)
+    inline bool getFieldValue(const std::string &sectionContent, const std::string &fieldName, std::string &valueBuffer)
     {
         const std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
         std::smatch m;
@@ -87,7 +79,7 @@ struct Parse
      * the function returns a boolean to specify whether the operation was
      * successful.
      */
-    static bool getList(const std::string &sectionContent, const std::string &fieldName,
+    inline bool getList(const std::string &sectionContent, const std::string &fieldName,
                         std::vector<std::string> &container)
     {
 
@@ -104,11 +96,11 @@ struct Parse
     }
 
     /*
-     * getSection is a static function that retrieves the contents of a specified section
+     * getSection is a function that retrieves the contents of a specified section
      * and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
      * to indicate whether the operation was successful.
      */
-    static bool getSection(const std::string &fileContent, const std::string &sectionTitle, std::string &sectionBuffer)
+    inline bool getSection(const std::string &fileContent, const std::string &sectionTitle, std::string &sectionBuffer)
     {
 
         // This regular expression finds the level of a specific section. In other
@@ -143,10 +135,10 @@ struct Parse
     }
 
     /*
-     * removeComments is a static function that takes a string as an argument. It strips the
+     * removeComments is a function that takes a string as an argument. It strips the
      * string from comments and returns it.
      */
-    static std::string removeComments(const std::string &content)
+    inline std::string removeComments(const std::string &content)
     {
         std::string content_clean;
 
@@ -163,7 +155,7 @@ struct Parse
      * returned as a StatePropertyDataType enumeration type.
      */
 
-    static StatePropertyDataType statePropertyDataType(const std::string &propertyString, std::string &buffer)
+    inline StatePropertyDataType statePropertyDataType(const std::string &propertyString, std::string &buffer)
     {
         static const std::regex reProperty(R"(.*=\s*(.+?)\s*$)");
         static const std::regex reValue(R"([\.0-9]+)");
@@ -192,7 +184,7 @@ struct Parse
      * stores them in two separate strings.
      */
 
-    static bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
+    inline bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
                                              std::string &argumentString)
     {
         static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
@@ -215,7 +207,7 @@ struct Parse
      * into a double and pushed into the arguments vector.
      */
 
-    static bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
+    inline bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
                                     const std::map<std::string, double *> &argumentMap)
     {
         static const std::regex r(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
@@ -252,7 +244,7 @@ struct Parse
      * passed by reference.
      */
 
-    static bool stateAndValue(const std::string &propertyFileLine, std::string &stateString, std::string &valueString)
+    inline bool stateAndValue(const std::string &propertyFileLine, std::string &stateString, std::string &valueString)
     {
         static const std::regex r(R"((.*?)\s*([\d\.e+-]+)\s*(?:\n|$))");
         std::smatch m;
@@ -270,7 +262,7 @@ struct Parse
      * Loads the complete content of a specified file into the given std::string.
      */
 
-    static bool stringBufferFromFile(const std::string &fileName, std::string &buffer)
+    inline bool stringBufferFromFile(const std::string &fileName, std::string &buffer)
     {
         std::ifstream in(INPUT "/" + fileName);
 
@@ -291,7 +283,7 @@ struct Parse
      * (i.e. mass or anharmonicFrequency).
      */
 
-    static bool gasProperty(const std::string &gasName, double &property, const std::string &content)
+    inline bool gasProperty(const std::string &gasName, double &property, const std::string &content)
     {
         const std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");
         std::smatch m;
@@ -303,30 +295,35 @@ struct Parse
         return static_cast<bool>(ss >> property);
     }
 
-    /* -- getValue --
-     * Tries to parse a string into a double, returns a boolean based on its success
-     * to do so.
+    /*
+     * The setField function extracts a value from a field in the input file,
+     * casts it to the appropriate type and assigns it to the 'value' argument
+     * which is passed by reference. It returns a boolean to give an indication
+     * whether the operation was successful.
+     *
+     * Note that this is a template function, and the type of 'value' is arbitrary,
+     * a standard string can be converted to most basic types using a stringstream.
+     * However, for some basic types (e.g. bool) and custom types, such as enums,
+     * we can specialize this function to alter its behaviour.
+     *
+     * The definitions of these specializations can be found below the Parse struct.
      */
 
-    static bool getValue(const std::string &valueString, double &value)
+    template <typename T>
+    bool setField(const std::string &sectionContent, const std::string &fieldName, T &value)
     {
-        //            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
-        //            std::smatch m;
-        //
-        //            if (!std::regex_match(valueString, r)) return false;
 
-        std::stringstream ss(valueString);
+        std::string valueBuffer;
 
-        return static_cast<bool>(ss >> value);
+        if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+            return false;
+
+        std::stringstream s(valueBuffer);
+        s >> value;
+
+        return true;
     }
 
-    static bool isNumerical(const std::string &str)
-    {
-        static const std::regex reNum(R"(\s*\d*\.?\d+\s*)");
-
-        return std::regex_match(str, reNum);
-    }
-};
 
 /*
  * The setField function needs to behave differently when it is
@@ -353,7 +350,7 @@ struct Parse
  * a Parse.cpp file and specify the specializations there.
  */
 template <>
-inline bool Parse::setField<std::string>(const std::string &sectionContent, const std::string &fieldName,
+inline bool setField<std::string>(const std::string &sectionContent, const std::string &fieldName,
                                          std::string &value)
 {
 
@@ -361,7 +358,7 @@ inline bool Parse::setField<std::string>(const std::string &sectionContent, cons
 }
 
 template <>
-inline bool Parse::setField<bool>(const std::string &sectionContent, const std::string &fieldName, bool &value)
+inline bool setField<bool>(const std::string &sectionContent, const std::string &fieldName, bool &value)
 {
     std::string valueBuffer;
 
@@ -375,7 +372,7 @@ inline bool Parse::setField<bool>(const std::string &sectionContent, const std::
 }
 
 template <>
-inline bool Parse::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName, EedfType &value)
+inline bool setField<EedfType>(const std::string &sectionContent, const std::string &fieldName, EedfType &value)
 {
 
     std::string valueBuffer;
@@ -387,10 +384,9 @@ inline bool Parse::setField<EedfType>(const std::string &sectionContent, const s
 }
 
 template <>
-inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionContent, const std::string &fieldName,
+inline bool setField<IonizationOperatorType>(const std::string &sectionContent, const std::string &fieldName,
                                                     IonizationOperatorType &value)
 {
-
     std::string valueBuffer;
 
     if (!getFieldValue(sectionContent, fieldName, valueBuffer))
@@ -400,7 +396,7 @@ inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionCo
 }
 
 template <>
-inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent, const std::string &fieldName,
+inline bool setField<GrowthModelType>(const std::string &sectionContent, const std::string &fieldName,
                                              GrowthModelType &value)
 {
 
@@ -413,17 +409,18 @@ inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent, 
 }
 
 template <>
-inline bool Parse::setField<std::vector<std::string>>(const std::string &sectionContent, const std::string &fieldName,
+inline bool setField<std::vector<std::string>>(const std::string &sectionContent, const std::string &fieldName,
                                                       std::vector<std::string> &value)
 {
     std::string fieldContent;
 
-    if (!Parse::getSection(sectionContent, fieldName, fieldContent))
+    if (!getSection(sectionContent, fieldName, fieldContent))
         return false;
 
-    return Parse::getList(fieldContent, fieldName, value);
+    return getList(fieldContent, fieldName, value);
 }
 
+} // namespace Parse
 } // namespace loki
 
 #endif // LOKI_CPP_PARSE_H
