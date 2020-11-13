@@ -226,6 +226,7 @@ void ElectronKinetics::solve()
     if (grid.smartGrid())
     {
         const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
+	/// \todo use log(a/b) instead of log(a)-log(b). See if we can avoid the repetition.
         double decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
 
         while (decades < smartGrid.minEedfDecay)
@@ -260,10 +261,6 @@ void ElectronKinetics::solve()
             decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
         }
     }
-
-    //        for (Grid::Index i = 0; i < eedf.size(); ++i) {
-    //            printf("%.16e\n", eedf[i]);
-    //        }
 
     evaluatePower(true);
 
