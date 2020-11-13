@@ -427,14 +427,13 @@ void ElectronKinetics::evaluateFieldOperator()
 
     Vector &cs = mixture.totalCrossSection;
 
-    /** \todo the follosing line produces a NaN for g_E[0] (as expected).
-     *        This is later set to 0, so everything is fine. However:
-     *        this will crash the code os FPU=exceptions are enabled...
-     */
-    g_E = ((EoN * EoN / 3) * grid.getNodes()).array() /
-          (cs.array() + (me * WoN * WoN / (2 * e)) / (grid.getNodes().cwiseProduct(cs)).array());
-
+    g_E.resize(grid.getNodes().size());
     g_E[0] = 0.;
+    for (Grid::Index i=1; i!= g_E.size()-1; ++i)
+    {
+        g_E[i] = (EoN * EoN / 3) * grid.getNode(i) /
+          (cs[i] + (me * WoN * WoN / (2 * e)) / (grid.getNode(i)*cs[i]));
+    }
     g_E[g_E.size() - 1] = 0.;
 
     const double sqStep = grid.du() * grid.du();
@@ -1031,7 +1030,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-    Vector totalCSI(grid.nCells() + 1), eedfNew(grid.nCells());
+    Vector eedfNew(grid.nCells());
 
     bool hasConverged = false;
     uint32_t iter = 0;
@@ -1040,20 +1039,18 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
     {
         Log<Message>::Notify("Iteration ", iter);
 
-        totalCSI[0] = mixture.totalCrossSection[0];
+        const long double growthFactor = CIEffNew * std::sqrt(m / (2 * e));
 
-        const long double growthFactor = CIEffNew * sqrt(m / (2 * e));
-
-        for (Grid::Index i = 1; i <= grid.nCells(); ++i)
-        {
-            totalCSI[i] = mixture.totalCrossSection[i] + growthFactor / sqrt(i * grid.du());
-        }
-
-        g_fieldTemporalGrowth =
-            ((EoN * EoN / 3) * grid.getNodes()).array() /
-            (totalCSI.array() + (m * WoN * WoN / (2 * e)) / (grid.getNodes().cwiseProduct(totalCSI)).array());
+        g_fieldTemporalGrowth.resize(grid.getNodes().size());
         g_fieldTemporalGrowth[0] = 0.;
-        g_fieldTemporalGrowth[grid.nCells()] = 0.;
+        for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
+        {
+            const double totalCSI = mixture.totalCrossSection[i] + growthFactor / std::sqrt(grid.getNode(i));
+            g_fieldTemporalGrowth[i] =
+                (EoN * EoN / 3) * grid.getNode(i) /
+                (totalCSI + (m * WoN * WoN / (2 * e)) / (grid.getNode(i)*totalCSI));
+        }
+        g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
 
         const double sqrStep = grid.du() * grid.du();
 
