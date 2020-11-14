@@ -31,14 +31,8 @@ namespace Parse {
      */
     inline bool getValue(const std::string &valueString, double &value)
     {
-        //            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
-        //            std::smatch m;
-        //
-        //            if (!std::regex_match(valueString, r)) return false;
-
         std::stringstream ss(valueString);
-
-        return static_cast<bool>(ss >> value);
+        return static_cast<bool>(ss >> value) && ss.eof();
     }
 
     /*
