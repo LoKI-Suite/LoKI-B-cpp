@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 namespace loki
 {
@@ -49,6 +50,8 @@ enum class StatePropertyType : uint8_t
     statisticalWeight,
     population
 };
+
+std::string statePropertyName(StatePropertyType type);
 
 enum StateType : uint8_t
 {
