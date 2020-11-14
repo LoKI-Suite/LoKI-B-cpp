@@ -425,7 +425,7 @@ void ElectronKinetics::evaluateFieldOperator()
     const double me = Constant::electronMass;
     const double e = Constant::electronCharge;
 
-    Vector &cs = mixture.totalCrossSection;
+    const Vector &cs = mixture.totalCrossSection;
 
     g_E.resize(grid.getNodes().size());
     g_E[0] = 0.;
