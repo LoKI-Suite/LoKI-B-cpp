@@ -58,10 +58,10 @@ StateEntry entryFromJSON(const json_type &cnf);
  */
 StateEntry propertyStateFromString(const std::string &propertyString);
 
-/** Parses a state property file into a vector of StateEntry, double pairs. This vector
- *  is passed by reference.
+/** Parses state property file \a fileName into \a entries, a vector of
+ *  StateEntry/double pairs.
  */
-bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries);
+void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries);
 
 } // namespace loki
 

@@ -3,6 +3,7 @@
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/StandardPaths.h"
 #include <fstream>
+#include <stdexcept>
 #include <regex>
 
 namespace loki
@@ -351,36 +352,47 @@ StateEntry propertyStateFromString(const std::string &propertyString)
     return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
 }
 
-bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)
+void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)
 {
-    std::ifstream in(fileName);
+    /** \bug 'S 1.2.3' will be accepted by this regex. Subsequently,
+     *        getValue will result in the value 1.2, since that does
+     *        not care about trailing characters.
+     */
+    static const std::regex expr(R"((.*?)\s+([\d\.e+-]+)\s*(?:\n|$))");
+    std::ifstream in{fileName};
 
-    if (!in.is_open())
-        return false;
-
+    if (!in)
+    {
+        Log<Message>::Error("Could not open state property file '"
+                            + fileName + "' for reading.");
+    }
     std::string line;
-
     while (std::getline(in, line))
     {
         line = Parse::removeComments(line);
-
         if (line.size() < 3)
+        {
             continue;
-
-        std::string stateString, valueString;
-
-        if (!Parse::stateAndValue(line, stateString, valueString))
-            return false;
-
+        }
+        std::smatch m;
+        if (!std::regex_search(line, m, expr))
+        {
+            throw std::runtime_error("Syntax error in file '"
+                            + fileName + "', line '"
+                            + line + "': expected a state name and a numeric argument.");
+        }
+        const std::string stateString = m.str(1);
+        const std::string valueString = m.str(2);
         double value;
-
         if (!Parse::getValue(valueString, value))
-            return false;
-
+        {
+            throw std::runtime_error("Syntax error in file '"
+                            + fileName + "', line '"
+                            + line + "': could not convert argument '"
+                            + valueString + "' to a number.");
+        }
         entries.emplace_back(propertyStateFromString(stateString), value);
     }
-
-    return true;
 }
 
 } // namespace loki

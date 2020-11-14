@@ -238,26 +238,6 @@ namespace Parse {
         return true;
     }
 
-    /* -- stateAndValue --
-     * Extracts the state and the corresponding value from a line as provided in a
-     * property file. They are both stored in their own string variables which are
-     * passed by reference.
-     */
-
-    inline bool stateAndValue(const std::string &propertyFileLine, std::string &stateString, std::string &valueString)
-    {
-        static const std::regex r(R"((.*?)\s*([\d\.e+-]+)\s*(?:\n|$))");
-        std::smatch m;
-
-        if (!std::regex_search(propertyFileLine, m, r))
-            return false;
-
-        stateString = m.str(1);
-        valueString = m.str(2);
-
-        return true;
-    }
-
     /* -- stringBufferFromFile --
      * Loads the complete content of a specified file into the given std::string.
      */
