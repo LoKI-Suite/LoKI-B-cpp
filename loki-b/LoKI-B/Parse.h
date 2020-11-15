@@ -140,6 +140,8 @@ namespace Parse {
         content_clean = std::regex_replace(content, reLine, "");
 
         static const std::regex reClean(R"(%[^]*?(?:\n|$))");
+        // next line: also remove whitespace before a %
+        //static const std::regex reClean(R"(\s*%[^]*?(?:\n|$))");
         return std::regex_replace(content_clean, reClean, "\n");
     }
 
@@ -251,24 +253,6 @@ namespace Parse {
         return true;
     }
 
-    /* -- gasProperty --
-     * Tries to parse the value of a given property for a given gas. The 'content' string
-     * should store the content of the database file corresponding to the passed property
-     * (i.e. mass or anharmonicFrequency).
-     */
-
-    inline bool gasProperty(const std::string &gasName, double &property, const std::string &content)
-    {
-        const std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");
-        std::smatch m;
-
-        if (!std::regex_search(content, m, r))
-            return false;
-
-        std::stringstream ss(m[1]);
-        return static_cast<bool>(ss >> property);
-    }
-
     /*
      * The setField function extracts a value from a field in the input file,
      * casts it to the appropriate type and assigns it to the 'value' argument
@@ -293,9 +277,7 @@ namespace Parse {
             return false;
 
         std::stringstream s(valueBuffer);
-        s >> value;
-
-        return true;
+        return (s >> value) && s.eof();
     }
 
 

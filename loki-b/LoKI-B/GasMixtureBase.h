@@ -43,16 +43,18 @@ void readGasPropertyFile(const GasListType& gasList,
             if (gas->name == "e")
                 continue;
             double value;
-            if (!Parse::gasProperty(gas->name, value, fileBuffer))
+            const std::regex r(R"((?:^|\n))" + gas->name + R"(\s+(\S*)\s*)");
+            std::smatch m;
+            if (std::regex_search(fileBuffer, m, r) && Parse::getValue(m[1],value))
+            {
+                handler(*gas,value);
+            }
+            else
             {
                 if (required)
                     Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name);
                 else
                     Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name);
-            }
-            else
-            {
-                handler(*gas,value);
             }
         }
     }

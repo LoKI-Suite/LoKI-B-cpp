@@ -359,19 +359,17 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
      *        not care about trailing characters.
      */
     static const std::regex expr(R"((.*?)\s+([\d\.e+-]+)\s*(?:\n|$))");
-    std::ifstream in{fileName};
 
-    /// \todo Can we use stringBufferFromFile to read the file and remove the comments?
-
-    if (!in)
+    std::string fileBuffer;
+    if (!Parse::stringBufferFromFile(fileName, fileBuffer))
     {
         Log<Message>::Error("Could not open state property file '"
                             + fileName + "' for reading.");
     }
+    std::stringstream ss{fileBuffer};
     std::string line;
-    while (std::getline(in, line))
+    while (std::getline(ss, line))
     {
-        line = Parse::removeComments(line);
         if (line.size() < 3)
         {
             continue;
