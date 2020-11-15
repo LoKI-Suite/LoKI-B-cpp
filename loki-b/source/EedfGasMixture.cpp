@@ -348,18 +348,16 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
 
 void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)
 {
-    std::string fileBuffer;
-    GAS_PROPERTY(gases(), OPBParameter)
-
     GasMixture::loadGasProperties(setup);
+    readGasPropertyFile(gases(), setup.OPBParameter, "OPBParameter", false,
+        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
 }
 
 void EedfGasMixture::loadGasProperties(const json_type &cnf)
 {
-    std::string fileBuffer;
-    GAS_PROPERTY_JSON(gases(), cnf, OPBParameter)
-
     GasMixture::loadGasProperties(cnf);
+    readGasProperty(gases(), cnf, "OPBParameter", false,
+        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
 }
 
 void EedfGasMixture::evaluateTotalAndElasticCS()

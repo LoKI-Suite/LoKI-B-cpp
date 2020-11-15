@@ -186,11 +186,16 @@ void GasMixtureBase::loadStateProperties(const json_type &cnf, const WorkingCond
 
 void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
 {
-    R_GAS_PROPERTY(m_gases, mass)
-    GAS_PROPERTY(m_gases, harmonicFrequency)
-    GAS_PROPERTY(m_gases, anharmonicFrequency)
-    GAS_PROPERTY(m_gases, electricQuadrupoleMoment)
-    GAS_PROPERTY(m_gases, rotationalConstant)
+    readGasPropertyFile(m_gases, setup.mass, "mass", true,
+        [](GasBase& gas, double value) { gas.mass=value; } );
+    readGasPropertyFile(m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+    readGasPropertyFile(m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+    readGasPropertyFile(m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
+        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+    readGasPropertyFile(m_gases, setup.rotationalConstant, "rotationalConstant", false,
+        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
@@ -220,11 +225,16 @@ void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
 
 void GasMixtureBase::loadGasProperties(const json_type &cnf)
 {
-    R_GAS_PROPERTY_JSON(m_gases, cnf, mass)
-    GAS_PROPERTY_JSON(m_gases, cnf, harmonicFrequency)
-    GAS_PROPERTY_JSON(m_gases, cnf, anharmonicFrequency)
-    GAS_PROPERTY_JSON(m_gases, cnf, electricQuadrupoleMoment)
-    GAS_PROPERTY_JSON(m_gases, cnf, rotationalConstant)
+    readGasProperty(m_gases, cnf, "mass", true,
+        [](GasBase& gas, double value) { gas.mass=value; } );
+    readGasProperty(m_gases, cnf, "harmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+    readGasProperty(m_gases, cnf, "anharmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+    readGasProperty(m_gases, cnf, "electricQuadrupoleMoment", false,
+        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+    readGasProperty(m_gases, cnf, "rotationalConstant", false,
+        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
