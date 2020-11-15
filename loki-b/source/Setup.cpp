@@ -25,7 +25,7 @@
  * designated member variable has the same name as the corresponding field in the input file.
  */
 #define SET(section, property)                                                                                         \
-    if (!Parse::setField(section, #property, property))                                                                \
+    if (!setField(section, #property, property))                                                                \
         Log<ParseFieldError>::Warning(#property);
 
 /*
@@ -33,7 +33,7 @@
  * is unsuccessful. Use this variant for fields that are required to perform the simulation.
  */
 #define R_SET(section, property)                                                                                       \
-    if (!Parse::setField(section, #property, property))                                                                \
+    if (!setField(section, #property, property))                                                                \
     {                                                                                                                  \
         Log<ParseFieldError>::Warning(#property);                                                                      \
         return false;                                                                                                  \
@@ -56,6 +56,176 @@
 namespace loki
 {
 
+bool SetupBase::getFieldValue(const std::string &sectionContent, const std::string &fieldName, std::string &valueBuffer)
+{
+    const std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
+    std::smatch m;
+
+    if (!std::regex_search(sectionContent, m, r))
+        return false;
+
+    valueBuffer = m[1];
+
+    return true;
+}
+
+bool SetupBase::getList(const std::string &sectionContent, const std::string &fieldName,
+                    std::vector<std::string> &container)
+{
+
+    static const std::regex r(R"(-\s*(\S+(?: \S+)*)\s*\n*)");
+
+    for (auto it = std::sregex_iterator(sectionContent.begin(), sectionContent.end(), r);
+         it != std::sregex_iterator(); ++it)
+    {
+
+        container.emplace_back(it->str(1));
+    }
+
+    return !container.empty();
+}
+
+bool SetupBase::getSection(const std::string &fileContent, const std::string &sectionTitle, std::string &sectionBuffer)
+{
+
+    // This regular expression finds the level of a specific section. In other
+    // words, it finds the number of spaces that precede the section title
+    const std::regex reLevel(R"((?:^|\n)( *))" + sectionTitle);
+    std::smatch m;
+
+    if (!std::regex_search(fileContent, m, reLevel))
+        return false;
+
+    const std::string levelString = m[1];
+
+// This regular expression matches a specific section in the input file. More accurately,
+// it returns the text in between the specified section and the next section on the same
+// level.
+#ifdef _MSVC
+    // MSVC: $ matches before \n and at the end of input
+    const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:$\n$)))");
+#else
+    // OTHER: $ matches only end of input
+    const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*$)))");
+#endif
+
+    if (!std::regex_search(fileContent, m, reSection))
+        return false;
+
+    // Restore the original level of the content to allow for further processing.
+    sectionBuffer = levelString + "  ";
+    sectionBuffer += m[1];
+
+    return true;
+}
+
+
+template <typename T>
+bool SetupBase::setField(const std::string &sectionContent, const std::string &fieldName, T &value)
+{
+
+    std::string valueBuffer;
+
+    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+        return false;
+
+    std::stringstream s(valueBuffer);
+    return (s >> value) && s.eof();
+}
+
+
+/*
+ * The setField function needs to behave differently when it is
+ * supplied with some specific types. The types for which the
+ * function needs to be specialized are:
+ *
+ * - bool; since these values are supplied through 'true' and
+ *   'false' rather than '1' and '0'.
+ * - std::string; strictly speaking, this is not necessary,
+ *   but in this case we can skip the type cast since the
+ *   desired type is already std::string.
+ * - std::vector<std::string>; in this case the behaviour
+ *   is completely different and the getList function is
+ *   used.
+ * - enums; whenever a new enum is defined that can occur in
+ *   the input file, a new specialization needs to be written.
+ *
+ * Note that we could have defined a different function for every
+ * type (e.g. setBool, setString, ...), however, now we can set
+ * any desired value through a single function.
+ */
+template <>
+bool SetupBase::setField<std::string>(const std::string &sectionContent, const std::string &fieldName,
+                                         std::string &value)
+{
+
+    return getFieldValue(sectionContent, fieldName, value);
+}
+
+template <>
+bool SetupBase::setField<bool>(const std::string &sectionContent, const std::string &fieldName, bool &value)
+{
+    std::string valueBuffer;
+
+    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+        return false;
+
+    std::stringstream s(valueBuffer);
+    s >> std::boolalpha >> value;
+
+    return true;
+}
+
+template <>
+bool SetupBase::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName, EedfType &value)
+{
+
+    std::string valueBuffer;
+
+    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+        return false;
+    value = getEedfType(valueBuffer);
+    return true;
+}
+
+template <>
+bool SetupBase::setField<IonizationOperatorType>(const std::string &sectionContent, const std::string &fieldName,
+                                                    IonizationOperatorType &value)
+{
+    std::string valueBuffer;
+
+    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+        return false;
+    value = getIonizationOperatorType(valueBuffer);
+    return true;
+}
+
+template <>
+bool SetupBase::setField<GrowthModelType>(const std::string &sectionContent, const std::string &fieldName,
+                                             GrowthModelType &value)
+{
+
+    std::string valueBuffer;
+
+    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
+        return false;
+    value = getGrowthModelType(valueBuffer);
+    return true;
+}
+
+template <>
+bool SetupBase::setField<std::vector<std::string>>(const std::string &sectionContent, const std::string &fieldName,
+                                                      std::vector<std::string> &value)
+{
+    std::string fieldContent;
+
+    if (!getSection(sectionContent, fieldName, fieldContent))
+        return false;
+
+    return getList(fieldContent, fieldName, value);
+}
+
+
 /*
  * The parseSubStructure function fills a substructure with the data available in the
  * supplied (section of the) input file. This substructure is derived from the
@@ -69,10 +239,9 @@ bool SetupBase::parseSubStructure(const std::string &content, const std::string 
 {
     std::string sectionContent;
 
-    // Added an extra new line character for MSVC regular expressions to work.
-    if (Parse::getSection(content + '\n', fieldName, sectionContent))
+    /// \todo Investigate me: Added an extra new line character for MSVC regular expressions to work.
+    if (getSection(content + '\n', fieldName, sectionContent))
     {
-
         // Same here.
         if (!subStruct.parse(sectionContent + '\n'))
         {
@@ -131,7 +300,7 @@ bool Setup::parseFile(const std::string &fileName)
 
 /*
  * Every derived class of the BaseSetup struct needs to override the parse function.
- * Inside this function the user should call Parse::setField on all the class member
+ * Inside this function the user should call setField on all the class member
  * variables, and SetupBase::parseSubStructure on all its substructures.
  *
  * At the top of this file, there are some defines that ease this process. However,
