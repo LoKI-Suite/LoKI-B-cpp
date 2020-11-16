@@ -280,21 +280,11 @@ bool Setup::parseFile(const std::string &fileName)
     const std::string inputPath("../Input/");
 #endif
 
-    std::ifstream file(inputPath + fileName);
-
-    if (!file)
+    if (!Parse::stringBufferFromFile(inputPath + fileName, fileContent))
     {
-        Log<FileError>::Error(fileName);
+        Log<FileError>::Error(inputPath + fileName);
         return false;
     }
-
-    // Load the contents of the file into a string buffer.
-    std::stringstream stringBuffer;
-    stringBuffer << file.rdbuf();
-
-    // Store the file contents in a string and remove any comments.
-    fileContent = Parse::removeComments(stringBuffer.str());
-
     return this->parse(fileContent);
 }
 
