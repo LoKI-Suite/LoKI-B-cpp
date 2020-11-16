@@ -8,6 +8,7 @@
 #include "LoKI-B/json.h"
 #include <iostream>
 #include <stdexcept>
+#include <regex>
 
 namespace loki
 {

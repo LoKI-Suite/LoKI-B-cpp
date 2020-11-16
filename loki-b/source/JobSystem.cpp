@@ -26,14 +26,15 @@
  *  \author Daan Boer and Jan van Dijk (C++ version)
  */
 
+#include "LoKI-B/JobSystem.h"
+#include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
+
 #include <cassert>
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
-
-#include "LoKI-B/JobSystem.h"
-#include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
+#include <regex>
 
 namespace loki
 {
