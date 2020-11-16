@@ -40,6 +40,34 @@ inline double getValue(const std::string &valueString)
     }
 }
 
+inline std::string& searchAndReplaceInPlace(
+                                std::string& str,
+                                const std::string& key,
+                                const std::string& repl)
+{
+        const std::string::size_type sz = key.length();
+        if (!sz)
+        {
+                throw std::runtime_error("search and replace: empty search string provided.");
+        }
+        for (std::string::size_type pos=0;                    // start looking at position 0
+             (pos = str.find(key,pos)) != std::string::npos;  // update pos, stop if there is no more match
+             pos += repl.length() )                           // advance to the end of the replaced substring
+        {
+                str.replace(pos, sz, repl);
+        }
+        return str;
+}
+
+inline std::string searchAndReplaceCopy(
+                                const std::string& str,
+                                const std::string& key,
+                                const std::string& repl)
+{
+        std::string copy(str);
+        return searchAndReplaceInPlace(copy,key,repl);
+}
+
 /** Reads characters from stream \a is into \a buffer.
  *  Comments and empty lines are removed.
  */
