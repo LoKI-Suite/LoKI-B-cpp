@@ -7,23 +7,14 @@
 
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <regex>
 #include <sstream>
 #include <string>
 
-#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/StandardPaths.h"
-#include "LoKI-B/json.h"
 
 namespace loki {
 namespace Parse {
-
-inline bool isNumerical(const std::string &str)
-{
-    static const std::regex reNum(R"(\s*\d*\.?\d+\s*)");
-    return std::regex_match(str, reNum);
-}
 
 /** Parse \a valueString into double \a value. The boolean return
  *  value returns tru if the conversion was successful, false otherwise.
@@ -31,7 +22,7 @@ inline bool isNumerical(const std::string &str)
 inline bool getValue(const std::string &valueString, double &value)
 {
     std::stringstream ss{valueString};
-    return static_cast<bool>(ss >> value) && ss.eof();
+    return (ss >> value) && ss.eof();
 }
 
 /** Parse \a valueString into a double and return the result. If the conversion
