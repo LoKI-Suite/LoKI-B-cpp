@@ -282,7 +282,7 @@ bool Setup::parseFile(const std::string &fileName)
 
     std::ifstream file(inputPath + fileName);
 
-    if (!file.is_open())
+    if (!file)
     {
         Log<FileError>::Error(fileName);
         return false;
