@@ -10,6 +10,7 @@
 #include "LoKI-B/GasBase.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
+#include "LoKI-B/Enumeration.h"
 
 #include <cmath>
 
@@ -33,14 +34,13 @@
 
 namespace loki::PropertyFunctions
 {
+
 using namespace Constant;
 
-/* -- setStateProperty --
- * Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
- * StatePropertyType, it will assign the value to either the population, statisticalWeight or
- * population member variables of the supplied state object.
+/** Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
+ *  StatePropertyType, it will assign the value to either the population, statisticalWeight or
+ *  population member variables of the supplied state object.
  */
-
 inline void setStateProperty(GasBase::StateBase *state, const double &value, StatePropertyType type)
 {
     switch (type)
