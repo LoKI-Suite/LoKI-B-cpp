@@ -25,7 +25,7 @@ class StateEntry
     StateEntry(const std::string &id, StateType level, const std::string &gasName, const std::string &charge,
                const std::string &e, const std::string &v, const std::string &J);
     static StateEntry electronEntry();
-    bool hasWildCard();
+    bool hasWildCard() const;
 
     /** \todo Rethink m_id, or at least document this. id should only be associated with
      *        the final state that is created, not with intermediate parents. This is not

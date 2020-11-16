@@ -26,7 +26,7 @@ StateEntry::StateEntry(const std::string &id, StateType level, const std::string
 }
 
 /// \todo Update: charge may also be a wildcard (?)
-bool StateEntry::hasWildCard()
+bool StateEntry::hasWildCard() const
 {
     switch (level)
     {
