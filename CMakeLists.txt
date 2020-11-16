@@ -52,7 +52,7 @@ if(MSVC)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(mkl ${mkl} mkl_intel_thread iomp5)
 else() # g++
-  set(mkl ${mkl} mkl_gnu_thread) #mkl_intel_thread iomp5 
+  set(mkl ${mkl} mkl_gnu_thread) #mkl_intel_thread iomp5
 endif()
 
 # Specify the linear algebra backend to use (default is pure Eigen).
@@ -108,7 +108,7 @@ set(cpp ${src}/WorkingConditions.cpp
 #         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
 #         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 
-# Standard MKL directories on different operating systems. 
+# Standard MKL directories on different operating systems.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
   set(mkl_lib "/opt/intel/mkl/lib/intel64")
   set(mkl_inc "/opt/intel/mkl/include")
@@ -139,16 +139,21 @@ if(NOT EMSCRIPTEN)
 	target_link_libraries(loki PRIVATE loki_l ${backend})
 
 	# -- loki tests -- #
+	add_executable(test_parser ${tests}/test_parser.cpp)
+	target_include_directories(test_parser PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(test_parser PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(test_parser PRIVATE loki_l ${backend})
+
 	add_executable(test_statebase ${tests}/test_statebase.cpp)
 	target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(test_statebase PRIVATE loki_l ${backend})
-	
+
 	add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
 	target_include_directories(test_reaction_format PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
-	
+
 	add_executable(test_lut ${tests}/test_lut.cpp)
 	target_include_directories(test_lut PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_lut PRIVATE build ${mkl_lib} ${mkl_comp})
