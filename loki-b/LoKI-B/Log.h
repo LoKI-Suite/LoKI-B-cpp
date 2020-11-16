@@ -170,33 +170,6 @@ struct PropertyFunctionError
     }
 };
 
-struct PropertyFunctionParseError
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Could not parse function name and argument list: " << t << "." << std::endl;
-    }
-};
-
-struct PropertyValueParseError
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Could not parse property state value: " << t << "." << std::endl;
-    }
-};
-
-struct PropertyArgumentsError
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Cannot extract property function arguments from input file: " << t << "." << std::endl;
-    }
-};
-
 struct PropertyStateError
 {
     template <typename T>

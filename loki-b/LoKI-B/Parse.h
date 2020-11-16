@@ -30,8 +30,25 @@ inline bool isNumerical(const std::string &str)
  */
 inline bool getValue(const std::string &valueString, double &value)
 {
-    std::stringstream ss(valueString);
+    std::stringstream ss{valueString};
     return static_cast<bool>(ss >> value) && ss.eof();
+}
+
+/** Parse \a valueString into a double and return the result. If the conversion
+ *  fails or is incomplete (trailing characters are present), a
+ *  std::runtime_error is thrown.
+ */
+inline double getValue(const std::string &valueString)
+{
+    double value;
+    if (getValue(valueString,value))
+    {
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("Error converting string '" + valueString + "' to a number.");
+    }
 }
 
 /** Remove empty lines, comments and trailing whitespace from
@@ -63,89 +80,6 @@ inline bool stringBufferFromFile(const std::string &fileName, std::string &buffe
                 std::istreambuf_iterator<char>(is),
                 std::istreambuf_iterator<char>()};
     buffer = removeComments(str);
-    return true;
-}
-
-/** Deduce whether an entry in the stateProperties section describes loading
- *  of state properties by direct value, file or function. The result is
- *  returned as a StatePropertyDataType enumeration type.
- */
-inline StatePropertyDataType statePropertyDataType(const std::string &propertyString, std::string &buffer)
-{
-    static const std::regex reProperty(R"(.*=\s*(.+?)\s*$)");
-    static const std::regex reValue(R"([\.0-9]+)");
-
-    std::smatch m;
-
-    if (std::regex_search(propertyString, m, reProperty))
-    { // value or function
-        buffer = m.str(1);
-
-        if (std::regex_match(buffer, reValue))
-        {
-            return StatePropertyDataType::direct;
-        }
-
-        return StatePropertyDataType::function;
-    }
-
-    buffer = propertyString;
-
-    return StatePropertyDataType::file;
-}
-
-/** Extracts the property function name and arguments from a given string and
- *  stores them in two separate strings.
- */
-inline bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
-                                         std::string &argumentString)
-{
-    static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
-    std::smatch m;
-
-    if (!std::regex_match(totalString, m, reFuncArgs))
-        return false;
-
-    functionName = m.str(1);
-    argumentString = m.str(2);
-
-    return true;
-}
-
-/** Extracts the separate arguments from a string containing the arguments, finds
- *  their corresponding double values and pushes them into the arguments vector. E.g.
- *  "[gasTemperature, 1000]" first yields "gasTemperature" which is looked up in
- *  the argumentMap to obtain its value, and then yields "1000" which is converted
- *  into a double and pushed into the arguments vector.
- */
-inline bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
-                                const std::map<std::string, double *> &argumentMap)
-{
-    static const std::regex r(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
-
-    for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), r);
-         it != std::sregex_iterator(); ++it)
-    {
-        std::string current = it->str(1);
-
-        if (isNumerical(current))
-        {
-            double value;
-
-            if (!getValue(current, value))
-                return false;
-
-            arguments.emplace_back(value);
-        }
-        else
-        {
-            if (argumentMap.count(current) == 0)
-                return false;
-
-            arguments.emplace_back(*argumentMap.at(current));
-        }
-    }
-
     return true;
 }
 

@@ -171,18 +171,15 @@ static Range *createLinLogRange(const std::string &rangeString)
 
 Range *Range::create(const std::string &str)
 {
-    if (Parse::isNumerical(str))
+    double value;
+    if (Parse::getValue(str, value))
     {
-        double value;
-        bool success = Parse::getValue(str, value);
-        if (!success)
-        {
-            throw std::runtime_error("Invalid value/range specification '" + str + "'.");
-        }
+        // if it was a number (getValue succeeded), create a single-value-range
         return new RangeSingleValue{value};
     }
     else
     {
+        // otherwise we assume it is a span (linear or logarithmic)
         return createLinLogRange(str);
     }
 }

@@ -64,68 +64,102 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
 
     for (const auto &line : entryVector)
     {
-        std::string valueString;
-        StatePropertyDataType dataType = Parse::statePropertyDataType(line, valueString);
-
-        if (dataType != StatePropertyDataType::file)
+        // look for a line of the form "S = E"
+        static const std::regex reProperty(R"((\S+)\s+=\s+(\S+)\s*$)");
+        std::smatch m;
+        if (std::regex_search(line, m, reProperty))
         {
-            StateEntry entry = propertyStateFromString(line);
+            // Found. E can be a literal value, or a function with arguments.
+            // value or function
+            const std::string state_id = m.str(1);
+            const std::string expr = m.str(2);
 
-            if (entry.level != none)
+            // 1. get the state or state group that the expression will
+            //    be applied to.
+            const StateEntry entry = propertyStateFromString(state_id);
+            if (entry.level == none)
             {
-                GasBase::StateBase *state = findState(entry);
+                throw std::runtime_error("loadStateProperty: illegal "
+                                "state identifier '" + line + "'.");
+            }
+            GasBase::StateBase *state = findState(entry);
+            if (state == nullptr)
+            {
+                throw std::runtime_error("loadStateProperty: could not find "
+                                "state or state group '" + line + "'.");
+            }
 
-                if (state == nullptr)
+            // 2. Now apply the expression.
+            // Try to parse expr as a number first...
+            double value;
+            if (Parse::getValue(expr, value))
+            {
+                // expr is a number, now parsed into value.
+                if (entry.hasWildCard())
                 {
-                    Log<PropertyStateError>::Error(entry);
-                }
-
-                if (dataType == StatePropertyDataType::direct)
-                {
-                    double value;
-
-                    if (!Parse::getValue(valueString, value))
-                        Log<PropertyValueParseError>::Error(valueString);
-
-                    if (entry.hasWildCard())
-                    {
-                        PropertyFunctions::constantValue(state->siblings(), value, propertyType);
-                    }
-                    else
-                    {
-                        /// \todo Can we avoid creation of the intermediate vector?
-                        std::vector<GasBase::StateBase *> states{state};
-                        PropertyFunctions::constantValue(states, value, propertyType);
-                    }
+                    PropertyFunctions::constantValue(state->siblings(), value, propertyType);
                 }
                 else
                 {
-                    std::vector<double> arguments;
-                    std::string functionName, argumentString;
+                    /// \todo Can we avoid creation of the intermediate vector?
+                    std::vector<GasBase::StateBase *> states{state};
+                    PropertyFunctions::constantValue(states, value, propertyType);
+                }
+            }
+            else
+            {
+                // expr is not a number. We treat is a function (maybe with arguments).
+                static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
+                std::smatch m;
+                if (!std::regex_match(expr, m, reFuncArgs))
+                {
+                    throw std::runtime_error("Could not parse function "
+                        "name and argument list from string '"
+                        + expr + "'.");
+                }
+                const std::string functionName = m.str(1);
+                const std::string argumentString = m.str(2);
 
-                    if (!Parse::propertyFunctionAndArguments(valueString, functionName, argumentString))
-                        Log<PropertyFunctionParseError>::Error(valueString);
-
-                    if (!Parse::argumentsFromString(argumentString, arguments, workingConditions->argumentMap))
-                        Log<PropertyArgumentsError>::Error(argumentString);
-
-                    if (entry.hasWildCard())
+                // create an argument list for the function (possibly empty)
+                std::vector<double> arguments;
+                static const std::regex reArgList(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
+                for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), reArgList);
+                     it != std::sregex_iterator(); ++it)
+                {
+                    const std::string arg{it->str(1)};
+                    double value;
+                    if (Parse::getValue(arg, value))
                     {
-                        PropertyFunctions::callByName(functionName, state->siblings(), arguments, propertyType);
+                        // value set by getValue
+                    }
+                    else if (workingConditions->argumentMap.count(arg))
+                    {
+                        value = *workingConditions->argumentMap.at(arg);
                     }
                     else
                     {
-                        /// \todo Can we avoid creation of the intermediate vector?
-                        std::vector<GasBase::StateBase *> states{state};
-                        PropertyFunctions::callByName(functionName, states, arguments, propertyType);
+                        throw std::runtime_error("Argument '" + arg + "' is neither a numerical "
+                                    "value, nor a known parameter name.");
                     }
+                    arguments.emplace_back(value);
+                }
+
+                if (entry.hasWildCard())
+                {
+                    PropertyFunctions::callByName(functionName, state->siblings(), arguments, propertyType);
+                }
+                else
+                {
+                    /// \todo Can we avoid creation of the intermediate vector?
+                    std::vector<GasBase::StateBase *> states{state};
+                    PropertyFunctions::callByName(functionName, states, arguments, propertyType);
                 }
             }
         }
         else
         {
             std::vector<std::pair<StateEntry, double>> entries;
-            const std::string fileName = INPUT "/" + valueString;
+            const std::string fileName = INPUT "/" + line;
 
             try
             {

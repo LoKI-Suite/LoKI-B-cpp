@@ -37,20 +37,12 @@ enum class GrowthModelType : uint8_t
 };
 GrowthModelType getGrowthModelType(const std::string &str);
 
-enum class StatePropertyDataType : uint8_t
-{
-    direct,
-    file,
-    function
-};
-
 enum class StatePropertyType : uint8_t
 {
     energy,
     statisticalWeight,
     population
 };
-
 std::string statePropertyName(StatePropertyType type);
 
 enum StateType : uint8_t
