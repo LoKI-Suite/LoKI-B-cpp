@@ -5,11 +5,9 @@
 #ifndef LOKI_CPP_PARSE_H
 #define LOKI_CPP_PARSE_H
 
-#include <fstream>
-#include <iostream>
-#include <regex>
-#include <sstream>
 #include <string>
+#include <sstream>
+#include <fstream>
 
 #include "LoKI-B/StandardPaths.h"
 
@@ -42,24 +40,35 @@ inline double getValue(const std::string &valueString)
     }
 }
 
-/** Remove empty lines, comments and trailing whitespace from
- *  the character stream \a content and return the result.
+/** Reads characters from stream \a is into \a buffer.
+ *  Comments and empty lines are removed.
  */
-inline std::string removeComments(const std::string &content)
+inline bool removeComments(std::istream& is, std::string &buffer)
 {
-    static const std::regex reLine(R"(\n\s*%[^\n]*)");
-    static const std::regex reClean(R"(%[^]*?(?:\n|$))");
-    // next line: also remove whitespace before a %
-    //static const std::regex reClean(R"(\s*%[^]*?(?:\n|$))");
-    std::string result;
-    result = std::regex_replace(content, reLine, "");
-    result = std::regex_replace(result, reClean, "\n");
-    return result;
+    std::string line;
+    while (!is.eof())
+    {
+        std::getline(is,line);
+        // remove everything from % onward (if one is found).
+        std::string::size_type comment_pos = line.find('%');
+        line = line.substr(0,comment_pos);
+        // remove trailing whitespace
+        line.erase(line.find_last_not_of(" \n\r\t")+1);
+        // If there is anything left, append it to the buffer.
+        // Prepend a newline character if buffer already contains
+        // something.
+        if (!line.empty())
+        {
+            if (!buffer.empty())
+            {
+                buffer += '\n';
+            }
+            buffer += line;
+        }
+    }
+    return true;
 }
 
-/** Loads the complete content of a specified file into the given std::string.
- *  Comments are removed.
- */
 inline bool stringBufferFromFile(const std::string &fileName, std::string &buffer)
 {
     std::ifstream is(INPUT "/" + fileName);
@@ -67,11 +76,7 @@ inline bool stringBufferFromFile(const std::string &fileName, std::string &buffe
     {
         return false;
     }
-    const std::string str{
-                std::istreambuf_iterator<char>(is),
-                std::istreambuf_iterator<char>()};
-    buffer = removeComments(str);
-    return true;
+    return removeComments(is,buffer);
 }
 
 } // namespace Parse
