@@ -1,6 +1,6 @@
 /** \file
  *
- *  Declarations of string parsing and utility functions for LoKI-B.
+ *  Implementation of string parsing and utility functions for LoKI-B.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -26,11 +26,15 @@
  *  \author Daan Boer and Jan van Dijk (C++ version)
  */
 
-#ifndef LOKI_CPP_PARSE_H
-#define LOKI_CPP_PARSE_H
-
+#include "LoKI-B/Parse.h"
 #include <string>
-#include <iosfwd>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <stdexcept>
+
+/// \todo Remove me once INPUT is no longer used.
+#include "LoKI-B/StandardPaths.h"
 
 namespace loki {
 namespace Parse {
@@ -38,13 +42,28 @@ namespace Parse {
 /** Parse \a valueString into double \a value. The boolean return
  *  value returns tru if the conversion was successful, false otherwise.
  */
-bool getValue(const std::string &valueString, double &value);
+bool getValue(const std::string &valueString, double &value)
+{
+    std::stringstream ss{valueString};
+    return (ss >> value) && ss.eof();
+}
 
 /** Parse \a valueString into a double and return the result. If the conversion
  *  fails or is incomplete (trailing characters are present), a
  *  std::runtime_error is thrown.
  */
-double getValue(const std::string &valueString);
+double getValue(const std::string &valueString)
+{
+    double value;
+    if (getValue(valueString,value))
+    {
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("Error converting string '" + valueString + "' to a number.");
+    }
+}
 
 /** Replace all occurrences of \a key in \a str with \a repl.
  *  The function correctly handles the case that \a key is a substring of \a repl.
@@ -61,7 +80,21 @@ double getValue(const std::string &valueString);
 std::string& searchAndReplaceInPlace(
                             std::string& str,
                             const std::string& key,
-                            const std::string& repl);
+                            const std::string& repl)
+{
+        const std::string::size_type sz = key.length();
+        if (!sz)
+        {
+                throw std::runtime_error("search and replace: empty search string provided.");
+        }
+        for (std::string::size_type pos=0;                    // start looking at position 0
+             (pos = str.find(key,pos)) != std::string::npos;  // update pos, stop if there is no more match
+             pos += repl.length() )                           // advance to the end of the replaced substring
+        {
+                str.replace(pos, sz, repl);
+        }
+        return str;
+}
 
 /** Replace all occurrences of \a key in a copy of \a str with \a repl
  *  and return the result.
@@ -78,7 +111,11 @@ std::string& searchAndReplaceInPlace(
 std::string searchAndReplaceCopy(
                             const std::string& str,
                             const std::string& key,
-                            const std::string& repl);
+                            const std::string& repl)
+{
+        std::string copy(str);
+        return searchAndReplaceInPlace(copy,key,repl);
+}
 
 /** Reads characters from stream \a is into \a dest.
  *  Om entry, the result \a dest is cleared. Then the function starts
@@ -100,7 +137,27 @@ std::string searchAndReplaceCopy(
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
-bool removeComments(std::istream& is, std::string &dest);
+bool removeComments(std::istream& is, std::string &dest)
+{
+    dest.clear();
+    std::string line;
+    while (!is.eof())
+    {
+        std::getline(is,line);
+        std::string::size_type comment_pos = line.find('%');
+        line = line.substr(0,comment_pos);
+        line.erase(line.find_last_not_of(" \n\r\t")+1);
+        if (!line.empty())
+        {
+            if (!dest.empty())
+            {
+                dest += '\n';
+            }
+            dest += line;
+        }
+    }
+    return true;
+}
 
 /** Open file \a filename for reading, call removeComments() to remove
  *  comments, trailing whitespace and empty lines from the stream, and
@@ -118,9 +175,11 @@ bool removeComments(std::istream& is, std::string &dest);
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
-bool stringBufferFromFile(const std::string &fileName, std::string &dest);
+bool stringBufferFromFile(const std::string &fileName, std::string &dest)
+{
+    std::ifstream is(INPUT "/" + fileName);
+    return is && removeComments(is,dest);
+}
 
 } // namespace Parse
 } // namespace loki
-
-#endif // LOKI_CPP_PARSE_H
