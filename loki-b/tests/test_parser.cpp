@@ -9,6 +9,7 @@
 
 #include "LoKI-B/Parse.h"
 #include <iostream>
+#include <sstream>
 
 unsigned ntests=0;
 unsigned nerrors=0;

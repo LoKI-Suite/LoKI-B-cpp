@@ -2,6 +2,9 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
+/// \todo Remove me once INPUT is no longer used.
+#include "LoKI-B/StandardPaths.h"
+
 
 #include <regex>
 
