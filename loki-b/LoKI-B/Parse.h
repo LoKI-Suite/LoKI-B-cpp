@@ -102,7 +102,7 @@ std::string searchAndReplaceCopy(
  */
 bool removeComments(std::istream& is, std::string &dest);
 
-/** Open file \a filename for reading, call removeComments() to remove
+/** Open file \a fileName for reading, call removeComments() to remove
  *  comments, trailing whitespace and empty lines from the stream, and
  *  send the output to \a dest.
  *
