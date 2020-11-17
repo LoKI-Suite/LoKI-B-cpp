@@ -396,7 +396,7 @@ void ElectronKinetics::evaluateMatrix()
 
 void ElectronKinetics::evaluateElasticOperator()
 {
-    const double Tg = workingConditions->gasTemperature;
+    const double Tg = workingConditions->gasTemperature();
 
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
@@ -420,8 +420,8 @@ void ElectronKinetics::evaluateElasticOperator()
 
 void ElectronKinetics::evaluateFieldOperator()
 {
-    const double EoN = workingConditions->reducedFieldSI;
-    const double WoN = workingConditions->reducedExcFreqSI;
+    const double EoN = workingConditions->reducedFieldSI();
+    const double WoN = workingConditions->reducedExcFreqSI();
     const double me = Constant::electronMass;
     const double e = Constant::electronCharge;
 
@@ -452,7 +452,7 @@ void ElectronKinetics::evaluateFieldOperator()
 
 void ElectronKinetics::evaluateCAROperator()
 {
-    const double Tg = workingConditions->gasTemperature;
+    const double Tg = workingConditions->gasTemperature();
 
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
@@ -823,7 +823,7 @@ void ElectronKinetics::mixingDirectSolutions()
 
 void ElectronKinetics::solveSpatialGrowthMatrix()
 {
-    const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI;
+    const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI();
 
     Vector cellTotalCrossSection(grid.nCells());
 
@@ -990,8 +990,8 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
 void ElectronKinetics::solveTemporalGrowthMatrix()
 {
-    const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI,
-                 WoN = workingConditions->reducedExcFreqSI;
+    const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI(),
+                 WoN = workingConditions->reducedExcFreqSI();
 
     if (!mixture.CARGases.empty())
     {
@@ -1107,8 +1107,10 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
 void ElectronKinetics::solveEEColl()
 {
-    const double e = Constant::electronCharge, e0 = Constant::vacuumPermittivity,
-                 ne = workingConditions->electronDensity, n0 = workingConditions->gasDensity;
+    const double e = Constant::electronCharge;
+    const double e0 = Constant::vacuumPermittivity;
+    const double ne = workingConditions->electronDensity();
+    const double n0 = workingConditions->gasDensity();
 
     // Splitting all possible options for the best performance.
 
@@ -1287,7 +1289,7 @@ void ElectronKinetics::solveEEColl()
 void ElectronKinetics::evaluatePower(bool isFinalSolution)
 {
     const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass),
-                 kTg = Constant::kBeV * workingConditions->gasTemperature,
+                 kTg = Constant::kBeV * workingConditions->gasTemperature(),
                  auxHigh = kTg + grid.du() * .5, // aux1
         auxLow = kTg - grid.du() * .5;           // aux2
 
@@ -1358,7 +1360,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
 
             power.field = factor * (field + grid.du() * correction);
             power.eDensGrowth = alphaRedEff * alphaRedEff * factor * grid.du() / 3. * powerDiffusion +
-                                factor * alphaRedEff * (workingConditions->reducedFieldSI / 6.) *
+                                factor * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
                                     (grid.getCell(0) * grid.getCell(0) * eedf[1] / cellCrossSection[0] -
                                      grid.getCell(grid.nCells() - 1) * grid.getCell(grid.nCells() - 1) *
                                          eedf[grid.nCells() - 2] / cellCrossSection[grid.nCells() - 1] +
@@ -1447,11 +1449,11 @@ void ElectronKinetics::evaluateSwarmParameters()
     if (growthModelType == GrowthModelType::spatial && nonConservative)
     {
         swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
-                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI;
+                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
     }
     else
     {
-        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI;
+        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
     }
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
@@ -1486,8 +1488,8 @@ void ElectronKinetics::evaluateFirstAnisotropy()
 {
     firstAnisotropy.setZero(grid.nCells());
 
-    const double e = Constant::electronCharge, me = Constant::electronMass, EoN = workingConditions->reducedFieldSI,
-                 WoN = workingConditions->reducedExcFreqSI;
+    const double e = Constant::electronCharge, me = Constant::electronMass, EoN = workingConditions->reducedFieldSI(),
+                 WoN = workingConditions->reducedExcFreqSI();
 
     const Grid::Index n = grid.nCells();
 

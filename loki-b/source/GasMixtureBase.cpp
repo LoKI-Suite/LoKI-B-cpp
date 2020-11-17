@@ -135,9 +135,9 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                     {
                         // value set by getValue
                     }
-                    else if (workingConditions->argumentMap.count(arg))
+                    else if (workingConditions->argumentMap().count(arg))
                     {
-                        value = *workingConditions->argumentMap.at(arg);
+                        value = *workingConditions->argumentMap().at(arg);
                     }
                     else
                     {
