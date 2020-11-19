@@ -24,6 +24,10 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
         loadCollisions(setup.LXCatFilesExtra, grid, true);
 
     this->loadGasProperties(setup.gasProperties);
+
+    for (auto &gas : gases())
+        gas->propagateFraction();
+
     /// \todo Store the electron state pointer as a member? Does the state type matter?
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
     /** For the electron, the root state has a population of 0 (the default),
@@ -36,10 +40,10 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
      *  hosts the properties (such as charge), it makes more sens to let the
      *  root be 'the' electronic state, since there is no need for additional structure.
      */
-    for (State *s = electron; s->type != StateType::root; s = s->parent())
-    {
-        s->population = 1.0;
-    }
+    // for (State *s = electron; s->type != StateType::root; s = s->parent())
+    // {
+    //     s->population = 1.0;
+    // }
     this->loadStateProperties(setup.stateProperties, workingConditions);
     this->evaluateStateDensities();
 
@@ -64,14 +68,18 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
         loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
 
     this->loadGasProperties(cnf.at("gasProperties"));
+
+    for (auto &gas : gases())
+        gas->propagateFraction();
+
     /// \todo Store the electron state pointer as a member? Does the state type matter?
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
     /**
      */
-    for (State *s = electron; s->type != StateType::root; s = s->parent())
-    {
-        s->population = 1.0;
-    }
+    // for (State *s = electron; s->type != StateType::root; s = s->parent())
+    // {
+    //     s->population = 1.0;
+    // }
     this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
     this->evaluateStateDensities();
 

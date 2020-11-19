@@ -31,12 +31,14 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
         break;
     }
     /** \todo if multiple ionization levels are present, we set the population of the
-     *        neutral state to 1 (the others remain at 0).
+     *        neutral state to 1 (the others remain at 0). EDIT: but only if the gas
+     *        fraction is > 0. However, the gas fractions have not been loaded at this
+     *        point, therefore this is now done in the "propagateFraction" function.
      */
-    if (type == StateType::charge && charge.empty())
-    {
-        population = 1;
-    }
+    // if (m_gas_base->fraction != 0 && type == StateType::charge && charge.empty())
+    // {
+    //     population = 1;
+    // }
     assert(m_gas_base);
 #if 0
     std::cout << "Created state: " << *this << ", type = " << type << std::endl;
@@ -47,7 +49,7 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
 
 GasBase::StateBase::StateBase(GasBase *gas)
     : m_gas_base(gas), m_parent_base(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
-      v(std::string{}), J(std::string{}), population(1), energy(-1), statisticalWeight(-1), density(0)
+      v(std::string{}), J(std::string{}), population(0), energy(-1), statisticalWeight(-1), density(0)
 {
     assert(m_gas_base);
 #if 0
@@ -222,6 +224,22 @@ GasBase::~GasBase()
 void GasBase::print(std::ostream &os) const
 {
     m_root->printChildren(os);
+}
+
+void GasBase::propagateFraction()
+{
+    if (fraction > 0)
+    {
+        m_root->population = 1.;
+        auto it = std::find_if(m_root->children().begin(), m_root->children().end(),
+                               [](auto *state) { return state->charge.empty(); });
+
+        if (it != m_root->children().end())
+        {
+            Log<Message>::Notify("Set population of ", *(*it), " to one.");
+            (*it)->population = 1.;
+        }
+    }
 }
 
 void GasBase::checkPopulations()
