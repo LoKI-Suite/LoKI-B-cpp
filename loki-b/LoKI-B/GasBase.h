@@ -127,6 +127,11 @@ class GasBase
      *  children.
      */
     void print(std::ostream &os) const;
+    /* Propagates the gas fractions to the state root and charge levels. If the
+     * fraction is >0, the populations of the root node and its neutral child are
+     * set to one. Otherwise, populations at these levels remain zero.
+     */
+    void propagateFraction();
     /* Verifies that the populations of all electronic states adds up to 1. It also
      * calls the checkPopulation function on all these states to recursively check
      * populations.
