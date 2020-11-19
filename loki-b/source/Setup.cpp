@@ -205,8 +205,8 @@ bool GasPropertiesSetup::parse(const std::string &sectionContent)
 
 bool StatePropertiesSetup::parse(const std::string &sectionContent)
 {
-    R_SET(sectionContent, energy)
-    R_SET(sectionContent, statisticalWeight)
+    SET(sectionContent, energy)
+    SET(sectionContent, statisticalWeight)
     R_SET(sectionContent, population)
 
     return true;
