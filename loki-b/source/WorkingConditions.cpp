@@ -54,6 +54,37 @@ WorkingConditions::WorkingConditions(const json_type &cnf)
     m_argumentMap.emplace("gasTemperature", &m_gasTemperature);
 }
 
+const double* WorkingConditions::addParameter(const std::string& name, const double* vptr)
+{
+    if (findParameter(name))
+    {
+        throw std::runtime_error("Redeclaration of parameter '" + name + "'.");
+    }
+    if (!vptr)
+    {
+        throw std::runtime_error("Parameter '" + name + "' must be non-null.");
+    }
+    m_argumentMap.emplace(name, vptr);
+    Log<Message>::Notify("Working conditions: added parameter + '" + name + "'.");
+    return vptr;
+}
+
+const double* WorkingConditions::findParameter(const std::string& name) const
+{
+    const ArgumentMap::const_iterator i = m_argumentMap.find(name);
+    return i==m_argumentMap.end() ? nullptr : i->second;
+}
+
+const double& WorkingConditions::getParameter(const std::string& name) const
+{
+    const double* vptr = findParameter(name);
+    if (!vptr)
+    {
+        throw std::runtime_error("Parameter '" + name + "' is not available.");
+    }
+    return *vptr;
+}
+
 void WorkingConditions::updateReducedField(double value)
 {
     m_reducedField = value;

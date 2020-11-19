@@ -40,8 +40,8 @@ class WorkingConditions
     double excitationFrequency() const { return m_excitationFrequency; }
     double reducedExcFreqSI() const { return m_excitationFrequency * 2 * Constant::pi / m_gasDensity; }
 
-    using ArgumentMap = std::map<std::string, const double *>;
-    const ArgumentMap& argumentMap() const { return m_argumentMap; }
+    const double* findParameter(const std::string& name) const;
+    const double& getParameter(const std::string& name) const;
 
     void updateReducedField(double value);
     void updateElectronTemperature(double value);
@@ -67,6 +67,8 @@ class WorkingConditions
     //Event<> updatedChamberLength;
     //Event<> updatedExcitationFrequency;
 private:
+    const double* addParameter(const std::string& name, const double* vptr);
+
     const double m_gasPressure;
     const double m_gasTemperature;
     const double m_gasDensity;
@@ -83,6 +85,7 @@ private:
     //double chamberRadius;
     double m_reducedField;
     double m_excitationFrequency;
+    using ArgumentMap = std::map<std::string, const double *>;
     ArgumentMap m_argumentMap;
 };
 
