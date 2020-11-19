@@ -157,12 +157,6 @@ void EedfGas::checkElasticCollisions(State *electron, Grid *energyGrid)
 
     std::vector<EedfState *> statesToUpdate = findStatesToUpdate();
 
-    // findStatesToUpdate(get_root().children(), statesToUpdate);
-    for (const auto *state : statesToUpdate)
-    {
-        Log<Message>::Notify("state to update: ", *state);
-    }
-
     if (!statesToUpdate.empty())
     {
         CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);
