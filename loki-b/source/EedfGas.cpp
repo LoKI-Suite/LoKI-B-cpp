@@ -127,21 +127,27 @@ void EedfGas::setDefaultEffPop(EedfState *ground)
     }
 }
 
-void EedfGas::findStatesToUpdate(const std::vector<EedfState *> &stateStructure,
-                                 std::vector<EedfState *> &statesToUpdate)
+std::vector<EedfGas::EedfState *> EedfGas::findStatesToUpdate()
 {
-    for (auto *eleState : stateStructure)
-    {
-        if (eleState->population > 0)
-        {
-            auto &colls = m_state_collisions[eleState];
-            auto it = find_if(colls.begin(), colls.end(),
-                              [](EedfCollision *collision) { return collision->type == CollisionType::elastic; });
+    std::vector<EedfState *> statesToUpdate;
 
-            if (it == colls.end())
-                statesToUpdate.emplace_back(eleState);
+    for (auto *chargeState : get_root().children())
+    {
+        for (auto *eleState : chargeState->children())
+        {
+            if (eleState->population > 0)
+            {
+                auto &colls = m_state_collisions[eleState];
+                auto it = find_if(colls.begin(), colls.end(),
+                                  [](EedfCollision *collision) { return collision->type == CollisionType::elastic; });
+
+                if (it == colls.end())
+                    statesToUpdate.emplace_back(eleState);
+            }
         }
     }
+
+    return statesToUpdate;
 }
 
 void EedfGas::checkElasticCollisions(State *electron, Grid *energyGrid)
@@ -149,9 +155,13 @@ void EedfGas::checkElasticCollisions(State *electron, Grid *energyGrid)
     if (isDummy())
         return;
 
-    std::vector<EedfState *> statesToUpdate;
+    std::vector<EedfState *> statesToUpdate = findStatesToUpdate();
 
-    findStatesToUpdate(get_root().children(), statesToUpdate);
+    // findStatesToUpdate(get_root().children(), statesToUpdate);
+    for (const auto *state : statesToUpdate)
+    {
+        Log<Message>::Notify("state to update: ", *state);
+    }
 
     if (!statesToUpdate.empty())
     {

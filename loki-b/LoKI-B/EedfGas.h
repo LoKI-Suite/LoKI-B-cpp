@@ -55,7 +55,7 @@ class EedfGas : public GasBase
   private:
     GasPower power;
 
-    void findStatesToUpdate(const std::vector<EedfState *> &stateStructure, std::vector<EedfState *> &statesToUpdate);
+    std::vector<EedfState *> findStatesToUpdate();
 
     CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
 
