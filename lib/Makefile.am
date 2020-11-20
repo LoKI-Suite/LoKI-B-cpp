@@ -15,8 +15,10 @@ libloki_b_la_SOURCES = \
 	Gnuplot.cpp \
 	Grid.cpp \
 	JobSystem.cpp \
+	LinearAlgebra.cpp \
 	LookupTable.cpp \
 	Output.cpp \
+	Parse.cpp \
 	Power.cpp \
 	Setup.cpp \
 	Simulation.cpp \
