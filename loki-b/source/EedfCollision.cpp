@@ -130,7 +130,7 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->cellNumber;
+    const uint32_t n = grid->nCells();
 
     CollPower collPower;
 
@@ -141,7 +141,7 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
+    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
     const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
@@ -152,7 +152,7 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
         ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
     }
 
-    collPower.ine = -factor * getTarget()->density * grid->step * grid->getNode(lmin) * ineSum;
+    collPower.ine = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
 
     if (isReverse)
     {
@@ -166,7 +166,7 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
         }
 
         collPower.sup +=
-            factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->step * grid->getNode(lmin) * supSum;
+            factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
     }
 
     return collPower;
@@ -177,7 +177,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                       const double OPBParameter)
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->cellNumber;
+    const uint32_t n = grid->nCells();
 
     CollPower collPower;
 
@@ -190,7 +190,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
+    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
     if (type == CollisionType::ionization)
     {
@@ -212,7 +212,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sumThree += grid->getCell(i) * term;
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->step *
+            collPower.ine = -factor * getTarget()->density * grid->du() *
                             (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
@@ -224,7 +224,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->step * grid->getCell(lmin - 1) * sum;
+            collPower.ine = -factor * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
@@ -233,7 +233,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             if (w == 0)
                 w = crossSection->threshold();
 
-            Vector TICS = Vector::Zero(grid->cellNumber);
+            Vector TICS = Vector::Zero(grid->nCells());
             Vector auxVec = 1. / (1. + (grid->getCells().cwiseAbs2().array() / (w * w)));
 
             for (int64_t k = 1; k < n; ++k)
@@ -247,8 +247,8 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                         (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->step *
-                            eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->step * TICS)).sum();
+            collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->du() *
+                            eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
     else if (type == CollisionType::attachment)
@@ -260,7 +260,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.ine = -factor * getTarget()->density * grid->step * sum;
+        collPower.ine = -factor * getTarget()->density * grid->du() * sum;
     }
     /// \todo For other Collision types, collPower is unitialized at this point
 
@@ -272,15 +272,15 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
     const Grid *grid = crossSection->getGrid();
 
-    const uint32_t nNodes = grid->cellNumber + 1;
-    const uint32_t nCells = grid->cellNumber;
+    const uint32_t nNodes = grid->nCells() + 1;
+    const uint32_t nCells = grid->nCells();
 
-    const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->step);
+    const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
-    ineRateCoeff = factor * grid->step *
+    ineRateCoeff = factor * grid->du() *
                    cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
     if (isReverse)
@@ -296,7 +296,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         const double statWeightRatio = tStatWeight / pStatWeight;
 
         supRateCoeff =
-            factor * statWeightRatio * grid->step *
+            factor * statWeightRatio * grid->du() *
             cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
     }
 

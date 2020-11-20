@@ -37,6 +37,53 @@ struct SetupBase
 
     template <class SubStructure>
     static bool parseSubStructure(const std::string &content, const std::string &fieldName, SubStructure &subStruct);
+protected:
+    /** The getFieldValue function will extract the value of a given field name.
+     *  From a section in the input file. This function is specifically designed
+     *  to extract single line values (thus they are not a section or list). The
+     *  string buffer to hold the value is passed by reference and the function
+     *  returns a boolean to specify whether the operation was successful.
+     *
+     *  NOTE: This function does not deal with ambiguous field names. E.g. the "isOn"
+     *  field occurs multiple times in the file. The user is advised to only retrieve
+     *  fields that are one level above the level of "sectionContent". E.g. retrieve
+     *  "isOn" when "sectionContent" contains the contents of the "electronKinetics"
+     *  section.
+     */
+    bool getFieldValue(const std::string &sectionContent, const std::string &fieldName, std::string &valueBuffer);
+    /** The getList function retrieves all entries in a list type field, e.g.:
+     *
+     *  dataFiles:
+     *    - eedf
+     *    - swarmParameters
+     *
+     *  and returns them as a vector of strings (thus {"eedf", "swarmParameters"}
+     *  in the example). This vector is passed by reference as an argument. and
+     *  the function returns a boolean to specify whether the operation was
+     *  successful.
+     */
+    bool getList(const std::string &sectionContent, const std::string &fieldName,
+                        std::vector<std::string> &container);
+    /** getSection is a function that retrieves the contents of a specified section
+     *  and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
+     *  to indicate whether the operation was successful.
+     */
+    static bool getSection(const std::string &fileContent, const std::string &sectionTitle, std::string &sectionBuffer);
+
+    /** The setField function extracts a value from a field in the input file,
+     *  casts it to the appropriate type and assigns it to the 'value' argument
+     *  which is passed by reference. It returns a boolean to give an indication
+     *  whether the operation was successful.
+     *
+     *  Note that this is a template function, and the type of 'value' is arbitrary,
+     *  a standard string can be converted to most basic types using a stringstream.
+     *  However, for some basic types (e.g. bool) and custom types, such as enums,
+     *  we can specialize this function to alter its behaviour.
+     *
+     *  The definitions of these specializations can be found below the Parse struct.
+     */
+    template <typename T>
+    bool setField(const std::string &sectionContent, const std::string &fieldName, T &value);
 };
 
 /* ------- WORKING CONDITIONS ------- */

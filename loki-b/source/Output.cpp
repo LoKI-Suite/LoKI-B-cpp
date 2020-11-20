@@ -151,7 +151,7 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     auto *file = std::fopen((m_folder + "/" + m_subFolder + "/swarm_parameters.txt").c_str(), "w");
 
-    fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField);
+    fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField());
     fprintf(file, "  Reduced diffusion coefficient = %#.14e (1/(ms))\n", swarmParameters.redDiffCoeff);
     fprintf(file, "   Reduced mobility coefficient = %#.14e (1/(msV))\n", swarmParameters.redMobCoeff);
     fprintf(file, "   Reduced Townsend coefficient = %#.14e (m2)\n", swarmParameters.redTownsendCoeff);
@@ -303,7 +303,7 @@ void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     }
 
     fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
-            workingConditions->reducedField,
+            workingConditions->reducedField(),
             swarmParameters.redDiffCoeff,
             swarmParameters.redMobCoeff,
             swarmParameters.redTownsendCoeff,
@@ -380,7 +380,7 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, co
 void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     json_type& out = (*m_active)["swarm_parameters"];
-    out.push_back( makeQuantity("Reduced electric field", workingConditions->reducedField, "Td") );
+    out.push_back( makeQuantity("Reduced electric field", workingConditions->reducedField(), "Td") );
     out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
     out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
     out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
@@ -498,7 +498,7 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     assert(out);
 
     (*out)["data"].push_back( {
-            workingConditions->reducedField,
+            workingConditions->reducedField(),
             swarmParameters.redDiffCoeff,
             swarmParameters.redMobCoeff,
             swarmParameters.redTownsendCoeff,

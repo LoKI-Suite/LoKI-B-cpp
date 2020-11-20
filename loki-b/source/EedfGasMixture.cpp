@@ -8,6 +8,7 @@
 #include "LoKI-B/json.h"
 #include <iostream>
 #include <stdexcept>
+#include <regex>
 
 namespace loki
 {
@@ -356,24 +357,22 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
 
 void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)
 {
-    std::string fileBuffer;
-    GAS_PROPERTY(gases(), OPBParameter)
-
     GasMixture::loadGasProperties(setup);
+    readGasPropertyFile(gases(), setup.OPBParameter, "OPBParameter", false,
+        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
 }
 
 void EedfGasMixture::loadGasProperties(const json_type &cnf)
 {
-    std::string fileBuffer;
-    GAS_PROPERTY_JSON(gases(), cnf, OPBParameter)
-
     GasMixture::loadGasProperties(cnf);
+    readGasProperty(gases(), cnf, "OPBParameter", false,
+        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
 }
 
 void EedfGasMixture::evaluateTotalAndElasticCS()
 {
-    elasticCrossSection.setZero(grid->cellNumber + 1);
-    totalCrossSection.setZero(grid->cellNumber + 1);
+    elasticCrossSection.setZero(grid->nCells() + 1);
+    totalCrossSection.setZero(grid->nCells() + 1);
 
     for (auto &gas : gases())
     {
@@ -430,7 +429,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->uMax())
                     continue;
                 rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
@@ -440,7 +439,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             for (auto &collision : collVec)
             {
 
-                if (collision->crossSection->threshold() > grid->getNode(grid->cellNumber))
+                if (collision->crossSection->threshold() > grid->uMax())
                     continue;
                 rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }

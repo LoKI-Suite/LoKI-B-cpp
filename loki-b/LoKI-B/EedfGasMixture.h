@@ -32,7 +32,7 @@ class EedfGasMixture : public GasMixture<EedfGas>
 
     Vector elasticCrossSection, totalCrossSection;
 
-    Grid *grid{nullptr};
+    const Grid *grid;
 
     std::vector<EedfGas *> CARGases;
 

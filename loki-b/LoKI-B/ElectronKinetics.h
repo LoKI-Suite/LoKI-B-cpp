@@ -37,8 +37,10 @@ class ElectronKinetics
     double maxPowerBalanceRelError;
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
-    bool includeEECollisions{false}, includeNonConservativeIonization{false}, includeNonConservativeAttachment{false},
-        hasSuperelastics{false};
+    bool includeEECollisions{false};
+    bool includeNonConservativeIonization{false};
+    bool includeNonConservativeAttachment{false};
+    bool hasSuperelastics{false};
 
     double CIEff{0.}, alphaRedEff{0.}, alphaEE{0.};
 
@@ -61,13 +63,11 @@ class ElectronKinetics
   public:
     ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
-
-    ResultEvent obtainedNewEedf;
-
-    ~ElectronKinetics() = default;
-
     // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
+    ~ElectronKinetics() = default;
+
+    ResultEvent obtainedNewEedf;
 
     void solve();
 

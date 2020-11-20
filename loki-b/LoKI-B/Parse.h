@@ -1,461 +1,126 @@
-//
-// Created by daan on 6-5-19.
-//
+/** \file
+ *
+ *  Declarations of string parsing and utility functions for LoKI-B.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ */
 
 #ifndef LOKI_CPP_PARSE_H
 #define LOKI_CPP_PARSE_H
 
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <regex>
-#include <sstream>
 #include <string>
+#include <iosfwd>
 
-#include "LoKI-B/Enumeration.h"
-#include "LoKI-B/StandardPaths.h"
-#include "LoKI-B/json.h"
+namespace loki {
+namespace Parse {
 
-namespace loki
-{
-struct Parse
-{
-    /*
-     * The setField function extracts a value from a field in the input file,
-     * casts it to the appropriate type and assigns it to the 'value' argument
-     * which is passed by reference. It returns a boolean to give an indication
-     * whether the operation was successful.
-     *
-     * Note that this is a template function, and the type of 'value' is arbitrary,
-     * a standard string can be converted to most basic types using a stringstream.
-     * However, for some basic types (e.g. bool) and custom types, such as enums,
-     * we can specialize this function to alter its behaviour.
-     *
-     * The definitions of these specializations can be found below the Parse struct.
-     */
-
-    template <typename T>
-    static bool setField(const std::string &sectionContent, const std::string &fieldName, T &value)
-    {
-
-        std::string valueBuffer;
-
-        if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-            return false;
-
-        std::stringstream s(valueBuffer);
-        s >> value;
-
-        return true;
-    }
-
-    /*
-     * The getFieldValue function will extract the value of a given field name.
-     * From a section in the input file. This function is specifically designed
-     * to extract single line values (thus they are not a section or list). The
-     * string buffer to hold the value is passed by reference and the function
-     * returns a boolean to specify whether the operation was successful.
-     *
-     * NOTE: This function does not deal with ambiguous field names. E.g. the "isOn"
-     * field occurs multiple times in the file. The user is advised to only retrieve
-     * fields that are one level above the level of "sectionContent". E.g. retrieve
-     * "isOn" when "sectionContent" contains the contents of the "electronKinetics"
-     * section.
-     */
-    static bool getFieldValue(const std::string &sectionContent, const std::string &fieldName, std::string &valueBuffer)
-    {
-        const std::regex r(fieldName + R"(:\s*(.*[^\s\n])\s*\n*)");
-        std::smatch m;
-
-        if (!std::regex_search(sectionContent, m, r))
-            return false;
-
-        valueBuffer = m[1];
-
-        return true;
-    }
-
-    /*
-     * The getList function retrieves all entries in a list type field, e.g.:
-     *
-     * dataFiles:
-     *   - eedf
-     *   - swarmParameters
-     *
-     * and returns them as a vector of strings (thus {"eedf", "swarmParameters"}
-     * in the example). This vector is passed by reference as an argument. and
-     * the function returns a boolean to specify whether the operation was
-     * successful.
-     */
-    static bool getList(const std::string &sectionContent, const std::string &fieldName,
-                        std::vector<std::string> &container)
-    {
-
-        static const std::regex r(R"(-\s*(\S+(?: \S+)*)\s*\n*)");
-
-        for (auto it = std::sregex_iterator(sectionContent.begin(), sectionContent.end(), r);
-             it != std::sregex_iterator(); ++it)
-        {
-
-            container.emplace_back(it->str(1));
-        }
-
-        return !container.empty();
-    }
-
-    /*
-     * getSection is a static function that retrieves the contents of a specified section
-     * and stores them in the "sectionBuffer" string. Furthermore, it returns a boolean
-     * to indicate whether the operation was successful.
-     */
-    static bool getSection(const std::string &fileContent, const std::string &sectionTitle, std::string &sectionBuffer)
-    {
-
-        // This regular expression finds the level of a specific section. In other
-        // words, it finds the number of spaces that precede the section title
-        const std::regex reLevel(R"((?:^|\n)( *))" + sectionTitle);
-        std::smatch m;
-
-        if (!std::regex_search(fileContent, m, reLevel))
-            return false;
-
-        const std::string levelString = m[1];
-
-// This regular expression matches a specific section in the input file. More accurately,
-// it returns the text in between the specified section and the next section on the same
-// level.
-#ifdef _MSVC
-        // MSVC: $ matches before \n and at the end of input
-        const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:$\n$)))");
-#else
-        // OTHER: $ matches only end of input
-        const std::regex reSection(sectionTitle + R"(:\s*\n*([^]*?)(?:(?:\n+)" + levelString + R"(\w)|(?:\n*$)))");
-#endif
-
-        if (!std::regex_search(fileContent, m, reSection))
-            return false;
-
-        // Restore the original level of the content to allow for further processing.
-        sectionBuffer = levelString + "  ";
-        sectionBuffer += m[1];
-
-        return true;
-    }
-
-    /*
-     * removeComments is a static function that takes a string as an argument. It strips the
-     * string from comments and returns it.
-     */
-    static std::string removeComments(const std::string &content)
-    {
-        std::string content_clean;
-
-        static const std::regex reLine(R"(\n\s*%[^\n]*)");
-        content_clean = std::regex_replace(content, reLine, "");
-
-        static const std::regex reClean(R"(%[^]*?(?:\n|$))");
-        return std::regex_replace(content_clean, reClean, "\n");
-    }
-
-    /* -- statePropertyDataType --
-     * Deduces whether an entry in the stateProperties section describes loading
-     * of state properties by direct value, file or function. The result is
-     * returned as a StatePropertyDataType enumeration type.
-     */
-
-    static StatePropertyDataType statePropertyDataType(const std::string &propertyString, std::string &buffer)
-    {
-        static const std::regex reProperty(R"(.*=\s*(.+?)\s*$)");
-        static const std::regex reValue(R"([\.0-9]+)");
-
-        std::smatch m;
-
-        if (std::regex_search(propertyString, m, reProperty))
-        { // value or function
-            buffer = m.str(1);
-
-            if (std::regex_match(buffer, reValue))
-            {
-                return StatePropertyDataType::direct;
-            }
-
-            return StatePropertyDataType::function;
-        }
-
-        buffer = propertyString;
-
-        return StatePropertyDataType::file;
-    }
-
-    /* -- propertyFunctionAndArguments --
-     * Extracts the property function name and arguments from a given string and
-     * stores them in two separate strings.
-     */
-
-    static bool propertyFunctionAndArguments(const std::string &totalString, std::string &functionName,
-                                             std::string &argumentString)
-    {
-        static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
-        std::smatch m;
-
-        if (!std::regex_match(totalString, m, reFuncArgs))
-            return false;
-
-        functionName = m.str(1);
-        argumentString = m.str(2);
-
-        return true;
-    }
-
-    /* -- argumentsFromString --
-     * Extracts the separate arguments from a string containing the arguments, finds
-     * their corresponding double values and pushes them into the arguments vector. E.g.
-     * "[gasTemperature, 1000]" first yields "gasTemperature" which is looked up in
-     * the argumentMap to obtain its value, and then yields "1000" which is converted
-     * into a double and pushed into the arguments vector.
-     */
-
-    static bool argumentsFromString(const std::string &argumentString, std::vector<double> &arguments,
-                                    const std::map<std::string, double *> &argumentMap)
-    {
-        static const std::regex r(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
-
-        for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), r);
-             it != std::sregex_iterator(); ++it)
-        {
-            std::string current = it->str(1);
-
-            if (isNumerical(current))
-            {
-                double value;
-
-                if (!getValue(current, value))
-                    return false;
-
-                arguments.emplace_back(value);
-            }
-            else
-            {
-                if (argumentMap.count(current) == 0)
-                    return false;
-
-                arguments.emplace_back(*argumentMap.at(current));
-            }
-        }
-
-        return true;
-    }
-
-    /* -- stateAndValue --
-     * Extracts the state and the corresponding value from a line as provided in a
-     * property file. They are both stored in their own string variables which are
-     * passed by reference.
-     */
-
-    static bool stateAndValue(const std::string &propertyFileLine, std::string &stateString, std::string &valueString)
-    {
-        static const std::regex r(R"((.*?)\s*([\d\.e+-]+)\s*(?:\n|$))");
-        std::smatch m;
-
-        if (!std::regex_search(propertyFileLine, m, r))
-            return false;
-
-        stateString = m.str(1);
-        valueString = m.str(2);
-
-        return true;
-    }
-
-    /* -- rawCrossSectionFromStream --
-     * Accepts a reference to an input file stream of an LXCat file. This stream should be
-     * at a position just after reading a collision description from the LXCat file, since
-     * this function searches for the line containing solely dashes, indicating that a
-     * cross section follows. The raw cross section is then stored as a vector of pairs of
-     * doubles, which the user passes by reference.
-     */
-
-    static void rawCrossSectionFromStream(std::vector<double> &rawEnergyData, std::vector<double> &rawCrossSection,
-                                          std::istream &in)
-    {
-        std::string line;
-
-        while (std::getline(in, line))
-        {
-            if (line.substr(0, 2) == "--")
-                break;
-        }
-
-        double energy = 0., value = 0.;
-
-        while (std::getline(in, line))
-        {
-            std::stringstream ss(line);
-            if (!((ss >> energy) && (ss >> value)))
-                break;
-
-            rawEnergyData.emplace_back(energy);
-            rawCrossSection.emplace_back(value);
-        }
-    }
-
-    /* -- stringBufferFromFile --
-     * Loads the complete content of a specified file into the given std::string.
-     */
-
-    static bool stringBufferFromFile(const std::string &fileName, std::string &buffer)
-    {
-        std::ifstream in(INPUT "/" + fileName);
-
-        if (!in)
-            return false;
-
-        std::stringstream ss;
-        ss << in.rdbuf();
-
-        buffer = removeComments(ss.str());
-
-        return true;
-    }
-
-    /* -- gasProperty --
-     * Tries to parse the value of a given property for a given gas. The 'content' string
-     * should store the content of the database file corresponding to the passed property
-     * (i.e. mass or anharmonicFrequency).
-     */
-
-    static bool gasProperty(const std::string &gasName, double &property, const std::string &content)
-    {
-        const std::regex r(R"((?:^|\n))" + gasName + R"(\s+(.*)\s*)");
-        std::smatch m;
-
-        if (!std::regex_search(content, m, r))
-            return false;
-
-        std::stringstream ss(m[1]);
-        return static_cast<bool>(ss >> property);
-    }
-
-    /* -- getValue --
-     * Tries to parse a string into a double, returns a boolean based on its success
-     * to do so.
-     */
-
-    static bool getValue(const std::string &valueString, double &value)
-    {
-        //            const std::regex r(R"(\s*(\d+\.?\d*)\s*\n*)");
-        //            std::smatch m;
-        //
-        //            if (!std::regex_match(valueString, r)) return false;
-
-        std::stringstream ss(valueString);
-
-        return static_cast<bool>(ss >> value);
-    }
-
-    static bool isNumerical(const std::string &str)
-    {
-        static const std::regex reNum(R"(\s*\d*\.?\d+\s*)");
-
-        return std::regex_match(str, reNum);
-    }
-};
-
-/*
- * The setField function needs to behave differently when it is
- * supplied with some specific types. The types for which the
- * function needs to be specialized are:
- *
- * - bool; since these values are supplied through 'true' and
- *   'false' rather than '1' and '0'.
- * - std::string; strictly speaking, this is not necessary,
- *   but in this case we can skip the type cast since the
- *   desired type is already std::string.
- * - std::vector<std::string>; in this case the behaviour
- *   is completely different and the getList function is
- *   used.
- * - enums; whenever a new enum is defined that can occur in
- *   the input file, a new specialization needs to be written.
- *
- * Note that we could have defined a different function for every
- * type (e.g. setBool, setString, ...), however, now we can set
- * any desired value through a single function.
- *
- * Use "inline" with fully specialized templates to refrain from
- * breaking the "One Definition Rule". An alternative is to add
- * a Parse.cpp file and specify the specializations there.
+/** Parse \a valueString into double \a value. The boolean return
+ *  value returns tru if the conversion was successful, false otherwise.
  */
-template <>
-inline bool Parse::setField<std::string>(const std::string &sectionContent, const std::string &fieldName,
-                                         std::string &value)
-{
+bool getValue(const std::string &valueString, double &value);
 
-    return getFieldValue(sectionContent, fieldName, value);
-}
+/** Parse \a valueString into a double and return the result. If the conversion
+ *  fails or is incomplete (trailing characters are present), a
+ *  std::runtime_error is thrown.
+ */
+double getValue(const std::string &valueString);
 
-template <>
-inline bool Parse::setField<bool>(const std::string &sectionContent, const std::string &fieldName, bool &value)
-{
-    std::string valueBuffer;
+/** Replace all occurrences of \a key in \a str with \a repl.
+ *  The function correctly handles the case that \a key is a substring of \a repl.
+ *  As an example, if in the string "AA" all "A" are to be replaced with "AB, the
+ *  result will be "ABAB": the 'produced' characters 'A' will not be replaced
+ *  recursively (which would result in an endless loop).
+ *
+ *  If the search string \a key is empty, a std::runtime_error is thrown.
+ *
+ *  \sa     searchAndReplaceCopy
+ *  \author Jan van Dijk
+ *  \date   May 2013
+ */
+std::string& searchAndReplaceInPlace(
+                            std::string& str,
+                            const std::string& key,
+                            const std::string& repl);
 
-    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-        return false;
+/** Replace all occurrences of \a key in a copy of \a str with \a repl
+ *  and return the result.
+ *
+ *  This function is similar to search_and_replace, but accepts a constant
+ *  string reference. The function makes a copy of \a str, then calls
+ *  searchAndReplaceInPlace to do the substitutions in that copy,
+ *  and returns the result.
+ *
+ *  \sa     searchAndReplaceInPlace
+ *  \author Jan van Dijk
+ *  \date   January 2014
+ */
+std::string searchAndReplaceCopy(
+                            const std::string& str,
+                            const std::string& key,
+                            const std::string& repl);
 
-    std::stringstream s(valueBuffer);
-    s >> std::boolalpha >> value;
+/** Reads characters from stream \a is into \a dest.
+ *  Om entry, the result \a dest is cleared. Then the function starts
+ *  extracts characters from \a is line by line, using the std::getine.
+ *  For every line, it scans for a '%' character, and if one is found it
+ *  removes everything starting from that point. Next, trailing whitespace
+ *  is removed. When the resulting line is not empty, it is appended to the
+ *  \a result (A newline character is prepanded if \a dest is not empty).
+ *
+ *  The function results a boolean that indicates success. At present, true
+ *  is always returned, but a future extension could do additional syntax
+ *  checking and return false if an error is detected. (Throwing an exception
+ *  with a clear error message will be more useful in that case, though.)
+ *
+ *  \todo Should a % that immediately follows a non-whitespace
+ *        character start a comment? Or should it be kept in a
+ *        situation like "fraction: 100%"?
+ *
+ *  \author Daan Boer and Jan van Dijk
+ *  \date   November 2020
+ */
+bool removeComments(std::istream& is, std::string &dest);
 
-    return true;
-}
+/** Open file \a fileName for reading, call removeComments() to remove
+ *  comments, trailing whitespace and empty lines from the stream, and
+ *  send the output to \a dest.
+ *
+ *  The function results a boolean that indicates success. When the file
+ *  cannot be opened, false is returned, otherwise the result of the call
+ *  to removeComments is returned.
+ *
+ *  \todo the string INPUT "/" is prepended unconditionally. This is better
+ *        decided by the caller. It would be cleaner and more general to
+ *        not do such magic and use \a fileName as-is. The comments above
+ *        already refelect that future situation.
+ *
+ *  \author Daan Boer and Jan van Dijk
+ *  \date   November 2020
+ */
+bool stringBufferFromFile(const std::string &fileName, std::string &dest);
 
-template <>
-inline bool Parse::setField<EedfType>(const std::string &sectionContent, const std::string &fieldName, EedfType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-        return false;
-    value = getEedfType(valueBuffer);
-    return true;
-}
-
-template <>
-inline bool Parse::setField<IonizationOperatorType>(const std::string &sectionContent, const std::string &fieldName,
-                                                    IonizationOperatorType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-        return false;
-    value = getIonizationOperatorType(valueBuffer);
-    return true;
-}
-
-template <>
-inline bool Parse::setField<GrowthModelType>(const std::string &sectionContent, const std::string &fieldName,
-                                             GrowthModelType &value)
-{
-
-    std::string valueBuffer;
-
-    if (!getFieldValue(sectionContent, fieldName, valueBuffer))
-        return false;
-    value = getGrowthModelType(valueBuffer);
-    return true;
-}
-
-template <>
-inline bool Parse::setField<std::vector<std::string>>(const std::string &sectionContent, const std::string &fieldName,
-                                                      std::vector<std::string> &value)
-{
-    std::string fieldContent;
-
-    if (!Parse::getSection(sectionContent, fieldName, fieldContent))
-        return false;
-
-    return Parse::getList(fieldContent, fieldName, value);
-}
-
+} // namespace Parse
 } // namespace loki
 
 #endif // LOKI_CPP_PARSE_H

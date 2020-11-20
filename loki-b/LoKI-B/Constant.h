@@ -31,6 +31,16 @@ const double e = M_E;
 const double kBeV = boltzmann / electronCharge;
 const double plankReduced = plank / (2. * pi);
 const double plankReducedInEv = plank / (2. * pi * electronCharge);
+
+namespace SI {
+
+/** The Townsend is a unit for the reduced field E/N and is defined
+ *  to be equal to 1e-17 V*cm^2, or in SI units 1e-21 V*m^2.
+ */
+const double Townsend = 1e-21;
+
+}
+
 } // namespace Constant
 } // namespace loki
 

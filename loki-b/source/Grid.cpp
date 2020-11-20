@@ -1,6 +1,31 @@
-//
-// Created by daan on 2-5-19.
-//
+/** \file
+ *
+ *  Implementation of the LoKI-B energy grid class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   2. May 2019
+ */
 
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Log.h"
@@ -8,77 +33,71 @@
 namespace loki
 {
 
+Grid::SmartGridParameters::SmartGridParameters(const SmartGridSetup& smartGrid)
+    : minEedfDecay(smartGrid.minEedfDecay),
+      maxEedfDecay(smartGrid.maxEedfDecay), updateFactor(smartGrid.updateFactor)
+{
+    checkConfiguration();
+}
+
+Grid::SmartGridParameters::SmartGridParameters(const json_type& cnf)
+    : minEedfDecay(cnf.at("minEedfDecay").get<unsigned>()),
+      maxEedfDecay(cnf.at("maxEedfDecay").get<unsigned>()),
+      updateFactor(cnf.at("updateFactor").get<double>())
+{
+    checkConfiguration();
+}
+
+void Grid::SmartGridParameters::checkConfiguration() const
+{
+    if (updateFactor<=0)
+    {
+        Log<Message>::Error("Smart grid: update factor must be positive.");
+    }
+    if (minEedfDecay > maxEedfDecay)
+    {
+        Log<Message>::Error("Smart grid: minEedfDecay exceeds maxEedfDecay.");
+    }
+}
+
 Grid::Grid(const EnergyGridSetup &gridSetup)
-    : cells(gridSetup.cellNumber), nodes(gridSetup.cellNumber - 1), cellNumber(gridSetup.cellNumber),
-      step(gridSetup.maxEnergy / gridSetup.cellNumber), minEedfDecay(gridSetup.smartGrid.minEedfDecay),
-      maxEedfDecay(gridSetup.smartGrid.maxEedfDecay), updateFactor(gridSetup.smartGrid.updateFactor),
-      isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
+    : m_nCells(gridSetup.cellNumber),
+      m_du(gridSetup.maxEnergy/m_nCells),
+      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, gridSetup.maxEnergy)),
+      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
 {
-    this->nodes = Vector::LinSpaced(cellNumber + 1, 0, gridSetup.maxEnergy);
-    this->cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
-
-    Log<Message>::Notify(*this);
+    const SmartGridSetup& sg = gridSetup.smartGrid;
+    /* Try to set up the smartGrid only if any of the configuration
+     * parameters does not have the default value (see Setup.h).
+     * We use that to test that a configuration has been read from file.
+     */
+    if (sg.minEedfDecay!=0 || sg.maxEedfDecay!=0 || sg.updateFactor !=0.0)
+    {
+        m_smartGrid.reset(new SmartGridParameters(gridSetup.smartGrid));
+    }
+    Log<Message>::Notify("Created the energy grid.");
 }
 
-/// \todo Use get<T>() everywhere, do not rely on implicit conversion
-/// \todo See if the elements for smartFrid support can be bundled in some way
 Grid::Grid(const json_type &cnf)
-    : cells(cnf.at("cellNumber").get<unsigned>()), nodes(cnf.at("cellNumber").get<unsigned>() - 1),
-      cellNumber(cnf.at("cellNumber")), step(cnf.at("maxEnergy").get<double>() / cnf.at("cellNumber").get<unsigned>()),
-      minEedfDecay(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("minEedfDecay").get<unsigned>() : 0),
-      maxEedfDecay(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("maxEedfDecay").get<unsigned>() : 0),
-      updateFactor(cnf.contains("smartGrid") ? cnf.at("smartGrid").at("updateFactor").get<double>() : 0),
-      isSmart(updateFactor != 0 && minEedfDecay < maxEedfDecay)
+    : m_nCells(cnf.at("cellNumber").get<unsigned>()),
+      m_du(cnf.at("maxEnergy").get<double>()/m_nCells),
+      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, cnf.at("maxEnergy"))),
+      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
 {
-    this->nodes = Vector::LinSpaced(cellNumber + 1, 0, cnf.at("maxEnergy"));
-    this->cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
-
-    Log<Message>::Notify(*this);
+    if (cnf.contains("smartGrid"))
+    {
+        m_smartGrid.reset(new SmartGridParameters(cnf.at("smartGrid")));
+    }
+    Log<Message>::Notify("Created the energy grid.");
 }
 
-const Vector &Grid::getNodes() const
+void Grid::updateMaxEnergy(double uMax)
 {
-    return nodes;
+    m_du = uMax / nCells();
+    m_nodes = Vector::LinSpaced(nCells() + 1, 0, uMax);
+    m_cells = Vector::LinSpaced(nCells(), .5, nCells() - .5) * m_du;
+
+    updatedMaxEnergy.emit();
 }
 
-const Vector &Grid::getCells() const
-{
-    return cells;
-}
-
-double Grid::getNode(uint32_t index) const
-{
-    return nodes[index];
-}
-
-double Grid::lastNode() const
-{
-    return nodes[cellNumber];
-}
-
-double Grid::getCell(uint32_t index) const
-{
-    return cells[index];
-}
-
-double Grid::lastCell() const
-{
-    return cells[cellNumber - 1];
-}
-
-void Grid::updateMaxEnergy(double value)
-{
-    step = value / cellNumber;
-    nodes = Vector::LinSpaced(cellNumber + 1, 0, value);
-    cells = Vector::LinSpaced(cellNumber, .5, cellNumber - .5) * step;
-
-    updatedMaxEnergy1.emit();
-    updatedMaxEnergy2.emit();
-}
-
-std::ostream &operator<<(std::ostream &os, const Grid &grid)
-{
-    return os << "Grid with " << grid.nodes.size() << " nodes, " << grid.cells.size() << " cells and step "
-              << grid.step;
-}
 } // namespace loki

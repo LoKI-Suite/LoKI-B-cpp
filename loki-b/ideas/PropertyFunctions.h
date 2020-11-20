@@ -5,6 +5,7 @@
 #include "LoKI-B/Parse.h"
 #include "ideas/StateContainer.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Enumeration.h"
 
 namespace loki::experimental{
 
@@ -26,12 +27,10 @@ namespace loki::experimental{
  */
 namespace PropertyFunctions {
 
-/* -- setStateProperty --
- * Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
- * StatePropertyType, it will assign the value to either the population, statisticalWeight or
- * population member variables of the supplied state object.
+/** Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
+ *  StatePropertyType, it will assign the value to either the population, statisticalWeight or
+ *  population member variables of the supplied state object.
  */
-
 template <class StateT>
 inline void setStateProperty(StateT& state, const double &value, loki::StatePropertyType type)
 {

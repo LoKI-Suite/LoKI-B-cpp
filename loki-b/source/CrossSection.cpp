@@ -4,7 +4,6 @@
 
 #include "LoKI-B/CrossSection.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
 #include <utility>
 
 namespace loki
@@ -17,7 +16,7 @@ CrossSection::CrossSection(Grid *energyGrid, bool isElasticOrEffective, const js
     m_lut(LookupTable::create(cnf))
 {
     this->interpolate();
-    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
 
 CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
@@ -27,7 +26,7 @@ CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrE
     m_lut(LookupTable::create(in))
 {
     this->interpolate();
-    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
 
 CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
@@ -38,7 +37,7 @@ CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrE
     m_lut(rawEnergyData,rawCrossSection)
 {
     this->interpolate();
-    energyGrid->updatedMaxEnergy1.addListener(&CrossSection::interpolate, this);
+    energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
 
 void CrossSection::interpolate()

@@ -5,9 +5,15 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/Parse.h"
+#include "LoKI-B/Log.h"
 
 #include <memory>
 #include <vector>
+#include <regex>
+
+namespace loki
+{
 
 /** This define accepts the name of a gas property (e.g. mass) and will try load the corresponding database
  *  file. If this fails it will output a warning (but nothing more). If the file is succesfully loaded, it
@@ -19,66 +25,62 @@
  *  Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
  *
  *  \todo For now, the electron gas (name=="e") is skipped. Decide how to handle electron properties.
+ *  \todo Error reporting should be fixed. The file name is not displayed, the field instead.
  */
-
-#define GAS_PROPERTY_TEMPL(GASLIST, PROPERTY, SEVERITY)                                                                \
-    {                                                                                                                  \
-        std::string fileBuffer;                                                                                        \
-        std::cerr << "Configuring gas property '" << #PROPERTY << "', using file '" << setup.PROPERTY << "'."          \
-                  << std::endl;                                                                                        \
-        if (Parse::stringBufferFromFile(setup.PROPERTY, fileBuffer))                                                   \
-        {                                                                                                              \
-            for (auto &gas : GASLIST)                                                                                  \
-            {                                                                                                          \
-                if (gas->name == "e")                                                                                  \
-                    continue;                                                                                          \
-                if (!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer))                                         \
-                {                                                                                                      \
-                    Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas '" + gas->name + "'");                          \
-                }                                                                                                      \
-            }                                                                                                          \
-        }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            Log<FileError>::SEVERITY(setup.PROPERTY);                                                                  \
-        }                                                                                                              \
-    }
-
-#define GAS_PROPERTY(GASLIST, PROPERTY) GAS_PROPERTY_TEMPL(GASLIST, PROPERTY, Warning)
-#define R_GAS_PROPERTY(GASLIST, PROPERTY) GAS_PROPERTY_TEMPL(GASLIST, PROPERTY, Error)
-
-// JSON versions. The filename is obtained from cnf, the JSON version of the input file
-/// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
-#define GAS_PROPERTY_JSON_TEMPL(GASLIST, cnf_object, PROPERTY, SEVERITY)                                               \
-    {                                                                                                                  \
-        std::string fileBuffer;                                                                                        \
-        if (cnf_object.contains(#PROPERTY) && Parse::stringBufferFromFile(cnf_object.at(#PROPERTY), fileBuffer))       \
-        {                                                                                                              \
-            std::cerr << "Configuring gas property '" << #PROPERTY << "', using file '" << cnf_object.at(#PROPERTY)    \
-                      << "'." << std::endl;                                                                            \
-            for (auto &gas : GASLIST)                                                                                  \
-            {                                                                                                          \
-                if (gas->name == "e")                                                                                  \
-                    continue;                                                                                          \
-                if (!Parse::gasProperty(gas->name, gas->PROPERTY, fileBuffer))                                         \
-                {                                                                                                      \
-                    Log<GasPropertyError>::SEVERITY(#PROPERTY " in gas " + gas->name);                                 \
-                }                                                                                                      \
-            }                                                                                                          \
-        }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            Log<FileError>::SEVERITY(#PROPERTY);                                                                       \
-        }                                                                                                              \
-    }
-
-#define GAS_PROPERTY_JSON(GASLIST, cnf_object, PROPERTY)                                                               \
-    GAS_PROPERTY_JSON_TEMPL(GASLIST, cnf_object, PROPERTY, Warning);
-#define R_GAS_PROPERTY_JSON(GASLIST, cnf_object, PROPERTY)                                                             \
-    GAS_PROPERTY_JSON_TEMPL(GASLIST, cnf_object, PROPERTY, Error);
-
-namespace loki
+template <typename GasListType, typename HandlerType>
+void readGasPropertyFile(const GasListType& gasList,
+                    const std::string& fileName,
+                    const std::string& propertyName,
+                    bool required,
+                    HandlerType handler)
 {
+    std::string fileBuffer;
+    if (!fileName.empty() && Parse::stringBufferFromFile(fileName, fileBuffer))
+    {
+        Log<Message>::Notify("Configuring gas property '" + propertyName
+              + "', using file '" + fileName + "'.");
+        for (auto &gas : gasList)
+        {
+            if (gas->name == "e")
+                continue;
+            double value;
+            const std::regex r(R"((?:^|\n))" + gas->name + R"(\s+(\S*)\s*)");
+            std::smatch m;
+            if (std::regex_search(fileBuffer, m, r) && Parse::getValue(m[1],value))
+            {
+                handler(*gas,value);
+            }
+            else
+            {
+                if (required)
+                    Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name);
+                else
+                    Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name);
+            }
+        }
+    }
+    else
+    {
+        if (required)
+            Log<FileError>::Error(propertyName);
+        else
+            Log<FileError>::Warning(propertyName);
+    }
+}
+
+
+/// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
+template <typename GasListType, typename HandlerType>
+void readGasProperty(const GasListType& gasList,
+                    const json_type& cnf,
+                    const std::string& propertyName,
+                    bool required,
+                    HandlerType handler)
+{
+    const std::string fileName = cnf.contains(propertyName)
+        ? cnf.at(propertyName).get<std::string>() : std::string{};
+    readGasPropertyFile(gasList,fileName,propertyName,required,handler);
+}
 
 /** Gas mixture base class...
  */
@@ -107,7 +109,11 @@ class GasMixtureBase
      *  character) then a pointer to the first sibling is returned.
      */
     GasBase::StateBase *findState(const StateEntry &entry);
-
+    /** Returns a container of matches. Empty (no match), one state (no owildcard)
+     *  or a vector with one or more state pointers (entry has a wildcard).
+     *  \todo reconsider all the state accessors. Which interfaces do we really need.
+     */
+    GasBase::StateBase::ChildContainer findStates(const StateEntry &entry);
     /** Loads the data concerning a single property of the states (energy, statistical
      *  weight, or population) from a vector of entries as supplied by the setup object.
      *  First it determines whether the current entry requires loading by direct value,

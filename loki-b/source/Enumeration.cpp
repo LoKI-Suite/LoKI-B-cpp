@@ -60,6 +60,17 @@ GrowthModelType getGrowthModelType(const std::string &str)
                                                    });
 }
 
+std::string statePropertyName(StatePropertyType type)
+{
+    switch (type)
+    {
+        case StatePropertyType::energy: return "energy"; break;
+        case StatePropertyType::statisticalWeight: return "statistical weight"; break;
+        case StatePropertyType::population: return "population"; break;
+    }
+    throw std::runtime_error("Illegal StatePropertyType");
+}
+
 CollisionType getCollisionType(const std::string &str)
 {
     return parse_enum_string<CollisionType>(str, {

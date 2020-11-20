@@ -25,7 +25,7 @@ class StateEntry
     StateEntry(const std::string &id, StateType level, const std::string &gasName, const std::string &charge,
                const std::string &e, const std::string &v, const std::string &J);
     static StateEntry electronEntry();
-    bool hasWildCard();
+    bool hasWildCard() const;
 
     /** \todo Rethink m_id, or at least document this. id should only be associated with
      *        the final state that is created, not with intermediate parents. This is not
@@ -58,10 +58,10 @@ StateEntry entryFromJSON(const json_type &cnf);
  */
 StateEntry propertyStateFromString(const std::string &propertyString);
 
-/** Parses a state property file into a vector of StateEntry, double pairs. This vector
- *  is passed by reference.
+/** Parses state property file \a fileName into \a entries, a vector of
+ *  StateEntry/double pairs.
  */
-bool statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries);
+void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries);
 
 } // namespace loki
 

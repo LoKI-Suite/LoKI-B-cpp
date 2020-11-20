@@ -2,6 +2,9 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
+/// \todo Remove me once INPUT is no longer used.
+#include "LoKI-B/StandardPaths.h"
+
 
 #include <regex>
 
@@ -58,93 +61,126 @@ GasBase::StateBase *GasMixtureBase::findState(const StateEntry &entry)
     return gas ? gas->findState(entry) : nullptr;
 }
 
+GasBase::StateBase::ChildContainer GasMixtureBase::findStates(const StateEntry &entry)
+{
+    using ChildContainer = GasBase::StateBase::ChildContainer;
+    GasBase::StateBase* state = findState(entry);
+    return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
+}
+
 void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
                                        const WorkingConditions *workingConditions)
 {
 
     for (const auto &line : entryVector)
     {
-        std::string valueString;
-        StatePropertyDataType dataType = Parse::statePropertyDataType(line, valueString);
-
-        if (dataType != StatePropertyDataType::file)
+        // look for a line of the form "S = E"
+        static const std::regex reProperty(R"((\S+)\s+=\s+(\S+)\s*$)");
+        std::smatch m;
+        if (std::regex_search(line, m, reProperty))
         {
-            StateEntry entry = propertyStateFromString(line);
+            // Found. E can be a literal value, or a function with arguments.
+            // value or function
+            const std::string state_id = m.str(1);
+            const std::string expr = m.str(2);
 
-            if (entry.level != none)
+            // 1. get the state or state group that the expression will
+            //    be applied to.
+            const StateEntry entry = propertyStateFromString(state_id);
+            /** \todo Should this be part of propertyStateFromString?
+             *        Is there a reason to accept a 'none'-result?
+             */
+            if (entry.level == none)
             {
-                GasBase::StateBase *state = findState(entry);
+                throw std::runtime_error("loadStateProperty: illegal "
+                                "state identifier '" + line + "'.");
+            }
+            GasBase::StateBase::ChildContainer states = findStates(entry);
+            if (states.empty())
+            {
+                throw std::runtime_error("loadStateProperty: could not find "
+                                "state or state group '" + line + "'.");
+            }
 
-                if (state == nullptr)
+            // 2. Now apply the expression.
+            // Try to parse expr as a number first...
+            double value;
+            if (Parse::getValue(expr, value))
+            {
+                // expr is a number, now parsed into value.
+                PropertyFunctions::constantValue(states, value, propertyType);
+            }
+            else
+            {
+                // expr is not a number. We treat is a function (maybe with arguments).
+                static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
+                std::smatch m;
+                if (!std::regex_match(expr, m, reFuncArgs))
                 {
-                    Log<PropertyStateError>::Error(entry);
+                    throw std::runtime_error("Could not parse function "
+                        "name and argument list from string '"
+                        + expr + "'.");
                 }
+                const std::string functionName = m.str(1);
+                const std::string argumentString = m.str(2);
 
-                if (dataType == StatePropertyDataType::direct)
+                // create an argument list for the function (possibly empty)
+                std::vector<double> arguments;
+                static const std::regex reArgList(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
+                for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), reArgList);
+                     it != std::sregex_iterator(); ++it)
                 {
+                    const std::string arg{it->str(1)};
                     double value;
-
-                    if (!Parse::getValue(valueString, value))
-                        Log<PropertyValueParseError>::Error(valueString);
-
-                    if (entry.hasWildCard())
+                    if (Parse::getValue(arg, value))
                     {
-                        PropertyFunctions::constantValue(state->siblings(), value, propertyType);
+                        // value set by getValue
+                    }
+                    else if (workingConditions->findParameter(arg))
+                    {
+                        value = workingConditions->getParameter(arg);
                     }
                     else
                     {
-                        /// \todo Can we avoid creation of the intermediate vector?
-                        std::vector<GasBase::StateBase *> states{state};
-                        PropertyFunctions::constantValue(states, value, propertyType);
+                        throw std::runtime_error("Argument '" + arg + "' is neither a numerical "
+                                    "value, nor a known parameter name.");
                     }
+                    arguments.emplace_back(value);
                 }
-                else
-                {
-                    std::vector<double> arguments;
-                    std::string functionName, argumentString;
-
-                    if (!Parse::propertyFunctionAndArguments(valueString, functionName, argumentString))
-                        Log<PropertyFunctionParseError>::Error(valueString);
-
-                    if (!Parse::argumentsFromString(argumentString, arguments, workingConditions->argumentMap))
-                        Log<PropertyArgumentsError>::Error(argumentString);
-
-                    if (entry.hasWildCard())
-                    {
-                        PropertyFunctions::callByName(functionName, state->siblings(), arguments, propertyType);
-                    }
-                    else
-                    {
-                        /// \todo Can we avoid creation of the intermediate vector?
-                        std::vector<GasBase::StateBase *> states{state};
-                        PropertyFunctions::callByName(functionName, states, arguments, propertyType);
-                    }
-                }
+                PropertyFunctions::callByName(functionName, states, arguments, propertyType);
             }
         }
         else
         {
             std::vector<std::pair<StateEntry, double>> entries;
-            const std::string fileName = INPUT "/" + valueString;
+            const std::string fileName = INPUT "/" + line;
 
-            if (!statePropertyFile(fileName, entries))
-                Log<FileError>::Error(fileName);
+            try
+            {
+                statePropertyFile(fileName, entries);
+            }
+            catch (std::exception& exc)
+            {
+                throw std::runtime_error("Error configuring state property '"
+                                        + statePropertyName(propertyType) + "': "
+                                        + std::string{exc.what()} );
+            }
 
+            /** \todo Also in case we read a property file, the expression type could be a function.
+             *        It would be nice if the external file case behaves the same as the inline case.
+             *        This could be achieved by first assembling a collection of tasks (either from
+             *        the settings node or from file), then execute these tasks. That will be more
+             *        general and simplify this function at the same time.
+             */
             for (auto &entry : entries)
             {
-                GasBase::StateBase *state = findState(entry.first);
-
-                if (state == nullptr)
-                    Log<PropertyStateError>::Error(entry.first);
-
-                if (entry.first.hasWildCard())
+                GasBase::StateBase::ChildContainer states = findStates(entry.first);
+                if (states.empty())
                 {
-                    PropertyFunctions::constantValue(state->siblings(), entry.second, propertyType);
+                    throw std::runtime_error("loadStateProperty: could not find "
+                                    "state or state group '" + entry.first.m_id + "'.");
                 }
-                else
-                {
-                    PropertyFunctions::setStateProperty(state, entry.second, propertyType);
-                }
+                PropertyFunctions::constantValue(states, entry.second, propertyType);
             }
         }
     }
@@ -178,11 +214,16 @@ void GasMixtureBase::loadStateProperties(const json_type &cnf, const WorkingCond
 
 void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
 {
-    R_GAS_PROPERTY(m_gases, mass)
-    GAS_PROPERTY(m_gases, harmonicFrequency)
-    GAS_PROPERTY(m_gases, anharmonicFrequency)
-    GAS_PROPERTY(m_gases, electricQuadrupoleMoment)
-    GAS_PROPERTY(m_gases, rotationalConstant)
+    readGasPropertyFile(m_gases, setup.mass, "mass", true,
+        [](GasBase& gas, double value) { gas.mass=value; } );
+    readGasPropertyFile(m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+    readGasPropertyFile(m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+    readGasPropertyFile(m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
+        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+    readGasPropertyFile(m_gases, setup.rotationalConstant, "rotationalConstant", false,
+        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
@@ -212,11 +253,16 @@ void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
 
 void GasMixtureBase::loadGasProperties(const json_type &cnf)
 {
-    R_GAS_PROPERTY_JSON(m_gases, cnf, mass)
-    GAS_PROPERTY_JSON(m_gases, cnf, harmonicFrequency)
-    GAS_PROPERTY_JSON(m_gases, cnf, anharmonicFrequency)
-    GAS_PROPERTY_JSON(m_gases, cnf, electricQuadrupoleMoment)
-    GAS_PROPERTY_JSON(m_gases, cnf, rotationalConstant)
+    readGasProperty(m_gases, cnf, "mass", true,
+        [](GasBase& gas, double value) { gas.mass=value; } );
+    readGasProperty(m_gases, cnf, "harmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+    readGasProperty(m_gases, cnf, "anharmonicFrequency", false,
+        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+    readGasProperty(m_gases, cnf, "electricQuadrupoleMoment", false,
+        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+    readGasProperty(m_gases, cnf, "rotationalConstant", false,
+        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
