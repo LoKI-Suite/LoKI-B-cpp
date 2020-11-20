@@ -109,7 +109,11 @@ class GasMixtureBase
      *  character) then a pointer to the first sibling is returned.
      */
     GasBase::StateBase *findState(const StateEntry &entry);
-
+    /** Returns a container of matches. Empty (no match), one state (no owildcard)
+     *  or a vector with one or more state pointers (entry has a wildcard).
+     *  \todo reconsider all the state accessors. Which interfaces do we really need.
+     */
+    GasBase::StateBase::ChildContainer findStates(const StateEntry &entry);
     /** Loads the data concerning a single property of the states (energy, statistical
      *  weight, or population) from a vector of entries as supplied by the setup object.
      *  First it determines whether the current entry requires loading by direct value,

@@ -61,6 +61,13 @@ GasBase::StateBase *GasMixtureBase::findState(const StateEntry &entry)
     return gas ? gas->findState(entry) : nullptr;
 }
 
+GasBase::StateBase::ChildContainer GasMixtureBase::findStates(const StateEntry &entry)
+{
+    using ChildContainer = GasBase::StateBase::ChildContainer;
+    GasBase::StateBase* state = findState(entry);
+    return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
+}
+
 void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
                                        const WorkingConditions *workingConditions)
 {
@@ -80,13 +87,16 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
             // 1. get the state or state group that the expression will
             //    be applied to.
             const StateEntry entry = propertyStateFromString(state_id);
+            /** \todo Should this be part of propertyStateFromString?
+             *        Is there a reason to accept a 'none'-result?
+             */
             if (entry.level == none)
             {
                 throw std::runtime_error("loadStateProperty: illegal "
                                 "state identifier '" + line + "'.");
             }
-            GasBase::StateBase *state = findState(entry);
-            if (state == nullptr)
+            GasBase::StateBase::ChildContainer states = findStates(entry);
+            if (states.empty())
             {
                 throw std::runtime_error("loadStateProperty: could not find "
                                 "state or state group '" + line + "'.");
@@ -98,16 +108,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
             if (Parse::getValue(expr, value))
             {
                 // expr is a number, now parsed into value.
-                if (entry.hasWildCard())
-                {
-                    PropertyFunctions::constantValue(state->siblings(), value, propertyType);
-                }
-                else
-                {
-                    /// \todo Can we avoid creation of the intermediate vector?
-                    std::vector<GasBase::StateBase *> states{state};
-                    PropertyFunctions::constantValue(states, value, propertyType);
-                }
+                PropertyFunctions::constantValue(states, value, propertyType);
             }
             else
             {
@@ -146,17 +147,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                     }
                     arguments.emplace_back(value);
                 }
-
-                if (entry.hasWildCard())
-                {
-                    PropertyFunctions::callByName(functionName, state->siblings(), arguments, propertyType);
-                }
-                else
-                {
-                    /// \todo Can we avoid creation of the intermediate vector?
-                    std::vector<GasBase::StateBase *> states{state};
-                    PropertyFunctions::callByName(functionName, states, arguments, propertyType);
-                }
+                PropertyFunctions::callByName(functionName, states, arguments, propertyType);
             }
         }
         else
@@ -175,21 +166,21 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                                         + std::string{exc.what()} );
             }
 
+            /** \todo Also in case we read a property file, the expression type could be a function.
+             *        It would be nice if the external file case behaves the same as the inline case.
+             *        This could be achieved by first assembling a collection of tasks (either from
+             *        the settings node or from file), then execute these tasks. That will be more
+             *        general and simplify this function at the same time.
+             */
             for (auto &entry : entries)
             {
-                GasBase::StateBase *state = findState(entry.first);
-
-                if (state == nullptr)
-                    Log<PropertyStateError>::Error(entry.first);
-
-                if (entry.first.hasWildCard())
+                GasBase::StateBase::ChildContainer states = findStates(entry.first);
+                if (states.empty())
                 {
-                    PropertyFunctions::constantValue(state->siblings(), entry.second, propertyType);
+                    throw std::runtime_error("loadStateProperty: could not find "
+                                    "state or state group '" + entry.first.m_id + "'.");
                 }
-                else
-                {
-                    PropertyFunctions::setStateProperty(state, entry.second, propertyType);
-                }
+                PropertyFunctions::constantValue(states, entry.second, propertyType);
             }
         }
     }
