@@ -31,10 +31,18 @@ else() # clang or g++
     endif()
 endif()
 
+# the following two must be enabled to make the versions of Eigen / nlohmann
+# that are shipped with LoKI-B available. When disabled, eigen3/Eigen/...
+# and nlohmann/json.hpp will be resolved using the default include paths.
+
+#todo see how/when to set these two. For now, we rely in a 'system' eigen3/
+#set(inc_eigen include/eigen-3.3.7)
+set(inc_nlohmann include/nlohmann-3.7.0)
+
 # --- loki-b --- #
 set(src loki-b/source)
 set(h   loki-b/LoKI-B)
-set(inc include)
+set(inc ${inc_eigen} ${inc_nlohmann})
 set(ideas loki-b/ideas)
 set(tests loki-b/tests)
 
