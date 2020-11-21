@@ -24,26 +24,34 @@ namespace loki
 {
 
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions), grid(setup.numerics.energyGrid), mixture(&grid, setup, workingConditions),
-      attachmentConservativeMatrix(grid.nCells(), grid.nCells()), boltzmannMatrix(grid.nCells(), grid.nCells()),
-      elasticMatrix(grid.nCells(), grid.nCells()), fieldMatrix(grid.nCells(), grid.nCells()),
-      attachmentMatrix(grid.nCells(), grid.nCells()), ionSpatialGrowthD(grid.nCells(), grid.nCells()),
-      ionSpatialGrowthU(grid.nCells(), grid.nCells()), fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
-      fieldMatrixTempGrowth(grid.nCells(), grid.nCells()), ionTemporalGrowth(grid.nCells(), grid.nCells()),
-      g_c(grid.nCells()), eedf(grid.nCells())
+    : workingConditions(workingConditions),
+      grid(setup.numerics.energyGrid),
+      mixture(&grid, setup, workingConditions),
+      elasticMatrix(grid.nCells(), grid.nCells()),
+      g_c(grid.getNodes().size()),
+      attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
+      attachmentMatrix(grid.nCells(), grid.nCells()),
+      fieldMatrix(grid.nCells(), grid.nCells()),
+      g_E(grid.getNodes().size()),
+      fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
+      ionSpatialGrowthD(grid.nCells(), grid.nCells()),
+      ionSpatialGrowthU(grid.nCells(), grid.nCells()),
+      fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
+      ionTemporalGrowth(grid.nCells(), grid.nCells()),
+      boltzmannMatrix(grid.nCells(), grid.nCells()),
+      eedf(grid.nCells())
 {
-    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
-
-    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
-
     this->eedfType = setup.eedfType;
     this->shapeParameter = setup.shapeParameter;
     this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
     this->maxEedfRelError = setup.numerics.nonLinearRoutines.maxEedfRelError;
+    this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
     this->ionizationOperatorType = setup.ionizationOperatorType;
     this->growthModelType = setup.growthModelType;
     this->includeEECollisions = setup.includeEECollisions;
-    this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
+
+    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
+    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
     // mixture.grid->getNodes(), mixture.totalCrossSection);
@@ -122,26 +130,34 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 }
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions), grid(cnf.at("numerics").at("energyGrid")),
-      mixture(&grid, cnf, workingConditions), attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
-      boltzmannMatrix(grid.nCells(), grid.nCells()), elasticMatrix(grid.nCells(), grid.nCells()),
-      fieldMatrix(grid.nCells(), grid.nCells()), attachmentMatrix(grid.nCells(), grid.nCells()),
-      ionSpatialGrowthD(grid.nCells(), grid.nCells()), ionSpatialGrowthU(grid.nCells(), grid.nCells()),
-      fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()), fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
-      ionTemporalGrowth(grid.nCells(), grid.nCells()), g_c(grid.nCells()), eedf(grid.nCells())
+    : workingConditions(workingConditions),
+    grid(cnf.at("numerics").at("energyGrid")),
+    mixture(&grid, cnf, workingConditions),
+    elasticMatrix(grid.nCells(), grid.nCells()),
+    g_c(grid.nCells()),
+    attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
+    attachmentMatrix(grid.nCells(), grid.nCells()),
+    fieldMatrix(grid.nCells(), grid.nCells()),
+    g_E(grid.getNodes().size()),
+    fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthD(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthU(grid.nCells(), grid.nCells()),
+    fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
+    ionTemporalGrowth(grid.nCells(), grid.nCells()),
+    boltzmannMatrix(grid.nCells(), grid.nCells()),
+    eedf(grid.nCells())
 {
-    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
-
-    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
-
     this->eedfType = getEedfType(cnf.at("eedfType"));
     this->shapeParameter = cnf.contains("shapeParameter") ? cnf.at("shapeParameter").get<unsigned>() : 0;
     this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
+    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
     this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
     this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     this->includeEECollisions = cnf.at("includeEECollisions");
-    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
+
+    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
+    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
     // mixture.grid->getNodes(), mixture.totalCrossSection);
@@ -184,6 +200,13 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     if (!mixture.CARGases.empty())
         CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
+    /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
+     *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
+     *        Then the pattern-code below can be removed, only a resize needed. Question:
+     *        does Eigen optimize matrix addition and multiplication for such matrices? That
+     *        is not immediately clear to me.
+     *        Same for the other constructor, of course.
+     */
     std::vector<Eigen::Triplet<double>> diagPattern;
     diagPattern.reserve(grid.nCells());
 
@@ -427,7 +450,7 @@ void ElectronKinetics::evaluateFieldOperator()
 
     const Vector &cs = mixture.totalCrossSection;
 
-    g_E.resize(grid.getNodes().size());
+    // g_E gets its size in the constructor.
     g_E[0] = 0.;
     for (Grid::Index i=1; i!= g_E.size()-1; ++i)
     {
@@ -703,9 +726,14 @@ void ElectronKinetics::evaluateAttachmentOperator()
             if (threshold > grid.getNode(cellNumber))
                 continue;
 
-            /** \this should definitely not be in this (double) loop. Is this a constructor task?
-             *        Can this just be replaced with 'gas->collisions[CollisionType::attachment].size()'
-             *        in (other) places where this is now used?
+            /* This should definitely not be in this (double) loop. Is this a constructor task?
+             * Can this just be replaced with 'gas->collisions[CollisionType::attachment].size()'
+             * in (other) places where this is now used?
+             * Answer: no, this depends on uMax(), which may change for a smart grid. But it
+             * could be done as an action when that changes.
+             */
+            /** \bug This should be reset to false at the beginning of this function
+             *       because the results may change when uMax is changed.
              */
             includeNonConservativeAttachment = true;
 
@@ -1293,6 +1321,7 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
                  auxHigh = kTg + grid.du() * .5, // aux1
         auxLow = kTg - grid.du() * .5;           // aux2
 
+    // reset by an assignment to a default-constructed Power object
     power = Power();
 
     double elasticNet = 0., elasticGain = 0.;
@@ -1488,9 +1517,10 @@ void ElectronKinetics::evaluateFirstAnisotropy()
 {
     firstAnisotropy.setZero(grid.nCells());
 
-    const double e = Constant::electronCharge, me = Constant::electronMass, EoN = workingConditions->reducedFieldSI(),
-                 WoN = workingConditions->reducedExcFreqSI();
-
+    const double e = Constant::electronCharge;
+    const double me = Constant::electronMass;
+    const double EoN = workingConditions->reducedFieldSI();
+    const double WoN = workingConditions->reducedExcFreqSI();
     const Grid::Index n = grid.nCells();
 
     firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid.du();
