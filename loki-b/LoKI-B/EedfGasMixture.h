@@ -34,7 +34,7 @@ class EedfGasMixture : public GasMixture<EedfGas>
 
     const Grid *grid;
 
-    std::vector<EedfGas *> CARGases;
+    std::vector<const EedfGas *> CARGases;
 
     std::vector<RateCoefficient> rateCoefficients, rateCoefficientsExtra;
 
