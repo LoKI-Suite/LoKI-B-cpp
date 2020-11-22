@@ -1372,6 +1372,7 @@ void ElectronKinetics::evaluatePower()
 
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
+                /// \todo check that it is correct that g_E (local) is used in a spatial growth simulation)
                 field += eedf[k] * (g_E[k + 1] - g_E[k]);
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
@@ -1386,6 +1387,10 @@ void ElectronKinetics::evaluatePower()
                 }
             }
 
+            /** \todo field and correction are both of the form 'eedf*g'.
+             *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
+             *  have different dimensions (factor energy).
+             */
             power.field = factor * (field + grid.du() * correction);
             power.eDensGrowth = alphaRedEff * alphaRedEff * factor * grid.du() / 3. * powerDiffusion +
                                 factor * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
