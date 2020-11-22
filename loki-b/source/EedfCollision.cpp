@@ -127,12 +127,12 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
         result[0] = 0;
 }
 
-CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
+PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 {
     const Grid *grid = crossSection->getGrid();
     const uint32_t n = grid->nCells();
 
-    CollPower collPower;
+    PowerTerm collPower;
 
     Vector cellCrossSection(n);
 
@@ -152,7 +152,7 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
         ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
     }
 
-    collPower.ine = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
+    collPower.forward = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
 
     if (isReverse)
     {
@@ -165,21 +165,21 @@ CollPower EedfCollision::evaluateConservativePower(const Vector &eedf)
             supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.sup +=
+        collPower.backward +=
             factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
     }
 
     return collPower;
 }
 
-CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
+PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                       const IonizationOperatorType ionizationOperatorType,
                                                       const double OPBParameter)
 {
     const Grid *grid = crossSection->getGrid();
     const uint32_t n = grid->nCells();
 
-    CollPower collPower;
+    PowerTerm collPower;
 
     const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
@@ -212,7 +212,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sumThree += grid->getCell(i) * term;
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->du() *
+            collPower.forward = -factor * getTarget()->density * grid->du() *
                             (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
@@ -224,7 +224,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
+            collPower.forward = -factor * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
@@ -247,7 +247,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                         (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
-            collPower.ine = -factor * getTarget()->density * grid->getCell(lmin) * grid->du() *
+            collPower.forward = -factor * getTarget()->density * grid->getCell(lmin) * grid->du() *
                             eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
@@ -260,7 +260,7 @@ CollPower EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.ine = -factor * getTarget()->density * grid->du() * sum;
+        collPower.forward = -factor * getTarget()->density * grid->du() * sum;
     }
     /// \todo For other Collision types, collPower is unitialized at this point
 

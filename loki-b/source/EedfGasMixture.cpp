@@ -421,6 +421,8 @@ void EedfGasMixture::addCARGases(const std::vector<std::string> &CARVector)
     }
 }
 
+/** \bug This ADDS rate coefficients to the previously calulated ones.
+ */
 void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
     for (auto &gas : gases())

@@ -54,7 +54,7 @@ class ElectronKinetics
     void solveSpatialGrowthMatrix();
     void solveTemporalGrowthMatrix();
     void solveEEColl();
-    void evaluatePower(bool isFinalSolution);
+    void evaluatePower();
     void evaluateSwarmParameters();
     void evaluateFirstAnisotropy();
 

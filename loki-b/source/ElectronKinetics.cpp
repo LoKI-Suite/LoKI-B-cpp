@@ -285,12 +285,17 @@ void ElectronKinetics::solve()
         }
     }
 
-    evaluatePower(true);
+    evaluatePower();
+    // we finished the solution procedure. If the power balance is
+    // still not good, issue a warning.
+    if (power.relativeBalance > maxPowerBalanceRelError)
+    {
+        Log<PowerBalanceError>::Warning(maxPowerBalanceRelError);
+    }
 
+    // evaluate derived data
     mixture.evaluateRateCoefficients(eedf);
-
     evaluateSwarmParameters();
-
     evaluateFirstAnisotropy();
 
     obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases(), swarmParameters,
@@ -1262,7 +1267,7 @@ void ElectronKinetics::solveEEColl()
 
         invertMatrix(boltzmannMatrix);
 
-        evaluatePower(false);
+        evaluatePower();
 
         const double ratio = std::abs(power.electronElectron / power.reference);
 
@@ -1314,24 +1319,22 @@ void ElectronKinetics::solveEEColl()
     std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
 }
 
-void ElectronKinetics::evaluatePower(bool isFinalSolution)
+void ElectronKinetics::evaluatePower()
 {
-    const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass),
-                 kTg = Constant::kBeV * workingConditions->gasTemperature(),
-                 auxHigh = kTg + grid.du() * .5, // aux1
-        auxLow = kTg - grid.du() * .5;           // aux2
+    const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass);
+    const double kTg = Constant::kBeV * workingConditions->gasTemperature();
+    const double auxHigh = kTg + grid.du() * .5; // aux1
+    const double auxLow  = kTg - grid.du() * .5; // aux2
 
     // reset by an assignment to a default-constructed Power object
     power = Power();
 
     double elasticNet = 0., elasticGain = 0.;
-
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxHigh);
         elasticGain += eedf[k] * (g_c[k + 1] - g_c[k]);
     }
-
     power.elasticNet = factor * elasticNet;
     power.elasticGain = factor * kTg * elasticGain;
     power.elasticLoss = power.elasticNet - power.elasticGain;
@@ -1339,13 +1342,11 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     if (!mixture.CARGases.empty())
     {
         double carNet = 0., carGain = 0.;
-
         for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
         {
             carNet += eedf[k] * (g_CAR[k + 1] * auxLow - g_CAR[k] * auxHigh);
             carGain += eedf[k] * (g_CAR[k + 1] - g_CAR[k]);
         }
-
         power.carNet = factor * carNet;
         power.carGain = factor * kTg * carGain;
         power.carLoss = power.carNet - power.carGain;
@@ -1356,13 +1357,11 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
         if (growthModelType == GrowthModelType::temporal)
         {
             double field = 0., growthModel = 0.;
-
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
                 field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
                 growthModel += eedf[k] * grid.getCell(k) * sqrt(grid.getCell(k));
             }
-
             power.field = factor * field;
             power.eDensGrowth = -CIEff * grid.du() * growthModel;
         }
@@ -1399,12 +1398,10 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
     else
     {
         double field = 0;
-
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             field += eedf[k] * (g_E[k + 1] - g_E[k]);
         }
-
         power.field = factor * field;
     }
 
@@ -1420,15 +1417,16 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
         power += gas->getPower();
     }
 
+    /// \todo Change inelastic/superelastic with inelastic, use inelastic.forward, inelastic.backward.
     power.inelastic =
-        power.excitationIne + power.vibrationalIne + power.rotationalIne + power.ionizationIne + power.attachmentIne;
-    power.superelastic = power.excitationSup + power.vibrationalSup + power.rotationalSup;
+        power.excitation.forward + power.vibrational.forward + power.rotational.forward + power.ionization.forward + power.attachment.forward;
+    power.superelastic = power.excitation.backward + power.vibrational.backward + power.rotational.backward;
 
     double totalGain = 0., totalLoss = 0.;
 
     double powerValues[13]{power.field,           power.elasticGain,   power.elasticLoss,   power.carGain,
-                           power.carLoss,         power.excitationSup, power.excitationIne, power.vibrationalSup,
-                           power.vibrationalIne,  power.rotationalSup, power.rotationalIne, power.eDensGrowth,
+                           power.carLoss,         power.excitation.backward, power.excitation.forward, power.vibrational.backward,
+                           power.vibrational.forward,  power.rotational.backward, power.rotational.forward, power.eDensGrowth,
                            power.electronElectron};
 
     for (double value : powerValues)
@@ -1443,9 +1441,6 @@ void ElectronKinetics::evaluatePower(bool isFinalSolution)
                     power.eDensGrowth + power.electronElectron;
     power.relativeBalance = abs(power.balance) / totalGain;
     power.reference = totalGain;
-
-    if (isFinalSolution && power.relativeBalance > maxPowerBalanceRelError)
-        Log<PowerBalanceError>::Warning(maxPowerBalanceRelError);
 }
 
 void ElectronKinetics::evaluateSwarmParameters()
