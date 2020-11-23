@@ -99,6 +99,9 @@ void EedfGas::setDefaultEffPop(EedfState *ground)
         double norm = 0;
         EedfState *childGround = ground->children()[0];
 
+        /** \todo Check the algorithm. It should be possible to
+         *  implement this without identifying the child ground.
+         */
         for (auto *child : ground->children())
         {
             if (child->energy < 0)
