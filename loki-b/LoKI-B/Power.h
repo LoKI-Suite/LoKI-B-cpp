@@ -59,6 +59,10 @@ struct Power : GasPower
     double inelastic{0.};
     double superelastic{0.};
     double eDensGrowth{0.};
+    /** \todo What is the meaning of this term? This is a redistribution of
+     *        energy among the electrons, so I would think that this should
+     *        be just zero. Is this meant as a check?
+     */
     double electronElectron{0.};
     double balance{0.};
     double relativeBalance{0.};
