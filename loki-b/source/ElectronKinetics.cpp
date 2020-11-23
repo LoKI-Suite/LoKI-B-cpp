@@ -249,7 +249,7 @@ void ElectronKinetics::solve()
     if (grid.smartGrid())
     {
         const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
-	/// \todo use log(a/b) instead of log(a)-log(b). See if we can avoid the repetition.
+        /// \todo use log(a/b) instead of log(a)-log(b). See if we can avoid the repetition.
         double decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
 
         while (decades < smartGrid.minEedfDecay)
@@ -892,7 +892,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
         B = alphaEE / grid.du() * (BAee * eedf);
     }
 
-    Vector integrandCI = (sqrt(2. * e / m) * grid.du()) * Vector::Ones(grid.nCells()).transpose() *
+    Vector integrandCI = (std::sqrt(2. * e / m) * grid.du()) * Vector::Ones(grid.nCells()).transpose() *
                          (ionizationMatrix + attachmentMatrix);
 
     double CIEffNew = eedf.dot(integrandCI);
@@ -923,18 +923,28 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     }
     const Vector U0 = U0sup + U0inf;
 
-    double ND = sqrt(2 * e / m) * grid.du() * D0.dot(eedf), muE = -sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
+    double ND  =  std::sqrt(2 * e / m) * grid.du() * D0.dot(eedf);
+    double muE = -std::sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
 
-    double alphaRedEffNew, alphaRedEffOld = 0.;
+    double alphaRedEffOld = 0.;
 
-    if (muE * muE - 4 * CIEffNew * ND < 0.)
-    {
-        alphaRedEffNew = CIEffNew / muE;
-    }
-    else
-    {
-        alphaRedEffNew = (muE - sqrt(muE * muE - 4 * CIEffNew * ND)) / (2 * ND);
-    }
+    /* The initial guess for the eedf may lead a negative discriminant.
+     * In this case the reduced townsend coefficient should be calculated
+     * on the basis of the assumption that there is no electron density
+     * gradient.
+     */
+    /** \todo Elaborate on the statement above, provide a motivation.
+     *  \todo discr==0 corresponds to muE/2ND = 2*CIEffNew/muE
+     *        and this will be assigned to alphaRedEffNew by the discr>=0
+     *        code path. But for discr<0 we assign CIEffNew / muE, resulting
+     *        in a discontinuity. Is is almost as if a factor 2 is missing
+     *        somewhere. (NB: this can in theory frustrate convergence
+     *        for the case that discr is around 0, I think.
+     */
+    const double discriminant = muE*muE - 4*CIEffNew*ND;
+    double alphaRedEffNew = (discriminant < 0.)
+        ? CIEffNew / muE
+        : (muE - std::sqrt(discriminant)) / (2 * ND);
 
     uint32_t iter = 0;
     bool hasConverged = false;
@@ -992,26 +1002,30 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        ND = sqrt(2 * e / m) * grid.du() * D0.dot(eedf);
-        muE = -sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
+        ND  =  std::sqrt(2 * e / m) * grid.du() * D0.dot(eedf);
+        muE = -std::sqrt(2 * e / m) * grid.du() * U0.dot(eedf);
 
+        /** \todo See the notes just above this loop for a note about the discontinuity.
+         */
         const double discriminant = muE * muE - 4 * CIEffNew * ND;
 
         alphaRedEffOld = alphaRedEffNew;
-        alphaRedEffNew = (discriminant < 0) ? CIEffNew / muE : (muE - sqrt(discriminant)) / (2 * ND);
+        alphaRedEffNew = (discriminant < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
-        if (((alphaRedEffNew == 0 || abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
+        if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
              ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) ||
             iter > 150)
         {
             hasConverged = true;
 
+            /** There is maximum number of iterations in case includeEECollisions==true.
+             *  Is there a reason for that?
+             */
             if (iter > 150 && !includeEECollisions)
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
         }
-
         ++iter;
     }
 
@@ -1023,8 +1037,10 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
 void ElectronKinetics::solveTemporalGrowthMatrix()
 {
-    const double e = Constant::electronCharge, m = Constant::electronMass, EoN = workingConditions->reducedFieldSI(),
-                 WoN = workingConditions->reducedExcFreqSI();
+    const double e = Constant::electronCharge;
+    const double m = Constant::electronMass;
+    const double EoN = workingConditions->reducedFieldSI();
+    const double WoN = workingConditions->reducedExcFreqSI();
 
     if (!mixture.CARGases.empty())
     {
@@ -1054,13 +1070,11 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         B = alphaEE / grid.du() * (BAee * eedf);
     }
 
-    Vector integrandCI = (sqrt(2. * e / m) * grid.du()) * Vector::Ones(grid.nCells()).transpose() *
-                         (ionizationMatrix + attachmentMatrix);
-    ;
-
+    const Vector integrandCI = (std::sqrt(2. * e / m) * grid.du())
+                    * Vector::Ones(grid.nCells()).transpose()
+                    * (ionizationMatrix + attachmentMatrix);
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3.;
-
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
     Vector eedfNew(grid.nCells());
@@ -1097,7 +1111,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
             if (k < grid.nCells() - 1)
                 fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
 
-            ionTemporalGrowth.coeffRef(k, k) = -growthFactor * sqrt(grid.getCell(k));
+            ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid.getCell(k));
         }
 
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
@@ -1120,7 +1134,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         CIEffNew = eedf.dot(integrandCI);
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        if (((CIEffNew == 0 || abs(CIEffNew - CIEffOld) / CIEffOld < 1.e-10) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1.e-10) &&
              ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) ||
             iter > 150)
         {
@@ -1231,13 +1245,18 @@ void ElectronKinetics::solveEEColl()
     {
         for (Grid::Index i = 1; i < grid.nCells(); ++i)
         {
-            BAee(i, j) = sqrt(BAee(i, j) * BAee(j + 1, i - 1));
+            BAee(i, j) = std::sqrt(BAee(i, j) * BAee(j + 1, i - 1));
         }
     }
 
-    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf), Te = 2. / 3. * meanEnergy,
-           logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne)),
-           alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+    /** \todo These four declarations can be moved to the beginning of the
+     *        while loop. Then the calculation does not have to repeated
+     *        at the end of that loop (and the decls. can be made constant).
+     */
+    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
+    double Te = 2. / 3. * meanEnergy;
+    double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
+    double alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
 
     double ratioNew = 0.;
     Vector eedfNew = eedf;
@@ -1245,9 +1264,11 @@ void ElectronKinetics::solveEEColl()
     bool hasConverged = false;
     uint32_t iter = 0;
 
-    //        Vector MeeDiag(grid.nCells()), MeeSub(grid.nCells()), MeeSup(grid.nCells());
-
-    // In this implementation we completely skip the Mee matrix, saving both memory and time.
+    /** Mee is ignored in solveEEColl. How does that result in differences with
+     *  respect to the MATLAB version.
+     */
+    /// In this implementation we completely skip the Mee matrix, saving both memory and time.
+    // Vector MeeDiag(grid.nCells()), MeeSub(grid.nCells()), MeeSup(grid.nCells());
 
     while (!hasConverged)
     {
@@ -1294,15 +1315,20 @@ void ElectronKinetics::solveEEColl()
             double ratioOld = ratioNew;
             ratioNew = ratio;
 
-            Vector eedfOld = eedfNew;
+            const Vector eedfOld = eedfNew;
             eedfNew = eedf;
 
             eedf = eedfNew - (ratioNew / (ratioNew - ratioOld)) * (eedfNew - eedfOld);
 
+            /** \todo Is this an appropriate clipping criterium?
+             *        Why take the absolute value, not some fixed small number?
+             */
             for (Grid::Index i = 0; i < grid.nCells(); ++i)
             {
                 if (eedf[i] < 0)
-                    eedf[i] = abs(eedf[i]);
+                {
+                    eedf[i] = std::abs(eedf[i]);
+                }
             }
         }
 
@@ -1321,7 +1347,7 @@ void ElectronKinetics::solveEEColl()
 
 void ElectronKinetics::evaluatePower()
 {
-    const double factor = sqrt(2. * Constant::electronCharge / Constant::electronMass);
+    const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
     const double kTg = Constant::kBeV * workingConditions->gasTemperature();
     const double auxHigh = kTg + grid.du() * .5; // aux1
     const double auxLow  = kTg - grid.du() * .5; // aux2
@@ -1360,7 +1386,7 @@ void ElectronKinetics::evaluatePower()
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
                 field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
-                growthModel += eedf[k] * grid.getCell(k) * sqrt(grid.getCell(k));
+                growthModel += eedf[k] * grid.getCell(k) * std::sqrt(grid.getCell(k));
             }
             power.field = factor * field;
             power.eDensGrowth = -CIEff * grid.du() * growthModel;
@@ -1424,15 +1450,28 @@ void ElectronKinetics::evaluatePower()
 
     /// \todo Change inelastic/superelastic with inelastic, use inelastic.forward, inelastic.backward.
     power.inelastic =
-        power.excitation.forward + power.vibrational.forward + power.rotational.forward + power.ionization.forward + power.attachment.forward;
-    power.superelastic = power.excitation.backward + power.vibrational.backward + power.rotational.backward;
+        power.excitation.forward
+        + power.vibrational.forward
+        + power.rotational.forward
+        + power.ionization.forward
+        + power.attachment.forward;
+    power.superelastic =
+        power.excitation.backward
+        + power.vibrational.backward
+        + power.rotational.backward;
 
     double totalGain = 0., totalLoss = 0.;
 
-    double powerValues[13]{power.field,           power.elasticGain,   power.elasticLoss,   power.carGain,
-                           power.carLoss,         power.excitation.backward, power.excitation.forward, power.vibrational.backward,
-                           power.vibrational.forward,  power.rotational.backward, power.rotational.forward, power.eDensGrowth,
-                           power.electronElectron};
+    double powerValues[13]{
+        power.field,
+        power.elasticGain, power.elasticLoss,
+        power.carGain, power.carLoss,
+        power.excitation.forward, power.excitation.backward,
+        power.vibrational.forward, power.vibrational.backward,
+        power.rotational.forward, power.rotational.backward,
+        power.eDensGrowth,
+        power.electronElectron
+    };
 
     for (double value : powerValues)
     {
@@ -1441,10 +1480,15 @@ void ElectronKinetics::evaluatePower()
         else
             totalLoss += value;
     }
-
-    power.balance = power.field + power.elasticNet + power.carNet + power.inelastic + power.superelastic +
-                    power.eDensGrowth + power.electronElectron;
-    power.relativeBalance = abs(power.balance) / totalGain;
+    power.balance =
+        power.field
+        + power.elasticNet
+        + power.carNet
+        + power.inelastic
+        + power.superelastic
+        + power.eDensGrowth
+        + power.electronElectron;
+    power.relativeBalance = std::abs(power.balance) / totalGain;
     power.reference = totalGain;
 }
 
@@ -1543,7 +1587,7 @@ void ElectronKinetics::evaluateFirstAnisotropy()
             }
             else
             {
-                firstAnisotropy = -EoN * sqrt(2.) * firstAnisotropy.array() /
+                firstAnisotropy = -EoN * std::sqrt(2.) * firstAnisotropy.array() /
                                   (cellCrossSection.array() +
                                    WoN * WoN * me / (2. * e * grid.getCells().array() * cellCrossSection.array()));
             }
@@ -1560,7 +1604,7 @@ void ElectronKinetics::evaluateFirstAnisotropy()
     else
     {
         firstAnisotropy =
-            -EoN * sqrt(2.) * firstAnisotropy.array() /
+            -EoN * std::sqrt(2.) * firstAnisotropy.array() /
             (cellCrossSection.array() + WoN * WoN * me / (2. * e * grid.getCells().array() * cellCrossSection.array()));
     }
 }
