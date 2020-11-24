@@ -173,14 +173,14 @@ void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
     fprintf(file, "           Elastic collisions (loss) = %#+.14e (eVm3/s)\n", power.elasticLoss);
     fprintf(file, "                          CAR (gain) = %#+.14e (eVm3/s)\n", power.carGain);
     fprintf(file, "                          CAR (loss) = %#+.14e (eVm3/s)\n", power.carLoss);
-    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitationIne);
-    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s)\n", power.excitationSup);
-    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrationalIne);
-    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s)\n", power.vibrationalSup);
-    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotationalIne);
-    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s)\n", power.rotationalSup);
-    fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", power.ionizationIne);
-    fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", power.attachmentIne);
+    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.forward);
+    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.backward);
+    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.forward);
+    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.backward);
+    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.forward);
+    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.backward);
+    fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", power.ionization.forward); // no recombination
+    fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", power.attachment.forward); // no detachment
     fprintf(file, "             Electron density growth = %#+.14e (eVm3/s) +\n", power.eDensGrowth);
     for (uint32_t i = 0; i < 73; ++i)
         fprintf(file, "-");
@@ -194,29 +194,29 @@ void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
     fprintf(file, "\n");
     fprintf(file, "            Elastic collisions (net) = %#+.14e (eVm3/s)\n\n", power.elasticNet);
     fprintf(file, "                          CAR (gain) = %#+.14e (eVm3/s)\n", power.carGain);
-    fprintf(file, "                          CAR (gain) = %#+.14e (eVm3/s) +\n", power.carLoss);
+    fprintf(file, "                          CAR (loss) = %#+.14e (eVm3/s) +\n", power.carLoss);
     for (uint32_t i = 0; i < 73; ++i)
         fprintf(file, "-");
     fprintf(file, "\n");
     fprintf(file, "                           CAR (net) = %#+.14e (eVm3/s)\n\n", power.carNet);
-    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitationIne);
-    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", power.excitationSup);
+    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.forward);
+    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", power.excitation.backward);
     for (uint32_t i = 0; i < 73; ++i)
         fprintf(file, "-");
     fprintf(file, "\n");
-    fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", power.excitationNet);
-    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrationalIne);
-    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", power.vibrationalSup);
+    fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", power.excitation.net());
+    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.forward);
+    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", power.vibrational.backward);
     for (uint32_t i = 0; i < 73; ++i)
         fprintf(file, "-");
     fprintf(file, "\n");
-    fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", power.vibrationalNet);
-    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotationalIne);
-    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", power.rotationalSup);
+    fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", power.vibrational.net());
+    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.forward);
+    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", power.rotational.backward);
     for (uint32_t i = 0; i < 73; ++i)
         fprintf(file, "-");
     fprintf(file, "\n");
-    fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n", power.rotationalNet);
+    fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n", power.rotational.net());
 
     for (const auto &gas : gases)
     {
@@ -230,26 +230,26 @@ void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
             fprintf(file, "*");
         fprintf(file, "\n\n");
 
-        fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.excitationIne);
-        fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.excitationSup);
+        fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.excitation.forward);
+        fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.excitation.backward);
         for (uint32_t i = 0; i < 73; ++i)
             fprintf(file, "-");
         fprintf(file, "\n");
-        fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.excitationNet);
-        fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.vibrationalIne);
-        fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.vibrationalSup);
+        fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.excitation.net());
+        fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.vibrational.forward);
+        fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.vibrational.backward);
         for (uint32_t i = 0; i < 73; ++i)
             fprintf(file, "-");
         fprintf(file, "\n");
-        fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.vibrationalNet);
-        fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.rotationalIne);
-        fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.rotationalSup);
+        fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.vibrational.net());
+        fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.rotational.forward);
+        fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.rotational.backward);
         for (uint32_t i = 0; i < 73; ++i)
             fprintf(file, "-");
         fprintf(file, "\n");
-        fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.rotationalNet);
-        fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", gasPower.ionizationIne);
-        fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", gasPower.attachmentIne);
+        fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.rotational.net());
+        fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", gasPower.ionization.forward); // no recombination
+        fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", gasPower.attachment.forward); // no detachment
     }
 
     fclose(file);
@@ -400,48 +400,55 @@ void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
     out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
     out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
     out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
-    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Ionization collisions", power.ionizationIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Attachment collisions", power.attachmentIne, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Ionization collisions", power.ionization.forward, "eV*m^3/s") ); // no recombination
+    out.push_back( makeQuantity("Attachment collisions", power.attachment.forward, "eV*m^3/s") ); // no detachment
     out.push_back( makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Power Balance", power.balance, "eV*m^3/s") );
     out.push_back( makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%") );
     out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
     out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+
     out.push_back( makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s") );
     out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
-    out.push_back( makeQuantity("CAR (gain)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+
     out.push_back( makeQuantity("CAR (net)", power.carNet, "eV*m^3/s") );
-    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitationIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitationSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Excitation collisions (net)", power.excitationNet, "eV*m^3/s") );
-    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrationalIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrationalSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrationalNet, "eV*m^3/s") );
-    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotationalIne, "eV*m^3/s") );
-    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotationalSup, "eV*m^3/s") );
-    out.push_back( makeQuantity("Rotational collisions (net)", power.rotationalNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Excitation collisions (net)", power.excitation.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrational.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Rotational collisions (net)", power.rotational.net(), "eV*m^3/s") );
 
     for (const auto &gas : gases)
     {
         const GasPower &gasPower = gas->getPower();
 	json_type gas_out;
         gas_out.push_back( { { "name", gas->name } } );
-        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitationIne, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitationSup, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitationNet, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrationalIne, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrationalSup, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrationalNet, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotationalIne, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotationalSup, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotationalNet, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionizationIne, "eV*m^3/s") );
-        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachmentIne, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionization.forward, "eV*m^3/s") ); // no recombination
+        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachment.forward, "eV*m^3/s") ); // no detachment
 
         out.push_back( { "gas", gas_out } );
     }

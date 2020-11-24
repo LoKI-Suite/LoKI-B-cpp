@@ -99,6 +99,9 @@ void EedfGas::setDefaultEffPop(EedfState *ground)
         double norm = 0;
         EedfState *childGround = ground->children()[0];
 
+        /** \todo Check the algorithm. It should be possible to
+         *  implement this without identifying the child ground.
+         */
         for (auto *child : ground->children())
         {
             if (child->energy < 0)
@@ -202,54 +205,20 @@ const GasPower &EedfGas::getPower() const
     return power;
 }
 
-void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const
+void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
 {
-
-    CollPower collisionPower;
-
-    auto *powerPtr = (double *)&power;
-
-    for (auto i = static_cast<uint8_t>(CollisionType::excitation); i <= static_cast<uint8_t>(CollisionType::attachment);
-         ++i)
-    {
-
-        if (i == static_cast<uint8_t>(CollisionType::ionization))
-        {
-            if (ionType == IonizationOperatorType::conservative)
-            {
-                collisionPower = evaluateConservativePower(collisions[i], eedf);
-            }
-            else
-            {
-                collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
-            }
-
-            uint8_t index = 9;
-
-            powerPtr[index] = collisionPower.ine;
-        }
-        else if (i == static_cast<uint8_t>(CollisionType::attachment))
-        {
-            collisionPower = evaluateNonConservativePower(collisions[i], ionType, eedf);
-
-            powerPtr[10] = collisionPower.ine;
-        }
-        else
-        {
-            collisionPower = evaluateConservativePower(collisions[i], eedf);
-
-            uint8_t baseIndex = (i - static_cast<uint8_t>(CollisionType::excitation)) * 3;
-
-            powerPtr[baseIndex] = collisionPower.ine;
-            powerPtr[baseIndex + 1] = collisionPower.sup;
-            powerPtr[baseIndex + 2] = collisionPower.ine + collisionPower.sup;
-        }
-    }
+    power.ionization = (ionType == IonizationOperatorType::conservative)
+        ? evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::ionization)], eedf)
+        : evaluateNonConservativePower(collisions[static_cast<uint8_t>(CollisionType::ionization)], ionType, eedf);
+    power.attachment = evaluateNonConservativePower(collisions[static_cast<uint8_t>(CollisionType::attachment)], ionType, eedf);
+    power.excitation = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::excitation)], eedf);
+    power.vibrational = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::vibrational)], eedf);
+    power.rotational = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::rotational)], eedf);
 }
 
-CollPower EedfGas::evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const
+PowerTerm EedfGas::evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const
 {
-    CollPower collPower;
+    PowerTerm collPower;
 
     for (auto &collision : collisionVector)
     {
@@ -263,10 +232,10 @@ CollPower EedfGas::evaluateConservativePower(const CollisionVector &collisionVec
     return collPower;
 }
 
-CollPower EedfGas::evaluateNonConservativePower(const CollisionVector &collisionVector,
+PowerTerm EedfGas::evaluateNonConservativePower(const CollisionVector &collisionVector,
                                                 const IonizationOperatorType ionType, const Vector &eedf) const
 {
-    CollPower collPower;
+    PowerTerm collPower;
 
     for (auto &collision : collisionVector)
     {

@@ -50,7 +50,7 @@ class EedfGas : public GasBase
 
     const GasPower &getPower() const;
 
-    void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf) const;
+    void evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
 
   private:
     GasPower power;
@@ -61,9 +61,9 @@ class EedfGas : public GasBase
 
     void setDefaultEffPop(EedfState *ground);
 
-    CollPower evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
+    PowerTerm evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
 
-    CollPower evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
+    PowerTerm evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
                                            const Vector &eedf) const;
 };
 } // namespace loki

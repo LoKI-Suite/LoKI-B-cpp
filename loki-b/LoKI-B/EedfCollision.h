@@ -47,9 +47,9 @@ class EedfCollision : public Collision
 
     friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
 
-    CollPower evaluateConservativePower(const Vector &eedf);
+    PowerTerm evaluateConservativePower(const Vector &eedf);
 
-    CollPower evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
+    PowerTerm evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
                                            const double OPBParameter);
 
     RateCoefficient evaluateRateCoefficient(const Vector &eedf);

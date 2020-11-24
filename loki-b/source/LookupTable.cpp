@@ -52,11 +52,23 @@ LookupTable LookupTable::create(std::istream& is)
     }
     while (std::getline(is, line))
     {
+        if (line.size() && line[0]=='#')
+        {
+            continue;
+        }
         std::stringstream ss(line);
         double energy, value;
         ss >> energy >> value;
         if (!ss)
         {
+            // This line did not start with two valid numbers.
+            // Check that we indeed reached the end-of-table
+            // marker "--" (there may be more "-").
+            if (line.substr(0, 2) != "--")
+            {
+                throw std::runtime_error("Bad data line '" + line + "': expected numbers or '--'");
+            }
+            // OK, -- was found. Stop reading.
             break;
         }
         x.emplace_back(energy);
