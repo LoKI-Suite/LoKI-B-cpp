@@ -1579,7 +1579,7 @@ void ElectronKinetics::evaluateFirstAnisotropy()
         if (growthModelType == GrowthModelType::temporal)
         {
             cellCrossSection =
-                cellCrossSection.array() + CIEff / (std::sqrt(e * e / me) * grid.getCells().cwiseSqrt()).array();
+                cellCrossSection.array() + CIEff / (std::sqrt(2 * e / me) * grid.getCells().cwiseSqrt()).array();
 
             if (WoN == 0)
             {
