@@ -173,6 +173,11 @@ if(NOT EMSCRIPTEN)
 	target_link_directories(bolsig_extract PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(bolsig_extract PRIVATE loki_l ${backend})
 
+	add_executable(compare_tables ${tests}/compare_tables.cpp)
+	target_include_directories(compare_tables PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(compare_tables PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(compare_tables PRIVATE loki_l ${backend})
+
 	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
 	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
