@@ -20,6 +20,8 @@ AC_PROG_CXX
 AC_PROG_CC
 
 # Checks for header files.
+
+# eigen
 AC_LANG_PUSH(C++)
 AC_ARG_WITH(eigen,
     [  --with-eigen(=eigen prefix)
@@ -31,7 +33,9 @@ EIGEN_CPPFLAGS=
 if test "$with_eigen" != "no" ; then
   dnl Testsuites that rely on eigen
   if test "$with_eigen" = "yes" ; then
-    AC_CHECK_HEADER(eigen3/Eigen/Core, with_eigen=yes, with_eigen=no)
+    AC_CHECK_HEADER(eigen3/Eigen/Core,
+      with_eigen=yes,
+      AC_MSG_ERROR(The eigen3 headers were not found. Please install these and reconfigure.))
   else
     EIGEN_CPPFLAGS="-I$with_eigen"
     CPPFLAGS="$CPPFLAGS $EIGEN_CPPFLAGS"
@@ -45,5 +49,33 @@ else
 fi
 
 AC_SUBST(EIGEN_CPPFLAGS)
+
+# nlohmann json
+AC_ARG_WITH(json,
+    [  --with-json(=json prefix)
+              use the nlohmann json library],
+    with_json="${withval}", with_json="yes")
+AC_MSG_CHECKING(--with-json)
+AC_MSG_RESULT($with_json)
+JSON_CPPFLAGS=
+if test "$with_json" != "no" ; then
+  dnl Testsuites that rely on json
+  if test "$with_json" = "yes" ; then
+    AC_CHECK_HEADER(nlohmann/json.hpp,
+      with_json=yes,
+      AC_MSG_ERROR(The nlohann json headers were not found. Please install these and reconfigure.))
+  else
+    JSON_CPPFLAGS="-I$with_json"
+    CPPFLAGS="$CPPFLAGS $JSON_CPPFLAGS"
+    AC_CHECK_HEADER(nlohmann/json.hpp,
+      with_json=yes,
+      AC_MSG_ERROR(The nlohann json headers were not found. Please install these and reconfigure.))
+  fi
+  AC_DEFINE_UNQUOTED([HAVE_JSON],1,[Define if we have the nlohmann json library])
+else
+  AC_MSG_ERROR(Nlohmann json headers are required.)
+fi
+
+AC_SUBST(JSON_CPPFLAGS)
 
 AC_OUTPUT
