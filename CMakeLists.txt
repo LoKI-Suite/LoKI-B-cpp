@@ -168,6 +168,11 @@ if(NOT EMSCRIPTEN)
 	target_link_directories(test_lut PRIVATE build ${mkl_lib} ${mkl_comp})
 	target_link_libraries(test_lut PRIVATE loki_l ${backend})
 
+	add_executable(bolsig_extract ${tests}/bolsig_extract.cpp)
+	target_include_directories(bolsig_extract PRIVATE loki-b ${inc} ${mkl_inc})
+	target_link_directories(bolsig_extract PRIVATE build ${mkl_lib} ${mkl_comp})
+	target_link_libraries(bolsig_extract PRIVATE loki_l ${backend})
+
 	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
 	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
