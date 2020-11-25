@@ -61,8 +61,11 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
 EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
     : grid(grid)
 {
+    if (cnf.contains("mixture"))
+        loadCollisions(cnf.at("mixture"), grid, true);
 
-    loadCollisions(cnf.at("LXCatFiles"), grid);
+    if (cnf.contains("LXCatFiles"))
+        loadCollisions(cnf.at("LXCatFiles").get<std::vector<std::string>>(), grid);
 
     if (cnf.contains("LXCatFilesExtra"))
         loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
@@ -229,7 +232,6 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
 void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
-
 #ifdef EMSCRIPTEN
     const std::string inputPath{""};
 #else
@@ -268,6 +270,33 @@ void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid 
 #endif
     Log<Message>::Notify("Finished loading collisions.");
 }
+
+void EedfGasMixture::loadCollisions(const json_type &mcnf, Grid *energyGrid, bool isExtra)
+{
+    Log<Message>::Notify("Started loading collisions.");
+
+    // 1. read the states
+    const json_type &scnf = mcnf.at("states");
+    for (json_type::const_iterator it = scnf.begin(); it != scnf.end(); ++it)
+    {
+        const StateEntry entry{entryFromJSON(*it)};
+        ensureState(entry);
+    }
+    // 2. read the processes
+    for (json_type::const_iterator it = mcnf.at("processes").begin(); it != mcnf.at("processes").end(); ++it)
+    {
+        createCollision(*it, energyGrid, isExtra);
+    }
+#if 0
+        std::cout << "List of collisions" << std::endl;
+        for (const auto& c : m_collisions)
+        {
+            std::cout << *c << std::endl;
+        }
+#endif
+    Log<Message>::Notify("Finished loading collisions.");
+}
+
 
 void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bool isExtra)
 {

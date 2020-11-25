@@ -85,6 +85,15 @@ class EedfGasMixture : public GasMixture<EedfGas>
 
     void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
 
+    /* -- loadCollisions --
+     * Loads the collisions from a json mixture section.
+     * Furthermore, it needs a pointer to the energy grid and a boolean to
+     * indicate whether the collisions are extra, for correct initialization and storage of
+     * the collisions.
+     */
+
+    void loadCollisions(const json_type &mcnf, Grid *energyGrid, bool isExtra = false);
+
     /* -- loadGasProperties --
      * EedfGas introduces one extra property that has to be set from a file: OPBParameter.
      * This overload sets this parameter and then calls Gas::loadGasProperties to set the
