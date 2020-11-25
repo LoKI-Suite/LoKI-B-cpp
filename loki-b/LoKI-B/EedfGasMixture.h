@@ -93,10 +93,16 @@ class EedfGasMixture : public GasMixture<EedfGas>
      *  loadCollisions is called for the file.
      */
     void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
+    /** Loads the collisions from a json mixture section.
+     *  Furthermore, it needs a pointer to the energy grid and a boolean to
+     *  indicate whether the collisions are extra, for correct initialization and storage of
+     *  the collisions.
+     */
+    void loadCollisions(const json_type &mcnf, Grid *energyGrid, bool isExtra = false);
 
-    /** EedfGas introduces one extra property that has to be set from a file: OPBParameter.
-     *  This override sets this parameter and then calls Gas::loadGasProperties to set the
-     *  rest of its properties.
+    /* EedfGas introduces one extra property that has to be set from a file: OPBParameter.
+     * This overload sets this parameter and then calls Gas::loadGasProperties to set the
+     * rest of its properties.
      */
     void loadGasProperties(const GasPropertiesSetup &setup) override;
     /** EedfGas introduces one extra property that has to be set from a file: OPBParameter.

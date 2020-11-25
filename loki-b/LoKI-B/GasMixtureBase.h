@@ -68,6 +68,47 @@ void readGasPropertyFile(const GasListType& gasList,
     }
 }
 
+/** This define accepts the name of a gas property (e.g. mass) and will try to parse the json object.
+ *  If this fails it will output a warning (but nothing more). If the json is succesfully loaded, it
+ *  will then try to set the property for all gases in the mixture. This version will not throw an error
+ *  in any case, and can therefore be used for gas properties that are not mandatory for every gas (e.g.
+ *  atomic gases do not have a harmonicFrequency).
+ *
+ *  It assumes that the passed property has the same name in the Gas and GasPropertiesSetup structures.
+ *  Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
+ *
+ *  \todo For now, the electron gas (name=="e") is skipped. Decide how to handle electron properties.
+ */
+template <typename GasListType, typename HandlerType>
+void readGasPropertyJson(const GasListType& gasList,
+                    const json_type& cnf,
+                    const std::string& propertyName,
+                    bool required,
+                    HandlerType handler)
+{
+
+    Log<Message>::Notify("Configuring gas property '" + propertyName + "'.");
+    for (auto &gas : gasList)
+    {
+        if (gas->name == "e")
+            continue;
+		bool found = false;
+        for (auto& el : cnf) {
+            if (el.at("name") == gas->name)
+            {
+                found = true;
+                handler(*gas, el.at(propertyName).get<double>());
+            }
+        }
+        if (!found)
+        {
+            if (required)
+                Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name);
+            else
+                Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name);
+        }
+    }
+}
 
 /// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
 template <typename GasListType, typename HandlerType>
@@ -77,9 +118,16 @@ void readGasProperty(const GasListType& gasList,
                     bool required,
                     HandlerType handler)
 {
-    const std::string fileName = cnf.contains(propertyName)
-        ? cnf.at(propertyName).get<std::string>() : std::string{};
-    readGasPropertyFile(gasList,fileName,propertyName,required,handler);
+    if (cnf.contains(propertyName) && cnf.at(propertyName).is_array())
+    {
+        readGasPropertyJson(gasList,cnf.at(propertyName),propertyName,required,handler);
+    }
+    else
+    {
+        const std::string fileName = cnf.contains(propertyName)
+            ? cnf.at(propertyName).get<std::string>() : std::string{};
+        readGasPropertyFile(gasList,fileName,propertyName,required,handler);
+    }
 }
 
 /** Gas mixture base class...
