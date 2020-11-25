@@ -40,6 +40,12 @@ namespace SI {
  *  to be equal to 1e-17 V*cm^2, or in SI units 1e-21 V*m^2.
  */
 constexpr const double Townsend = 1e-21;
+/** The constant gamma=sqrt(2e/m_e) appears in many places in the code.
+ *  The name gamma for this constant appears in \cite Hagelaar2005 just
+ *  below equation (6). Here you find the numerical value of gamma in SI
+ *  units, sqrt(C/kg).
+ */
+constexpr const double gamma = std::sqrt(2*Constant::electronCharge/Constant::electronMass);
 
 }
 

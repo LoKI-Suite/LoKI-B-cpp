@@ -143,8 +143,6 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 
     auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
-    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
-
     double ineSum = 0;
 
     for (uint32_t i = lmin; i < n; ++i)
@@ -152,7 +150,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
         ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
     }
 
-    collPower.forward = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
+    collPower.forward = -SI::gamma * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
 
     if (isReverse())
     {
@@ -166,7 +164,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
         }
 
         collPower.backward +=
-            factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
+            SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
     }
 
     return collPower;
@@ -180,8 +178,6 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
     const Grid::Index n = grid->nCells();
 
     PowerTerm collPower;
-
-    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
     Vector cellCrossSection(n);
 
@@ -212,7 +208,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sumThree += grid->getCell(i) * term;
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->du() *
+            collPower.forward = -SI::gamma * getTarget()->density * grid->du() *
                             (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
@@ -224,7 +220,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
+            collPower.forward = -SI::gamma * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
@@ -247,7 +243,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                         (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->getCell(lmin) * grid->du() *
+            collPower.forward = -SI::gamma * getTarget()->density * grid->getCell(lmin) * grid->du() *
                             eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
@@ -260,7 +256,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.forward = -factor * getTarget()->density * grid->du() * sum;
+        collPower.forward = -SI::gamma * getTarget()->density * grid->du() * sum;
     }
     /// \todo For other Collision types, collPower is unitialized at this point
 
@@ -269,7 +265,6 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
 RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 {
-    const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
     const Grid *grid = crossSection->getGrid();
 
     const Grid::Index nNodes = grid->nCells() + 1;
@@ -280,7 +275,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
-    ineRateCoeff = factor * grid->du() *
+    ineRateCoeff = SI::gamma * grid->du() *
                    cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
     if (isReverse())
@@ -296,7 +291,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         const double statWeightRatio = tStatWeight / pStatWeight;
 
         supRateCoeff =
-            factor * statWeightRatio * grid->du() *
+            SI::gamma * statWeightRatio * grid->du() *
             cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
     }
 
