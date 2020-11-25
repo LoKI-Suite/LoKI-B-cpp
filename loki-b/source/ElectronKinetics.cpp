@@ -1502,8 +1502,6 @@ void ElectronKinetics::evaluatePower()
 
 void ElectronKinetics::evaluateSwarmParameters()
 {
-    const double me = Constant::electronMass, e = Constant::electronCharge;
-
     const Grid::Index n = grid.nCells();
 
     const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
