@@ -10,6 +10,9 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects])
 AC_CONFIG_FILES([
 	Makefile
 	lib/Makefile
+	doc/Makefile
+	doc/doxygen/Makefile
+	doc/doxygen/Doxyfile
 	])
 
 LT_INIT([disable-static win32-dll])
@@ -52,9 +55,9 @@ AC_SUBST(EIGEN_CPPFLAGS)
 
 # nlohmann json
 AC_ARG_WITH(json,
-    [  --with-json(=json prefix)
+  [  --with-json(=json prefix)
               use the nlohmann json library],
-    with_json="${withval}", with_json="yes")
+  with_json="${withval}", with_json="yes")
 AC_MSG_CHECKING(--with-json)
 AC_MSG_RESULT($with_json)
 JSON_CPPFLAGS=
@@ -77,5 +80,31 @@ else
 fi
 
 AC_SUBST(JSON_CPPFLAGS)
+
+# documentation
+AC_ARG_WITH(doc,
+  [  --with-doc         generate documentation],
+  with_doc="${withval}", with_doc="no")
+AC_MSG_CHECKING(--with-doc)
+DOC_SUBDIR=
+if test "$with_doc" == "yes" ; then
+  AC_MSG_RESULT([yes])
+  AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, "")
+  if ! test "$DOXYGEN" ; then
+    AC_MSG_ERROR(Documentation requires doxygen)
+  fi
+  DOC_SUBDIR="doc"
+  AM_CONDITIONAL([HAVE_DOXYGEN],
+    [test -n "$DOXYGEN"])
+else
+  AC_MSG_RESULT([no])
+fi
+AC_SUBST(DOC_SUBDIR)
+
+# set CMAKE variable
+CMAKE_CURRENT_BINARY_DIR=`pwd`
+AC_SUBST(CMAKE_CURRENT_BINARY_DIR)
+CMAKE_CURRENT_SOURCE_DIR=`cd ${srcdir} && pwd`
+AC_SUBST(CMAKE_CURRENT_SOURCE_DIR)
 
 AC_OUTPUT

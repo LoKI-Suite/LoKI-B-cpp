@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I autodir
 
-SUBDIRS = lib .
+SUBDIRS = lib . @DOC_SUBDIR@
 
 AM_CPPFLAGS = -I$(top_srcdir)/loki-b -I$(top_srcdir)/include
 AM_CXXFLAGS = -g -pedantic -Wall -std=c++17
