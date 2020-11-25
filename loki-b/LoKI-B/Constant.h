@@ -25,8 +25,12 @@ constexpr const double speedOfLight = 299792458;             // Speed of light i
 constexpr const double atmosphereInPa = 101325;              // Standard atmosphere in Pa
 constexpr const double atmosphereInTorr = 760;               // Standard atmosphere in Torr (not obtained from NIST database)
 
+/// \todo Always define the literal pi value ourselves?
+#ifndef M_PI
+constexpr const double pi = 3.1415926535897932384626433833;
+#else
 constexpr const double pi = M_PI;
-constexpr const double e = M_E;
+#endif
 
 constexpr const double kBeV = boltzmann / electronCharge;
 constexpr const double plankReduced = plank / (2. * pi);
