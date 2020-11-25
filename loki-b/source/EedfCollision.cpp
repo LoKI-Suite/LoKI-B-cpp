@@ -130,7 +130,7 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->nCells();
+    const Grid::Index n = grid->nCells();
 
     PowerTerm collPower;
 
@@ -177,7 +177,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                       const double OPBParameter)
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->nCells();
+    const Grid::Index n = grid->nCells();
 
     PowerTerm collPower;
 
@@ -272,8 +272,8 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
     const Grid *grid = crossSection->getGrid();
 
-    const uint32_t nNodes = grid->nCells() + 1;
-    const uint32_t nCells = grid->nCells();
+    const Grid::Index nNodes = grid->nCells() + 1;
+    const Grid::Index nCells = grid->nCells();
 
     const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
