@@ -36,7 +36,7 @@ class WorkingConditions
     double gasDensity() const { return m_gasDensity; }
     double electronDensity() const { return m_electronDensity; }
     double reducedField() const { return m_reducedField; }
-    double reducedFieldSI() const { return m_reducedField * Constant::SI::Townsend; }
+    double reducedFieldSI() const { return m_reducedField * SI::Townsend; }
     double excitationFrequency() const { return m_excitationFrequency; }
     double reducedExcFreqSI() const { return m_excitationFrequency * 2 * Constant::pi / m_gasDensity; }
 
