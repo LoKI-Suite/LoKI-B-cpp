@@ -478,8 +478,8 @@ int main()
 {
     try {
         const std::string str(
-            std::istreambuf_iterator<char>(std::cin),
-            std::istreambuf_iterator<char>());
+            std::istreambuf_iterator<char>{std::cin},
+            std::istreambuf_iterator<char>{});
         const json_type src(json_type::parse(str));
         json2lxcat(src,std::cout);
         return 0;
