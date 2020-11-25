@@ -550,7 +550,7 @@ void ElectronKinetics::evaluateInelasticOperators()
                         inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
                     }
 
-                    if (collision->isReverse)
+                    if (collision->isReverse())
                     {
                         const double swRatio = collision->getTarget()->statisticalWeight /
                                                collision->m_rhsHeavyStates[0]->statisticalWeight;

@@ -23,8 +23,8 @@ void EedfGas::addCollision(EedfCollision *collision, bool isExtra)
     (isExtra ? m_state_collisionsExtra[target] : m_state_collisions[target]).emplace_back(collision);
 
     // add to the gas' list
-    (isExtra ? this->collisionsExtra[static_cast<uint8_t>(collision->type)]
-             : this->collisions[static_cast<uint8_t>(collision->type)])
+    (isExtra ? this->collisionsExtra[static_cast<uint8_t>(collision->type())]
+             : this->collisions[static_cast<uint8_t>(collision->type())])
         .emplace_back(collision);
 }
 
@@ -53,7 +53,7 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
     {
         for (const auto &collision : m_state_collisions[pair.first])
         {
-            if (collision->type == CollisionType::effective)
+            if (collision->type() == CollisionType::effective)
                 continue;
 
             Vector crossSection;
@@ -61,7 +61,7 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
 
             rawEl -= crossSection * pair.second;
 
-            if (collision->isReverse)
+            if (collision->isReverse())
             {
                 collision->superElastic(rawEnergies, crossSection);
 
@@ -142,7 +142,7 @@ std::vector<EedfGas::EedfState *> EedfGas::findStatesToUpdate()
             {
                 auto &colls = m_state_collisions[eleState];
                 auto it = find_if(colls.begin(), colls.end(),
-                                  [](EedfCollision *collision) { return collision->type == CollisionType::elastic; });
+                                  [](EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
 
                 if (it == colls.end())
                     statesToUpdate.emplace_back(eleState);

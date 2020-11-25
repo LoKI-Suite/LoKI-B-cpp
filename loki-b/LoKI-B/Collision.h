@@ -20,40 +20,34 @@ class Collision
 {
   public:
     using State = GasBase::State;
+    using StateVector = std::vector<State *>;
+    using CoeffVector = std::vector<uint16_t>;
 
     virtual ~Collision()
     {
     }
 
-    const CollisionType type;
-    const bool isReverse;
-
-    using StateVector = std::vector<State *>;
-    using CoeffVector = std::vector<uint16_t>;
-
-    using StoichArray = std::map<const State *, uint16_t>;
-    // Left-hand side-map of State pointers and stoichiometric coefficients
-    const StoichArray m_lhs;
-    // Right-hand side-map of State pointers and stoichiometric coefficients
-    const StoichArray m_rhs;
+    const CollisionType type() const { return m_type; }
+    const bool isReverse() const { return m_isReverse; }
 
     /** Compare the stoichiometry and type of the reaction.
      */
     bool is_same_as(const Collision &other) const
     {
-        return type == other.type && m_lhs == other.m_lhs && m_rhs == other.m_rhs;
+        return m_type == other.m_type && m_lhs == other.m_lhs && m_rhs == other.m_rhs;
     }
-
-  protected:
+protected:
     /** Initializes the members of the Collision class, the vectors are initialized
      *  using move semantics.
      */
     Collision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
               const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-        : type(type), isReverse(isReverse), m_lhs(makeStoichMap(lhsStates, lhsCoeffs)),
+        : m_type(type), m_isReverse(isReverse), m_lhs(makeStoichMap(lhsStates, lhsCoeffs)),
           m_rhs(makeStoichMap(rhsStates, rhsCoeffs))
     {
     }
+private:
+    using StoichArray = std::map<const State *, uint16_t>;
     static StoichArray makeStoichMap(const StateVector &states, const CoeffVector &coeffs)
     {
         StoichArray sm;
@@ -64,6 +58,12 @@ class Collision
         }
         return sm;
     }
+    const CollisionType m_type;
+    const bool m_isReverse;
+    // Left-hand side-map of State pointers and stoichiometric coefficients
+    const StoichArray m_lhs;
+    // Right-hand side-map of State pointers and stoichiometric coefficients
+    const StoichArray m_rhs;
 };
 
 } // namespace loki

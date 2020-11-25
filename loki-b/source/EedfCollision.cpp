@@ -76,11 +76,11 @@ EedfCollision::EedfState *EedfCollision::getTarget()
 
 std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
 {
-    os << "e + " << *collision.getTarget() << (collision.isReverse ? " <->" : " ->");
+    os << "e + " << *collision.getTarget() << (collision.isReverse() ? " <->" : " ->");
 
-    if (collision.type != CollisionType::attachment)
+    if (collision.type() != CollisionType::attachment)
         os << " e +";
-    if (collision.type == CollisionType::ionization)
+    if (collision.type() == CollisionType::ionization)
         os << " e +";
 
     for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
@@ -96,7 +96,7 @@ std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
 
 void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 {
-    if (!isReverse)
+    if (!isReverse())
     {
         Log<SuperElasticForNonReverse>::Error(*this);
     }
@@ -154,7 +154,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 
     collPower.forward = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
 
-    if (isReverse)
+    if (isReverse())
     {
         const double statWeightRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
 
@@ -192,7 +192,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
     auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
-    if (type == CollisionType::ionization)
+    if (type() == CollisionType::ionization)
     {
 
         if (ionizationOperatorType == IonizationOperatorType::equalSharing)
@@ -251,7 +251,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                             eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
-    else if (type == CollisionType::attachment)
+    else if (type() == CollisionType::attachment)
     {
         double sum = 0.;
 
@@ -283,7 +283,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     ineRateCoeff = factor * grid->du() *
                    cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
-    if (isReverse)
+    if (isReverse())
     {
         const double tStatWeight = getTarget()->statisticalWeight;
         const double pStatWeight = m_rhsHeavyStates[0]->statisticalWeight;
@@ -305,7 +305,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 
 std::string EedfCollision::typeAsString() const
 {
-    switch (type)
+    switch (type())
     {
     case CollisionType::effective:
         return "Effective";

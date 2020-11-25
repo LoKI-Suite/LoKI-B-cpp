@@ -40,7 +40,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
      *  hosts the properties (such as charge), it makes more sens to let the
      *  root be 'the' electronic state, since there is no need for additional structure.
      */
-    // for (State *s = electron; s->type != StateType::root; s = s->parent())
+    // for (State *s = electron; s->type() != StateType::root; s = s->parent())
     // {
     //     s->population = 1.0;
     // }
@@ -76,7 +76,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
     /**
      */
-    // for (State *s = electron; s->type != StateType::root; s = s->parent())
+    // for (State *s = electron; s->type() != StateType::root; s = s->parent())
     // {
     //     s->population = 1.0;
     // }
@@ -206,10 +206,10 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
                     EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
                     eedfGas.addCollision(collision.get(), isExtra);
                     m_collisions.push_back(collision.get());
-                    hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+                    hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
                     const bool isElasticOrEffective =
-                        (collision->type == CollisionType::effective || collision->type == CollisionType::elastic);
+                        (collision->type() == CollisionType::effective || collision->type() == CollisionType::elastic);
                     collision->crossSection.reset(new CrossSection(threshold, energyGrid, isElasticOrEffective, in));
                     collision.release();
                 }
@@ -340,10 +340,10 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
             EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
             eedfGas.addCollision(collision.get(), isExtra);
             m_collisions.push_back(collision.get());
-            hasCollisions[static_cast<uint8_t>(collision->type)] = true;
+            hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
             const bool isElasticOrEffective =
-                (collision->type == CollisionType::effective || collision->type == CollisionType::elastic);
+                (collision->type() == CollisionType::effective || collision->type() == CollisionType::elastic);
             collision->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
             collision.release();
         }
@@ -391,7 +391,7 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
             {
                 totalCrossSection += *collision->crossSection * collision->getTarget()->density;
 
-                if (collision->isReverse)
+                if (collision->isReverse())
                 {
                     Vector superElastic;
                     collision->superElastic(grid->getNodes(), superElastic);
