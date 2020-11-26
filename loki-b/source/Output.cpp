@@ -133,188 +133,173 @@ void FileOutput::setDestination(const std::string& subFolder)
     fs::create_directory(subPath);
 }
 
+void FileOutput::writeTerm(std::ostream& os, const std::string& name, const std::string& unit, double value, bool plus) const
+{
+    os << std::setw(36) << name << " = "
+        << std::showpos << std::scientific << std::setprecision(14) << value
+        << " (" << unit << ")";
+    if (plus) os << " +";
+    os << std::endl;
+}
+
 void FileOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
 {
-    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/eedf.txt").c_str(), "w");
-
-    fprintf(file, "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy\n");
-
-    for (uint32_t i = 0; i < energies.size(); ++i)
+    std::ofstream os(m_folder + "/" + m_subFolder + "/eedf.txt");
+    os << "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy" << std::endl;
+    for (Vector::Index i = 0; i < energies.size(); ++i)
     {
-        fprintf(file, "%.14e %.14e %.14e\n", energies[i], eedf[i], firstAnisotropy[i]);
+        os << std::scientific << std::setprecision(14) << energies[i];
+        os << ' ';
+        os << std::scientific << std::setprecision(14) << eedf[i];
+        os << ' ';
+        os << std::scientific << std::setprecision(14) << firstAnisotropy[i];
+        os << std::endl;
     }
-
-    fclose(file);
 }
 
 void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
-    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/swarm_parameters.txt").c_str(), "w");
-
-    fprintf(file, "         Reduced electric field = %#.14e (Td)\n", workingConditions->reducedField());
-    fprintf(file, "  Reduced diffusion coefficient = %#.14e (1/(ms))\n", swarmParameters.redDiffCoeff);
-    fprintf(file, "   Reduced mobility coefficient = %#.14e (1/(msV))\n", swarmParameters.redMobCoeff);
-    fprintf(file, "   Reduced Townsend coefficient = %#.14e (m2)\n", swarmParameters.redTownsendCoeff);
-    fprintf(file, " Reduced attachment coefficient = %#.14e (m2)\n", swarmParameters.redAttCoeff);
-    fprintf(file, "                    Mean energy = %#.14e (eV)\n", swarmParameters.meanEnergy);
-    fprintf(file, "          Characteristic energy = %#.14e (eV)\n", swarmParameters.characEnergy);
-    fprintf(file, "           Electron temperature = %#.14e (eV)\n", swarmParameters.Te);
-    fprintf(file, "                 Drift velocity = %#.14e (m/s)\n", swarmParameters.driftVelocity);
-
-    fclose(file);
+    std::ofstream os(m_folder + "/" + m_subFolder + "/swarm_parameters.txt");
+    writeTerm(os,"Reduced electric field", "Td", workingConditions->reducedField());
+    writeTerm(os,"Reduced diffusion coefficient","1/(ms)",swarmParameters.redDiffCoeff);
+    writeTerm(os,"Reduced mobility coefficient","1/(msV)",swarmParameters.redMobCoeff);
+    writeTerm(os,"Reduced Townsend coefficient","m2",swarmParameters.redTownsendCoeff);
+    writeTerm(os,"Reduced attachment coefficient","m2",swarmParameters.redAttCoeff);
+    writeTerm(os,"Mean energy","eV",swarmParameters.meanEnergy);
+    writeTerm(os,"Characteristic energy","eV",swarmParameters.characEnergy);
+    writeTerm(os,"Electron temperature","eV",swarmParameters.Te);
+    writeTerm(os,"Drift velocity","m/s",swarmParameters.driftVelocity);
 }
 
 void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
 {
-    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/power_balance.txt").c_str(), "w");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/power_balance.txt");
+    writeTerm(os, "Field","eVm3/s", power.field);
+    writeTerm(os, "Elastic collisions (gain)","eVm3/s", power.elasticGain);
+    writeTerm(os, "Elastic collisions (loss)","eVm3/s", power.elasticLoss);
+    writeTerm(os, "CAR (gain)","eVm3/s", power.carGain);
+    writeTerm(os, "CAR (loss)","eVm3/s", power.carLoss);
+    writeTerm(os, "Excitation inelastic collisions","eVm3/s", power.excitation.forward);
+    writeTerm(os, "Excitation superelastic collisions","eVm3/s", power.excitation.backward);
+    writeTerm(os, "Vibrational inelastic collisions","eVm3/s", power.vibrational.forward);
+    writeTerm(os, "Vibrational superelastic collisions","eVm3/s", power.vibrational.backward);
+    writeTerm(os, "Rotational inelastic collisions","eVm3/s", power.rotational.forward);
+    writeTerm(os, "Rotational superelastic collisions","eVm3/s", power.rotational.backward);
+    writeTerm(os, "Ionization collisions","eVm3/s", power.ionization.forward); // no recombination
+    writeTerm(os, "Attachment collisions","eVm3/s", power.attachment.forward); // no detachment
+    writeTerm(os, "Electron density growth","eVm3/s", power.eDensGrowth,true);
+    os << std::string(73,'-') << std::endl;
 
-    fprintf(file, "                               Field = %#+.14e (eVm3/s)\n", power.field);
-    fprintf(file, "           Elastic collisions (gain) = %#+.14e (eVm3/s)\n", power.elasticGain);
-    fprintf(file, "           Elastic collisions (loss) = %#+.14e (eVm3/s)\n", power.elasticLoss);
-    fprintf(file, "                          CAR (gain) = %#+.14e (eVm3/s)\n", power.carGain);
-    fprintf(file, "                          CAR (loss) = %#+.14e (eVm3/s)\n", power.carLoss);
-    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.forward);
-    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.backward);
-    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.forward);
-    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.backward);
-    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.forward);
-    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.backward);
-    fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", power.ionization.forward); // no recombination
-    fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", power.attachment.forward); // no detachment
-    fprintf(file, "             Electron density growth = %#+.14e (eVm3/s) +\n", power.eDensGrowth);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "                       Power Balance = %#+.14e (eVm3/s)\n", power.balance);
-    fprintf(file, "              Relative Power Balance = % #.14e%%\n\n", power.relativeBalance * 100);
-    fprintf(file, "           Elastic collisions (gain) = %#+.14e (eVm3/s)\n", power.elasticGain);
-    fprintf(file, "           Elastic collisions (loss) = %#+.14e (eVm3/s) +\n", power.elasticLoss);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "            Elastic collisions (net) = %#+.14e (eVm3/s)\n\n", power.elasticNet);
-    fprintf(file, "                          CAR (gain) = %#+.14e (eVm3/s)\n", power.carGain);
-    fprintf(file, "                          CAR (loss) = %#+.14e (eVm3/s) +\n", power.carLoss);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "                           CAR (net) = %#+.14e (eVm3/s)\n\n", power.carNet);
-    fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", power.excitation.forward);
-    fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", power.excitation.backward);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", power.excitation.net());
-    fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", power.vibrational.forward);
-    fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", power.vibrational.backward);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", power.vibrational.net());
-    fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", power.rotational.forward);
-    fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", power.rotational.backward);
-    for (uint32_t i = 0; i < 73; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n");
-    fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n", power.rotational.net());
+    writeTerm(os,"Power Balance","eVm3/s", power.balance);
+    writeTerm(os,"Relative Power Balance", "%", power.relativeBalance * 100);
+    writeTerm(os,"Elastic collisions (gain)","eVm3/s", power.elasticGain);
+    writeTerm(os,"Elastic collisions (loss)","eVm3/s", power.elasticLoss,true);
+    os << std::string(73,'-') << std::endl;
+    writeTerm(os,"Elastic collisions (net)","eVm3/s", power.elasticNet);
+    writeTerm(os,"CAR (gain)","eVm3/s", power.carGain);
+    writeTerm(os,"CAR (loss)","eVm3/s", power.carLoss,true);
+    os << std::string(73,'-') << std::endl;
+    writeTerm(os,"CAR (net)","eVm3/s", power.carNet);
+    writeTerm(os,"Excitation inelastic collisions","eVm3/s", power.excitation.forward);
+    writeTerm(os,"Excitation superelastic collisions","eVm3/s", power.excitation.backward,true);
+    os << std::string(73,'-') << std::endl;
+    writeTerm(os,"Excitation collisions (net)","eVm3/s", power.excitation.net());
+    writeTerm(os,"Vibrational inelastic collisions","eVm3/s", power.vibrational.forward);
+    writeTerm(os,"Vibrational superelastic collisions","eVm3/s", power.vibrational.backward,true);
+    os << std::string(73,'-') << std::endl;
+    writeTerm(os,"Vibrational collisions (net)","eVm3/s", power.vibrational.net());
+    writeTerm(os,"Rotational inelastic collisions","eVm3/s", power.rotational.forward);
+    writeTerm(os,"Rotational superelastic collisions","eVm3/s", power.rotational.backward,true);
+    os << std::string(73,'-') << std::endl;
+    writeTerm(os,"Rotational collisions (net)","eVm3/s", power.rotational.net());
 
     for (const auto &gas : gases)
     {
         const GasPower &gasPower = gas->getPower();
 
-        fprintf(file, "\n");
-        for (uint32_t i = 0; i < 37; ++i)
-            fprintf(file, "*");
-        fprintf(file, " %s ", gas->name.c_str());
-        for (uint32_t i = 0; i < 39 - gas->name.length(); ++i)
-            fprintf(file, "*");
-        fprintf(file, "\n\n");
+        os << std::endl;
+        os << std::string(37,'*') << ' ' << gas->name << ' ' << std::string(39 - gas->name.length(),'*') << std::endl;
+        os << std::endl;
 
-        fprintf(file, "     Excitation inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.excitation.forward);
-        fprintf(file, "  Excitation superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.excitation.backward);
-        for (uint32_t i = 0; i < 73; ++i)
-            fprintf(file, "-");
-        fprintf(file, "\n");
-        fprintf(file, "         Excitation collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.excitation.net());
-        fprintf(file, "    Vibrational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.vibrational.forward);
-        fprintf(file, " Vibrational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.vibrational.backward);
-        for (uint32_t i = 0; i < 73; ++i)
-            fprintf(file, "-");
-        fprintf(file, "\n");
-        fprintf(file, "        Vibrational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.vibrational.net());
-        fprintf(file, "     Rotational inelastic collisions = %#+.14e (eVm3/s)\n", gasPower.rotational.forward);
-        fprintf(file, "  Rotational superelastic collisions = %#+.14e (eVm3/s) +\n", gasPower.rotational.backward);
-        for (uint32_t i = 0; i < 73; ++i)
-            fprintf(file, "-");
-        fprintf(file, "\n");
-        fprintf(file, "         Rotational collisions (net) = %#+.14e (eVm3/s)\n\n", gasPower.rotational.net());
-        fprintf(file, "               Ionization collisions = %#+.14e (eVm3/s)\n", gasPower.ionization.forward); // no recombination
-        fprintf(file, "               Attachment collisions = %#+.14e (eVm3/s)\n", gasPower.attachment.forward); // no detachment
+        writeTerm(os,"Excitation inelastic collisions","eVm3/s", gasPower.excitation.forward);
+        writeTerm(os,"Excitation superelastic collisions","eVm3/s", gasPower.excitation.backward,true);
+        os << std::string(73,'-') << std::endl;
+        writeTerm(os,"Excitation collisions (net)","eVm3/s", gasPower.excitation.net());
+        writeTerm(os,"Vibrational inelastic collisions","eVm3/s", gasPower.vibrational.forward);
+        writeTerm(os,"Vibrational superelastic collisions","eVm3/s", gasPower.vibrational.backward,true);
+        os << std::string(73,'-') << std::endl;
+        writeTerm(os,"Vibrational collisions (net)","eVm3/s", gasPower.vibrational.net());
+        writeTerm(os,"Rotational inelastic collisions","eVm3/s", gasPower.rotational.forward);
+        writeTerm(os,"Rotational superelastic collisions","eVm3/s", gasPower.rotational.backward,true);
+        os << std::string(73,'-') << std::endl;
+        writeTerm(os,"Rotational collisions (net)","eVm3/s", gasPower.rotational.net());
+        writeTerm(os,"Ionization collisions","eVm3/s", gasPower.ionization.forward); // no recombination
+        writeTerm(os,"Attachment collisions","eVm3/s", gasPower.attachment.forward); // no detachment
     }
-
-    fclose(file);
 }
 
 void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                    const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    auto *file = std::fopen((m_folder + "/" + m_subFolder + "/rate_coefficients.txt").c_str(), "w");
-
-    fprintf(file, "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description\n");
-
+    std::ofstream os(m_folder + "/" + m_subFolder + "/rate_coefficients.txt");
+    os << "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description" << std::endl;
     for (const auto &rateCoeff : rateCoefficients)
     {
-        std::stringstream ss;
-
-        ss << *rateCoeff.collision;
-
-        fprintf(file, "%20.14e %20.14e %s\n", rateCoeff.inelastic, rateCoeff.superelastic, ss.rdbuf()->str().c_str());
+        os << std::setw(20) << std::scientific << std::setprecision(14) << rateCoeff.inelastic;
+        os << ' ';
+        os << std::setw(20) << std::scientific << std::setprecision(14) << rateCoeff.superelastic;
+        os << ' ';
+        os << *rateCoeff.collision;
+        os << std::endl;
     }
-
-    fprintf(file, "\n");
-    for (uint32_t i = 0; i < 27; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n* Extra Rate Coefficients *\n");
-    for (uint32_t i = 0; i < 27; ++i)
-        fprintf(file, "-");
-    fprintf(file, "\n\n");
-
+    os << std::endl;
+    os << std::string(27,'-');
+    os << std::endl;
+    os << "* Extra Rate Coefficients *" << std::endl;
+    os << std::string(27,'-');
+    os << std::endl;
+    os << std::endl;
     for (const auto &rateCoeff : extraRateCoefficients)
     {
-        std::stringstream ss;
-
-        ss << *rateCoeff.collision;
-
-        fprintf(file, "%20.14e %20.14e %s\n", rateCoeff.inelastic, rateCoeff.superelastic, ss.rdbuf()->str().c_str());
+        os << std::setw(20) << std::scientific << std::setprecision(14) << rateCoeff.inelastic;
+        os << ' ';
+        os << std::setw(20) << std::scientific << std::setprecision(14) << rateCoeff.superelastic;
+        os << ' ';
+        os << *rateCoeff.collision;
+        os << std::endl;
     }
-
-    fclose(file);
 }
 
 void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
-    std::FILE* file = std::fopen((m_folder + "/lookup_table.txt").c_str(), m_initTable ? "w" : "a");
+    std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     if (m_initTable)
     {
-        fprintf(file, "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
+        os << "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
                       "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
-                      "DriftVelocity(m/s)   RelativePowerBalance\n");
+                      "DriftVelocity(m/s)   RelativePowerBalance" << std::endl;
         m_initTable = false;
     }
-
-    fprintf(file, "%20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %20.14e %19.14e%%\n",
-            workingConditions->reducedField(),
-            swarmParameters.redDiffCoeff,
-            swarmParameters.redMobCoeff,
-            swarmParameters.redTownsendCoeff,
-            swarmParameters.redAttCoeff,
-            swarmParameters.meanEnergy,
-            swarmParameters.characEnergy,
-            swarmParameters.Te,
-            swarmParameters.driftVelocity,
-            power.relativeBalance * 100);
-
-    fclose(file);
+    os << std::setw(20) << std::scientific << std::setprecision(14) << workingConditions->reducedField();
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
+    os << ' ';
+    os << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
+    os << std::endl;
 }
 
 void FileOutput::createPath(const PathExistsHandler& handler)
