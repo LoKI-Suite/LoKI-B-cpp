@@ -69,7 +69,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
 {
     if (cnf.contains("mixture"))
     {
-        loadCollisions(cnf.at("mixture"), grid, true);
+        loadCollisions(cnf.at("mixture"), grid);
     }
     if (cnf.contains("LXCatFiles"))
     {
