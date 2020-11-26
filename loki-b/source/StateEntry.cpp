@@ -38,6 +38,8 @@ bool StateEntry::hasWildCard() const
         return (J == "*");
     case none:
         return false;
+    default:
+        break;
     }
     return false;
 }
