@@ -87,19 +87,20 @@ AC_ARG_WITH(doc,
   with_doc="${withval}", with_doc="no")
 AC_MSG_CHECKING(--with-doc)
 DOC_SUBDIR=
+DOXYGEN=
 if test "$with_doc" == "yes" ; then
   AC_MSG_RESULT([yes])
+  DOC_SUBDIR="doc"
   AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, "")
   if ! test "$DOXYGEN" ; then
-    AC_MSG_ERROR(Documentation requires doxygen)
+    AC_MSG_WARN(Doxygen documentation will not be built.)
   fi
-  DOC_SUBDIR="doc"
-  AM_CONDITIONAL([HAVE_DOXYGEN],
-    [test -n "$DOXYGEN"])
 else
   AC_MSG_RESULT([no])
 fi
 AC_SUBST(DOC_SUBDIR)
+AM_CONDITIONAL([HAVE_DOXYGEN],
+  [test -n "$DOXYGEN"])
 
 # set CMAKE variable
 CMAKE_CURRENT_BINARY_DIR=`pwd`
