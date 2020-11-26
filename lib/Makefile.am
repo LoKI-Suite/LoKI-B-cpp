@@ -1,6 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/loki-b -I$(top_srcdir)/include
-AM_CXXFLAGS = -g -pedantic -Wall -std=c++17
-AM_LDFLAGS = -no-undefined
+include $(top_srcdir)/Makefile.rules
 
 VPATH=$(top_srcdir)/loki-b/source
 

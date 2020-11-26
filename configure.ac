@@ -13,6 +13,7 @@ AC_CONFIG_FILES([
 	doc/Makefile
 	doc/doxygen/Makefile
 	doc/doxygen/Doxyfile
+	testsuite/Makefile
 	])
 
 LT_INIT([disable-static win32-dll])
