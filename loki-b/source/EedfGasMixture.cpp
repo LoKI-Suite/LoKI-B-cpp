@@ -62,7 +62,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
     : grid(grid)
 {
     if (cnf.contains("mixture"))
-        loadCollisions(cnf.at("mixture"), grid, true);
+        loadCollisions(cnf.at("mixture"), grid);
 
     if (cnf.contains("LXCatFiles"))
         loadCollisions(cnf.at("LXCatFiles").get<std::vector<std::string>>(), grid);
