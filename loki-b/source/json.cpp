@@ -30,4 +30,4 @@ json_type read_json_from_file(const std::string &fname)
     }
 }
 
-}; // namespace loki
+} // namespace loki

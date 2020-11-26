@@ -29,6 +29,8 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
         if (J.empty())
             throw std::runtime_error("Rotational state not specified.");
         break;
+    default:
+        break;
     }
     /** \todo if multiple ionization levels are present, we set the population of the
      *        neutral state to 1 (the others remain at 0). EDIT: but only if the gas

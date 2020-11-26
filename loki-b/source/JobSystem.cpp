@@ -209,7 +209,7 @@ class JobManager::Parameter
     /** The callback function must accept a double and returns a void.
      */
     Parameter(const std::string &name, const callback_type callback, const Range *range)
-        : m_name(name), m_callback(callback), m_range(range), m_active_ndx(0)
+        : m_callback(callback), m_name(name), m_range(range), m_active_ndx(0)
     {
     }
 

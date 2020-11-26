@@ -38,6 +38,8 @@ bool StateEntry::hasWildCard() const
         return (J == "*");
     case none:
         return false;
+    default:
+        break;
     }
     return false;
 }
@@ -285,7 +287,7 @@ StateEntry entryFromJSON(const json_type &cnf)
                         throw std::runtime_error("Duplicate J entries encountered.");
                     }
                     int nJ = *J_vals.rbegin() + 1 - *J_vals.begin();
-                    if (nJ != J_vals.size())
+                    if (nJ != int(J_vals.size()))
                     {
                         throw std::runtime_error("Expected a contiguous J-range.");
                     }
@@ -311,7 +313,7 @@ StateEntry entryFromJSON(const json_type &cnf)
                 throw std::runtime_error("Duplicate v entries encountered.");
             }
             int nv = *v_vals.rbegin() + 1 - *v_vals.begin();
-            if (nv != v_vals.size())
+            if (nv != int(v_vals.size()))
             {
                 throw std::runtime_error("Expected a contiguous v-range.");
             }
