@@ -1,11 +1,8 @@
 ACLOCAL_AMFLAGS=-I autodir
 
-SUBDIRS = lib . @DOC_SUBDIR@
+SUBDIRS = lib . testsuite @DOC_SUBDIR@
 
-AM_CPPFLAGS = -I$(top_srcdir)/loki-b -I$(top_srcdir)/include
-AM_CXXFLAGS = -g -pedantic -Wall -std=c++17
-
-#all: loki
+include $(top_srcdir)/Makefile.rules
 
 VPATH=$(top_srcdir)/loki-b/source
 
