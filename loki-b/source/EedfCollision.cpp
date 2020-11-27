@@ -37,7 +37,8 @@ void remove_electron_entries(Collision::StateVector &parts, Collision::CoeffVect
 EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
     : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse), m_lhsHeavyStates(lhsStates),
-      m_lhsHeavyCoeffs(lhsCoeffs), m_rhsHeavyStates(rhsStates), m_rhsHeavyCoeffs(rhsCoeffs)
+      m_lhsHeavyCoeffs(lhsCoeffs), m_rhsHeavyStates(rhsStates), m_rhsHeavyCoeffs(rhsCoeffs),
+      m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
 {
     /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
     // for the left hand side we expect 'e + X' or 'X + e'.
@@ -127,7 +128,7 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
         result[0] = 0;
 }
 
-PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
+PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 {
     const Grid *grid = crossSection->getGrid();
     const Grid::Index n = grid->nCells();
@@ -172,7 +173,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 
 PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                       const IonizationOperatorType ionizationOperatorType,
-                                                      const double OPBParameter)
+                                                      const double OPBParameter) const
 {
     const Grid *grid = crossSection->getGrid();
     const Grid::Index n = grid->nCells();
@@ -275,7 +276,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
-    ineRateCoeff = SI::gamma * grid->du() *
+    m_ineRateCoeff = SI::gamma * grid->du() *
                    cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
     if (isReverse())
@@ -290,12 +291,12 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 
         const double statWeightRatio = tStatWeight / pStatWeight;
 
-        supRateCoeff =
+        m_supRateCoeff =
             SI::gamma * statWeightRatio * grid->du() *
             cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
     }
 
-    return {this, ineRateCoeff, supRateCoeff};
+    return {this, m_ineRateCoeff, m_supRateCoeff};
 }
 
 std::string EedfCollision::typeAsString() const

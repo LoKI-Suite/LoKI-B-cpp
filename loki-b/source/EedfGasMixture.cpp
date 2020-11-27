@@ -359,14 +359,14 @@ void EedfGasMixture::loadGasProperties(const GasPropertiesSetup &setup)
 {
     GasMixture::loadGasProperties(setup);
     readGasPropertyFile(gases(), setup.OPBParameter, "OPBParameter", false,
-        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
+        [](EedfGas& gas, double value) { gas.setOPBParameter(value); } );
 }
 
 void EedfGasMixture::loadGasProperties(const json_type &cnf)
 {
     GasMixture::loadGasProperties(cnf);
     readGasProperty(gases(), cnf, "OPBParameter", false,
-        [](EedfGas& gas, double value) { gas.OPBParameter=value; } );
+        [](EedfGas& gas, double value) { gas.setOPBParameter(value); } );
 }
 
 void EedfGasMixture::evaluateTotalAndElasticCS()
@@ -380,14 +380,14 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
             continue;
 
         double massRatio = Constant::electronMass / gas->mass;
-        for (auto &collision : gas->collisions[static_cast<uint8_t>(CollisionType::elastic)])
+        for (auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::elastic)])
         {
             elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
         }
 
-        for (auto i = static_cast<uint8_t>(CollisionType::elastic); i < gas->collisions.size(); ++i)
+        for (auto i = static_cast<uint8_t>(CollisionType::elastic); i < gas->collisions().size(); ++i)
         {
-            for (auto &collision : gas->collisions[i])
+            for (auto &collision : gas->collisions()[i])
             {
                 totalCrossSection += *collision->crossSection * collision->getTarget()->density;
 
@@ -427,7 +427,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
     for (auto &gas : gases())
     {
-        for (auto &collVec : gas->collisions)
+        for (auto &collVec : gas->collisions())
         {
             for (auto &collision : collVec)
             {
@@ -436,7 +436,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
                 rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }
-        for (auto &collVec : gas->collisionsExtra)
+        for (auto &collVec : gas->collisionsExtra())
         {
             for (auto &collision : collVec)
             {
