@@ -35,7 +35,7 @@ private:
     const double m_threshold;
     const Grid *m_energyGrid;
     const bool m_isElasticOrEffective;
-    LookupTable m_lut;
+    const LookupTable m_lut;
 };
 
 } // namespace loki
