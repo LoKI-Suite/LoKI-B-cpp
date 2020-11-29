@@ -17,16 +17,17 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
                                const WorkingConditions *workingConditions)
     : grid(grid)
 {
-
     loadCollisions(setup.LXCatFiles, grid);
-
     if (!setup.LXCatFilesExtra.empty())
+    {
         loadCollisions(setup.LXCatFilesExtra, grid, true);
+    }
 
     this->loadGasProperties(setup.gasProperties);
-
     for (auto &gas : gases())
+    {
         gas->propagateFraction();
+    }
 
     /// \todo Store the electron state pointer as a member? Does the state type matter?
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
@@ -50,10 +51,15 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
     for (auto &gas : gases())
     {
         if (!gas->isDummy())
+        {
             gas->checkElasticCollisions(electron, grid);
+        }
     }
 
-    this->addCARGases(setup.CARgases);
+    for (const std::string& gasName : setup.CARgases)
+    {
+        this->addCARGas(gasName);
+    }
 
     //        this->evaluateTotalAndElasticCS();
 }
@@ -61,36 +67,37 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
 EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
     : grid(grid)
 {
-
     loadCollisions(cnf.at("LXCatFiles"), grid);
-
     if (cnf.contains("LXCatFilesExtra"))
+    {
         loadCollisions(cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
+    }
 
     this->loadGasProperties(cnf.at("gasProperties"));
-
     for (auto &gas : gases())
+    {
         gas->propagateFraction();
+    }
 
     /// \todo Store the electron state pointer as a member? Does the state type matter?
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
-    /**
-     */
-    // for (State *s = electron; s->type() != StateType::root; s = s->parent())
-    // {
-    //     s->population = 1.0;
-    // }
+    /// \todo See the comments about the population in the other overload
     this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
     this->evaluateStateDensities();
 
     for (auto &gas : gases())
     {
         if (!gas->isDummy())
+        {
             gas->checkElasticCollisions(electron, grid);
+        }
     }
     if (cnf.contains("CARgases"))
     {
-        this->addCARGases(cnf.at("CARgases"));
+        for (const auto& cg : cnf.at("CARgases"))
+        {
+            addCARGas(cg.get<std::string>());
+        }
     }
 
     //        this->evaluateTotalAndElasticCS();
@@ -206,7 +213,7 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
                     EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
                     eedfGas.addCollision(collision.get(), isExtra);
                     m_collisions.push_back(collision.get());
-                    hasCollisions[static_cast<uint8_t>(collision->type())] = true;
+                    m_hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
                     const bool isElasticOrEffective =
                         (collision->type() == CollisionType::effective || collision->type() == CollisionType::elastic);
@@ -340,7 +347,7 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
             EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
             eedfGas.addCollision(collision.get(), isExtra);
             m_collisions.push_back(collision.get());
-            hasCollisions[static_cast<uint8_t>(collision->type())] = true;
+            m_hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
             const bool isElasticOrEffective =
                 (collision->type() == CollisionType::effective || collision->type() == CollisionType::elastic);
@@ -371,58 +378,80 @@ void EedfGasMixture::loadGasProperties(const json_type &cnf)
 
 void EedfGasMixture::evaluateTotalAndElasticCS()
 {
-    elasticCrossSection.setZero(grid->nCells() + 1);
-    totalCrossSection.setZero(grid->nCells() + 1);
+    // 1. resize and zero-initialize the elastic and total cross sections
+    m_elasticCrossSection.setZero(grid->nCells() + 1);
+    m_totalCrossSection.setZero(grid->nCells() + 1);
 
     for (auto &gas : gases())
     {
         if (gas->isDummy())
+        {
             continue;
-
-        double massRatio = Constant::electronMass / gas->mass;
-        for (auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::elastic)])
-        {
-            elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
         }
-
-        for (auto i = static_cast<uint8_t>(CollisionType::elastic); i < gas->collisions().size(); ++i)
+        // 2. add elastic terms
+        const double massRatio = Constant::electronMass / gas->mass;
+        for (auto &collision : gas->collisions(CollisionType::elastic))
         {
-            for (auto &collision : gas->collisions()[i])
+            m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
+            m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+        }
+        // 3. add inelastic terms (also from reverse processes, if enabled)
+        //    (note: here inelastic also includes non-conserving process:
+        //    ionization, attachment)
+        for (auto ctype : {
+                    CollisionType::excitation,
+                    CollisionType::vibrational,
+                    CollisionType::rotational,
+                    CollisionType::ionization,
+                    CollisionType::attachment } )
+
+        {
+            for (auto &collision : gas->collisions(ctype) )
             {
-                totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+                m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
 
                 if (collision->isReverse())
                 {
                     Vector superElastic;
                     collision->superElastic(grid->getNodes(), superElastic);
-
-                    totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->density;
+                    m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->density;
                 }
             }
         }
     }
 }
 
-void EedfGasMixture::addCARGases(const std::vector<std::string> &CARVector)
+void EedfGasMixture::addCARGas(const std::string& gasName)
 {
-    for (const auto &gasName : CARVector)
-    {
-        EedfGas *gas = this->findGas(gasName);
-
+    try {
+        const EedfGas *gas = this->findGas(gasName);
         if (gas == nullptr)
         {
-            Log<CARForNonExistent>::Warning(gasName);
-            continue;
+            throw std::runtime_error("Gas not found.");
         }
-
-        gas->checkCARConditions();
-
+        if (gas->electricQuadrupoleMoment < 0)
+        {
+            throw std::runtime_error("Electrical quadrupole moment not specified.");
+        }
+        if (gas->rotationalConstant < 0)
+        {
+            throw std::runtime_error("Rotational constant not specified.");
+        }
+        if (!gas->collisions(CollisionType::rotational).empty())
+        {
+            throw std::runtime_error("Rotational collision have been specified.");
+        }
+        // all chacks passed. add the gas to the list of CAR gases
         CARGases.emplace_back(gas);
+        Log<Message>::Notify("Registered gas '" + gasName + "' as CAR gas.");
+    }
+    catch(std::exception& exc)
+    {
+        throw std::runtime_error("Error adding CAR gas '" + gasName + "': "
+            + std::string{exc.what()});
     }
 }
 
-/** \bug This ADDS rate coefficients to the previously calulated ones.
- */
 void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
     for (auto &gas : gases())
@@ -432,7 +461,9 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             for (auto &collision : collVec)
             {
                 if (collision->crossSection->threshold() > grid->uMax())
+                {
                     continue;
+                }
                 rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }
@@ -442,7 +473,9 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             {
 
                 if (collision->crossSection->threshold() > grid->uMax())
+                {
                     continue;
+                }
                 rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }

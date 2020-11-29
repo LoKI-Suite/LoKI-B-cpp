@@ -35,10 +35,10 @@ EedfGas::~EedfGas()
 
 CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
 {
-    if (m_collisions[static_cast<uint8_t>(CollisionType::effective)].empty())
+    if (collisions(CollisionType::effective).empty())
         Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
-    EedfCollision *eff = m_collisions[static_cast<uint8_t>(CollisionType::effective)][0].get();
+    EedfCollision *eff = collisions(CollisionType::effective)[0].get();
     const Vector &rawEnergies = eff->crossSection->lookupTable().x();
     const Vector &rawEff = eff->crossSection->lookupTable().y();
 
@@ -179,24 +179,14 @@ void EedfGas::checkElasticCollisions(State *electron, Grid *energyGrid)
     }
 }
 
-void EedfGas::checkCARConditions() const
-{
-    if (electricQuadrupoleMoment < 0)
-        Log<NoElectricQuadMoment>::Error(name);
-
-    if (rotationalConstant < 0)
-        Log<NoRotationalConstant>::Error(name);
-
-    if (!collisions()[static_cast<uint8_t>(CollisionType::rotational)].empty())
-        Log<RotCollisionInCARGas>::Error(name);
-}
-
 bool EedfGas::isDummy() const
 {
     for (const auto &vec : collisions())
     {
         if (!vec.empty())
+        {
             return false;
+        }
     }
     return true;
 }
@@ -204,12 +194,12 @@ bool EedfGas::isDummy() const
 const GasPower& EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
 {
     m_power.ionization = (ionType == IonizationOperatorType::conservative)
-        ? evaluateConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::ionization)], eedf)
-        : evaluateNonConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::ionization)], ionType, eedf);
-    m_power.attachment = evaluateNonConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::attachment)], ionType, eedf);
-    m_power.excitation = evaluateConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::excitation)], eedf);
-    m_power.vibrational = evaluateConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::vibrational)], eedf);
-    m_power.rotational = evaluateConservativePower(m_collisions[static_cast<uint8_t>(CollisionType::rotational)], eedf);
+        ? evaluateConservativePower(collisions(CollisionType::ionization), eedf)
+        : evaluateNonConservativePower(collisions(CollisionType::ionization), ionType, eedf);
+    m_power.attachment = evaluateNonConservativePower(collisions(CollisionType::attachment), ionType, eedf);
+    m_power.excitation = evaluateConservativePower(collisions(CollisionType::excitation), eedf);
+    m_power.vibrational = evaluateConservativePower(collisions(CollisionType::vibrational), eedf);
+    m_power.rotational = evaluateConservativePower(collisions(CollisionType::rotational), eedf);
     return m_power;
 }
 

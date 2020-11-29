@@ -54,7 +54,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.totalCrossSection);
+    // mixture.grid->getNodes(), mixture.totalCrossSection());
 
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
@@ -63,7 +63,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+        mixture.hasCollisions(CollisionType::ionization))
     {
         ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
@@ -109,7 +109,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
         diagPattern.emplace_back(k, k, 0.);
     }
 
-    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    if (mixture.hasCollisions(CollisionType::attachment))
     {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
     }
@@ -160,7 +160,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.totalCrossSection);
+    // mixture.grid->getNodes(), mixture.totalCrossSection());
 
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
@@ -169,7 +169,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+        mixture.hasCollisions(CollisionType::ionization))
     {
         ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
@@ -215,7 +215,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
         diagPattern.emplace_back(k, k, 0.);
     }
 
-    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    if (mixture.hasCollisions(CollisionType::attachment))
     {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
     }
@@ -410,10 +410,10 @@ void ElectronKinetics::evaluateMatrix()
 
     evaluateInelasticOperators();
 
-    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::ionization)])
+    if (mixture.hasCollisions(CollisionType::ionization))
         evaluateIonizationOperator();
 
-    if (mixture.hasCollisions[static_cast<uint8_t>(CollisionType::attachment)])
+    if (mixture.hasCollisions(CollisionType::attachment))
         evaluateAttachmentOperator();
 
     // Sort and erase duplicates.
@@ -429,7 +429,7 @@ void ElectronKinetics::evaluateElasticOperator()
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
 
-    g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.elasticCrossSection) * 2;
+    g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.elasticCrossSection()) * 2;
 
     g_c[0] = 0.;
     g_c[g_c.size() - 1] = 0.;
@@ -453,7 +453,7 @@ void ElectronKinetics::evaluateFieldOperator()
     const double me = Constant::electronMass;
     const double e = Constant::electronCharge;
 
-    const Vector &cs = mixture.totalCrossSection;
+    const Vector &cs = mixture.totalCrossSection();
 
     // g_E gets its size in the constructor.
     g_E[0] = 0.;
@@ -519,11 +519,9 @@ void ElectronKinetics::evaluateInelasticOperators()
 
     for (const auto &gas : mixture.gases())
     {
-        for (auto vecIndex = static_cast<uint8_t>(CollisionType::excitation);
-             vecIndex <= static_cast<uint8_t>(CollisionType::rotational); ++vecIndex)
+        for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
         {
-
-            for (const auto &collision : gas->collisions()[vecIndex])
+            for (const auto &collision : gas->collisions(vecIndex) )
             {
                 const double threshold = collision->crossSection->threshold();
 
@@ -593,7 +591,7 @@ void ElectronKinetics::evaluateIonizationOperator()
 
     for (const auto &gas : mixture.gases())
     {
-        for (const auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::ionization)])
+        for (const auto &collision : gas->collisions(CollisionType::ionization))
         {
             const double threshold = collision->crossSection->threshold();
 
@@ -664,7 +662,7 @@ void ElectronKinetics::evaluateIonizationOperator()
                         ionizationMatrix(k, k) -= density * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
                     }
 
-                    /** \todo If k + numThreshold + 1 < grid.nCells(), the term is ignored.
+                    /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
                      *        Document (in the document, not necessarily here) what are the
                      *        consequences of that.
                      */
@@ -682,8 +680,9 @@ void ElectronKinetics::evaluateIonizationOperator()
                      *  \todo Document what is done here (algorithm) and how it is implemented.
                      */
 
-                    // This last section might need some adjustments because of indexing
-                    // differences between Matlab and C++ (since indexes are multiplied here).
+                    /** \todo This last section might need some adjustments because of indexing
+                     *  differences between Matlab and C++ (since indexes are multiplied here).
+                     */
 
                     for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
                     {
@@ -724,7 +723,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
     for (const auto &gas : mixture.gases())
     {
-        for (const auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::attachment)])
+        for (const auto &collision : gas->collisions(CollisionType::attachment))
         {
             const double threshold = collision->crossSection->threshold();
 
@@ -732,7 +731,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
                 continue;
 
             /* This should definitely not be in this (double) loop. Is this a constructor task?
-             * Can this just be replaced with 'gas->collisions()[CollisionType::attachment].size()'
+             * Can this just be replaced with 'gas->collisions(CollisionType::attachment).size()'
              * in (other) places where this is now used?
              * Answer: no, this depends on uMax(), which may change for a smart grid. But it
              * could be done as an action when that changes.
@@ -861,7 +860,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     Vector cellTotalCrossSection(grid.nCells());
 
     for (Grid::Index i = 0; i < grid.nCells(); ++i)
-        cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection[i] + mixture.totalCrossSection[i + 1]);
+        cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection()[i] + mixture.totalCrossSection()[i + 1]);
 
     if (!mixture.CARGases.empty())
     {
@@ -958,7 +957,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     uint32_t iter = 0;
     bool hasConverged = false;
 
-    const Vector g_fieldSpatialBase = (EoN / 6) * grid.getNodes().array() / mixture.totalCrossSection.array();
+    const Vector g_fieldSpatialBase = (EoN / 6) * grid.getNodes().array() / mixture.totalCrossSection().array();
 
     while (!hasConverged)
     {
@@ -1101,7 +1100,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         g_fieldTemporalGrowth[0] = 0.;
         for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
         {
-            const double totalCSI = mixture.totalCrossSection[i] + growthFactor / std::sqrt(grid.getNode(i));
+            const double totalCSI = mixture.totalCrossSection()[i] + growthFactor / std::sqrt(grid.getNode(i));
             g_fieldTemporalGrowth[i] =
                 (EoN * EoN / 3) * grid.getNode(i) /
                 (totalCSI + (m * WoN * WoN / (2 * e)) / (grid.getNode(i)*totalCSI));
@@ -1411,7 +1410,7 @@ void ElectronKinetics::evaluatePower()
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
                 // Diffusion and Mobility contributions
-                cellCrossSection[k] = .5 * (mixture.totalCrossSection[k] + mixture.totalCrossSection[k + 1]);
+                cellCrossSection[k] = .5 * (mixture.totalCrossSection()[k] + mixture.totalCrossSection()[k + 1]);
                 powerDiffusion += grid.getCell(k) * grid.getCell(k) * eedf[k] / cellCrossSection[k];
 
                 if (k > 0 && k < grid.nCells() - 1)
@@ -1506,7 +1505,7 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
 
-    Vector tCS(mixture.totalCrossSection);
+    Vector tCS(mixture.totalCrossSection());
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
@@ -1538,12 +1537,12 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     for (const auto &gas : mixture.gases())
     {
-        for (const auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::ionization)])
+        for (const auto &collision : gas->collisions(CollisionType::ionization))
         {
             totalIonRateCoeff += collision->getTarget()->density * collision->ineRateCoeff();
         }
 
-        for (const auto &collision : gas->collisions()[static_cast<uint8_t>(CollisionType::attachment)])
+        for (const auto &collision : gas->collisions(CollisionType::attachment))
         {
             totalAttRateCoeff += collision->getTarget()->density * collision->ineRateCoeff();
         }
@@ -1577,7 +1576,7 @@ void ElectronKinetics::evaluateFirstAnisotropy()
     firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid.du();
     firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid.du());
 
-    Vector cellCrossSection = (mixture.totalCrossSection.segment(0, n) + mixture.totalCrossSection.segment(1, n)) / 2.;
+    Vector cellCrossSection = (mixture.totalCrossSection().segment(0, n) + mixture.totalCrossSection().segment(1, n)) / 2.;
 
     if (includeNonConservativeIonization || includeNonConservativeAttachment)
     {

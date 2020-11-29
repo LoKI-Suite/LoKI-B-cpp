@@ -13,34 +13,34 @@ namespace loki
 namespace
 {
 
-void remove_electron_entries(Collision::StateVector &parts, Collision::CoeffVector &coefs)
+template <class VectorType>
+VectorType remove_electron_entries(const Collision::StateVector &parts, const VectorType &vec)
 {
-    assert(parts.size() == coefs.size());
+    assert(parts.size() == vec.size());
+    VectorType result;
     // now remove all electrons from the right-hand side (since EedfCollision wants that).
     // beware of iterator invalidation
-    for (unsigned i = 0; i != parts.size(); /**/)
+    for (unsigned i = 0; i != parts.size(); ++i)
     {
-        if (parts[i]->gas().name == "e")
+        if (parts[i]->gas().name != "e")
         {
-            parts.erase(parts.begin() + i);
-            coefs.erase(coefs.begin() + i);
-        }
-        else
-        {
-            ++i;
+            result.push_back(vec[i]);
         }
     }
+    return result;
 }
 
 } // namespace
 
 EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse), m_lhsHeavyStates(lhsStates),
-      m_lhsHeavyCoeffs(lhsCoeffs), m_rhsHeavyStates(rhsStates), m_rhsHeavyCoeffs(rhsCoeffs),
+    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
+      m_lhsHeavyStates(remove_electron_entries(lhsStates,lhsStates)),
+      m_lhsHeavyCoeffs(remove_electron_entries(lhsStates,lhsCoeffs)),
+      m_rhsHeavyStates(remove_electron_entries(rhsStates,rhsStates)),
+      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates,rhsCoeffs)),
       m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
 {
-    /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
     if (lhsStates.size() != 2 || lhsCoeffs[0] != 1 || lhsCoeffs[1] != 1 ||
@@ -49,12 +49,10 @@ EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, c
     {
         Log<Message>::Error("Expected a binary electron impact process.");
     }
-
-    remove_electron_entries(m_lhsHeavyStates, m_lhsHeavyCoeffs);
-    remove_electron_entries(m_rhsHeavyStates, m_rhsHeavyCoeffs);
-
     if (m_lhsHeavyCoeffs.size() != 1 || m_lhsHeavyCoeffs[0] != 1)
+    {
         Log<MultipleReactantInEedfCol>::Warning(*this);
+    }
     if (isReverse)
     {
         if (m_rhsHeavyStates.size() != 1 || m_rhsHeavyCoeffs[0] != 1)

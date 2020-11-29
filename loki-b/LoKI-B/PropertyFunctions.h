@@ -14,28 +14,28 @@
 
 #include <cmath>
 
-/* -- PropertyFunctions --
- * In this namespace the user can define all their property functions. Each property function has the same
- * structure.
+/** This namespace hosts all property functions. Each property function has
+ *  the same structure.
  *
- * The arguments are as follows.
+ *  The arguments are as follows.
  *
- *  1. A vector of pointers to the states (StateBase) of which to set the property.
- *  2. A vector of doubles representing the arguments to be used by the property function. E.g. in the
- *     case of boltzmannPopulation this vector contains a single argument, the temperature.
- *  3. A StatePropertyType indicating whether the function is supposed to set either the energy, population
- *     or statistical weight of the states.
+ *  1. A vector of pointers to the states (StateBase) of which to set the
+       property.
+ *  2. A vector of doubles representing the arguments of the property function.
+ *     As an example, in the case of boltzmannPopulation this vector contains a
+ *     single argument, the temperature.
+ *  3. A StatePropertyType indicating whether the function is supposed to set
+ *     either the energy, population or statistical weight of the states.
  *
- * The user is responsible to provide any checks on the number of arguments provided, the validity of the
- * passed StateProperty etc. Furthermore, when adding a function, the user should also add it to the
- * callByName function, which links the function to a string containing its name. When this is done, it is
- * possible to address the function in a setup file to set state properties.
+ *  The user is responsible to provide any checks on the number of arguments
+ *  provided, the validity of the passed StateProperty etc. Furthermore,
+ *  when adding a function, the user should also add it to the callByName
+ *  function, which links the function to a string containing its name. When
+ *  this is done, it is possible to address the function in a setup file to
+ *  set state properties.
  */
-
 namespace loki::PropertyFunctions
 {
-
-using namespace Constant;
 
 /** Accepts a pointer to a state, a double value and a StatePropertyType. Based on the value of the
  *  StatePropertyType, it will assign the value to either the population, statisticalWeight or
@@ -71,7 +71,7 @@ inline void boltzmannPopulation(const std::vector<GasBase::StateBase *> &states,
 
     for (auto *state : states)
     {
-        state->population = state->statisticalWeight * std::exp(-state->energy / (kBeV * temp));
+        state->population = state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp));
         norm += state->population;
     }
     for (auto *state : states)
@@ -104,7 +104,7 @@ inline void harmonicOscillatorEnergy(const std::vector<GasBase::StateBase *> &st
             Log<Message>::Error("Non numerical vib level (" + state->v +
                                 ") when trying to assign harmonic oscillator energy.");
 
-        state->energy = plankReducedInEv * state->gas().harmonicFrequency * (vibLevel + .5);
+        state->energy = Constant::plankReducedInEv * state->gas().harmonicFrequency * (vibLevel + .5);
     }
 }
 

@@ -244,48 +244,12 @@ struct NoEnergy
     }
 };
 
-struct NoElectricQuadMoment
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Electrical quadrupole moment not found for state: " << t << "." << std::endl;
-    }
-};
-
-struct NoRotationalConstant
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Rotational constant not found for gas: " << t << "." << std::endl;
-    }
-};
-
 struct NoStatWeight
 {
     template <typename T>
     inline static void print(const T &t)
     {
         std::cerr << "Statistical weight not found for state: " << t << "." << std::endl;
-    }
-};
-
-struct RotCollisionInCARGas
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Rotational collision found for CAR candidate: " << t << "." << std::endl;
-    }
-};
-
-struct CARForNonExistent
-{
-    template <typename T>
-    inline static void print(const T &t)
-    {
-        std::cerr << "Trying to enable CAR for non-existent gas: " << t << "." << std::endl;
     }
 };
 

@@ -40,8 +40,8 @@ public:
 private:
     // The raw cross section data and threshold is stored in
     // the CrossSection object
-    StateVector m_lhsHeavyStates;
-    CoeffVector m_lhsHeavyCoeffs;
+    const StateVector m_lhsHeavyStates;
+    const CoeffVector m_lhsHeavyCoeffs;
 public:
     /// \todo Make private
     StateVector m_rhsHeavyStates;

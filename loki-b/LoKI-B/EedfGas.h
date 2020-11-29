@@ -33,7 +33,6 @@ class EedfGas : public GasBase
 
     void addCollision(EedfCollision *collision, bool isExtra);
     void checkElasticCollisions(State *electron, Grid *energyGrid);
-    void checkCARConditions() const;
     bool isDummy() const;
     const GasPower &getPower() const;
     /** \todo Non-constant because m_power is changed. See if m_power must managed here.
@@ -45,6 +44,7 @@ class EedfGas : public GasBase
 
     // We need to store the collisions per Gas since we need to calculate
     // the mass ratio when evaluating the total and elastic cross-sections.
+    const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
     const std::vector<CollisionVector>& collisions() const { return m_collisions; }
     const std::vector<CollisionVector>& collisionsExtra() const { return m_collisionsExtra; }
 private:

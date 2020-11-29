@@ -69,8 +69,8 @@ void CrossSection::interpolate(const Vector &energies, Vector &result) const
     }
     for (; gridIndex != nEnergies; ++gridIndex)
     {
-        /* 0.0, 0.0: these are the values that are assumed if the enery is not
-         * in the range of the table.
+        /* 0.0, 0.0: these are the values that are assumed if the enery is
+         * below or above the range of the table, respectively.
          */
 	result[gridIndex] = m_lut.interpolate_or_set(energies[gridIndex],0.0,0.0);
     }
