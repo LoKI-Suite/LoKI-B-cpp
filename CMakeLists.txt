@@ -37,7 +37,7 @@ endif()
 
 #todo see how/when to set these two. For now, we rely on a 'system' eigen3/,
 #except for builds with MSVC: then we use the built-in Eigen.
-if(MSVC)
+if(MSVC OR EMSCRIPTEN)
 set(inc_eigen include/eigen-3.3.7)
 endif()
 set(inc_nlohmann include/nlohmann-3.7.0)
