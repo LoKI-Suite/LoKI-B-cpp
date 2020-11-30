@@ -93,12 +93,6 @@ class EedfGasMixture : public GasMixture<EedfGas>
      *  loadCollisions is called for the file.
      */
     void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
-    /** Loads the collisions from a json mixture section.
-     *  Furthermore, it needs a pointer to the energy grid and a boolean to
-     *  indicate whether the collisions are extra, for correct initialization and storage of
-     *  the collisions.
-     */
-    void loadCollisions(const json_type &mcnf, Grid *energyGrid, bool isExtra = false);
 
     /* Loads the collisions from a json mixture section.
      * Furthermore, it needs a pointer to the energy grid and a boolean to
