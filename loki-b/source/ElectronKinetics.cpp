@@ -507,6 +507,12 @@ void ElectronKinetics::evaluateCAROperator()
     /** \todo In the papers, we see Q_k expressed in ea_0^2.
      *        Doublecheck that all unit conversions are consistent.
      */
+    /** \todo In the code all the G's are divided by the (total) gas particle
+     *  density, compared to the LoKI-B paper \cite Tejero2019, I believe.
+     *  That explains why, in the code below, you see gas->fraction,
+     *  whereas in the paper you see N_k. It would be good to have a
+     *  document where the equations are written *exactly* as in the code.
+     */
     const double Tg = workingConditions->gasTemperature();
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
@@ -519,7 +525,7 @@ void ElectronKinetics::evaluateCAROperator()
     sigma0B *= 8. * Constant::pi / (15. * Constant::electronCharge);
 
     g_CAR = grid.getNodes() * (4. * sigma0B);
-    // Boundary conditions
+    // Boundary conditions. See Tejero2019 below equation 16b.
     g_CAR[0] = 0.;
     g_CAR[grid.nCells()] = 0.;
 
