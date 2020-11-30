@@ -93,7 +93,7 @@ bool removeComments(std::istream& is, std::string &dest)
     while (!is.eof())
     {
         std::getline(is,line);
-        std::string::size_type comment_pos = line.find('%');
+        const std::string::size_type comment_pos = line.find('%');
         line = line.substr(0,comment_pos);
         line.erase(line.find_last_not_of(" \n\r\t")+1);
         if (!line.empty())
