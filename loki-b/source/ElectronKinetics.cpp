@@ -480,6 +480,33 @@ void ElectronKinetics::evaluateFieldOperator()
 
 void ElectronKinetics::evaluateCAROperator()
 {
+    /* When comparing this with Tejero2019, realize that in that paper,
+     * equation 6c, the following symbols are used:
+     *
+     * B_k: rotationalConstant
+     * Q_k: quadruple moment (in units of e a_0^2, a_0 is the Bohr radius)
+     *  [NOTE: electricQuadrupoleMoment in the code is in SI units Cm^2].
+     * nu_{0,k} = N_k*sqrt(2*e*u/m)*sigma_{0,k}
+     * sigma_{0,k} = 8*pi*Q_k^2*a_0^2
+     *
+     * sigma_0 refs for "sigma_0 = 8*pi*Q_k^2*a_0^2/15":
+     *   Tejero (1019), below equation 6d
+     *   Ridenti (2015), below equation 8b
+     *   Gerjuoy, Stein (1955), equation 20 (not sigma_0 per se).
+     *
+     * Rewrite:
+     *   nu_{0,k} = N_k*gamma*sqrt(u)*sigma_{0,k}
+     * Then:
+     *   nu_{0,k}*sqrt(u)
+     *   = N_k*gamma*u*sigma_{0,k}
+     *   = 4*B_k*nu_{0,k}*sqrt(u)
+     *   = 4*B_k*N_k*gamma*u*sigma_{0,k}
+     *
+     */
+    /// \todo In the code below we see Q_k instead of Q_k^2
+    /** \todo In the papers, we see Q_k expressed in ea_0^2.
+     *        Doublecheck that all unit conversions are consistent.
+     */
     const double Tg = workingConditions->gasTemperature();
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
