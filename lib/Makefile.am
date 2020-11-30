@@ -1,3 +1,5 @@
+SUBDIRS = .
+
 include $(top_srcdir)/Makefile.rules
 
 VPATH=$(top_srcdir)/loki-b/source
