@@ -481,20 +481,17 @@ void ElectronKinetics::evaluateFieldOperator()
 void ElectronKinetics::evaluateCAROperator()
 {
     const double Tg = workingConditions->gasTemperature();
-
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
     const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
 
     double sigma0B = 0.;
-
-    for (auto &gas : mixture.CARGases)
+    for (const auto &gas : mixture.CARGases)
     {
         sigma0B += gas->fraction * gas->electricQuadrupoleMoment * gas->rotationalConstant;
     }
-
     sigma0B *= 8. * Constant::pi / (15. * Constant::electronCharge);
-    g_CAR = grid.getNodes() * (4. * sigma0B);
 
+    g_CAR = grid.getNodes() * (4. * sigma0B);
     // Boundary conditions
     g_CAR[0] = 0.;
     g_CAR[grid.nCells()] = 0.;
@@ -864,8 +861,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
 
     if (!mixture.CARGases.empty())
     {
-        boltzmannMatrix =
-            1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
     }
     else
     {
