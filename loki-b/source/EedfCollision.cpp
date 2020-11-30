@@ -13,33 +13,34 @@ namespace loki
 namespace
 {
 
-void remove_electron_entries(Collision::StateVector &parts, Collision::CoeffVector &coefs)
+template <class VectorType>
+VectorType remove_electron_entries(const Collision::StateVector &parts, const VectorType &vec)
 {
-    assert(parts.size() == coefs.size());
+    assert(parts.size() == vec.size());
+    VectorType result;
     // now remove all electrons from the right-hand side (since EedfCollision wants that).
     // beware of iterator invalidation
-    for (unsigned i = 0; i != parts.size(); /**/)
+    for (unsigned i = 0; i != parts.size(); ++i)
     {
-        if (parts[i]->gas().name == "e")
+        if (parts[i]->gas().name != "e")
         {
-            parts.erase(parts.begin() + i);
-            coefs.erase(coefs.begin() + i);
-        }
-        else
-        {
-            ++i;
+            result.push_back(vec[i]);
         }
     }
+    return result;
 }
 
 } // namespace
 
 EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse), m_lhsHeavyStates(lhsStates),
-      m_lhsHeavyCoeffs(lhsCoeffs), m_rhsHeavyStates(rhsStates), m_rhsHeavyCoeffs(rhsCoeffs)
+    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
+      m_lhsHeavyStates(remove_electron_entries(lhsStates,lhsStates)),
+      m_lhsHeavyCoeffs(remove_electron_entries(lhsStates,lhsCoeffs)),
+      m_rhsHeavyStates(remove_electron_entries(rhsStates,rhsStates)),
+      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates,rhsCoeffs)),
+      m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
 {
-    /// \todo See if this is the correct place to do this. This could also be part of the collision ctor
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
     if (lhsStates.size() != 2 || lhsCoeffs[0] != 1 || lhsCoeffs[1] != 1 ||
@@ -48,12 +49,10 @@ EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, c
     {
         Log<Message>::Error("Expected a binary electron impact process.");
     }
-
-    remove_electron_entries(m_lhsHeavyStates, m_lhsHeavyCoeffs);
-    remove_electron_entries(m_rhsHeavyStates, m_rhsHeavyCoeffs);
-
     if (m_lhsHeavyCoeffs.size() != 1 || m_lhsHeavyCoeffs[0] != 1)
+    {
         Log<MultipleReactantInEedfCol>::Warning(*this);
+    }
     if (isReverse)
     {
         if (m_rhsHeavyStates.size() != 1 || m_rhsHeavyCoeffs[0] != 1)
@@ -76,11 +75,11 @@ EedfCollision::EedfState *EedfCollision::getTarget()
 
 std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
 {
-    os << "e + " << *collision.getTarget() << (collision.isReverse ? " <->" : " ->");
+    os << "e + " << *collision.getTarget() << (collision.isReverse() ? " <->" : " ->");
 
-    if (collision.type != CollisionType::attachment)
+    if (collision.type() != CollisionType::attachment)
         os << " e +";
-    if (collision.type == CollisionType::ionization)
+    if (collision.type() == CollisionType::ionization)
         os << " e +";
 
     for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
@@ -96,7 +95,7 @@ std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
 
 void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
 {
-    if (!isReverse)
+    if (!isReverse())
     {
         Log<SuperElasticForNonReverse>::Error(*this);
     }
@@ -127,10 +126,10 @@ void EedfCollision::superElastic(const Vector &energyData, Vector &result) const
         result[0] = 0;
 }
 
-PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
+PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->nCells();
+    const Grid::Index n = grid->nCells();
 
     PowerTerm collPower;
 
@@ -143,8 +142,6 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 
     auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
-    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
-
     double ineSum = 0;
 
     for (uint32_t i = lmin; i < n; ++i)
@@ -152,9 +149,9 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
         ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
     }
 
-    collPower.forward = -factor * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
+    collPower.forward = -SI::gamma * getTarget()->density * grid->du() * grid->getNode(lmin) * ineSum;
 
-    if (isReverse)
+    if (isReverse())
     {
         const double statWeightRatio = getTarget()->statisticalWeight / m_rhsHeavyStates[0]->statisticalWeight;
 
@@ -166,7 +163,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
         }
 
         collPower.backward +=
-            factor * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
+            SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->density * grid->du() * grid->getNode(lmin) * supSum;
     }
 
     return collPower;
@@ -174,14 +171,12 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf)
 
 PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                                       const IonizationOperatorType ionizationOperatorType,
-                                                      const double OPBParameter)
+                                                      const double OPBParameter) const
 {
     const Grid *grid = crossSection->getGrid();
-    const uint32_t n = grid->nCells();
+    const Grid::Index n = grid->nCells();
 
     PowerTerm collPower;
-
-    const double factor = sqrt(2 * Constant::electronCharge / Constant::electronMass);
 
     Vector cellCrossSection(n);
 
@@ -192,7 +187,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
     auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
-    if (type == CollisionType::ionization)
+    if (type() == CollisionType::ionization)
     {
 
         if (ionizationOperatorType == IonizationOperatorType::equalSharing)
@@ -212,7 +207,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sumThree += grid->getCell(i) * term;
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->du() *
+            collPower.forward = -SI::gamma * getTarget()->density * grid->du() *
                             (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
@@ -224,7 +219,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
+            collPower.forward = -SI::gamma * getTarget()->density * grid->du() * grid->getCell(lmin - 1) * sum;
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
@@ -247,11 +242,11 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                         (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
-            collPower.forward = -factor * getTarget()->density * grid->getCell(lmin) * grid->du() *
+            collPower.forward = -SI::gamma * getTarget()->density * grid->getCell(lmin) * grid->du() *
                             eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
-    else if (type == CollisionType::attachment)
+    else if (type() == CollisionType::attachment)
     {
         double sum = 0.;
 
@@ -260,7 +255,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.forward = -factor * getTarget()->density * grid->du() * sum;
+        collPower.forward = -SI::gamma * getTarget()->density * grid->du() * sum;
     }
     /// \todo For other Collision types, collPower is unitialized at this point
 
@@ -269,21 +264,20 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
 RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 {
-    const double factor = std::sqrt(2. * Constant::electronCharge / Constant::electronMass);
     const Grid *grid = crossSection->getGrid();
 
-    const uint32_t nNodes = grid->nCells() + 1;
-    const uint32_t nCells = grid->nCells();
+    const Grid::Index nNodes = grid->nCells() + 1;
+    const Grid::Index nCells = grid->nCells();
 
     const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
-    ineRateCoeff = factor * grid->du() *
+    m_ineRateCoeff = SI::gamma * grid->du() *
                    cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
-    if (isReverse)
+    if (isReverse())
     {
         const double tStatWeight = getTarget()->statisticalWeight;
         const double pStatWeight = m_rhsHeavyStates[0]->statisticalWeight;
@@ -295,17 +289,17 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 
         const double statWeightRatio = tStatWeight / pStatWeight;
 
-        supRateCoeff =
-            factor * statWeightRatio * grid->du() *
+        m_supRateCoeff =
+            SI::gamma * statWeightRatio * grid->du() *
             cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
     }
 
-    return {this, ineRateCoeff, supRateCoeff};
+    return {this, m_ineRateCoeff, m_supRateCoeff};
 }
 
 std::string EedfCollision::typeAsString() const
 {
-    switch (type)
+    switch (type())
     {
     case CollisionType::effective:
         return "Effective";

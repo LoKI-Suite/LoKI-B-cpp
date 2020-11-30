@@ -35,8 +35,11 @@ endif()
 # that are shipped with LoKI-B available. When disabled, eigen3/Eigen/...
 # and nlohmann/json.hpp will be resolved using the default include paths.
 
-#todo see how/when to set these two. For now, we rely in a 'system' eigen3/
-#set(inc_eigen include/eigen-3.3.7)
+#todo see how/when to set these two. For now, we rely on a 'system' eigen3/,
+#except for builds with MSVC: then we use the built-in Eigen.
+if(MSVC)
+set(inc_eigen include/eigen-3.3.7)
+endif()
 set(inc_nlohmann include/nlohmann-3.7.0)
 
 # --- loki-b --- #

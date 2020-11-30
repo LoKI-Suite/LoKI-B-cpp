@@ -11,8 +11,9 @@ namespace loki
 {
 
 EedfGas::EedfGas(const std::string &name)
-    : GasBase(name), collisions(static_cast<uint8_t>(CollisionType::size)),
-      collisionsExtra(static_cast<uint8_t>(CollisionType::size))
+    : GasBase(name), m_collisions(static_cast<uint8_t>(CollisionType::size)),
+      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
+      m_OPBParameter(0.)
 {
 }
 
@@ -23,8 +24,8 @@ void EedfGas::addCollision(EedfCollision *collision, bool isExtra)
     (isExtra ? m_state_collisionsExtra[target] : m_state_collisions[target]).emplace_back(collision);
 
     // add to the gas' list
-    (isExtra ? this->collisionsExtra[static_cast<uint8_t>(collision->type)]
-             : this->collisions[static_cast<uint8_t>(collision->type)])
+    (isExtra ? this->m_collisionsExtra[static_cast<uint8_t>(collision->type())]
+             : this->m_collisions[static_cast<uint8_t>(collision->type())])
         .emplace_back(collision);
 }
 
@@ -34,26 +35,26 @@ EedfGas::~EedfGas()
 
 CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
 {
-    if (collisions[static_cast<uint8_t>(CollisionType::effective)].empty())
+    if (collisions(CollisionType::effective).empty())
         Log<Message>::Error("Could not find effective cross section for gas " + name + ".");
 
-    EedfCollision *eff = collisions[static_cast<uint8_t>(CollisionType::effective)][0].get();
+    EedfCollision *eff = collisions(CollisionType::effective)[0].get();
     const Vector &rawEnergies = eff->crossSection->lookupTable().x();
     const Vector &rawEff = eff->crossSection->lookupTable().y();
 
     Vector rawEl = rawEff; // copy raw effective into raw elastic
 
-    if (effectivePopulations.empty())
+    if (m_effectivePopulations.empty())
     {
-        effectivePopulations.emplace(eff->getTarget(), 1.);
+        m_effectivePopulations.emplace(eff->getTarget(), 1.);
         setDefaultEffPop(eff->getTarget());
     }
 
-    for (const auto &pair : effectivePopulations)
+    for (const auto &pair : m_effectivePopulations)
     {
         for (const auto &collision : m_state_collisions[pair.first])
         {
-            if (collision->type == CollisionType::effective)
+            if (collision->type() == CollisionType::effective)
                 continue;
 
             Vector crossSection;
@@ -61,12 +62,12 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
 
             rawEl -= crossSection * pair.second;
 
-            if (collision->isReverse)
+            if (collision->isReverse())
             {
                 collision->superElastic(rawEnergies, crossSection);
 
-                if (effectivePopulations.count(collision->m_rhsHeavyStates[0]) == 1)
-                    rawEl -= crossSection * effectivePopulations[collision->m_rhsHeavyStates[0]];
+                if (m_effectivePopulations.count(collision->m_rhsHeavyStates[0]) == 1)
+                    rawEl -= crossSection * m_effectivePopulations[collision->m_rhsHeavyStates[0]];
             }
         }
     }
@@ -118,12 +119,12 @@ void EedfGas::setDefaultEffPop(EedfState *ground)
             }
             double effPop = child->statisticalWeight * std::exp(-child->energy / (Constant::kBeV * 300));
 
-            effectivePopulations.emplace(child, effPop);
+            m_effectivePopulations.emplace(child, effPop);
             norm += effPop;
         }
         for (auto *child : ground->children())
         {
-            effectivePopulations[child] /= (norm / effectivePopulations[ground]);
+            m_effectivePopulations[child] /= (norm / m_effectivePopulations[ground]);
         }
 
         setDefaultEffPop(childGround);
@@ -142,7 +143,7 @@ std::vector<EedfGas::EedfState *> EedfGas::findStatesToUpdate()
             {
                 auto &colls = m_state_collisions[eleState];
                 auto it = find_if(colls.begin(), colls.end(),
-                                  [](EedfCollision *collision) { return collision->type == CollisionType::elastic; });
+                                  [](EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
 
                 if (it == colls.end())
                     statesToUpdate.emplace_back(eleState);
@@ -178,42 +179,33 @@ void EedfGas::checkElasticCollisions(State *electron, Grid *energyGrid)
     }
 }
 
-void EedfGas::checkCARConditions()
+bool EedfGas::isDummy() const
 {
-    if (electricQuadrupoleMoment < 0)
-        Log<NoElectricQuadMoment>::Error(name);
-
-    if (rotationalConstant < 0)
-        Log<NoRotationalConstant>::Error(name);
-
-    if (!collisions[static_cast<uint8_t>(CollisionType::rotational)].empty())
-        Log<RotCollisionInCARGas>::Error(name);
-}
-
-bool EedfGas::isDummy()
-{
-    for (const auto &vec : collisions)
+    for (const auto &vec : collisions())
     {
         if (!vec.empty())
+        {
             return false;
+        }
     }
     return true;
 }
 
-const GasPower &EedfGas::getPower() const
+const GasPower& EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
 {
-    return power;
+    m_power.ionization = (ionType == IonizationOperatorType::conservative)
+        ? evaluateConservativePower(collisions(CollisionType::ionization), eedf)
+        : evaluateNonConservativePower(collisions(CollisionType::ionization), ionType, eedf);
+    m_power.attachment = evaluateNonConservativePower(collisions(CollisionType::attachment), ionType, eedf);
+    m_power.excitation = evaluateConservativePower(collisions(CollisionType::excitation), eedf);
+    m_power.vibrational = evaluateConservativePower(collisions(CollisionType::vibrational), eedf);
+    m_power.rotational = evaluateConservativePower(collisions(CollisionType::rotational), eedf);
+    return m_power;
 }
 
-void EedfGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
+const GasPower& EedfGas::getPower() const
 {
-    power.ionization = (ionType == IonizationOperatorType::conservative)
-        ? evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::ionization)], eedf)
-        : evaluateNonConservativePower(collisions[static_cast<uint8_t>(CollisionType::ionization)], ionType, eedf);
-    power.attachment = evaluateNonConservativePower(collisions[static_cast<uint8_t>(CollisionType::attachment)], ionType, eedf);
-    power.excitation = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::excitation)], eedf);
-    power.vibrational = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::vibrational)], eedf);
-    power.rotational = evaluateConservativePower(collisions[static_cast<uint8_t>(CollisionType::rotational)], eedf);
+    return m_power;
 }
 
 PowerTerm EedfGas::evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const
@@ -244,7 +236,7 @@ PowerTerm EedfGas::evaluateNonConservativePower(const CollisionVector &collision
         if (collision->crossSection->threshold() > grid->uMax())
             continue;
 
-        collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter);
+        collPower += collision->evaluateNonConservativePower(eedf, ionType, OPBParameter());
     }
     return collPower;
 }

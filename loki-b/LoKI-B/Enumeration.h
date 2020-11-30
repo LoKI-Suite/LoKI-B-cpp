@@ -89,8 +89,7 @@ enum class CollisionType : uint8_t
     rotational,
     ionization,
     attachment,
-    size,
-    none
+    size
 };
 CollisionType getCollisionType(const std::string &str);
 CollisionType getCollisionTypeFromTypeTagArray(const json_type &type_tags);
