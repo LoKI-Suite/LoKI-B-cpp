@@ -49,7 +49,7 @@ constexpr const double Townsend = 1e-21;
  *  below equation (6). Here you find the numerical value of gamma in SI
  *  units, sqrt(C/kg).
  */
-constexpr const double gamma = std::sqrt(2*Constant::electronCharge/Constant::electronMass);
+const double gamma = std::sqrt(2*Constant::electronCharge/Constant::electronMass);
 
 }
 
