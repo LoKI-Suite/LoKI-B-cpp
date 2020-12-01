@@ -942,10 +942,48 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     ionSpatialGrowthD.setZero();
     ionSpatialGrowthU.setZero();
 
-    const Vector tempVector = grid.getCells().array() / (3. * cellTotalCrossSection).array();
-    /// \todo What is the meaning of D0? Do we really need this copy of tempVector?
-    const Vector D0 = tempVector;
-
+    /* In the following block we evaluate D_eN and mu_eN as given by equations
+     * 19a and 19b of \cite Tejero2019. Note that we are handling the SST case
+     * in this function, and for x=SST we have Omega_x=sigma_c (equation 5b).
+     * We first define D0(u) = (1./3)*u/Omega_SST(u) = (1./3)*u/sigma_c(u).
+     *
+     * Subsequently, we evaluate D_eN=+gamma*int_0^infty D0(u)f(u)du (eqn. 19a),
+     * which is straightforward.
+     *
+     * For the mobility we have mu_eN=-gamma*int_0^infty D0(u)[df/du]du (19b).
+     * which is handled quite differently. It appears as if in the code below
+     * a partial integration is carried out: since on the boundaries u=0 and
+     * u=infty we have uf(u)=0 this gives int D(u)f'(u)du = -int D'(u)f(u)du.
+     * In the code below we define U0=-D'(u), which results in the expression
+     * mu_eN=-gamma*int_0^infty U0(u)f(u) du. This is what you find below.
+     */
+    /** \todo The calculation of U0 on the boundaries needs to be explained.
+     *  These seem to be incorrect. In the approximation D'[i]=(D[i+1]-D[i-1])/(2*du)
+     *  the problematic terms i-1 (at i=0) and i+i (at i=Nc) are simply omitted.
+     *  That results in uncontrolled discretization errors (in practice small,
+     *  if you have enough grid points).
+     */
+    /** \todo It appears that cellTotalCrossSection includes a factor N (the
+     *  total gas particle density). That means that below we are calculating
+     *  D_e and mu_e instead of D_eN and mu_eN. Also the matrix coefficients
+     *  that are based on D0, U0 are then related to u/(sigma*N), not to
+     *  u/sigma. This needs to be checked. If this analysis is correct, we should
+     *  really fix the names DN andcellTotalCrossSection, and make clear that
+     *  the entire BE is in fact divided by N, compared to the exposition in
+     *  \cite Tejero2019.
+     */
+    /** \todo cellTotalCrossSection is the result of interpolation. See if
+     *  it may be better to use the original CS at the nodes in parts of these
+     *  calculations. In particular, the calculation of U will be much more
+     *  straighforward if we do a node->cell interpolation, since also the
+     *  first and last cells have two node-neighbours. Does does also
+     *  influence the accuracy with which invariants are reproduced (for
+     *  example: the Einstein relation or the characteristic temperature in
+     *  case of a Maxwellian eedf)? Check such things first.
+     */
+    const Vector D0 = grid.getCells().array() / (3. * cellTotalCrossSection).array();
+    /** \todo Document/explain which equation is discretized here.
+     */
     Vector U0sup(grid.nCells());
     Vector U0inf(grid.nCells());
     U0sup[0] = 0.;
@@ -953,10 +991,10 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     for (Grid::Index j = 0; j < grid.nCells(); ++j)
     {
         if (j != 0)
-            U0sup[j] = EoN / (2. * grid.du()) * tempVector[j - 1];
+            U0sup[j] = EoN / (2. * grid.du()) * D0[j - 1];
 
         if (j != grid.nCells() - 1)
-            U0inf[j] = -EoN / (2. * grid.du()) * tempVector[j + 1];
+            U0inf[j] = -EoN / (2. * grid.du()) * D0[j + 1];
     }
     const Vector U0 = U0sup + U0inf;
 
@@ -970,13 +1008,21 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
      * on the basis of the assumption that there is no electron density
      * gradient.
      */
-    /** \todo Elaborate on the statement above, provide a motivation.
-     *  \todo discr==0 corresponds to muE/2ND = 2*CIEffNew/muE
+    /** \todo discr==0 corresponds to muE/2ND = 2*CIEffNew/muE
      *        and this will be assigned to alphaRedEffNew by the discr>=0
      *        code path. But for discr<0 we assign CIEffNew / muE, resulting
      *        in a discontinuity. It is almost as if a factor 2 is missing
      *        somewhere. (NB: this can in theory frustrate convergence
      *        for the case that discr is around 0, I think.
+     */
+    /** The following line implements the solution of equation 22 of
+     *  \cite Tejero2019, but there are two differences:
+     *   - the name alpha_eff is used in the paper, whereas the word *reduced*
+     *     townsend coefficient is used in the code. Better be consistent.
+     *   - Next, the case that the roots are complex is not discussed in the
+     *     text, only here in the code. It would be nice to understand a bit
+     *     better underwhat circumstances that happens, and more importantly:
+     *     why that does *not* happen for a 'correct' f(u).
      */
     const double discriminant = muE*muE - 4*CIEffNew*ND;
     double alphaRedEffNew = (discriminant < 0.)
@@ -1498,6 +1544,9 @@ void ElectronKinetics::evaluatePower()
 
     double totalGain = 0., totalLoss = 0.;
 
+    /** \todo get rid of this; do 'for (double value : { ... this list ... })'
+     *  in the line below.
+     */
     double powerValues[13]{
         power.field,
         power.elasticGain, power.elasticLoss,
@@ -1538,7 +1587,6 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
-
         tCS.tail(grid.nCells()).array() += (CIEff/SI::gamma) / grid.getNodes().tail(n).cwiseSqrt().array();
     }
 
