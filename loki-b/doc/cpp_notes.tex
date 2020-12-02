@@ -1,0 +1,115 @@
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{bm}
+% the next block is the modern way of achieving 'a4wide'
+\usepackage{geometry}
+\usepackage{layout}
+\geometry{
+  includeheadfoot,
+  margin=2.54cm
+}
+
+\input{../../doc/listings}
+\input{../../doc/loki_defs}
+
+\bibliographystyle{unsrt}
+
+\title{Notes on the C++ Implementation of LoKI-B}
+\author{Jan van Dijk, Daan Boer and Wouter Graef}
+
+\begin{document}
+
+\maketitle
+
+\abstract{
+This document contains notes about the C++ version of LoKI-B.
+It provides additional details of definitions and algorithms that are not
+explicitly written in the LoKI-B paper \cite{Tejero2019} or the User Manual
+of the initial public release of LoKI-B \cite{Manual_1_0_0}. It also
+discusses features of the C++ version that are not available yet in the MATLAB
+version, such as support for JSON input files and the Web deployment of LoKI-B
+and discusses and motivates things that have been done different in the C++
+version for various reasons.
+}
+
+\tableofcontents
+
+\section{Introduction}
+
+\subsection{Definitions}
+
+There are multiple variables that describe the densities (absolute and relative)
+of the gases and states.
+\begin{itemize}
+  \item $N$
+  \item $N_k$
+  \item $\chi_k$
+  \item $\xi_{k_i}$
+  \item $\delta_{k_i}$
+\end{itemize}
+
+In the Loki-B paper \cite{Tejero2019}, in the text between equations 1 and 2,
+$\xi_{k_i}$ is defined as the density of a state $k_i$ divided by that of the
+sum of all densities of states of gas $k$. On the other hand, in the LoKI-B
+user manual (version 1.0.0) \cite{Manual_1_0_0} below equation 2 it is defined
+as the density of that state divided by its parent density. TODO: what is in
+MATLAB? Let's adopt that and state that clearly here. SOme names in the code
+must perhaps be changed: \SRC{density} in the code corresponds to the `reduced
+density' in the user guide, it seems. Call that \SRC{state_density}?
+
+Gamma has been introduced. This constant also appears in the Bolsig+ paper
+\cite{Hagelaar2005}, where it introduced just below equation 6, and is defined
+as
+\begin{equation}
+  \gamma = \sqrt{2e/m_e}.
+\end{equation}
+The symbol is available as \SRC{SI::gamma} (relative to the \SRC{loki}
+namespace). Note that in LoKI-B documentation the symbol $\gamma_k$ is
+defined as the mass ration of the electron and a species $k$
+\cite[below eqn. 9d]{Manual_1_0_0},
+\begin{equation}
+  \gamma_k = m_e/m_k,
+\end{equation}
+but the presence of the subscript $k$ results in a clear distinction.
+
+\section{Matrices \& Vectors}
+
+Eigen, the various Hessenberg-solvers.
+
+\subsection{EEDF Normalization Strategies}
+
+The EEDF is ormalized by the condition that $\int\limits_0^\infty \sqrt{u}f(u)\dd{u}=1$,
+which can be achieved in two ways:
+\begin{enumerate}
+  \item Make the equation $\sum_c \sqrt{u_c} f(u_c) \Delta u=1$ part of the
+    linear system of equations. This can be achieved for example by filling the
+    columns $s$ of the first row of the system matrix with values
+    $\sqrt{u[c]}\Delta u$, and setting the right hand side to 1.
+  \item Impose the condition $f(u_0)=1$, then solve the equation and do the
+    scaling of $f(u)$ that is dictated by the normalization condition afterwards.
+\end{enumerate}
+It appears that at present both are done (in both MATLAB and C++ versions). The
+advantage of (only) using the second mathod is that no unnecessary non-zero
+entries are introduced in the system matrix. This is beneficial when a sparse
+matrix solver is adopted. Especially when a band matrix format is used, it
+prevents all upper diagonals to be allocated, in most cases only containing
+a single non-zero element due to the normalization condition.
+
+\section{Build System}
+
+\subsection{cmake}
+
+\subsection{autotools}
+
+\subsection{Cross Compilation}
+
+\subsection{Automated Testing}
+
+Unit tests, checking results with reference data, comparing the MATLAB and C++
+versions, comparisons with Bolsig+ output.
+
+\bibliography{../../doc/reflist}
+
+\end{document}
