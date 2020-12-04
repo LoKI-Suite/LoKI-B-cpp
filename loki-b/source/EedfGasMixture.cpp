@@ -43,10 +43,10 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
      */
     // for (State *s = electron; s->type() != StateType::root; s = s->parent())
     // {
-    //     s->population = 1.0;
+    //     s->setPopulation(1.0);
     // }
     this->loadStateProperties(setup.stateProperties, workingConditions);
-    this->evaluateStateDensities();
+    this->evaluateReducedDensities();
 
     for (auto &gas : gases())
     {
@@ -90,7 +90,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
     /// \todo See the comments about the population in the other overload
     this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
-    this->evaluateStateDensities();
+    this->evaluateReducedDensities();
 
     for (auto &gas : gases())
     {
@@ -425,8 +425,8 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
         const double massRatio = Constant::electronMass / gas->mass;
         for (auto &collision : gas->collisions(CollisionType::elastic))
         {
-            m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
-            m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+            m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->delta() * massRatio);
+            m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
         }
         // 3. add inelastic terms (also from reverse processes, if enabled)
         //    (note: here inelastic also includes non-conserving process:
@@ -441,13 +441,13 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
         {
             for (auto &collision : gas->collisions(ctype) )
             {
-                m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+                m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
 
                 if (collision->isReverse())
                 {
                     Vector superElastic;
                     collision->superElastic(grid->getNodes(), superElastic);
-                    m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->density;
+                    m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->delta();
                 }
             }
         }
@@ -475,7 +475,7 @@ void EedfGasMixture::addCARGas(const std::string& gasName)
             throw std::runtime_error("Rotational collision have been specified.");
         }
         // all chacks passed. add the gas to the list of CAR gases
-        CARGases.emplace_back(gas);
+        m_CARGases.emplace_back(gas);
         Log<Message>::Notify("Registered gas '" + gasName + "' as CAR gas.");
     }
     catch(std::exception& exc)

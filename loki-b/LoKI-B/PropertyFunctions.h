@@ -52,7 +52,7 @@ inline void setStateProperty(GasBase::StateBase *state, const double &value, Sta
         state->statisticalWeight = value;
         break;
     case StatePropertyType::population:
-        state->population = value;
+        state->setPopulation(value);
         break;
     }
 }
@@ -71,12 +71,12 @@ inline void boltzmannPopulation(const std::vector<GasBase::StateBase *> &states,
 
     for (auto *state : states)
     {
-        state->population = state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp));
-        norm += state->population;
+        state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+        norm += state->population();
     }
     for (auto *state : states)
     {
-        state->population /= norm;
+        state->setPopulation(state->population()/norm);
     }
 }
 

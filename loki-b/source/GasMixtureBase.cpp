@@ -5,7 +5,6 @@
 /// \todo Remove me once INPUT is no longer used.
 #include "LoKI-B/StandardPaths.h"
 
-
 #include <regex>
 
 namespace loki
@@ -186,10 +185,12 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
     }
 }
 
-void GasMixtureBase::evaluateStateDensities()
+void GasMixtureBase::evaluateReducedDensities()
 {
     for (auto &gas : m_gases)
-        gas->evaluateStateDensities();
+    {
+        gas->evaluateReducedDensities();
+    }
 }
 
 void GasMixtureBase::loadStateProperties(const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
