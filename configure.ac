@@ -9,11 +9,12 @@ AC_CONFIG_MACRO_DIR([autodir])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects])
 AC_CONFIG_FILES([
 	Makefile
-	lib/Makefile
 	doc/Makefile
 	doc/doxygen/Makefile
 	doc/doxygen/Doxyfile
-	testsuite/Makefile
+	lib/Makefile
+	loki-b/Makefile
+	loki-b/tests/Makefile
 	])
 
 LT_INIT([disable-static win32-dll])
@@ -79,6 +80,18 @@ if test "$with_json" != "no" ; then
 else
   AC_MSG_ERROR(Nlohmann json headers are required.)
 fi
+
+AC_MSG_CHECKING(nlohmann json version >= 3.7.0)
+AC_TRY_CPP(
+  [ #include <nlohmann/json.hpp>
+    #if !(NLOHMANN_JSON_VERSION_MAJOR > 3 || \
+      (NLOHMANN_JSON_VERSION_MAJOR >= 3 && NLOHMANN_JSON_VERSION_MINOR >= 7))
+    #error nlohmann json too old
+    #endif
+  ],
+  [ AC_MSG_RESULT([OK, detected nlohmann json >= 3.7.0]) ],
+  [ AC_MSG_ERROR([Error: nlohman json >= 3.7.0 required])]
+)
 
 AC_SUBST(JSON_CPPFLAGS)
 

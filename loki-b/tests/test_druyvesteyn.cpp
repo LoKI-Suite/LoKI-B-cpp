@@ -1,3 +1,12 @@
+#include <iostream>
+#include <cmath>
+
+#include "LoKI-B/Setup.h"
+#include "LoKI-B/Simulation.h"
+
+#define TOLERANCE 2e-5
+
+auto json = R"json(
 {
 	"workingConditions": {
 		"reducedField": 10.0,
@@ -133,4 +142,64 @@
 			"lookUpTable"
 		]
 	}
+}
+)json"_json;
+
+double druyvesteyn(const double eps, const double e)
+{
+    const double pi = 3.141592653589793238463;
+    const double Gamma_1_4 = 3.625609908221908311931;
+    const double Gamma_5_4 = Gamma_1_4 / 4;
+    const double Gamma_3_4 = pi * std::sqrt(2) / Gamma_1_4;
+    const double b_1 = std::pow(Gamma_5_4, 1.5) / std::pow(Gamma_3_4, 2.5);
+    const double b_2 = Gamma_5_4 / Gamma_3_4;
+    return 2 * b_1 * std::exp(-std::pow(b_2*e/eps, 2)) / std::pow(eps, 1.5);
+}
+
+void checkRMSE(const loki::Grid &grid,
+    const loki::Vector &eedf,
+    const loki::WorkingConditions &wc,
+    const loki::Power &power,
+    const std::vector<loki::EedfGas *> &gases,
+    const loki::SwarmParameters &swarmParameters,
+    const std::vector<loki::RateCoefficient> &rateCoefficients,
+    const std::vector<loki::RateCoefficient> &extraRateCoefficients,
+    const loki::Vector &firstAnisotropy)
+{
+    using namespace loki;
+    if (grid.getCells().size() != eedf.size())
+    {
+        throw std::runtime_error("error");
+    }
+
+    const double eps = swarmParameters.meanEnergy;
+    double se = 0.0;
+    for (unsigned i = 0; i < grid.getCells().size(); i++)
+    {
+        const double e = grid.getCells()[i];
+        const double eedf_d = druyvesteyn(eps, e);
+        se += std::pow(eedf[i] - eedf_d, 2);
+        std::cout << e << "\t" << eedf[i] << "\t" << eedf_d << std::endl;
+    }
+    const double rmse = std::sqrt(se / grid.getCells().size());
+    if (rmse > TOLERANCE)
+    {
+        throw std::runtime_error(std::string("RMSE = ") + std::to_string(rmse) +
+            " exceeds tolerance");
+    }
+}
+
+int main(int argc, char **argv)
+{
+    try
+    {
+        std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(json));
+        simulation->m_obtainedResults.addListener(checkRMSE);
+        simulation->run();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
 }

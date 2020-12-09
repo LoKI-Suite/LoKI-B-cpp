@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I autodir
 
-SUBDIRS = lib . testsuite @DOC_SUBDIR@
+SUBDIRS = lib . loki-b @DOC_SUBDIR@
 
 include $(top_srcdir)/Makefile.rules
 

@@ -55,4 +55,4 @@ int main()
     std::cout << " *** Number of errors: " << nerrors << std::endl;
 
     return nerrors;
-};
+}
