@@ -123,7 +123,12 @@ class EedfGasMixture : public GasMixture<EedfGas>
     void addCARGas(const std::string& gasName);
 
     const Grid *grid;
-    std::vector<const Collision *> m_collisions;
+    struct CollisionEntry
+    {
+        Collision * m_coll;
+        const bool m_isExtra;
+    };
+    std::vector<CollisionEntry> m_collisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
     /** \todo Should hasCollisions be recalculated when uMax() is changed?
