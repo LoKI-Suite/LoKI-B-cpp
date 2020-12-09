@@ -361,8 +361,14 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
             if (c.m_coll->is_same_as(*collision))
             {
                 Log<DoubleCollision>::Warning(*c.m_coll);
+//#define ALLOW_DUPLICATE_PROCESSES
+#ifdef ALLOW_DUPLICATE_PROCESSES
+                // duplicates are allowed. The warning is emitted,
+                // but no further action needed
+#else
                 collision.release();
                 break;
+#endif
             }
         }
         // 4. Register the collision with the (single) gas that is the target of the
