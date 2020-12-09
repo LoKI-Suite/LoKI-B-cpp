@@ -1,4 +1,7 @@
 # LoKI-B C++
+
+![action](https://github.com/DAANBOER/luxurious-loki/workflows/autotools%20CI/badge.svg)
+
 Numerical Boltzmann solver for the two-term approximation of the Boltzmann equation for electrons.
 
 The clean branch only contains the files needed to compile the loki-b project (apart from the basic input to get you started). Furthermore, the CMakeLists.txt file has been updated to support compilers different from g++. It should compile out of the box on g++, MSVC and Clang (untested). Additional, compiler specific, flags can always be added in the CMakeLists.txt file.
