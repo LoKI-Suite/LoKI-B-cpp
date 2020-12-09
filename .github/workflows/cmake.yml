@@ -21,5 +21,5 @@ jobs:
       run: cd build && cmake ..
     - name: make
       run: cd build && make
-    - name: make check
-      run: cd build && ./test_lut && ./test_parser && ./test_reaction_format && ./test_statebase && ./test_statecontainer && ./druyvesteyn
+    - name: make test
+      run: cd build && make test
