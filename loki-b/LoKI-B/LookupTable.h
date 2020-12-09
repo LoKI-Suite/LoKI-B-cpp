@@ -38,7 +38,7 @@ namespace loki {
 
 /** A lookup table class that supports extrapolation and clipping.
  *  A lookup table is constructed with two vectors that represent samples of
- *  the abscissa and ordinate of a function. At least table points must
+ *  the abscissa and ordinate of a function. At least two table points must
  *  be provided. After a lookup table has been constructed, approximate values
  *  of the function can be obtained for arbitrary points using one of the
  *  members interpolate, interpolate_or_clip or interpolate_or_set. See the
@@ -72,20 +72,21 @@ public:
      *  values. At least two table points must be specified.
      *
      *  If the vectors have different lengths, the length is smaller than two
-     *  of the values of \a x are not in ascending order, a std:::runtime_error
+     *  or the values of \a x are not in ascending order, a std:::runtime_error
      *  is thrown.
      */
     LookupTable(const Vector& x, const Vector& y);
-    /** Create and return a lookup table that is created from the JSON object \a data.
-     *  \a data must contain a field "data" that is an array of double pairs, each
-     *  representing a table point.
+    /** Create and return a lookup table that is created from the JSON object
+     *  \a data. Object \a data must contain a field "data" that is an array of
+     *  double pairs, each representing a table point.
      */
     static LookupTable create(const json_type& data);
-    /* Accepts a reference to an input file stream of an LXCat file. This stream should be
-     * at a position just after reading a collision description from the LXCat file, since
-     * this function searches for the line containing solely dashes, indicating that a
-     * cross section follows. The raw cross section is then stored as a vector of pairs of
-     * doubles, which the user passes by reference.
+    /** Accepts a reference to an input file stream of an LXCat file. This
+     *  stream should be at a position just after reading a collision
+     *  description from the LXCat file, since this function searches for the
+     *  line containing solely dashes, indicating that a cross section follows.
+     *  The raw cross section is then stored as a vector of pairs of doubles,
+     *  which the user passes by reference.
      */
     static LookupTable create(std::istream& is);
 
@@ -99,15 +100,13 @@ public:
     double xMin() const { return m_x[0]; }
     /// returns the highest tabulated argument value
     double xMax() const { return m_x[size()-1]; }
-    /** Get the index of the last sample of the abscissa
-     *  that is smaller than or equal to \a x. When \a x
-     *  exceeds the highest sampled value of the abscissa,
-     *  the value size()-2 is returned.
-     *  This guarantees that, if the return value is denoted as i,
-     *  the samples i and i+1 are always available for interpolating
-     *  function values for points inbetween x()[i] and x()[i+1] or,
-     *  when i=0 or i==size()-2, for extrapolating function values
-     *  for points that are outside the range of the table.
+    /** Get the index of the last sample of the abscissa that is smaller than
+     *  or equal to \a x. When \a x exceeds the highest sampled value of the
+     *  abscissa, the value size()-2 is returned. This guarantees that, if the
+     *  return value is denoted as i, the samples i and i+1 are always available
+     *  for interpolating function values for arguments that are between x()[i]
+     *  and x()[i+1] or, when i=0 or i==size()-2, for extrapolating function
+     *  values for points that are outside the range of the table.
      */
     Index getIndexL(double x) const
     {
@@ -120,11 +119,10 @@ public:
         }
         return base-1;
     }
-    /** Lookup the indices that contain \a x, use linear interpolation
-     *  to interpolate the function value in \a x and return the result.
-     *  Note: when \a x is outside of the table range, linear extrapolation
-     *  is done, using the lowest (x<xMin()) or highest (x>xMax()) pair of
-     *  values.
+    /** Lookup the indices that contain \a x, use linear interpolation to
+     *  interpolate the function value in \a x and return the result.
+     *  Note: when \a x is outside of the table range, linear extrapolation is
+     *  done, using the lowest (x<xMin()) or highest (x>xMax()) pair of values.
      */
     double interpolate(double x) const
     {
@@ -154,8 +152,7 @@ public:
     }
     /** When \a x < xMin(), this function returns \a y_below; when
      *  \a x > xMin() this function returns y_above. For other values
-     *  of \a x, which are in the range of the table, the result of
-     *  calling interpolate(x) is returned.
+     *  of \a x, the result of calling interpolate(x) is returned.
      */
     double interpolate_or_set(double x, double y_below, double y_above) const
     {

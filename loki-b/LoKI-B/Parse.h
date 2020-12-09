@@ -35,8 +35,9 @@
 namespace loki {
 namespace Parse {
 
-/** Parse \a valueString into double \a value. The boolean return
- *  value returns tru if the conversion was successful, false otherwise.
+/** Parse \a valueString into double \a value. The function returns true if
+ *  the conversion was successful, false otherwise. In the latter case the
+ *  \a value is undefined after returning from this function.
  */
 bool getValue(const std::string &valueString, double &value);
 
@@ -82,20 +83,21 @@ std::string searchAndReplaceCopy(
 
 /** Reads characters from stream \a is into \a dest.
  *  Om entry, the result \a dest is cleared. Then the function starts
- *  extracts characters from \a is line by line, using the std::getine.
+ *  extracting characters from \a is line by line, using std::getline.
  *  For every line, it scans for a '%' character, and if one is found it
  *  removes everything starting from that point. Next, trailing whitespace
  *  is removed. When the resulting line is not empty, it is appended to the
- *  \a result (A newline character is prepanded if \a dest is not empty).
+ *  \a result (In this case, a newline character is prepended if \a dest is
+ *  not empty --- we already  a line before).
  *
- *  The function results a boolean that indicates success. At present, true
+ *  The function returns a boolean that indicates success. At present, true
  *  is always returned, but a future extension could do additional syntax
  *  checking and return false if an error is detected. (Throwing an exception
  *  with a clear error message will be more useful in that case, though.)
  *
- *  \todo Should a % that immediately follows a non-whitespace
- *        character start a comment? Or should it be kept in a
- *        situation like "fraction: 100%"?
+ *  Note that this function follows the MATLAB version of Loki-B in interpreting
+ *  a % character as the start of a comment even if it is part of a string or if
+ *  it follows a non-whitespace character.
  *
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
@@ -104,7 +106,7 @@ bool removeComments(std::istream& is, std::string &dest);
 
 /** Open file \a fileName for reading, call removeComments() to remove
  *  comments, trailing whitespace and empty lines from the stream, and
- *  send the output to \a dest.
+ *  write the output into \a dest.
  *
  *  The function results a boolean that indicates success. When the file
  *  cannot be opened, false is returned, otherwise the result of the call
@@ -113,7 +115,7 @@ bool removeComments(std::istream& is, std::string &dest);
  *  \todo the string INPUT "/" is prepended unconditionally. This is better
  *        decided by the caller. It would be cleaner and more general to
  *        not do such magic and use \a fileName as-is. The comments above
- *        already refelect that future situation.
+ *        already reflect that future situation.
  *
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020

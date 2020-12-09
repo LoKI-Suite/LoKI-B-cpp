@@ -93,7 +93,8 @@ void readGasPropertyJson(const GasListType& gasList,
         if (gas->name == "e")
             continue;
 		bool found = false;
-        for (auto& el : cnf) {
+        for (auto& el : cnf)
+	{
             if (el.at("name") == gas->name)
             {
                 found = true;
@@ -174,7 +175,7 @@ class GasMixtureBase
                            const WorkingConditions *workingConditions);
     /** Evaluates the densities of all states in the state tree. \todo Explain. All states of all gases?
      */
-    void evaluateStateDensities();
+    void evaluateReducedDensities();
     /** Loads the state properties as specified in the input file. It also calls
      *  checkPopulations.
      */

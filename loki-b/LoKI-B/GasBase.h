@@ -78,11 +78,16 @@ class GasBase
          *  or a parent of a state as described by a given StateEntry object.
          */
         bool operator>=(const StateEntry &entry);
-        /* Calculates the density based on the gas fraction, the states population and populations
-         * of any parent states. Then it calls evaluateDensity on all child states to recursively
-         * evaluate all densities in the state tree.
+        /** Calculates the reduced density delta of this state, then calls this
+         *  function on all child states (if any). The reduced density is
+         *  obtained by multiplying this state's population with the reduced
+         *  density of the parent state. For the root state, the gas fraction
+         *  is used as the reduced density of the parent instead.
+         *
+         *  This function should normally be called only indirectly, by calling
+         *  evaluateReducedDensities() on the gas.
          */
-        void evaluateDensity();
+        void evaluateReducedDensities();
         StateBase *ensure_state(const StateEntry &entry)
         {
             StateBase *state = find(entry);
@@ -111,13 +116,28 @@ class GasBase
         /// \todo make private
         ChildContainer m_children;
 
+        double population() const { return m_population; }
+        void setPopulation(double population) { m_population = population; }
+        /** The reduced density is the density of this state, divided by the
+         *  total particle density of the gases in the mixture. (For a
+         *  compound state, the state density is defined as the sum of the
+         *  densities of the children.) This quantity is discussed in the
+         *  LoKI-B manual \cite Manual_1_0_0 in equations 4a,4b and the
+         *  accompanyng text.
+         *
+         *  \todo It appears that in these definitions, only the neutral gas
+         *  considered. The reduced densities of charged states and the electron
+         *  are initialized to zero.
+         */
+        double delta() const { return m_delta; }
       public:
         const StateType type;
         const std::string charge, e, v, J;
-        double population;
         double energy;
         double statisticalWeight;
-        double density;
+      private:
+        double m_population;
+        double m_delta;
     };
     /// \todo Get rid of StateBase, use State exclusively here and elsewhere.
     using State = StateBase;
@@ -137,9 +157,10 @@ class GasBase
      * populations.
      */
     void checkPopulations();
-    /* Calls evaluateDensity on all electronic states for this gas.
+    /** Calls evaluateReducedDensities on the root state of this gas. (That
+     *  function will recuse into the child states.
      */
-    void evaluateStateDensities();
+    void evaluateReducedDensities();
     /** This member is the State part of the member findState that was previously
      *  completely in GasMixture.h. It differs from member find, which also takes
      *  an Entry and returns a State pointer, but the semantics are not documented

@@ -43,10 +43,10 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const ElectronKineticsSetup &setup,
      */
     // for (State *s = electron; s->type() != StateType::root; s = s->parent())
     // {
-    //     s->population = 1.0;
+    //     s->setPopulation(1.0);
     // }
     this->loadStateProperties(setup.stateProperties, workingConditions);
-    this->evaluateStateDensities();
+    this->evaluateReducedDensities();
 
     for (auto &gas : gases())
     {
@@ -90,7 +90,7 @@ EedfGasMixture::EedfGasMixture(Grid *grid, const json_type &cnf, const WorkingCo
     GasBase::State *electron = ensureState(StateEntry::electronEntry());
     /// \todo See the comments about the population in the other overload
     this->loadStateProperties(cnf.at("stateProperties"), workingConditions);
-    this->evaluateStateDensities();
+    this->evaluateReducedDensities();
 
     for (auto &gas : gases())
     {
@@ -198,9 +198,9 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
                 //    since we do not release that before returning from this function..)
                 for (const auto &c : m_collisions)
                 {
-                    if (c->is_same_as(*collision))
+                    if (c.m_coll->is_same_as(*collision))
                     {
-                        Log<DoubleCollision>::Warning(*c);
+                        Log<DoubleCollision>::Warning(*c.m_coll);
                         collision.release();
                         break;
                     }
@@ -219,7 +219,7 @@ void EedfGasMixture::loadCollisions(const std::string &file, Grid *energyGrid, b
                 {
                     EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
                     eedfGas.addCollision(collision.get(), isExtra);
-                    m_collisions.push_back(collision.get());
+                    m_collisions.push_back(CollisionEntry{collision.get(),isExtra});
                     m_hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
                     const bool isElasticOrEffective =
@@ -276,7 +276,7 @@ void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid 
         std::cout << "List of collisions" << std::endl;
         for (const auto& c : m_collisions)
         {
-            std::cout << *c << std::endl;
+            std::cout << *c.m_coll << std::endl;
         }
 #endif
     Log<Message>::Notify("Finished loading collisions.");
@@ -358,11 +358,17 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
         //    since we do not release that before returning from this function..)
         for (const auto &c : m_collisions)
         {
-            if (c->is_same_as(*collision))
+            if (c.m_coll->is_same_as(*collision))
             {
-                Log<DoubleCollision>::Warning(*c);
+                Log<DoubleCollision>::Warning(*c.m_coll);
+//#define ALLOW_DUPLICATE_PROCESSES
+#ifdef ALLOW_DUPLICATE_PROCESSES
+                // duplicates are allowed. The warning is emitted,
+                // but no further action needed
+#else
                 collision.release();
                 break;
+#endif
             }
         }
         // 4. Register the collision with the (single) gas that is the target of the
@@ -379,7 +385,7 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
         {
             EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
             eedfGas.addCollision(collision.get(), isExtra);
-            m_collisions.push_back(collision.get());
+            m_collisions.push_back({collision.get(),isExtra});
             m_hasCollisions[static_cast<uint8_t>(collision->type())] = true;
 
             const bool isElasticOrEffective =
@@ -425,8 +431,8 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
         const double massRatio = Constant::electronMass / gas->mass;
         for (auto &collision : gas->collisions(CollisionType::elastic))
         {
-            m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->density * massRatio);
-            m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+            m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->delta() * massRatio);
+            m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
         }
         // 3. add inelastic terms (also from reverse processes, if enabled)
         //    (note: here inelastic also includes non-conserving process:
@@ -441,13 +447,13 @@ void EedfGasMixture::evaluateTotalAndElasticCS()
         {
             for (auto &collision : gas->collisions(ctype) )
             {
-                m_totalCrossSection += *collision->crossSection * collision->getTarget()->density;
+                m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
 
                 if (collision->isReverse())
                 {
                     Vector superElastic;
                     collision->superElastic(grid->getNodes(), superElastic);
-                    m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->density;
+                    m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->delta();
                 }
             }
         }
@@ -475,7 +481,7 @@ void EedfGasMixture::addCARGas(const std::string& gasName)
             throw std::runtime_error("Rotational collision have been specified.");
         }
         // all chacks passed. add the gas to the list of CAR gases
-        CARGases.emplace_back(gas);
+        m_CARGases.emplace_back(gas);
         Log<Message>::Notify("Registered gas '" + gasName + "' as CAR gas.");
     }
     catch(std::exception& exc)
@@ -487,6 +493,27 @@ void EedfGasMixture::addCARGas(const std::string& gasName)
 
 void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
+    rateCoefficients.clear();
+    rateCoefficientsExtra.clear();
+//#define NEW_RATE_COEFFICIENT_OUTPUT
+#ifdef NEW_RATE_COEFFICIENT_OUTPUT
+    /* The m_collisions member has been changed to store pairs
+     * representing the collision pointer and the isExtra field.
+     * that allows us to simply iterate over the elements of
+     * m_collisions to populate the rate coefficient arrays.
+     * The only difference is that the rate coefficient arrays
+     * are no longer grouped by gas: the coefficients appear
+     * in the order in which the processes were read from file.
+     * personally I (JvD) think that this should not matter,
+     * and makes the code a LOT easier (not just the code below).
+     */
+    for (auto& c : m_collisions)
+    {
+        std::vector<RateCoefficient>& rcVector = c.m_isExtra
+            ?  rateCoefficientsExtra : rateCoefficients;
+        rcVector.emplace_back(c.m_coll->evaluateRateCoefficient(eedf));
+    }
+#else
     for (auto &gas : gases())
     {
         for (auto &collVec : gas->collisions())
@@ -513,6 +540,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
             }
         }
     }
+#endif
 }
 
 } // namespace loki

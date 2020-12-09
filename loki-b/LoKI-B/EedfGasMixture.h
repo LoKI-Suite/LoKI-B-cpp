@@ -41,7 +41,14 @@ class EedfGasMixture : public GasMixture<EedfGas>
      *  of that type were loaded).
      */
     bool hasCollisions(CollisionType type) const { return m_hasCollisions[static_cast<uint8_t>(type)]; }
-    /// \todo comment evaluateTotalAndElasticCS
+    /** \todo Add precise references to published sources for this function.
+     *  The elastic cross section implemented here is related to the
+     *  combination of equations 12 and equation 6b of \cite Tejero2019
+     *  and the definitions just below 6d in that paper. It appears that
+     *  the exact expressions implemented in this function are not
+     *  explicitly stated in the text. Not a problem per se, but we should
+     *  make sure to compensate for that by having detailed documentation here.
+     */
     void evaluateTotalAndElasticCS();
     /** \bug This ADDS rate coefficients to the previously calulated ones in
      *       rateCoefficients and rateCoefficientsExtra. Every time a case is run,
@@ -55,7 +62,7 @@ class EedfGasMixture : public GasMixture<EedfGas>
      */
     void evaluateRateCoefficients(const Vector &eedf);
 
-    std::vector<const EedfGas *> CARGases;
+    const std::vector<const EedfGas *>& CARGases() const { return m_CARGases; }
     std::vector<RateCoefficient> rateCoefficients;
     std::vector<RateCoefficient> rateCoefficientsExtra;
   private:
@@ -116,8 +123,12 @@ class EedfGasMixture : public GasMixture<EedfGas>
     void addCARGas(const std::string& gasName);
 
     const Grid *grid;
-
-    std::vector<const Collision *> m_collisions;
+    struct CollisionEntry
+    {
+        Collision * m_coll;
+        const bool m_isExtra;
+    };
+    std::vector<CollisionEntry> m_collisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
     /** \todo Should hasCollisions be recalculated when uMax() is changed?
@@ -125,6 +136,7 @@ class EedfGasMixture : public GasMixture<EedfGas>
      *  have threshold above uMax().
      */
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
+    std::vector<const EedfGas *> m_CARGases;
 };
 
 } // namespace loki

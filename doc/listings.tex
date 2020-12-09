@@ -1,0 +1,53 @@
+% This includes the listings.sty style file and does some global configuration.
+% The options frame= and captionpos= should _NOT_ be overridden in your .tex
+% files in order to guarantee a consistent look of LoKI documents.
+% The option language=C++ is present here because we have C++ code in most
+% cases. It can be overridden in the lst-options list to whatever code you 
+% are listing, of course.
+% The syntax highlighting settings are subject to debate, IMHO
+% the defaults were a bit too wild, hence the settings here.
+%   --- Jan van Dijk, March 2001
+%
+
+\usepackage{html}
+\usepackage{listings}
+\usepackage{upquote}
+\usepackage{xcolor}
+\lstset{
+	frame=LBtr,
+	captionpos=b,
+	language=C++,
+%	basicstyle=\small\itshape,
+	basicstyle=\small\tt,
+	keywordstyle=\bfseries,
+%	commentstyle=\color{blue},
+%	commentstyle=\tt,
+	stringstyle=\slshape,
+	basewidth={0.58em,0.47em},
+	flexiblecolumns
+}
+
+% Use the command \SRC for inline code fragments. It uses the same style
+% attributes as the rest of the 'listing' style, but overrides the frame option
+% the @ sign is arbitrary, but should not occur in the code.
+% In case we are being processed by Latex2Html we select a typewriter font
+% and process the argument as is.
+\newcommand{\SRC}[1]{{\lstinline[frame=]@#1@}}
+
+\lstdefinestyle{BashInputStyle}{
+	language=bash,
+	basicstyle=\small\sffamily,
+	keywordstyle=\ttfamily,
+	frame=,
+	backgroundcolor=\color{gray!10},
+	columns=fullflexible,
+	linewidth=0.9\linewidth,
+	xleftmargin=0.01\linewidth
+}
+\newcommand{\bashSRC}[1]{{\lstinline[frame=,language=bash]^#1^}}
+
+\newcommand\bashline{\lstinline[style=BashInputStyle]}
+
+\lstnewenvironment{bashlist}%
+	{ \lstset{style=BashInputStyle} }%
+	{}

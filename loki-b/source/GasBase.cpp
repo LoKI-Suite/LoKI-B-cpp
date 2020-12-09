@@ -12,8 +12,9 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
     : m_gas_base(gas), m_parent_base(&parent), type(static_cast<StateType>(parent.type + 1)),
       charge(type == StateType::charge ? entry.charge : parent.charge),
       e(type == StateType::electronic ? entry.e : parent.e), v(type == StateType::vibrational ? entry.v : parent.v),
-      J(type == StateType::rotational ? entry.J : parent.J), population(0), energy(-1), statisticalWeight(-1),
-      density(0)
+      J(type == StateType::rotational ? entry.J : parent.J), energy(-1), statisticalWeight(-1),
+      m_population(0),
+      m_delta(0)
 {
     switch (type)
     {
@@ -39,7 +40,7 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
      */
     // if (m_gas_base->fraction != 0 && type == StateType::charge && charge.empty())
     // {
-    //     population = 1;
+    //     setpopulation(1);
     // }
     assert(m_gas_base);
 #if 0
@@ -51,7 +52,7 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
 
 GasBase::StateBase::StateBase(GasBase *gas)
     : m_gas_base(gas), m_parent_base(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
-      v(std::string{}), J(std::string{}), population(0), energy(-1), statisticalWeight(-1), density(0)
+      v(std::string{}), J(std::string{}), energy(-1), statisticalWeight(-1), m_population(0), m_delta(0)
 {
     assert(m_gas_base);
 #if 0
@@ -176,11 +177,11 @@ void GasBase::StateBase::checkPopulations() const
 
     for (auto *state : m_children)
     {
-        totalPopulation += state->population;
+        totalPopulation += state->population();
         state->checkPopulations();
     }
 
-    if (population == 0)
+    if (population() == 0)
     {
         if (totalPopulation != 0)
             Log<ChildrenPopulationError>::Error(*this);
@@ -192,18 +193,20 @@ void GasBase::StateBase::checkPopulations() const
     }
 }
 
-void GasBase::StateBase::evaluateDensity()
+void GasBase::StateBase::evaluateReducedDensities()
 {
-    /* \todo This old implementation appears to assign the (neutral) gas density to the charged species.
+    /* \todo This old implementation appears to assign the (neutral) gas delta to the charged species.
      *       Setting that to zero for now...
      */
     if (type == StateType::root)
-        density = population * gas().fraction;
+        m_delta = population() * gas().fraction;
     else
-        density = population * parent()->density;
+        m_delta = population() * parent()->delta();
 
     for (auto *state : m_children)
-        state->evaluateDensity();
+    {
+        state->evaluateReducedDensities();
+    }
 }
 
 GasBase::StateBase *GasBase::StateBase::find(const StateEntry &entry)
@@ -232,14 +235,14 @@ void GasBase::propagateFraction()
 {
     if (fraction > 0)
     {
-        m_root->population = 1.;
+        m_root->setPopulation(1.);
         auto it = std::find_if(m_root->children().begin(), m_root->children().end(),
                                [](auto *state) { return state->charge.empty(); });
 
         if (it != m_root->children().end())
         {
             Log<Message>::Notify("Set population of ", *(*it), " to one.");
-            (*it)->population = 1.;
+            (*it)->setPopulation(1.);
         }
     }
 }
@@ -249,9 +252,9 @@ void GasBase::checkPopulations()
     m_root->checkPopulations();
 }
 
-void GasBase::evaluateStateDensities()
+void GasBase::evaluateReducedDensities()
 {
-    m_root->evaluateDensity();
+    m_root->evaluateReducedDensities();
 }
 
 GasBase::StateBase *GasBase::findState(const StateEntry &entry)

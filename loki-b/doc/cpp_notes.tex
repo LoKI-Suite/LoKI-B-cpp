@@ -1,0 +1,431 @@
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{bm}
+% the next block is the modern way of achieving 'a4wide'
+\usepackage{geometry}
+\usepackage{layout}
+\geometry{
+  includeheadfoot,
+  margin=2.54cm
+}
+\usepackage{xfrac}
+\newcommand{\frachalf}{\ensuremath{\sfrac{1}{2}}}
+\newcommand{\phalf}[1]{\ensuremath{{#1}+\frachalf}}
+\newcommand{\mhalf}[1]{\ensuremath{{#1}-\frachalf}}
+
+\newcommand{\MEAN}[1]{\ensuremath{\langle{{#1}}\rangle}}
+
+\input{../../doc/listings}
+\input{../../doc/loki_defs}
+
+\bibliographystyle{unsrt}
+
+\title{Notes on the C++ Implementation of LoKI-B}
+\author{Jan van Dijk, Daan Boer and Wouter Graef}
+
+\begin{document}
+
+\maketitle
+
+\abstract{
+This document contains notes about the C++ version of LoKI-B.
+It provides additional details of definitions and algorithms that are not
+explicitly written in the LoKI-B paper \cite{Tejero2019} or the User Manual
+of the initial public release of LoKI-B \cite{Manual_1_0_0}. It also
+discusses features of the C++ version that are not available yet in the MATLAB
+version, such as support for JSON input files and the Web deployment of LoKI-B
+and discusses and motivates things that have been done different in the C++
+version for various reasons.
+}
+
+\tableofcontents
+
+\section{Definitions}
+
+\subsection{Basic Quantities}
+
+There are multiple variables that describe the densities (absolute and relative)
+of the gases and states.
+\begin{itemize}
+  \item $N$
+  \item $N_k$
+  \item Gas fraction:
+  \begin{equation}
+    \chi_k = N_k/N.
+    \label{eq:chi_k}
+  \end{equation}
+  \item $\xi_{k_i}$
+  \item $\delta_{k_i}$
+\end{itemize}
+
+\begin{itemize}
+  \item In the Loki-B paper \cite{Tejero2019}, in the text between equations 1
+  and 2, $\xi_{k_i}$ is defined as the density of a state $k_i$ divided by that
+  of the sum of all densities of states of gas $k$. On the other hand, in the
+  LoKI-B user manual (version 1.0.0) \cite{Manual_1_0_0} below equation 2 it
+  is defined as the density of that state divided by its parent density.
+  TODO: what is in MATLAB? Let's adopt that and state that clearly here.
+  \item The name \SRC{density} that appeared in the code corresponded to the
+  `reduced density' $\delta_{k}$ in the user guide. In the C++ code this is
+  now provided by member \SRC{delta()} of the state class.
+\end{itemize}
+
+\subsection{The gamma constant}
+
+Gamma has been introduced. This constant also appears in the BOLSIG+ paper
+\cite{Hagelaar2005}, where it introduced just below equation 6, and is defined
+as
+\begin{equation}
+  \gamma = \sqrt{2e/m_e}.
+  \label{eq:gamma}
+\end{equation}
+The symbol is available as \SRC{SI::gamma} (relative to the \SRC{loki}
+namespace). Note that this appears {\em many} times in the code, and
+this change has resulted in much better readability.
+
+Note that in LoKI-B documentation the symbol $\gamma_k$ is
+defined as the mass ration of the electron and a species $k$
+\cite[below eqn. 9d]{Manual_1_0_0},
+\begin{equation}
+  \gamma_k = m_e/m_k,
+\end{equation}
+but the presence of the subscript $k$ avoids any confusion with the
+constant $\gamma$, which in addition has the \SRC{SI::} prefix.
+
+\subsection{The functions $G_x(y)$ and $g_x(u)$}
+
+Many terms on the left-hand side of the 2-term approximation of the Boltzmann
+equation are written in terms of energy-derivatives of functions $G_x(u)$, where
+$x$ denotes a particular process type.
+\begin{itemize}
+  \item Expressions for $G_x(u)$ are given in equations 6b-c of the LoKI-B paper
+        \cite{Tejero2019} and in equations 9b-c of the manual \cite{Manual_1_0_0};
+        those are identical.
+\end{itemize}
+Of course, the Boltzmann equation does not change if each term is divided by the
+same non-zero constant value. That does, however, change the meaning/interpretation
+of the individual terms and has resulted in conflicting definitions for
+auxiary functions $g_x(u)$.
+\begin{itemize}
+  \item In the paper \cite[eqn. 15d]{Tejero2019}, $g_x(u)$ and $c_u$ are defined
+        by the relation
+        \[
+          G_x(u) = g_x(u)\left(f(u)+c_x\DERIV{f(u)}{u}\right),
+        \]
+        of which the energy-derivative is stated in the text. As an example,
+        for the elastic operator this results in \cite[eqn. 6b]{Tejero2019},
+        \[
+           g_{el}(u)=-\sum\limits_k 2\gamma_k\nu^{el}_{k,c}(u)u^{3/2}
+           = -N\sqrt{2e/m_e}\;2u^2\sum\limits_k \delta_k\gamma_k\sigma^{el}_{k,c}(u)
+           := -N\gamma\;2u^2\sigma^{el}_u(u).
+        \]
+        (TODO: add note about the 'eneragy averaged cross section here, including $2m_e/m_k$.)
+        This matches the {\em comments} in the MATLAB code, which announce
+\begin{lstlisting}
+  g_c(u) = -N*sqrt(2*e/me)*2*u^2*sigmaC(u);
+\end{lstlisting}
+  \item In the user manual \cite[eqn. 16d]{Tejero2019}, $g_x(u)$ is defined
+        relative to $G_x(u)/(N\gamma)$, that is:
+        \begin{equation}
+          \frac{1}{N\gamma}G_x(u) = g_x(u)\left(f(u)+c_x\DERIV{f(u)}{u}\right).
+          \label{eq:G(g)}
+        \end{equation}
+        That would instead result in:
+\begin{lstlisting}
+  g_c(u) = -2*u^2*sigmaC(u);
+\end{lstlisting}
+  \item In the actual implementation we find the latter definition, but {\em without
+        the minus sign}: the implementation of the elastic operator actually does
+\begin{lstlisting}
+  boltzmann.g_c = 2*boltzmann.energyGrid.node.^2.*boltzmann.elasticCrossSection;
+\end{lstlisting}
+        So the function $g_x(u)$ that we actually find in the code corresponds to the definition
+        \[
+          \frac{1}{N\gamma}G_x(u) = -g_x(u)\left(f(u)+c_x\DERIV{f(u)}{u}\right).
+        \]
+  \item Since the expressions for the discretization coefficients in terms of
+        $g_x(u)$ are the same in the code as in the manual, the effect is that
+        the matrices $M^x$ that are set up such that
+        \[
+           [M^x_{ij}][f_j] \doteq -\frac{1}{N\gamma}\DERIV{G_x(u)}{u}.
+        \]
+        (Also see section \ref{sec:discretization}.)
+  \item Note that the elements of $g_x(u)$ are also used to calculated the
+        elastic terms on the power balance, see \cite[eq. 24c]{Tejero2019} and
+        \cite[eq. 38c]{Manual_1_0_0}.\footnote{
+          In the code, a different expression is used, that appears to be
+          based on partial integration of the expressions in the paper and
+          manual. This must be checked.}
+        When the meaning of $g_x(u)$ is changed, also those expressions must
+        be updated accordingly.
+  \item In order to compare expressions with those in the BOLSIG+ paper
+        \cite{Hagelaar2005}, it is important to realize that in that paper the
+        terms of the equation correspond to the LoKI-B expressions
+        \[
+          \frac{1}{N}\DERIV{G_x(u)}{u},
+        \]
+        in other words: there is no division by $\gamma$. As an example, consider
+        \[
+          \frac{1}{N}G_{el}(u)
+          = -\gamma\;2u^2\sigma^{el}_u(u)\left[f(u) + \frac{k_BT}{e}\DERIV{f(u)}{u}\right].
+        \]
+        This corresponds to the elastic part (involving $\sigma_\epsilon$) of equations
+        40 and 41 of \cite{Hagelaar2005}.
+        TODO: note the definition of $\sigma_\epsilon$ in equation (42) in
+        \cite{Hagelaar2005}. The correspondence with the expression in LoKI-B should
+        be made explicit, the mass-ratios emphasized.
+\end{itemize}
+
+\subsection{The CAR Implementation}
+
+The implementation of CAR processes needs some attention. There appears to be
+a problem in the code, but this may also be the result of a misunderstanding
+of the definition and/or units of the quantities involved.
+
+The description of the CAR terms can be found in the LoKI-B paper \cite{Tejero2019}
+in equation 6c and in the text just below 6d. There the CAR cross section for a gas
+$k$ is stated to be
+\begin{equation}
+  \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
+  \label{eq:sigma_CAR}
+\end{equation}
+where $a_0$ is the Bohr radius and $Q_k$ is the quadrupole moment of that gas
+{\em in atomic units}, $ea_0^2$.
+This expression is also found in the user manual \cite{Manual_1_0_0} (below
+equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
+equation 8b). Those sources refer to the paper of Gerjuoy and Stein
+\cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
+To emphasize the units of $Q_{k,au}$, we have added the suffix $au$ in equation
+\eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
+
+The electron-neutral collision frequency that corresponds to the CAR cross
+section is presented just below equation 6d of \cite{Tejero2019}, it is given by
+\begin{equation}
+  \nu_{0,k} = N_k\sqrt{2eu/m_e}\sigma_{0,k}.
+\end{equation}
+Using the definitions of $\gamma$ from equation \eqref{eq:gamma} and that of the
+gas fraction $\chi_k$ from equation \eqref{eq:chi_k}, this can be weritten as
+\begin{equation}
+  \nu_{0,k} = N\gamma\sqrt{u}\chi_k\sigma_{0,k}.
+\end{equation}
+This frequency appears in equation 6c of \cite{Tejero2019} in a factor
+\[
+  N\gamma g_{CAR} = -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}
+  = -\sum\limits_k 4B_k N\gamma u\chi_k\sigma_{0,k}
+  = -N\gamma 4u\sum\limits_k \chi_k\sigma_{0,k}B_k,
+\]
+which results in
+\begin{equation}
+  g_{CAR} = -4u\sum\limits_k \chi_k\sigma_{0,k}B_k.
+\end{equation}
+\begin{itemize}
+  \item As discussed elsewhere, in the code we find $g_{CAR}$ defined without
+        the minus sign (same is true for other $g_x(u)$;
+  \item In the code the cross section in the expression for $g_{CAR}$ is written as:
+  \[
+    \sigma_{0,k}
+    = \frac{8\pi}{15}\frac{Q_{k}}{e}
+    = \frac{8\pi}{15}\frac{Q_{k}}{ea_0^2}a_0^2
+    = \frac{8\pi}{15}Q_{k,au}a_0^2\quad\mbox{WRONG?}
+  \]
+  {\bf In other words: it is as if the code uses an expression with $Q_{k,au}$ instead
+  of $Q_{k,au}^2$.}
+\end{itemize}
+
+
+\section{Discretization}
+\label{sec:discretization}
+
+\subsection{Final form of the equation}
+In \cite[eqn. 3a]{Tejero2019} the final form of the two-term approximation of the
+Boltzmann equation with a temporal growth term is written as
+\begin{equation}
+  \frac{1}{N\gamma}\MEAN{\nu_{\mbox{eff}}}uf(u) + \frac{1}{N\gamma}\DERIV{G(u)}{u} = S(u).
+\end{equation}
+The equation with the spatial graowth model is similar, only the first term takes
+a different form. The equation is subject to the normalization condition
+\begin{equation}
+  \int\limits_0^\infty \sqrt{u}f(u)du=1.
+  \label{eq:f-norm}
+\end{equation}
+Bringing all terms of the EBE to the right-hand side of the equation yields
+\begin{equation}
+  -\frac{1}{N\gamma}\MEAN{\nu_{\mbox{eff}}}uf(u) - \frac{1}{N\gamma}\DERIV{G(u)}{u} + S(u) = 0.
+  \label{eq:EBE-temp}
+\end{equation}
+In LoKI-B, this particular form of the equation is cast in matrix-vector form,
+\begin{equation}
+  \sum\limits_{j=0}^{N_c-1}C_{ij}f_j = 0.
+  \label{eq:Cf=0}
+\end{equation}
+In this equation, the system matrix $C_{ij}=\sum_x C_{x,ij}$, where each
+matrix $C_{x,ij}$ corresponds to one of a terms, identified by $x$, in
+equation \eqref{eq:EBE-temp}. Then, for example
+\[
+   \sum\limits_{j=0}^{N_c-1}C_{el,ij}f_j
+   \doteq
+   -\frac{1}{N\gamma}\left.\DERIV{G_{el}(u)}{u}\right|_{u_i}.
+\]
+Note that a constant multiplication factor could still be applied to the matrix
+$C_{ij}$ in equation \eqref{eq:Cf=0} without changing the solution, but that
+would change the physical meaning of an expression like $\sum_jC_{el,ij}f_j$.
+Note that for some terms the coefficients depend on $f$, making this a
+{\em non-linear system}.
+
+TODO: verify that the above is indeed what is done by LoKI-B (and be very precise).
+
+Since the system is homogeneous, the solution is determined up to a constant
+multiplication factor. This follows from the normalization condition
+\eqref{eq:f-norm}, which can be approximated as
+\begin{equation}
+  \sum\limits_{j=0}^{N_c-1} \sqrt{u_j} f_j \Delta u = 1.
+  \label{eq:f-norm-disc}
+\end{equation}
+This condition can be imposed ion the system in multiple ways:
+\begin{itemize}
+  \item Replace equation \eqref{eq:Cf=0} with the discrete form of the
+    normalization condition as given by \eqref{eq:f-norm-disc}.
+  \item Replace this equation with the equation $f_0=1$ (or another fixed
+    number), solve the system and scale the solution afterwards.
+\end{itemize}
+It appears that at present both are done (in both MATLAB and C++ versions). The
+advantage of (only) using the second mathod is that no unnecessary non-zero
+entries are introduced in the system matrix. This is beneficial when a sparse
+matrix solver is adopted. Especially when a band matrix format is used, it
+prevents all upper diagonals to be allocated, in most cases only containing
+a single non-zero element due to the normalization condition.
+
+\subsection{Discretization of the Energy Transport Terms}
+
+The LoKI-B paper \cite{Tejero2019} discusses the numerical recipes in
+section 3.4. There it is stated that the finite-difference method of
+Rockwood \cite[appendix A]{Rockwood1973} is used. The relation between Rockwood's
+discretization strategy and the one adopted in LoKI-B is not immediately
+clear, since Rockwoord provides explicit expression for the two terms
+he considers (field and elastic terms), not the general recipe.
+
+Rockwood approximates $\dd{G(u)}/\dd{u}$ in the cell points $k$ as
+\begin{equation}
+  \left.\DERIV{G_x(u)}{u}\right|_k
+  = \frac{G_x(u_{\phalf{k}}) - G_x(u_{\mhalf{k}})}{\Delta u}.
+\end{equation}
+It is important to realize that this amounts to a finite-{\em volume} method,
+since the right-hand side can also be written as
+\[
+  \frac{1}{\Delta u}\left[G_x(u_{\phalf{k}}) - G_x(u_{\mhalf{k}})\right]
+  =
+  \frac{1}{\Delta u}\int\limits_{u_{\mhalf{k}}}^{u_{\phalf{k}}}\DERIV{G_x(u)}{u}\dd{u},
+\]
+which makes clear that the approximation amounts to replacing the value of
+$\dd G_x/\dd u$ with its mean value in the interval
+$[u_{\mhalf{k}},u_{\phalf{k}}]$. Except for the factor $1/\Delta u$ this is,
+of course, the volume integral of $\dd G_x(u)/\dd u$ over that interval.
+All this can be recognized as applying Gau\ss' theorem to an integral over
+a one-dimensional energy volume, with flux $G(u)$ and flux-divergence
+$\dd G(u)/\dd u$.
+
+This analysis makes clear that the emphasis can be placed on a proper discretization
+of the flux $G(u)$ on the boundaries $u_\mhalf{k}$ and $u_\phalf{k}$ of the cell
+around $u_k$. LoKI-B follows Rockwood in adopting a central difference scheme for
+the approximation of equation \eqref{eq:G(g)}. Using the definition of $G_x(u)$
+that appears in the user manual, see equation \ref{eq:G(g)} of the present text,
+we get
+\begin{align}
+  \frac{1}{N\gamma}G_x(u_{\phalf{k}})
+    &\doteq g_x(u_{\phalf{k}})\left(\frac{f(u_{k+1})+f(u_k)}{2}+c_x\frac{f(u_{k+1})-f(u_k)}{\Delta u}\right) \nonumber \\
+    &\doteq
+      -g_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right)f(u_k)
+      +
+      g_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)f(u_{k+1})
+  \\
+  \frac{1}{N\gamma}G_x(u_{\mhalf{k}})
+    &\doteq g_x(u_{\mhalf{k}})\left(\frac{f(u_{k})+f(u_{k-1})}{2}+c_x\frac{f(u_{k})-f(u_{k-1})}{\Delta u}\right) \nonumber \\
+    &\doteq
+      g_x(u_{\mhalf{k}})\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)f(u_k)
+      -
+      g_x(u_{\mhalf{k}})\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right)f(u_{k-1})
+\end{align}
+Which results in the following discrete result,
+\begin{align}
+  \frac{1}{N\gamma}\DERIV{G_x(u)}{u}
+  =& \frac{1}{N\gamma}\frac{G_x(u_{\phalf{k}}) - G_x(u_{\mhalf{k}})}{\Delta u} \nonumber \\
+       =& +\left[\frac{g_x(u_{\mhalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right)\right]f(u_{k-1}) \nonumber \\
+        & -\left[
+              \frac{g_x(u_{\mhalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)
+            + \frac{g_x(u_{\phalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right)
+           \right] f(u_k) \nonumber \\
+        & +\left[\frac{g_x(u_{\phalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)\right]f(u_{k+1}) \nonumber \\
+       =& M(k,k-1)f(u_{k-1}) + M(k,k)f(u_k) + M(k,k+1)f(u_{k+1}).
+\end{align}
+NOTE: A relation between the central coefficient $M(k,k)$ and the neighbour
+coefficients can be derived as follows:
+\begin{align}
+  -M(k,k)
+    &=
+    \frac{g_x(u_{\mhalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)
+    +
+    \frac{g_x(u_{\phalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right) \nonumber \\
+    &=
+    \frac{g_x(u_{\mhalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}-\frac{1}{2}\right)
+    +
+    \frac{g_x(u_{\phalf{k}})}{\Delta u}\left(\frac{c_x}{\Delta u}+\frac{1}{2}\right)
+    + \frac{g_x(u_{\mhalf{k}})}{\Delta u} - \frac{g_x(u_{\phalf{k}})}{\Delta u} \nonumber \\
+    &=
+    M(k,k-1)
+    +
+    M(k,k+1)
+    + \frac{g_x(u_{\mhalf{k}}) - g_x(u_{\phalf{k}})}{\Delta u}.
+\end{align}
+this can be used later on to do some stability analysis on the scheme. In brief:
+consider a situation where this is the only term in the Boltzmann equation, and
+assume that $g_x(u_{\mhalf{k}})=g_x(u_{\phalf{k}})$ for some cell $k$. Then we can
+derive
+\begin{align}
+  &M(k,k-1)f(u_{k-1}) + M(k,k)f(u_k) + M(k,k+1)f(u_{k+1}) = 0 \nonumber \\
+  \implies & M(k,k)f(u_k) = - M(k,k+1)f(u_{k+1}) - M(k,k-1)f(u_{k-1}) \nonumber \\
+  \implies & (M(k,k-1)+M(k,k+1))f(u_k) = + M(k,k+1)f(u_{k+1}) + M(k,k-1)f(u_{k-1}) \nonumber \\
+  \implies & f(u_k) = (1-\alpha)f(u_{k+1}) + \alpha f(u_{k-1}),
+\end{align}
+where $\alpha=M(k,k-1)/(M(k,k-1)+M(k,k+1))$. Only if the coefficients $M(k,k-1)$
+and $M(k,k+1)$ have the same sign will this result in monotonic behaviour of the solution
+$f(u)$. From this we can deduce the requirement that $||c_x/\Delta u||>1/2$, or
+$||\Delta u/c_x||<2$. This number can be recognized as the {\em grid P\'eclet number}
+of the problem. The condition can be eliminated by using another scheme than the
+central difference scheme (upwind, Scharfetter-Gummel, ...).
+
+Note that a true finite-difference scheme (not in LoKI-B) would have been obtained by
+first employing the product rule for differentiation and grouping terms with the
+same derivative of $f(u)$,
+\begin{equation}
+  \frac{1}{N\gamma}G_x(u)
+    = \DERIV{g_x(u)}{u}f(u)
+    + \left(g_x(u)+\DERIV{g_x(u)}{u}c_x\right)\DERIV{f(u)}{u}
+    + g_x(u)c_x\DDERIV{f(u)}{u},
+\end{equation}
+then use $f'(u_k)\doteq(f(u_{k+1})-f(u_{k-1}))/(2\Delta u)$ and
+$f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
+
+
+
+\section{Matrices \& Vectors}
+
+Eigen, the various Hessenberg-solvers.
+
+\section{Build System}
+
+\subsection{cmake}
+
+\subsection{autotools}
+
+\subsection{Cross Compilation}
+
+\subsection{Automated Testing}
+
+Unit tests, checking results with reference data, comparing the MATLAB and C++
+versions, comparisons with BOLSIG+ output.
+
+\bibliography{../../doc/reflist}
+
+\end{document}

@@ -139,7 +139,7 @@ std::vector<EedfGas::EedfState *> EedfGas::findStatesToUpdate()
     {
         for (auto *eleState : chargeState->children())
         {
-            if (eleState->population > 0)
+            if (eleState->population() > 0)
             {
                 auto &colls = m_state_collisions[eleState];
                 auto it = find_if(colls.begin(), colls.end(),
