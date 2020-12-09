@@ -9,11 +9,12 @@ AC_CONFIG_MACRO_DIR([autodir])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects])
 AC_CONFIG_FILES([
 	Makefile
-	lib/Makefile
 	doc/Makefile
 	doc/doxygen/Makefile
 	doc/doxygen/Doxyfile
-	testsuite/Makefile
+	lib/Makefile
+	loki-b/Makefile
+	loki-b/tests/Makefile
 	])
 
 LT_INIT([disable-static win32-dll])
