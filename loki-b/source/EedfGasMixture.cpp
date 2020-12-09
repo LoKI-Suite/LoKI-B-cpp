@@ -489,7 +489,7 @@ void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
     rateCoefficients.clear();
     rateCoefficientsExtra.clear();
-// #ifdef NEW_RATE_COEFFICIENT_OUTPUT
+//#define NEW_RATE_COEFFICIENT_OUTPUT
 #ifdef NEW_RATE_COEFFICIENT_OUTPUT
     /* The m_collisions member has been changed to store pairs
      * representing the collision pointer and the isExtra field.
