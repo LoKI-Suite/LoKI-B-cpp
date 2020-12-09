@@ -265,6 +265,10 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 {
     const Grid *grid = crossSection->getGrid();
+    if (crossSection->threshold() > grid->uMax())
+    {
+        return {this, 0.0, 0.0};
+    }
 
     const Grid::Index nNodes = grid->nCells() + 1;
     const Grid::Index nCells = grid->nCells();
