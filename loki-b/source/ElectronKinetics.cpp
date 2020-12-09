@@ -481,31 +481,31 @@ void ElectronKinetics::evaluateFieldOperator()
 void ElectronKinetics::evaluateCAROperator()
 {
     /* When comparing this with Tejero2019, realize that in that paper,
-     * equation 6c, the following symbols are used:
+     * equation 6c, the following symbols are used for a gas k:
      *
      * B_k: rotationalConstant
-     * Q_k: quadruple moment (in units of e a_0^2, a_0 is the Bohr radius)
+     * Q_{k,au}: quadruple moment (in units of e a_0^2, a_0 is the Bohr radius)
      *  [NOTE: electricQuadrupoleMoment in the code is in SI units Cm^2].
-     * nu_{0,k} = N_k*sqrt(2*e*u/m)*sigma_{0,k}
-     * sigma_{0,k} = 8*pi*Q_k^2*a_0^2
      *
-     * sigma_0 refs for "sigma_0 = 8*pi*Q_k^2*a_0^2/15":
-     *   Tejero (1019), below equation 6d
+     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see references
+     *
+     *   Tejero (2019), below equation 6d
      *   Ridenti (2015), below equation 8b
      *   Gerjuoy, Stein (1955), equation 20 (not sigma_0 per se).
      *
-     * Rewrite:
-     *   nu_{0,k} = N_k*gamma*sqrt(u)*sigma_{0,k}
-     * Then:
-     *   nu_{0,k}*sqrt(u)
-     *   = N_k*gamma*u*sigma_{0,k}
-     *   = 4*B_k*nu_{0,k}*sqrt(u)
-     *   = 4*B_k*N_k*gamma*u*sigma_{0,k}
+     * mixtures the terms B_k*sigma_k in the expression for g_CAR must be
+     * weighted with the molar fractions,
      *
-     */
-    /// \todo In the code below we see Q_k instead of Q_k^2
-    /** \todo In the papers, we see Q_k expressed in ea_0^2.
-     *        Doublecheck that all unit conversions are consistent.
+     *   sum_k chi_k*B_k*sigma_k = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}^2
+     *
+     * in the code the square is missing on Q_{k,au}, it appears. Without that,
+     * we have, with Q_{k,au} = Q_k/(e*a_0^2,
+     *
+     *      (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}
+     *    = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_k/(e*a_0^2)
+     *    = (8.*pi/(15*e)) * sum_k chi_k*B_k*Q_k
+     *
+     *  which is the expression that is found in the code (not yet changed).
      */
     /** \todo In the code all the G's are divided by the (total) gas particle
      *  density, compared to the LoKI-B paper \cite Tejero2019, I believe.
