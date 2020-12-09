@@ -487,6 +487,8 @@ void EedfGasMixture::addCARGas(const std::string& gasName)
 
 void EedfGasMixture::evaluateRateCoefficients(const Vector &eedf)
 {
+    rateCoefficients.clear();
+    rateCoefficientsExtra.clear();
     for (auto &gas : gases())
     {
         for (auto &collVec : gas->collisions())
