@@ -1,6 +1,7 @@
 # LoKI-B C++
 
 ![action](https://github.com/DAANBOER/luxurious-loki/workflows/autotools%20CI/badge.svg)
+![action](https://github.com/DAANBOER/luxurious-loki/workflows/cmake%20CI/badge.svg)
 
 Numerical Boltzmann solver for the two-term approximation of the Boltzmann equation for electrons.
 
