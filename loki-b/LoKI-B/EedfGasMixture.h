@@ -101,10 +101,17 @@ class EedfGasMixture : public GasMixture<EedfGas>
      */
     void loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra = false);
 
-    /* Loads the collisions from a json mixture section.
-     * Furthermore, it needs a pointer to the energy grid and a boolean to
-     * indicate whether the collisions are extra, for correct initialization and storage of
-     * the collisions.
+    /** Loads the collisions from a json mixture section. Such section must contain two
+     *  subsections: an object "states" that consists of key-value pairs that represent
+     *  name of the species and an object that defines the species, and an array called
+     *  "sets". Ech set element is an object that describes a group of processes. It
+     *  must contain an array "processes"; each element of this array describes a processes.
+     *  Furthermore, it needs a pointer to the energy grid and a boolean to
+     *  indicate whether the collisions are extra, for correct initialization and storage of
+     *  the collisions.
+     *
+     *  \todo The meta information in the set objects ("_id", "complete", "description",
+     *  "contributor" etc. are ignored so far.
      */
     void loadCollisions(const json_type &mcnf, Grid *energyGrid, bool isExtra = false);
 

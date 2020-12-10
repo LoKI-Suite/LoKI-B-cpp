@@ -25,20 +25,22 @@ auto json = R"json(
 		"growthModelType": "temporal",
 		"includeEECollisions": false,
 		"mixture": {
-			"states": [
-				{ "particle": "e", "charge": -1, "id": "e" },
-					{
-						"particle": "X",
-						"charge": 0,
-						"electronic": [
+			"states": {
+				"e": {
+					"particle": "e",
+					"charge": -1
+				},
+				"X(0)": {
+					"particle": "X",
+					"charge": 0,
+					"electronic": [
 						{
 							"e": "0",
 							"summary": "0"
 						}
-					],
-					"id": "X(0)"
+					]
 				},
-				{
+				"X(*)": {
 					"particle": "X",
 					"charge": 0,
 					"electronic": [
@@ -46,10 +48,9 @@ auto json = R"json(
 							"e": "*",
 							"summary": "*"
 						}
-					],
-					"id": "X(*)"
+					]
 				},
-				{
+				"X(+)": {
 					"particle": "X",
 					"charge": 1,
 					"electronic": [
@@ -57,36 +58,39 @@ auto json = R"json(
 							"e": "0",
 							"summary": "0"
 						}
-					],
-					"id": "X(+)"
-				}
-			],
-			"processes": [
-				{
-					"reaction": {
-						"lhs": [
-							{ "state": "e", "count": 1 },
-							{ "state": "X(0)", "count": 1 }
-					],
-					"rhs": [
-						{ "state": "e", "count": 1 },
-						{ "state": "X(0)", "count": 1 }
-					],
-					"reversible": false,
-					"type_tags": ["Elastic"]
-					},
-					"parameters": ["m/M = 0.00025"],
-					"reference": [
-						"Analytical test, constant cross section"
-					],
-					"labels": ["Energy", "Cross section"],
-					"units": ["eV", "m2"],
-					"threshold": 0,
-					"data": [
-						[0.000000e+0, 1.000000e-19],
-						[1.000000e+3, 1.000000e-19]
 					]
 				}
+			},
+			"sets": [
+                        {
+				"processes": [
+					{
+						"reaction": {
+							"lhs": [
+								{ "state": "e", "count": 1 },
+								{ "state": "X(0)", "count": 1 }
+						],
+						"rhs": [
+							{ "state": "e", "count": 1 },
+							{ "state": "X(0)", "count": 1 }
+						],
+						"reversible": false,
+						"type_tags": ["Elastic"]
+						},
+						"parameters": ["m/M = 0.00025"],
+						"reference": [
+							"Analytical test, constant cross section"
+						],
+						"labels": ["Energy", "Cross section"],
+						"units": ["eV", "m2"],
+						"threshold": 0,
+						"data": [
+							[0.000000e+0, 1.000000e-19],
+							[1.000000e+3, 1.000000e-19]
+						]
+					}
+				]
+			}
 			]
 		},
 		"gasProperties": {

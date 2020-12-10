@@ -123,12 +123,12 @@
           "parameters": ["E = 0.0015 eV", "g1/g0 = 5", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=0}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=2}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -244,12 +244,12 @@
           "parameters": ["E = 0.0025 eV", "g1/g0 = 2.33333", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=1}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=3}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -355,12 +355,12 @@
           "parameters": ["E = 0.0035 eV", "g1/g0 = 1.8", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=2}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=4}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -456,12 +456,12 @@
           "parameters": ["E = 0.0045 eV", "g1/g0 = 1.57143", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=3}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=5}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -547,12 +547,12 @@
           "parameters": ["E = 0.0055 eV", "g1/g0 = 1.44444", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=4}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=6}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -628,12 +628,12 @@
           "parameters": ["E = 0.0065 eV", "g1/g0 = 1.36364", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=5}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=7}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -699,12 +699,12 @@
           "parameters": ["E = 0.0075 eV", "g1/g0 = 1.30769", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=6}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=8}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -760,12 +760,12 @@
           "parameters": ["E = 0.0085 eV", "g1/g0 = 1.26667", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=7}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=9}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -811,12 +811,12 @@
           "parameters": ["E = 0.0095 eV", "g1/g0 = 1.23529", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=8}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=10}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -867,12 +867,12 @@
           "parameters": ["E = 0.0105 eV", "g1/g0 = 1.21053", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=9}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=11}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -922,12 +922,12 @@
           "parameters": ["E = 0.0115 eV", "g1/g0 = 1.19048", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=10}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=12}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -976,12 +976,12 @@
           "parameters": ["E = 0.0125 eV", "g1/g0 = 1.17391", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=11}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=13}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1029,12 +1029,12 @@
           "parameters": ["E = 0.0135 eV", "g1/g0 = 1.16", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=12}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=14}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1081,12 +1081,12 @@
           "parameters": ["E = 0.0145 eV", "g1/g0 = 1.14815", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=13}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=15}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1132,12 +1132,12 @@
           "parameters": ["E = 0.0155 eV", "g1/g0 = 1.13793", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=14}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=16}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1182,12 +1182,12 @@
           "parameters": ["E = 0.0165 eV", "g1/g0 = 1.12903", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=15}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=17}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1231,12 +1231,12 @@
           "parameters": ["E = 0.0175 eV", "g1/g0 = 1.12121", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=16}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=18}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1279,12 +1279,12 @@
           "parameters": ["E = 0.0185 eV", "g1/g0 = 1.11429", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=17}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=19}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1335,12 +1335,12 @@
           "parameters": ["E = 0.0195 eV", "g1/g0 = 1.10811", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=18}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=20}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1390,12 +1390,12 @@
           "parameters": ["E = 0.0205 eV", "g1/g0 = 1.10256", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=19}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=21}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1444,12 +1444,12 @@
           "parameters": ["E = 0.0215 eV", "g1/g0 = 1.09756", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=20}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=22}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1497,12 +1497,12 @@
           "parameters": ["E = 0.0225 eV", "g1/g0 = 1.09302", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=21}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=23}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1549,12 +1549,12 @@
           "parameters": ["E = 0.0235 eV", "g1/g0 = 1.08889", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=22}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=24}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1600,12 +1600,12 @@
           "parameters": ["E = 0.0245 eV", "g1/g0 = 1.08511", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=23}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=25}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1650,12 +1650,12 @@
           "parameters": ["E = 0.0255 eV", "g1/g0 = 1.08163", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=24}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=26}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1699,12 +1699,12 @@
           "parameters": ["E = 0.0265 eV", "g1/g0 = 1.07843", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=25}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=27}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1747,12 +1747,12 @@
           "parameters": ["E = 0.0275 eV", "g1/g0 = 1.07547", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=26}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=28}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1794,12 +1794,12 @@
           "parameters": ["E = 0.0285 eV", "g1/g0 = 1.07273", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=27}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=29}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1840,12 +1840,12 @@
           "parameters": ["E = 0.0295 eV", "g1/g0 = 1.07018", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=28}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=30}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1890,12 +1890,12 @@
           "parameters": ["E = 0.0305 eV", "g1/g0 = 1.0678", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=29}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=31}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1939,12 +1939,12 @@
           "parameters": ["E = 0.0315 eV", "g1/g0 = 1.06557", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=30}}}" }
             ],
             "reversible": true,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "N2{X^1S_g^+{v=0{J=32}}}" }
             ],
             "type_tags": ["Rotational"]
@@ -1958,7 +1958,7 @@
     }
   ],
   "states": {
-    "e^-": { "charge": -1, "particle": "e" },
+    "e": { "charge": -1, "particle": "e" },
     "N2{X^1S_g^+{v=0{J=0}}}": {
       "charge": 0,
       "electronic": [

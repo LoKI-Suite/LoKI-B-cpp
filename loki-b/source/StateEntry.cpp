@@ -231,10 +231,9 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
     }
 }
 
-StateEntry entryFromJSON(const json_type &cnf)
+StateEntry entryFromJSON(const std::string& id, const json_type &cnf)
 {
     const std::string gasName = cnf.at("particle");
-    const std::string id = cnf.at("id");
     // this is how it is now done for the electron for legacy input
     if (gasName == "e")
     {
