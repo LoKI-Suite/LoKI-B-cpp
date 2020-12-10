@@ -7434,50 +7434,16 @@
     }
   },
   "references": {
-    "Reference/2606284": {
-      "_id": "Reference/2606284",
-      "string": "Pitchford L C and Phelps A V 1982 Bull. Am. Phys. Soc. 27 109"
-    },
-    "Reference/2606287": {
-      "_id": "Reference/2606287",
-      "string": "Tachibana K and Phelps A V 1979 JCP 71 3544"
-    },
-    "Reference/2606290": {
-      "_id": "Reference/2606290",
-      "string": "Schulz G J 1962 Phys. Rev. 125 229"
-    },
-    "Reference/2606293": {
-      "_id": "Reference/2606293",
-      "string": "Schulz G J 1964 Phys. Rev. 135 A988"
-    },
-    "Reference/2606296": {
-      "_id": "Reference/2606296",
-      "string": "Schulz G J 1973 Rev. Mod. Phys. 45 423"
-    },
-    "Reference/2606299": {
-      "_id": "Reference/2606299",
-      "string": "Engelhardt A G, Phelps A V and Risk C G 1964 Phys. Rev. 135 A1566"
-    },
-    "Reference/2606302": {
-      "_id": "Reference/2606302",
-      "string": "Pavlovic Z, Boness M J W, Herzenberg A and Schulz G J 1972 Phys. Rev. A 6 676"
-    },
-    "Reference/2606305": {
-      "_id": "Reference/2606305",
-      "string": "Boness M J W and Schulz G J 1973 Phys. Rev. A 8 2883"
-    },
-    "Reference/2606308": {
-      "_id": "Reference/2606308",
-      "string": "Cartwright D C et al 1977 Phys. Rev. A 16 1041"
-    },
-    "Reference/2606311": {
-      "_id": "Reference/2606311",
-      "string": "Zipf E C and McLaughlin R W 1978 Planet. Space Sci. 26 449"
-    },
-    "Reference/2606314": {
-      "_id": "Reference/2606314",
-      "string": "Rapp D and Englander-Golden P 1965 J. Chem. Phys. 43 1464"
-    }
+    "Reference/2606284": "Pitchford L C and Phelps A V 1982 Bull. Am. Phys. Soc. 27 109",
+    "Reference/2606287": "Tachibana K and Phelps A V 1979 JCP 71 3544",
+    "Reference/2606290": "Schulz G J 1962 Phys. Rev. 125 229",
+    "Reference/2606293": "Schulz G J 1964 Phys. Rev. 135 A988",
+    "Reference/2606296": "Schulz G J 1973 Rev. Mod. Phys. 45 423",
+    "Reference/2606299": "Engelhardt A G, Phelps A V and Risk C G 1964 Phys. Rev. 135 A1566",
+    "Reference/2606302": "Pavlovic Z, Boness M J W, Herzenberg A and Schulz G J 1972 Phys. Rev. A 6 676",
+    "Reference/2606305": "Boness M J W and Schulz G J 1973 Phys. Rev. A 8 2883",
+    "Reference/2606308": "Cartwright D C et al 1977 Phys. Rev. A 16 1041",
+    "Reference/2606311": "Zipf E C and McLaughlin R W 1978 Planet. Space Sci. 26 449",
+    "Reference/2606314": "Rapp D and Englander-Golden P 1965 J. Chem. Phys. 43 1464"
   }
 }
-

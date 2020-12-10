@@ -79,12 +79,12 @@
           "parameters": ["m/M = 0.0000136", "complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "Ar{^1S_0}" }
             ],
             "reversible": false,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "Ar{^1S_0}" }
             ],
             "type_tags": ["Effective"]
@@ -132,12 +132,12 @@
           "parameters": ["complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "Ar{^1S_0}" }
             ],
             "reversible": false,
             "rhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "Ar{*}" }
             ],
             "type_tags": ["Electronic"]
@@ -182,12 +182,12 @@
           "parameters": ["complete set"],
           "reaction": {
             "lhs": [
-              { "count": 1, "state": "e^-" },
+              { "count": 1, "state": "e" },
               { "count": 1, "state": "Ar{^1S_0}" }
             ],
             "reversible": false,
             "rhs": [
-              { "count": 2, "state": "e^-" },
+              { "count": 2, "state": "e" },
               { "count": 1, "state": "Ar^+" }
             ],
             "type_tags": ["Ionization"]
@@ -201,7 +201,7 @@
     }
   ],
   "states": {
-    "e^-": { "charge": -1, "id": "e^-", "particle": "e" },
+    "e": { "charge": -1, "id": "e", "particle": "e" },
     "Ar{^1S_0}": {
       "charge": 0,
       "electronic": [
