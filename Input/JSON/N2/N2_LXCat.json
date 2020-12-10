@@ -1,9 +1,9 @@
 {
   "sets": [
     {
-      "_id": "CrossSectionSet/2591729",
+      "_id": "CrossSectionSet/2605946",
       "complete": true,
-      "description": "J. Loureiro and C.M. Ferreira, ''Coupled electron energy and vibrational distribution functions in stationary N2 discharges'' 1986 J. Phys. D 19 17. The complete cross sections set was compiled mostly from L.C. Pitchford and A.V.  Phelps 1982 Bull. Am. Phys. Soc. 27 109 and K. Tachibana and A.V. Phelps 1979 J. Chem. Phys. 71 3544.  The cross sections were originally limited to 40 eV kinetic energy, and were later extended to 1 keV using information from the databases BIAGI-v8.9 and PHELPS. The thresholds of vibrational cross sections for transitions from ground-state, N2(X,v=0) --> N2(X,v') (1 <= v' <= 10), correspond to an anharmonic distribution of energy levels, close to the one obtained by assuming a Morse potential. When this complete set is used in a two-term Boltzmann solver (choosing a linear interpolation scheme), it yields calculated swarm parameters in good agreement with measurements for E/N values between 1 and 1000 Td.  For E/N < 1 Td, the set must be further completed to include rotational excitation mechanisms (see below), in order to reproduce measured swarm data.  IMPORTANT NOTICE ABOUT ROTATIONAL TRANSITIONS This set is to be completed with the rotational cross sections for transitions N2(X,v=0,J) --> N2(X,v=0,J+2) (J=0,1,.,30), available in this database under group N2-rot (see N2-rot description for more details). When the full cross section set for N2 (containing momentum-transfer, and electronic excitation and ionization from ground-state) and N2-rot (including the rotational excitation / deexcitation to/from the N2(J=0), N2(J=1),.., N2(J=32) states) are used in a two-term Boltzmann solver, one obtains calculated swarm parameters in good agreement with measurements over a large range of E/N values (1e-4 to 1000 Td).",
+      "description": "J. Loureiro and C.M. Ferreira, ''Coupled electron energy and vibrational distribution functions in stationary N2 discharges'' 1986 J. Phys. D 19 17. The complete cross sections set was compiled mostly from L.C. Pitchford and A.V. Phelps 1982 Bull. Am. Phys. Soc. 27 109 and K. Tachibana and A.V. Phelps 1979 J. Chem. Phys. 71 3544. The cross sections were originally limited to 40 eV kinetic energy, and were later extended to 1 keV using information from the databases BIAGI-v8.9 and PHELPS. The thresholds of vibrational cross sections for transitions from ground-state, N2(X,v=0) --> N2(X,v') (1 <= v' <= 10), correspond to an anharmonic distribution of energy levels, close to the one obtained by assuming a Morse potential. When this complete set is used in a two-term Boltzmann solver (choosing a linear interpolation scheme), it yields calculated swarm parameters in good agreement with measurements for E/N values between 1 and 1000 Td. For E/N < 1 Td, the set must be further completed to include rotational excitation mechanisms (see below), in order to reproduce measured swarm data.\nIMPORTANT NOTICE ABOUT ROTATIONAL TRANSITIONS\nThis set is to be completed with the rotational cross sections for transitions N2(X,v=0,J) --> N2(X,v=0,J+2) (J=0,1,.,30), available in this database under group N2-rot (see N2-rot description for more details). When the full cross section set for N2 (containing momentum-transfer, and electronic excitation and ionization from ground-state) and N2-rot (including the rotational excitation / deexcitation to/from the N2(J=0), N2(J=1),.., N2(J=32) states) are used in a two-term Boltzmann solver, one obtains calculated swarm parameters in good agreement with measurements over a large range of E/N values (1e-4 to 1000 Td).",
       "name": "N2",
       "processes": [
         {
@@ -134,7 +134,7 @@
           },
           "threshold": 0,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067", "Reference/2592070"]
+          "reference": ["Reference/2606284", "Reference/2606287"]
         },
         {
           "data": [
@@ -481,13 +481,13 @@
           "threshold": 0.3,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076",
-            "Reference/2592079",
-            "Reference/2592082",
-            "Reference/2592085"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293",
+            "Reference/2606296",
+            "Reference/2606299",
+            "Reference/2606302"
           ]
         },
         {
@@ -532,10 +532,10 @@
           "threshold": 0.6,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -576,10 +576,10 @@
           "threshold": 0.9,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -618,10 +618,10 @@
           "threshold": 1.1,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -660,10 +660,10 @@
           "threshold": 1.4,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -699,10 +699,10 @@
           "threshold": 1.7,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -740,10 +740,10 @@
           "threshold": 2,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -779,10 +779,10 @@
           "threshold": 2.2,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293"
           ]
         },
         {
@@ -828,11 +828,11 @@
           "threshold": 2.5,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076",
-            "Reference/2592088"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293",
+            "Reference/2606305"
           ]
         },
         {
@@ -870,11 +870,11 @@
           "threshold": 2.7,
           "units": ["eV", "m2"],
           "reference": [
-            "Reference/2592067",
-            "Reference/2592070",
-            "Reference/2592073",
-            "Reference/2592076",
-            "Reference/2592088"
+            "Reference/2606284",
+            "Reference/2606287",
+            "Reference/2606290",
+            "Reference/2606293",
+            "Reference/2606305"
           ]
         },
         {
@@ -1262,7 +1262,7 @@
           },
           "threshold": 6.2,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -1641,7 +1641,7 @@
           },
           "threshold": 7,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -2375,7 +2375,7 @@
           },
           "threshold": 7.4,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -2909,7 +2909,7 @@
           },
           "threshold": 7.4,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -3281,7 +3281,7 @@
           },
           "threshold": 7.8,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -4021,7 +4021,7 @@
           },
           "threshold": 8.2,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -4609,7 +4609,7 @@
           },
           "threshold": 8.4,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -4955,7 +4955,7 @@
           },
           "threshold": 8.6,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -5456,7 +5456,7 @@
           },
           "threshold": 8.9,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592091"]
+          "reference": ["Reference/2606308"]
         },
         {
           "data": [
@@ -5775,7 +5775,7 @@
           },
           "threshold": 11,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -6164,7 +6164,7 @@
           },
           "threshold": 11.8,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -6473,7 +6473,7 @@
           },
           "threshold": 12.2,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592067"]
+          "reference": ["Reference/2606284"]
         },
         {
           "data": [
@@ -6775,7 +6775,7 @@
           },
           "threshold": 13,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592094"]
+          "reference": ["Reference/2606311"]
         },
         {
           "data": [
@@ -7052,14 +7052,14 @@
           },
           "threshold": 15.6,
           "units": ["eV", "m2"],
-          "reference": ["Reference/2592097"]
+          "reference": ["Reference/2606314"]
         }
       ],
       "contributor": "IST-Lisbon"
     }
   ],
   "states": {
-    "e^-": { "charge": -1, "id": "e^-", "particle": "e" },
+    "e^-": { "charge": -1, "particle": "e" },
     "N2{X^1S_g^+}": {
       "charge": 0,
       "electronic": [
@@ -7072,7 +7072,6 @@
           "summary": "X^1S_g^+"
         }
       ],
-      "id": "N2{X^1S_g^+}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7089,7 +7088,6 @@
           "vibrational": [{ "v": 0, "summary": "0" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=0}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7106,7 +7104,6 @@
           "vibrational": [{ "v": 1, "summary": "1" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=1}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7123,7 +7120,6 @@
           "vibrational": [{ "v": 2, "summary": "2" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=2}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7140,7 +7136,6 @@
           "vibrational": [{ "v": 3, "summary": "3" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=3}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7157,7 +7152,6 @@
           "vibrational": [{ "v": 4, "summary": "4" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=4}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7174,7 +7168,6 @@
           "vibrational": [{ "v": 5, "summary": "5" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=5}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7191,7 +7184,6 @@
           "vibrational": [{ "v": 6, "summary": "6" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=6}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7208,7 +7200,6 @@
           "vibrational": [{ "v": 7, "summary": "7" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=7}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7225,7 +7216,6 @@
           "vibrational": [{ "v": 8, "summary": "8" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=8}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7242,7 +7232,6 @@
           "vibrational": [{ "v": 9, "summary": "9" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=9}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7259,7 +7248,6 @@
           "vibrational": [{ "v": 10, "summary": "10" }]
         }
       ],
-      "id": "N2{X^1S_g^+{v=10}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7282,7 +7270,6 @@
           "summary": "A^3S_u^+"
         }
       ],
-      "id": "N2{A^3S_u^+{v=0|1|2|3|4}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7305,7 +7292,6 @@
           "summary": "A^3S_u^+"
         }
       ],
-      "id": "N2{A^3S_u^+{v=5|6|7|8|9}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7314,7 +7300,6 @@
       "electronic": [
         { "e": "B", "Lambda": 1, "S": 1, "parity": "g", "summary": "B^3P_g" }
       ],
-      "id": "N2{B^3P_g}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7323,7 +7308,6 @@
       "electronic": [
         { "e": "W", "Lambda": 2, "S": 1, "parity": "u", "summary": "W^3D_u" }
       ],
-      "id": "N2{W^3D_u}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7340,7 +7324,6 @@
           "vibrational": [{ "v": "10+", "summary": "10+" }]
         }
       ],
-      "id": "N2{A^3S_u^+{v=10+}}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7356,7 +7339,6 @@
           "summary": "B'^3S_u^-"
         }
       ],
-      "id": "N2{B'^3S_u^-}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7372,7 +7354,6 @@
           "summary": "a'^1S_u^-"
         }
       ],
-      "id": "N2{a'^1S_u^-}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7381,7 +7362,6 @@
       "electronic": [
         { "e": "a", "Lambda": 1, "S": 0, "parity": "g", "summary": "a^1P_g" }
       ],
-      "id": "N2{a^1P_g}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7390,7 +7370,6 @@
       "electronic": [
         { "e": "w", "Lambda": 2, "S": 0, "parity": "u", "summary": "w^1D_u" }
       ],
-      "id": "N2{w^1D_u}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7399,7 +7378,6 @@
       "electronic": [
         { "e": "C", "Lambda": 1, "S": 1, "parity": "u", "summary": "C^3P_u" }
       ],
-      "id": "N2{C^3P_u}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7415,7 +7393,6 @@
           "summary": "E^3S_g^+"
         }
       ],
-      "id": "N2{E^3S_g^+}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7431,14 +7408,12 @@
           "summary": "a''^1S_g^+"
         }
       ],
-      "id": "N2{a''^1S_g^+}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
     "N2{sing-sup}": {
       "charge": 0,
       "electronic": [{ "e": "sing-sup", "summary": "sing-sup" }],
-      "id": "N2{sing-sup}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     },
@@ -7454,54 +7429,53 @@
           "summary": "X^2S_g^+"
         }
       ],
-      "id": "N2^+{X^2S_g^+}",
       "particle": "N2",
       "type": "HomonuclearDiatom"
     }
   },
   "references": {
-    "Reference/2592067": {
-      "_id": "Reference/2592067",
+    "Reference/2606284": {
+      "_id": "Reference/2606284",
       "string": "Pitchford L C and Phelps A V 1982 Bull. Am. Phys. Soc. 27 109"
     },
-    "Reference/2592070": {
-      "_id": "Reference/2592070",
+    "Reference/2606287": {
+      "_id": "Reference/2606287",
       "string": "Tachibana K and Phelps A V 1979 JCP 71 3544"
     },
-    "Reference/2592073": {
-      "_id": "Reference/2592073",
+    "Reference/2606290": {
+      "_id": "Reference/2606290",
       "string": "Schulz G J 1962 Phys. Rev. 125 229"
     },
-    "Reference/2592076": {
-      "_id": "Reference/2592076",
+    "Reference/2606293": {
+      "_id": "Reference/2606293",
       "string": "Schulz G J 1964 Phys. Rev. 135 A988"
     },
-    "Reference/2592079": {
-      "_id": "Reference/2592079",
+    "Reference/2606296": {
+      "_id": "Reference/2606296",
       "string": "Schulz G J 1973 Rev. Mod. Phys. 45 423"
     },
-    "Reference/2592082": {
-      "_id": "Reference/2592082",
+    "Reference/2606299": {
+      "_id": "Reference/2606299",
       "string": "Engelhardt A G, Phelps A V and Risk C G 1964 Phys. Rev. 135 A1566"
     },
-    "Reference/2592085": {
-      "_id": "Reference/2592085",
+    "Reference/2606302": {
+      "_id": "Reference/2606302",
       "string": "Pavlovic Z, Boness M J W, Herzenberg A and Schulz G J 1972 Phys. Rev. A 6 676"
     },
-    "Reference/2592088": {
-      "_id": "Reference/2592088",
+    "Reference/2606305": {
+      "_id": "Reference/2606305",
       "string": "Boness M J W and Schulz G J 1973 Phys. Rev. A 8 2883"
     },
-    "Reference/2592091": {
-      "_id": "Reference/2592091",
+    "Reference/2606308": {
+      "_id": "Reference/2606308",
       "string": "Cartwright D C et al 1977 Phys. Rev. A 16 1041"
     },
-    "Reference/2592094": {
-      "_id": "Reference/2592094",
+    "Reference/2606311": {
+      "_id": "Reference/2606311",
       "string": "Zipf E C and McLaughlin R W 1978 Planet. Space Sci. 26 449"
     },
-    "Reference/2592097": {
-      "_id": "Reference/2592097",
+    "Reference/2606314": {
+      "_id": "Reference/2606314",
       "string": "Rapp D and Englander-Golden P 1965 J. Chem. Phys. 43 1464"
     }
   }
