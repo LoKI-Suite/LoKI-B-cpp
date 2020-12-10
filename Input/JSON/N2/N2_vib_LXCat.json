@@ -4671,10 +4671,6 @@
     }
   },
   "references": {
-    "Reference/2607170": {
-      "_id": "Reference/2607170",
-      "string": "Loureiro and Ferreira C M 1986 J. Phys. D 19 17"
-    }
+    "Reference/2607170": "Loureiro and Ferreira C M 1986 J. Phys. D 19 17"
   }
 }
-

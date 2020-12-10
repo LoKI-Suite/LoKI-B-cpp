@@ -2687,10 +2687,7 @@
     }
   },
   "references": {
-    "Reference/2608803": {
-      "_id": "Reference/2608803",
-      "string": "E. Gerjuoy and S. Stein 1955 Phys. Rev. 97 1671"
-    }
+    "Reference/2608803": "E. Gerjuoy and S. Stein 1955 Phys. Rev. 97 1671"
   }
 }
 
