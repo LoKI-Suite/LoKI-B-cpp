@@ -254,18 +254,7 @@ void EedfGasMixture::loadCollisions(const std::vector<std::string> &files, Grid 
         if (file.size() >= 5 && file.substr(file.size() - 5) == ".json")
         {
             const json_type cnf = read_json_from_file(inputPath + file);
-            // 1. read the states
-            const json_type &scnf = cnf.at("states");
-            for (json_type::const_iterator it = scnf.begin(); it != scnf.end(); ++it)
-            {
-                const StateEntry entry{entryFromJSON(*it)};
-                ensureState(entry);
-            }
-            // 2. read the processes
-            for (json_type::const_iterator it = cnf.at("processes").begin(); it != cnf.at("processes").end(); ++it)
-            {
-                createCollision(*it, energyGrid, isExtra);
-            }
+            loadCollisions(cnf, energyGrid, isExtra);
         }
         else
         {
@@ -290,13 +279,16 @@ void EedfGasMixture::loadCollisions(const json_type &mcnf, Grid *energyGrid, boo
     const json_type &scnf = mcnf.at("states");
     for (json_type::const_iterator it = scnf.begin(); it != scnf.end(); ++it)
     {
-        const StateEntry entry{entryFromJSON(*it)};
+        const StateEntry entry{entryFromJSON(it.key(),it.value())};
         ensureState(entry);
     }
     // 2. read the processes
-    for (json_type::const_iterator it = mcnf.at("processes").begin(); it != mcnf.at("processes").end(); ++it)
+    for (json_type::const_iterator sit = mcnf.at("sets").begin(); sit != mcnf.at("sets").end(); ++sit)
     {
-        createCollision(*it, energyGrid, isExtra);
+        for (json_type::const_iterator it = sit->at("processes").begin(); it != sit->at("processes").end(); ++it)
+        {
+            createCollision(*it, energyGrid, isExtra);
+        }
     }
 #if 0
         std::cout << "List of collisions" << std::endl;

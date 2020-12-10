@@ -50,7 +50,7 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
                        std::vector<uint16_t> *stoiCoeff);
 
 /// \todo Make this a StateEntry constructor
-StateEntry entryFromJSON(const json_type &cnf);
+StateEntry entryFromJSON(const std::string& id, const json_type &cnf);
 
 /** Extracts a StateEntry object from a given string and returns it. Note that this function
  *  is specifically used when loading state properties, since then the states can contain
