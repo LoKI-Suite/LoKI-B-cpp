@@ -432,15 +432,21 @@ void emit_process(const json_type& pnode, std::ostream& os)
     os << '\n';
 }
 
-/** No string preference what this should be. 80 is 'classic',
+/** No strong preference what this should be. 80 is 'classic',
  *  but somewhat small on terminals that are less than 25 years old.
  */
-const std::string::size_type line_length = 100;
+const std::string::size_type line_length = 80;
+const std::string::size_type safety_length = 10;
 
 void format_meta(std::ostream& os, const std::string& prefix, std::string str)
 {
+    if (prefix.size()+safety_length>=line_length)
+    {
+        throw std::runtime_error("format: prefix to long. Increase line_length.");
+    }
     bool first=true;
     const std::string::size_type part_length = line_length - prefix.size();
+    const std::string::size_type break_after = part_length-safety_length;
     while (!str.empty())
     {
         const std::string::size_type nl_pos = str.find("\n");
@@ -460,7 +466,7 @@ void format_meta(std::ostream& os, const std::string& prefix, std::string str)
         }
         else
         {
-            const std::string::size_type pos = std::min(nl_pos,str.find_first_of(" \t",70));
+            const std::string::size_type pos = std::min(nl_pos,str.find_first_of(" \t",break_after));
             os << str.substr(0,pos);
             str = str.substr(pos+1);
         }
