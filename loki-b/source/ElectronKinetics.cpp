@@ -484,34 +484,38 @@ void ElectronKinetics::evaluateCAROperator()
      * equation 6c, the following symbols are used for a gas k:
      *
      * B_k: rotationalConstant
-     * Q_{k,au}: quadruple moment (in units of e a_0^2, a_0 is the Bohr radius)
-     *  [NOTE: electricQuadrupoleMoment in the code is in SI units Cm^2].
-     *
+     * Q_{k,au}: quadruple moment in (atomic) units e*a_0^2. Here e is
+     *   the elementary charge and a_0 the Bohr radius. (NOTE that the
+     *   variable electricQuadrupoleMoment in the code is in SI units Cm^2.)
      * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see references
-     *
      *   Tejero (2019), below equation 6d
      *   Ridenti (2015), below equation 8b
      *   Gerjuoy, Stein (1955), equation 20 (not sigma_0 per se).
      *
-     * mixtures the terms B_k*sigma_k in the expression for g_CAR must be
-     * weighted with the molar fractions,
+     * For mixtures, the terms B_k*sigma_k in the expression for g_CAR must be
+     * weighted with the molar fractions. The code first calculates this weighted
+     * sum sigma0B, which should give
      *
      *   sum_k chi_k*B_k*sigma_k = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}^2
      *
-     * in the code the square is missing on Q_{k,au}, it appears. Without that,
-     * we have, with Q_{k,au} = Q_k/(e*a_0^2,
+     * In the code the square is missing on Q_{k,au}, it appears. Without that,
+     * we have, with Q_{k,au} = Q_k/(e*a_0^2),
      *
      *      (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}
      *    = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_k/(e*a_0^2)
      *    = (8.*pi/(15*e)) * sum_k chi_k*B_k*Q_k
      *
-     *  which is the expression that is found in the code (not yet changed).
+     *  which is the expression that is actually found in the code. This appears
+     *  to be a bug.
      */
-    /** \todo In the code all the G's are divided by the (total) gas particle
-     *  density, compared to the LoKI-B paper \cite Tejero2019, I believe.
+    /** \todo In the code all the G's are divided by N*sqrt(2*e/m_e),
+     *  compared to the LoKI-B paper \cite Tejero2019, it seems.
      *  That explains why, in the code below, you see gas->fraction,
      *  whereas in the paper you see N_k. It would be good to have a
      *  document where the equations are written *exactly* as in the code.
+     *  Also g is defined without the minus sign that appears in the definition
+     *  in the paper. All in all, CARmatrix seems to be defined such that
+     *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
      */
     const double Tg = workingConditions->gasTemperature();
     const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();

@@ -432,6 +432,42 @@ void emit_process(const json_type& pnode, std::ostream& os)
     os << '\n';
 }
 
+/** No string preference what this should be. 80 is 'classic',
+ *  but somewhat small on terminals that are less than 25 years old.
+ */
+const std::string::size_type line_length = 100;
+
+void format_meta(std::ostream& os, const std::string& prefix, std::string str)
+{
+    bool first=true;
+    const std::string::size_type part_length = line_length - prefix.size();
+    while (!str.empty())
+    {
+        const std::string::size_type nl_pos = str.find("\n");
+        if (first)
+        {
+            os << prefix;
+            first = false;
+        }
+        else
+        {
+            os << std::string(prefix.size(),' ');
+        }
+        if (str.size()<=part_length && nl_pos==std::string::npos)
+        {
+            os << str;
+            str = std::string{};
+        }
+        else
+        {
+            const std::string::size_type pos = std::min(nl_pos,str.find_first_of(" \t",70));
+            os << str.substr(0,pos);
+            str = str.substr(pos+1);
+        }
+        os << std::endl;
+    }
+}
+
 /** Write the JSON (v6) document \a src to \a os in LXCat format.
  *
  *  \todo The general LXCat header is not yet written.
@@ -460,16 +496,23 @@ void emit_process(const json_type& pnode, std::ostream& os)
 void json2lxcat(const json_type& src, std::ostream& os)
 {
     unsigned ndx=0;
-    for (const auto& pcnf: src.at("processes"))
+    for (const auto& sit: src.at("sets"))
     {
-        try {
-            emit_process(pcnf,os);
-            ++ndx;
-        }
-        catch (std::exception& exc)
+        os << std::string(line_length,'*') << '\n' << '\n';
+        format_meta(os,"COMMENT: ",sit.at("description"));
+        os << '\n';
+        os << std::string(line_length,'*') << '\n' << '\n';
+        for (const auto& pcnf: sit.at("processes"))
         {
-            throw std::runtime_error("While parsing process #"
-		+ std::to_string(ndx) + ": " + std::string(exc.what()));
+            try {
+                emit_process(pcnf,os);
+                ++ndx;
+            }
+            catch (std::exception& exc)
+            {
+                throw std::runtime_error("While parsing process #"
+    		+ std::to_string(ndx) + ": " + std::string(exc.what()));
+            }
         }
     }
 }
