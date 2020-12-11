@@ -375,15 +375,15 @@ void EedfGasMixture::createCollision(const json_type &pcnf, Grid *energyGrid, bo
          */
         if (collision.get())
         {
-            EedfGas &eedfGas = static_cast<EedfGas &>(collision->getTarget()->gas());
-            eedfGas.addCollision(collision.get(), isExtra);
-            m_collisions.push_back({collision.get(),isExtra});
-            m_hasCollisions[static_cast<uint8_t>(collision->type())] = true;
+            EedfCollision* coll = collision.release();
+            EedfGas &eedfGas = static_cast<EedfGas &>(coll->getTarget()->gas());
+            eedfGas.addCollision(coll, isExtra);
+            m_collisions.push_back({coll,isExtra});
+            m_hasCollisions[static_cast<uint8_t>(coll->type())] = true;
 
             const bool isElasticOrEffective =
-                (collision->type() == CollisionType::effective || collision->type() == CollisionType::elastic);
-            collision->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
-            collision.release();
+                (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
+            coll->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
         }
     }
     catch (std::exception &exc)
