@@ -13,7 +13,7 @@ void writeGnuplot(std::ostream& os, const std::string &title, const std::string 
     os << "set logscale y" << std::endl;
     // os << "set format y '%g'" << std::endl;
     os << "plot '-' w l" << std::endl;
-    for (uint32_t i = 0; i < x.size(); ++i)
+    for (Vector::Index i = 0; i < x.size(); ++i)
     {
         os << x[i] << "\t" << y[i] << '\n';
     }
