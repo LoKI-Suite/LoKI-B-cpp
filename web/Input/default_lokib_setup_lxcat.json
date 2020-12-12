@@ -1,88 +1,85 @@
 {
-	"workingConditions": {
-		"reducedField": 50,
-		"_reducedField": "linspace(50,100,6)",
-		"_reducedField": { "value": 50 },
-		"_reducedField": [ "linspace", 50, 100, 6 ],
-		"_reducedField": { "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6} },
-		"electronTemperature": "0.03",
-		"excitationFrequency": 0,
-		"gasPressure": 133.32,
-		"gasTemperature": 300,
-		"electronDensity": 1e19,
-		"chamberLength": 1.0,
-		"chamberRadius": 1.0
-	},
-	"electronKinetics":	{
-		"isOn": true,
-		"eedfType": "boltzmann",
-		"ionizationOperatorType": "usingSDCS",
-		"growthModelType": "temporal",
-		"includeEECollisions": false,
-		"LXCatFiles": [
-			"http://localhost:3000/test/by_set_name?name=N2_LXCat",
-			"http://localhost:3000/test/by_set_name?name=N2_rot_LXCat"
-		],
-		"_LXCatFiles": [
-			"JSON/v5/N2/with_ids/N2_LXCat.json",
-			"JSON/v5/N2/with_ids/N2_rot_LXCat.json"
-		],
-		"_LXCatFiles": [
-			"Nitrogen/N2_LXCat.txt",
-			"Nitrogen/N2_rot_LXCat.txt"
-		],
-		"gasProperties": {
-			"mass": "masses.txt",
-			"fraction": [
-				"N2 = 1"
-			],
-			"harmonicFrequency": "harmonicFrequencies.txt",
-			"anharmonicFrequency": "anharmonicFrequencies.txt",
-			"rotationalConstant": "rotationalConstants.txt",
-			"electricQuadrupoleMoment": "quadrupoleMoment.txt",
-			"OPBParameter": "OPBParameter.txt"
-		},
-		"stateProperties": {
-			"energy": [
-				"N2(X,v=*) = harmonicOscillatorEnergy",
-				"N2(X,v=0,J=*) = rigidRotorEnergy"
-			],
-			"statisticalWeight": [
-				"N2(X,v=*) = 1.0",
-				"N2(X,v=0,J=*) = rotationalDegeneracy_N2"
-			],
-			"population": [
-				"N2(X) = 1.0",
-				"N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature",
-				"N2_vibpop.txt"
-			]
-		},
-		"numerics": {
-			"energyGrid": {
-				"maxEnergy": 20,
-				"cellNumber": 1000
-			},
-			"maxPowerBalanceRelError": 1e-9,
-			"nonLinearRoutines": {
-				"algorithm": "mixingDirectSolutions",
-				"mixingParameter": 0.7,
-				"maxEedfRelError": 1e-9
-			}
-		}
-	},
-	"gui": {
-		"isOn": false,
-		"refreshFrequency": 1
-	},
-	"output": {
-		"isOn": false,
-		"folder": "simulation",
-		"dataFiles": [
-			"eedf",
-			"swarmParameters",
-			"rateCoefficients",
-			"powerBalance",
-			"lookUpTable"
-		]
-	}
+  "workingConditions": {
+    "reducedField": 50,
+    "_reducedField": "linspace(50,100,6)",
+    "_reducedField": { "value": 50 },
+    "_reducedField": ["linspace", 50, 100, 6],
+    "_reducedField": {
+      "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6 }
+    },
+    "electronTemperature": "0.03",
+    "excitationFrequency": 0,
+    "gasPressure": 133.32,
+    "gasTemperature": 300,
+    "electronDensity": 1e19,
+    "chamberLength": 1.0,
+    "chamberRadius": 1.0
+  },
+  "electronKinetics": {
+    "isOn": true,
+    "eedfType": "boltzmann",
+    "ionizationOperatorType": "usingSDCS",
+    "growthModelType": "temporal",
+    "includeEECollisions": false,
+    "LXCatFiles": [
+      "http://localhost:3000/cross_section/set/by_name?name=N2&contributor=IST-Lisbon",
+      "http://localhost:3000/cross_section/set/by_name?name=N2-rot&contributor=IST-Lisbon"
+    ],
+    "_LXCatFiles": [
+      "JSON/v5/N2/with_ids/N2_LXCat.json",
+      "JSON/v5/N2/with_ids/N2_rot_LXCat.json"
+    ],
+    "_LXCatFiles": ["Nitrogen/N2_LXCat.txt", "Nitrogen/N2_rot_LXCat.txt"],
+    "gasProperties": {
+      "mass": "masses.txt",
+      "fraction": ["N2 = 1"],
+      "harmonicFrequency": "harmonicFrequencies.txt",
+      "anharmonicFrequency": "anharmonicFrequencies.txt",
+      "rotationalConstant": "rotationalConstants.txt",
+      "electricQuadrupoleMoment": "quadrupoleMoment.txt",
+      "OPBParameter": "OPBParameter.txt"
+    },
+    "stateProperties": {
+      "energy": [
+        "N2(X,v=*) = harmonicOscillatorEnergy",
+        "N2(X,v=0,J=*) = rigidRotorEnergy"
+      ],
+      "statisticalWeight": [
+        "N2(X,v=*) = 1.0",
+        "N2(X,v=0,J=*) = rotationalDegeneracy_N2"
+      ],
+      "population": [
+        "N2(X) = 1.0",
+        "N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature",
+        "N2_vibpop.txt"
+      ]
+    },
+    "numerics": {
+      "energyGrid": {
+        "maxEnergy": 20,
+        "cellNumber": 1000
+      },
+      "maxPowerBalanceRelError": 1e-9,
+      "nonLinearRoutines": {
+        "algorithm": "mixingDirectSolutions",
+        "mixingParameter": 0.7,
+        "maxEedfRelError": 1e-9
+      }
+    }
+  },
+  "gui": {
+    "isOn": false,
+    "refreshFrequency": 1
+  },
+  "output": {
+    "isOn": false,
+    "folder": "simulation",
+    "dataFiles": [
+      "eedf",
+      "swarmParameters",
+      "rateCoefficients",
+      "powerBalance",
+      "lookUpTable"
+    ]
+  }
 }
