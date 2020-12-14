@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{framed}
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{bm}
@@ -180,59 +181,87 @@ auxiary functions $g_x(u)$.
 
 \subsection{The CAR Implementation}
 
-The implementation of CAR processes needs some attention. There appears to be
-a problem in the code, but this may also be the result of a misunderstanding
-of the definition and/or units of the quantities involved.
-
-The description of the CAR terms can be found in the LoKI-B paper \cite{Tejero2019}
-in equation 6c and in the text just below 6d. There the CAR cross section for a gas
-$k$ is stated to be
+The CAR term in the EBE is described by equation 6c of \cite{Tejero2019}.
+It can be written in the form \eqref{eq:G(g)}, with
+\begin{align}
+  N\gamma g_{CAR} &= -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}, \\
+  c_{CAR} &= k_BT_e/e.
+\end{align}
+The frequency of the CAR cross section for a gas $k$ is presented just below
+equation 6d of \cite{Tejero2019}. Using the definition of the gas fraction
+$\chi_k$ from equation \eqref{eq:gamma} this becomes
 \begin{equation}
-  \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
-  \label{eq:sigma_CAR}
+  \nu_{0,k} = N_k\sqrt{2eu/m_e}\sigma_{0,k} = N\gamma\sqrt{u}\chi_k\sigma_{0,k}
 \end{equation}
-where $a_0$ is the Bohr radius and $Q_k$ is the quadrupole moment of that gas
-{\em in atomic units}, $ea_0^2$.
-This expression is also found in the user manual \cite{Manual_1_0_0} (below
-equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
-equation 8b). Those sources refer to the paper of Gerjuoy and Stein
-\cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
-To emphasize the units of $Q_{k,au}$, we have added the suffix $au$ in equation
-\eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
-
-The electron-neutral collision frequency that corresponds to the CAR cross
-section is presented just below equation 6d of \cite{Tejero2019}, it is given by
-\begin{equation}
-  \nu_{0,k} = N_k\sqrt{2eu/m_e}\sigma_{0,k}.
-\end{equation}
-Using the definitions of $\gamma$ from equation \eqref{eq:gamma} and that of the
-gas fraction $\chi_k$ from equation \eqref{eq:chi_k}, this can be weritten as
-\begin{equation}
-  \nu_{0,k} = N\gamma\sqrt{u}\chi_k\sigma_{0,k}.
-\end{equation}
-This frequency appears in equation 6c of \cite{Tejero2019} in a factor
-\[
-  N\gamma g_{CAR} = -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}
-  = -\sum\limits_k 4B_k N\gamma u\chi_k\sigma_{0,k}
-  = -N\gamma 4u\sum\limits_k \chi_k\sigma_{0,k}B_k,
-\]
-which results in
+and substitution in the expression for $g_{CAR}$ yields
 \begin{equation}
   g_{CAR} = -4u\sum\limits_k \chi_k\sigma_{0,k}B_k.
 \end{equation}
 \begin{itemize}
   \item As discussed elsewhere, in the code we find $g_{CAR}$ defined without
-        the minus sign (same is true for other $g_x(u)$;
-  \item In the code the cross section in the expression for $g_{CAR}$ is written as:
-  \[
-    \sigma_{0,k}
-    = \frac{8\pi}{15}\frac{Q_{k}}{e}
-    = \frac{8\pi}{15}\frac{Q_{k}}{ea_0^2}a_0^2
-    = \frac{8\pi}{15}Q_{k,au}a_0^2\quad\mbox{WRONG?}
-  \]
-  {\bf In other words: it is as if the code uses an expression with $Q_{k,au}$ instead
-  of $Q_{k,au}^2$.}
+        the minus sign (same is true for other $g_x(u)$.
 \end{itemize}
+
+The CAR cross section for a gas $k$ can be found in the LoKI-B paper \cite{Tejero2019}
+in the text below equation 6d, which states
+\begin{equation}
+  \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
+  \label{eq:sigma_CAR}
+\end{equation}
+where $a_0$ is the Bohr radius and $Q_{k,au}$ is the quadrupole moment of that
+gas {\em in atomic units} ($ea_0^2$).
+This expression is also found in the user manual \cite{Manual_1_0_0} (below
+equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
+equation 8b). Those sources refer to the paper of Gerjuoy and Stein
+\cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
+To emphasize that $Q_{k,au}$ is a dimensionless number (the numerical value
+that arises when atomic units are used), we have added the suffix $au$ in equation
+\eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
+
+Substitution of this expression in \eqref{eq:g_CAR} gives
+\begin{equation}
+  4u\sum\limits_k\chi_k\sigma_{0,k}B_k = 4u\frac{8\pi}{15}a_0^2\sum\limits_k \chi_k Q_{k,au}^2B_k.
+\end{equation}
+
+\begin{framed}
+In version 1.0.0 of the LoKI-B code (MATLAB), $\sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}a_0^2$,
+was used (without the square on $Q_{k,au}$). Since $Q_{k,au}=Q_k/(ea_0^2)$, where
+$Q_k$ is the value in SI units, that would result in $\sigma_{0,k}=(8\pi/15)Q_k/e$
+and in
+\begin{equation}
+  \sum\limits_k\chi_k\sigma_{0,k}B_k = \frac{8\pi}{15}\frac{1}{e}\sum\limits_k \chi_k Q_kB_k,
+\end{equation}
+and this is what was found in the code in \SRC{Boltzmann.m} line 423,
+in function \SRC{evaluateCAROperator}:
+\begin{lstlisting}[language=matlab]
+sigma0B = 0;
+for gasName = boltzmann.CARgases
+  gasID = Gas.find(gasName, boltzmann.gasArray);
+  gas = boltzmann.gasArray(gasID);
+  sigma0B = sigma0B + gas.fraction*gas.electricQuadrupoleMoment*gas.rotationalConstant;
+end
+sigma0B = 8.0*pi*sigma0B/(15.0*Constant.electronCharge);
+\end{lstlisting}
+(Note that in the MATLAB code indeed \SRC{electricQuadrupoleMoment} is expressed
+in SI units, see file \SRC{Input/Databases/quadrupoleMoment.txt}.)
+
+Since $Q_{k,au}$ is usually of order unity, it is no surprise
+that this could go unnoticed. The implementation has been corrected to
+\begin{lstlisting}[language=matlab]
+a02 = Constant.bohrRadius*Constant.bohrRadius:
+sigma0B = 0;
+for gasName = boltzmann.CARgases
+  gasID = Gas.find(gasName, boltzmann.gasArray);
+  gas = boltzmann.gasArray(gasID);
+  Qau = gas.electricQuadrupoleMoment/(Constant.electronCharge*a02);
+  sigma0B = sigma0B + gas.fraction*Qau*Qau*gas.rotationalConstant;
+end
+sigma0B = (8.0*pi*a02/15.0)*sigma0B;
+\end{lstlisting}
+Previous versions of the C++ implementation had the same problem, it
+has been fixed along the same lines.
+
+\end{framed}
 
 
 \section{Discretization}

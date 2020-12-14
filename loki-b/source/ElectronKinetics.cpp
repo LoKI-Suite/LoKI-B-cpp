@@ -424,16 +424,15 @@ void ElectronKinetics::evaluateMatrix()
 
 void ElectronKinetics::evaluateElasticOperator()
 {
-    const double Tg = workingConditions->gasTemperature();
-
-    const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
-    const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
-
     g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.elasticCrossSection()) * 2;
-
     g_c[0] = 0.;
     g_c[g_c.size() - 1] = 0.;
 
+    const double Tg = workingConditions->gasTemperature();
+    const double c_el = Constant::kBeV * Tg;
+
+    const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
+    const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         elasticMatrix.coeffRef(k, k) = -(g_c[k] * factor1 + g_c[k + 1] * factor2);
@@ -478,6 +477,15 @@ void ElectronKinetics::evaluateFieldOperator()
     }
 }
 
+/** \todo In the code all the G's are divided by N*sqrt(2*e/m_e),
+ *  compared to the LoKI-B paper \cite Tejero2019, it seems.
+ *  That explains why, in the code below, you see gas->fraction,
+ *  whereas in the paper you see N_k. It would be good to have a
+ *  document where the equations are written *exactly* as in the code.
+ *  Also g is defined without the minus sign that appears in the definition
+ *  in the paper. All in all, CARmatrix seems to be defined such that
+ *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
+ */
 void ElectronKinetics::evaluateCAROperator()
 {
     /* When comparing this with Tejero2019, realize that in that paper,
@@ -487,52 +495,38 @@ void ElectronKinetics::evaluateCAROperator()
      * Q_{k,au}: quadruple moment in (atomic) units e*a_0^2. Here e is
      *   the elementary charge and a_0 the Bohr radius. (NOTE that the
      *   variable electricQuadrupoleMoment in the code is in SI units Cm^2.)
-     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see references
-     *   Tejero (2019), below equation 6d
-     *   Ridenti (2015), below equation 8b
-     *   Gerjuoy, Stein (1955), equation 20 (not sigma_0 per se).
+     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see \cite Tejero below
+     * equation 6d, \cite Ridenti below equation 8b or Gerjuoy and Stein,
+     * equation 20.
      *
      * For mixtures, the terms B_k*sigma_k in the expression for g_CAR must be
      * weighted with the molar fractions. The code first calculates this weighted
-     * sum sigma0B, which should give
+     * sum sigma0B, which gives
      *
      *   sum_k chi_k*B_k*sigma_k = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}^2
      *
-     * In the code the square is missing on Q_{k,au}, it appears. Without that,
-     * we have, with Q_{k,au} = Q_k/(e*a_0^2),
-     *
-     *      (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}
-     *    = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_k/(e*a_0^2)
-     *    = (8.*pi/(15*e)) * sum_k chi_k*B_k*Q_k
-     *
-     *  which is the expression that is actually found in the code. This appears
-     *  to be a bug.
+     * NOTE: in the first public release of LoKI-B Q_{k,au} was used instead
+     *       of Q_{k,au}^2. That will be fixed in version 2.0.0.
      */
-    /** \todo In the code all the G's are divided by N*sqrt(2*e/m_e),
-     *  compared to the LoKI-B paper \cite Tejero2019, it seems.
-     *  That explains why, in the code below, you see gas->fraction,
-     *  whereas in the paper you see N_k. It would be good to have a
-     *  document where the equations are written *exactly* as in the code.
-     *  Also g is defined without the minus sign that appears in the definition
-     *  in the paper. All in all, CARmatrix seems to be defined such that
-     *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
-     */
-    const double Tg = workingConditions->gasTemperature();
-    const double factor1 = (Constant::kBeV * Tg / grid.du() + 0.5) / grid.du();
-    const double factor2 = (Constant::kBeV * Tg / grid.du() - 0.5) / grid.du();
-
+    const double a02 = Constant::bohrRadius*Constant::bohrRadius;
     double sigma0B = 0.;
     for (const auto &gas : mixture.CARGases())
     {
-        sigma0B += gas->fraction * gas->electricQuadrupoleMoment * gas->rotationalConstant;
+        const double Qau = gas->electricQuadrupoleMoment/(Constant::electronCharge*a02);
+        sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
     }
-    sigma0B *= 8. * Constant::pi / (15. * Constant::electronCharge);
+    sigma0B *= (8.*Constant::pi*a02/15.)*sigma0B;
 
     g_CAR = grid.getNodes() * (4. * sigma0B);
     // Boundary conditions. See Tejero2019 below equation 16b.
     g_CAR[0] = 0.;
     g_CAR[grid.nCells()] = 0.;
 
+    const double Tg = workingConditions->gasTemperature();
+    const double c_CAR = Constant::kBeV * Tg;
+
+    const double factor1 = (c_CAR / grid.du() + 0.5) / grid.du();
+    const double factor2 = (c_CAR / grid.du() - 0.5) / grid.du();
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         CARMatrix.coeffRef(k, k) = -(g_CAR[k] * factor1 + g_CAR[k + 1] * factor2);
