@@ -128,6 +128,31 @@ class RangeLogSpace : public Range
     const double log_stop;
 };
 
+/** A range that represents an array of predefined values.
+ */
+class RangeArray : public Range
+{
+  public:
+    RangeArray(const json_type& cnf)
+        : Range(cnf.size())
+    {
+        Log<Message>::Notify("Creating array range size = ", cnf.size());
+        for (auto& v : cnf)
+        {
+            array.push_back(v);
+        }
+    }
+  protected:
+    virtual double get_value(size_type ndx) const override
+    {
+        return array[ndx];
+    }
+
+  private:
+    std::vector<double> array;
+};
+
+
 static Range *createLinLogRange(const std::string &rangeString)
 {
     try
@@ -190,6 +215,10 @@ Range *Range::create(const json_type &cnf)
     if (cnf.type() == json_type::value_t::string)
     {
         return createLinLogRange(cnf);
+    }
+    else if (cnf.type() == json_type::value_t::array)
+    {
+        return new RangeArray(cnf);
     }
     else
     {
