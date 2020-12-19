@@ -41,7 +41,7 @@ namespace loki {
 
 double maxRelDiff(const Vector& v1, const Vector& v2)
 {
-#define LOKIB_USE_OLD_MAXRELDIFF
+//#define LOKIB_USE_OLD_MAXRELDIFF
 #ifdef LOKIB_USE_OLD_MAXRELDIFF
     const double res = ((v2 - v1).cwiseAbs().array() / v2.array()).maxCoeff();
 #else
