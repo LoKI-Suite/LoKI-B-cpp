@@ -1210,7 +1210,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         CIEffNew = eedf.dot(integrandCI);
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1.e-10) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 10e-10) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
