@@ -865,7 +865,7 @@ void ElectronKinetics::mixingDirectSolutions()
 
                 solveEEColl();
 
-                if (((eedfOld - eedf).cwiseAbs().array() / eedfOld.array()).maxCoeff() < maxEedfRelError)
+                if (maxRelDiff(eedf,eedfOld) < maxEedfRelError)
                     break;
 
                 ++globalIter;
@@ -1091,7 +1091,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
         if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
-             ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) ||
+             maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
             hasConverged = true;
@@ -1211,7 +1211,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1.e-10) &&
-             ((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError) ||
+             maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
             hasConverged = true;
@@ -1368,7 +1368,7 @@ void ElectronKinetics::solveEEColl()
 
         const double ratio = std::abs(power.electronElectron / power.reference);
 
-        if (((eedf - eedfNew).cwiseAbs().array() / eedf.array()).maxCoeff() < maxEedfRelError)
+        if (maxRelDiff(eedfNew,eedf) < maxEedfRelError)
         {
             if (std::abs(ratio) < 1.e-9)
             {
