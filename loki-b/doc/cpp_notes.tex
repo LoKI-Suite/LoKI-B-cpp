@@ -442,6 +442,38 @@ $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
 
 \section{Matrices \& Vectors}
 
+\subsection{Calculating the Maximum Relative Difference of Two Vectors}
+
+During the development of the C++ code, a nasty difference between MATLAB
+and C++ was discovered in the handling of NaN (not-a-number values) values,
+that are produced by such operations as $0.0/0.0$, $\infty\cdot 0.0$ and
+$\infty/\infty$, where $\infty$ indicates the platform's \SRC{inf} value.
+
+When looking for the maximum element of an array, MATLAB skips NaN's and
+returns the highes non-NaN element.
+\begin{lstlisting}[language=matlab]
+>> max(abs([0 0]./[1 0]))
+ans =
+     0
+\end{lstlisting}
+On the other hand, C++ with Eigen returns NaN. The last line of the code
+below shows the calculation that was previously in the C++ version of LoKI-B,
+it prints a NaN:
+\begin{lstlisting}[language=matlab]
+    #include <eigen3/Eigen/Dense>
+    ...
+    using Vector = Eigen::VectorXd;
+    Vector ev1(2); ev1[0] = 0.; ev1[0] = 0.;
+    Vector ev2(2); ev2[0] = 1.; ev2[0] = 0.;
+    std::cout << (ev1.array()/ev2.array()).cwiseAbs().maxCoeff() << std::endl;
+\end{lstlisting}
+For this reason, a member \SRC{maxRelDiff} has been introduced. That avoids
+the spurious NaN's by skipping over points for which both values (old and new)
+are different. NOTE that this implements the relative {\em difference}, using
+the averaged absolute values as reference, rather than the olf or new one.
+
+\subsection{Linear Systems, Matrix Inversion}
+
 Eigen, the various Hessenberg-solvers.
 
 \section{Build System}
