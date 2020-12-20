@@ -249,8 +249,8 @@ void ElectronKinetics::solve()
     if (grid.smartGrid())
     {
         const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
-        /// \todo use log(a/b) instead of log(a)-log(b). See if we can avoid the repetition.
-        double decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
+        double decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+        //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
 
         while (decades < smartGrid.minEedfDecay)
         {
@@ -265,7 +265,8 @@ void ElectronKinetics::solve()
                 this->invertLinearMatrix();
             }
 
-            decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
+            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+            //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
         }
 
         while (decades > smartGrid.maxEedfDecay)
@@ -281,7 +282,8 @@ void ElectronKinetics::solve()
                 this->invertLinearMatrix();
             }
 
-            decades = log10(eedf[0]) - log10(eedf[grid.nCells() - 1]);
+            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+            //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
         }
     }
 
@@ -1160,7 +1162,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
-        Log<Message>::Notify("Iteration ", iter);
+ //       Log<Message>::Notify("Iteration ", iter);
 
         const long double growthFactor = CIEffNew / SI::gamma;
 

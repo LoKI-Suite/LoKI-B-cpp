@@ -58,6 +58,34 @@ class ElectronKinetics
     void evaluateSwarmParameters();
     void evaluateFirstAnisotropy();
 
+    /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
+     *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
+     *  Furthermore, calcDecades(v1,v2)=-calcDecades(v2,v1) and in particular,
+     *  for non-zero v we have calcDecades(0,v)=-Inf and calcDecades(v,0)=+Inf;
+     *
+     *  Loki-B uses this function to evaluate the dynamic range of the EEDF, and
+     *  calculate the energy grid accordingly.
+     *
+     *  Note that the abs is needed even if v1,v2 are non-negative. In case of
+     *  underflow, LoKI-B may produce v1>0 and v2=-0. Such signed zero would
+     *  result in v1/v2=-Inf, for which case log(v1/v2)=NaN, where +Inf is desired.
+     *  The old implementation (still present in the MATLAB code) was written
+     *  as log10(v1)-log10(v2). Note that using the mathematical identity
+     *  log10(a)-log10(b) = log10(a/b) could NOT be used, since for positive a
+     *  and b=+/-0.0 the LHS produces log10(a)-(-Inf) = Inf, whereas the right
+     *  hand side would produce log10(+/- Inf) and would depend on the sign of
+     *  the zero: log10(Inf)=Inf, but log10(-Inf)=NaN.
+     *  By using the abs, we can solve this problem and need to evaluate only
+     *  a single logarithm.
+     *
+     *  \author Jan van Dijk
+     *  \date   December 2020
+     */
+    static double calcDecades(double v1, double v2)
+    {
+        return std::log10(std::abs(v1/v2));
+    }
+
     WorkingConditions *workingConditions;
     Grid grid;
     EedfGasMixture mixture;
