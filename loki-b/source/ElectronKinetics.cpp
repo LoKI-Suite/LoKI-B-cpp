@@ -235,7 +235,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     this->evaluateMatrix();
 }
 
-void ElectronKinetics::solve()
+void ElectronKinetics::solveSingle()
 {
     if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
     {
@@ -245,46 +245,99 @@ void ElectronKinetics::solve()
     {
         this->invertLinearMatrix();
     }
+}
 
+void ElectronKinetics::solveSmartGrid()
+{
+    assert (grid.smartGrid());
+    const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
+    solveSingle();
+    double decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+    //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
+
+    while (decades < smartGrid.minEedfDecay)
+    {
+        grid.updateMaxEnergy(grid.uMax() * (1 + smartGrid.updateFactor));
+        solveSingle();
+        decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+        //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
+    }
+
+    while (decades > smartGrid.maxEedfDecay)
+    {
+        grid.updateMaxEnergy(grid.uMax() / (1 + smartGrid.updateFactor));
+        solveSingle();
+        decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+        //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
+    }
+}
+
+void ElectronKinetics::solveSmartGrid2()
+{
+    assert (grid.smartGrid());
+    const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
+
+    double uM=grid.uMax();
+    double uP=grid.uMax();
+
+    solveSingle();
+    double decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+    std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+    if (decades<smartGrid.minEedfDecay)
+    {
+        while (decades<smartGrid.minEedfDecay)
+        {
+            uP *= 2;
+            grid.updateMaxEnergy(uP);
+            solveSingle();
+            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+            std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+        }
+    }
+    else if (decades>smartGrid.maxEedfDecay)
+    {
+        while (decades>smartGrid.maxEedfDecay)
+        {
+            uM /= 2;
+            grid.updateMaxEnergy(uM);
+            solveSingle();
+            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+            std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+        }
+    }
+    while (decades<smartGrid.minEedfDecay || decades>smartGrid.maxEedfDecay)
+    {
+        // bisection step
+        grid.updateMaxEnergy((uP+uM)/2);
+        solveSingle();
+        decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
+        std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+        if (decades<smartGrid.minEedfDecay)
+        {
+            uM = grid.uMax();
+        }
+        else
+        {
+            uP = grid.uMax();
+        }
+    }
+    std::cout << "Final uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+}
+
+void ElectronKinetics::solve()
+{
     if (grid.smartGrid())
     {
-        const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
-        double decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
-        //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
-
-        while (decades < smartGrid.minEedfDecay)
-        {
-            grid.updateMaxEnergy(grid.uMax() * (1 + smartGrid.updateFactor));
-
-            if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
-            {
-                this->mixingDirectSolutions();
-            }
-            else
-            {
-                this->invertLinearMatrix();
-            }
-
-            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
-            //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
-        }
-
-        while (decades > smartGrid.maxEedfDecay)
-        {
-            grid.updateMaxEnergy(grid.uMax() / (1 + smartGrid.updateFactor));
-
-            if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
-            {
-                this->mixingDirectSolutions();
-            }
-            else
-            {
-                this->invertLinearMatrix();
-            }
-
-            decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
-            //std::cout << "decades: " << decades << ", uMax: " << grid.uMax() << std::endl;
-        }
+//#define LOKIB_USE_BISECTING_SMART_GRID
+#ifdef LOKIB_USE_BISECTING_SMART_GRID
+        solveSmartGrid2();
+#else
+        solveSmartGrid();
+#endif
+    }
+    else
+    {
+        solveSingle();
     }
 
     evaluatePower();
@@ -394,8 +447,8 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
     eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.du());
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << "Inverted matrix elapsed time = "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+ //   std::cerr << "Inverted matrix elapsed time = "
+ //             << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
 
 }
 
@@ -1225,7 +1278,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         ++iter;
     }
 
-    std::cerr << "Temporal growth routine converged in: " << iter << " iterations.\n";
+ //   std::cerr << "Temporal growth routine converged in: " << iter << " iterations.\n";
 
     CIEff = CIEffOld;
 }

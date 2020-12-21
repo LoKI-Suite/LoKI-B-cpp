@@ -58,6 +58,24 @@ class ElectronKinetics
     void evaluateSwarmParameters();
     void evaluateFirstAnisotropy();
 
+    void solveSingle();
+    void solveSmartGrid();
+    /** Strategy: introduce uM, uP and set these to uMax, the initial
+     *  value of the upper boundary. Next:
+     *  1. do a calculation. If 'decades' is in the specified range, the
+     *     calculation is finished.
+     *  2. Otherwise, box the target range in [uM,uP]. If decades is below
+     *     the interval, double uP, solve and recalculate decades until
+     *     decades is above the interval. Otherwise, if decades is above
+     *     the interval, cut uM in half, solve and recalculate decades
+     *     until decades is below the interval.
+     *  3. Until decades is in the range, use bisection:
+     *      - Set uMax = (uM+uP)/2
+     *      - solve and calculate decades.
+     *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax
+     */
+    void solveSmartGrid2();
+
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
      *  Furthermore, calcDecades(v1,v2)=-calcDecades(v2,v1) and in particular,
