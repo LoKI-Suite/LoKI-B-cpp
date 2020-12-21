@@ -476,6 +476,60 @@ the averaged absolute values as reference, rather than the olf or new one.
 
 Eigen, the various Hessenberg-solvers.
 
+\subsection{The Smart Grid}
+
+The smart grid functionality can be used to let the program adjust the
+upper boundary of the energy grid such that the dynamic range of the
+EEDF is within a user-specified specific range. The number of decades
+that the EEDF drops is given by the expression
+\begin{equation}
+    N_d = \log_{10} f_{\mbox{max}} - \log_{10} f_{\mbox{min}}.
+\end{equation}
+LoKI-B assumes that the highest and lowest EEDF values are attained on
+the first and last energy grid point, respectively. This is the expression
+that is also implemented in the MATLAB version of LoKI-B. In case of
+an underflow for high energy values, such that $f_{\mbox{min}}=0$, while
+$f_{\mbox{max}}$ is finite, MATLAB produces the value \SRC{Inf}, since
+\SRC{log10} is specified to return \SRC{-Inf} for zero-valued arguments\footnote{
+See: \url{https://nl.mathworks.com/help/matlab/ref/log10.html}}.
+In such case, a test like \SRC{Inf > N_max} will evaluate as \SRC{true}
+and this tells LoKI-B to reduce the upper boundary of the energy grid.
+Also the C/C++ function \SRC{log10} is specified to return \SRC{-Inf}
+for zero-valued arguments.
+
+It is tempting to combine the logarithms in this expression, wich would
+result in
+\begin{equation}
+    N_d= \log_{10} \frac{f_{\mbox{max}}}{f_{\mbox{min}}}.
+\end{equation}
+It is important to realize that these expressions may give different
+results in the case of underflow, when {\em signed} zeros are produced:
+the IEE754 floating point standard recognizes \SRC{0.0} and the
+signed zero \SRC{-0.0} as separate numbers, although they do compare
+equal\footnote{See: \url{https://en.wikipedia.org/wiki/Signed_zero}}.
+However, for a positive finite number $f$ we have \SRC{f/(+0.0)=+Inf}
+and \SRC{f/(-0.0)=-Inf}, and while \SRC{log10(+Inf)=+Inf}, we have
+\SRC{log10(-Inf)=NaN}. This means that for a positive $f_{\mbox{max}}$ we get
+\begin{equation}
+    \log_{10} f_{\mbox{max}} - \log_{10}(\pm 0.0)
+  = \log_{10} f_{\mbox{max}} - (-\SRC{Inf}) = \SRC{+Inf}.
+\end{equation}
+whereas
+\begin{equation}
+  \log_{10} (f_{\mbox{max}}/(\pm 0.0)) = \log_{10}(\pm\SRC{Inf}),
+\end{equation}
+which gives \SRC{NaN} instead of \SRC{Inf} for a signed zero.
+
+In the C++ code we have implemented the function \SRC{calcDecades(v1,v2)}
+for this calculation. It has been implemented to return
+\SRC{log10(abs(v1/v2)}. Taking the absolute value allows the calculation
+to rely on only one calculation of a logithm, while avoiding the problem
+that a \SRC{NaN} is produced for signed zeros. It also allows a comparison
+of the size of scalars that are both negative or have different signs.
+Perhaps most importantly, it centralizes this simply but tricky bit of
+code, so it does not have to be repeated three times in the code.
+
+
 \section{Build System}
 
 \subsection{cmake}
