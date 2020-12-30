@@ -60,16 +60,19 @@ class ElectronKinetics
 
     void solveSingle();
     void solveSmartGrid();
-    /** Strategy: introduce uM, uP and set these to uMax, the initial
-     *  value of the upper boundary. Next:
-     *  1. do a calculation. If 'decades' is in the specified range, the
-     *     calculation is finished.
-     *  2. Otherwise, box the target range in [uM,uP]. If decades is below
-     *     the interval, double uP, solve and recalculate decades until
-     *     decades is above the interval. Otherwise, if decades is above
-     *     the interval, cut uM in half, solve and recalculate decades
-     *     until decades is below the interval.
-     *  3. Until decades is in the range, use bisection:
+    /** An alternative for solveSmartGrid.
+     *
+     *  0. introduce uM, uP and set these to uMax, the initial value of the
+     *     upper boundary.
+     *  1. do a calculation and calculate 'decades'.
+     *  2. If necessary, widen the interval [uM,uP].
+     *     - if decades is below the interval:
+     *         while decades is below the interval:
+     *          - double uP, set uMax=uP, solve and recalculate 'decades'
+     *     - else if decades is above the interval:
+     *         while decades is above the interval:
+     *          - divide uM by 2, set uMax=uM, solve and recalculate 'decades'
+     *  3. While decades is not in the range, use bisection:
      *      - Set uMax = (uM+uP)/2
      *      - solve and calculate decades.
      *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax

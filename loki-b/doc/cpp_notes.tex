@@ -478,6 +478,8 @@ Eigen, the various Hessenberg-solvers.
 
 \subsection{The Smart Grid}
 
+\subsubsection{Calculation of the Dynamic Range of the EEDF}
+
 The smart grid functionality can be used to let the program adjust the
 upper boundary of the energy grid such that the dynamic range of the
 EEDF is within a user-specified specific range. The number of decades
@@ -529,6 +531,53 @@ of the size of scalars that are both negative or have different signs.
 Perhaps most importantly, it centralizes this simply but tricky bit of
 code, so it does not have to be repeated three times in the code.
 
+\subsection{A Bisecting Smart Grid Implementation}
+
+Let $[D_m,D_p]$ denote the user-specified dynamic range of the EEDF,
+and $D(u_x)$ be the dynamic range that is realized for an upper
+energy that is equal to $u_x$. The `smart grid feature' can be used
+to adjust $u_{\mbox{max}}$ such that $D(u_{\mbox{max}})\in[D_m,D_p]$.
+The original implementation uses an adjustment with a user-specified
+factor, first lowering $u_{\mbox{max}}$ until the lower boundary is
+respected, then increasing $u_{\mbox{max}}$ until the upper boundary
+is respected. This can be a slow process, and there is no guarantee
+that the criteria are actually met after the algorithm is finished:
+when the adjustment factor is too high, you may go from too low to
+too high in a single step. On the other hand, choosing a small
+adjustment factor will result in lots of iterations.
+
+For these reasons, an alternative implementation of the smart grid adjustment
+has been implemented in the C++ version of the code. The new algorithm consists
+of two parts. Firstly, values $u_m$ and $u_p$ are determined such that
+$[D(u_m),D(u_p)]$ has overlap with $[D_m,D_p]$. (The latter interval
+may be enclused entirely by the former, or the overlap may be partial).
+Secondly, the interval $[u_m,u_P]$ is bisected until $[D(u_m),D(u_p)]$
+is fully within the specified range and the final $u_{\mbox{max}}$ is
+chosen from $[u_m,u_P]$. In detail:
+\begin{enumerate}
+  \item Set $u_m=u_p=u_{\mbox{max}}$, solve the EEDF and calculate $D(u_M)$;
+	if that is in the required range, we are ready.
+  \item If $D(u_p)$ is below the required range, keep doubling $u_p$,
+	setting $u_{\mbox{max}}=u_p$,
+	solving the EEDF and calculating $D(u_p)$ unless it is in the
+	required range or above. Else:
+        If $D(u_m)$ is above the required range, keep halving $u_m$,
+	setting $u_{\mbox{max}}=u_m$,
+	solving the EEDF and calculating $D(u_m)$ unless it is in the
+	required range or below.
+  \item Until $D(u_{\mbox{max}})$ is in the specified range,
+	set $u_{\mbox{max}}=(u_m+u_p)/2$, solve the EEDF and calculate
+	$D(u_{\mbox{max}})$. If $D(u_{\mbox{max}})<D_m$,
+	set $u_m=u_{\mbox{max}}$, else if $D(u_{\mbox{max}})>D_p$,
+	set $u_p=u_{\mbox{max}}$. (This bisects the interval until
+	one of its end points matches the criterium.)
+\end{enumerate}
+\begin{framed}
+At present, the new implementation can be enabled only by
+commenting in the macro \SRC{LOKIB_USE_BISECTING_SMART_GRID}
+in \SRC{source/ElectronKinetics.cpp} and recompiling. This
+must be controllable from the input file instead.
+\end{framed}
 
 \section{Build System}
 

@@ -277,14 +277,19 @@ void ElectronKinetics::solveSmartGrid2()
     assert (grid.smartGrid());
     const Grid::SmartGridParameters& smartGrid = *grid.smartGrid();
 
+    // 0. Set uM and uP equal to the present (initial) uMax, solve
+    //    and calculate decades.
     double uM=grid.uMax();
     double uP=grid.uMax();
-
     solveSingle();
     double decades = calcDecades(eedf[0],eedf[grid.nCells()-1]);
     std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
+    // 1. Ensure that [decades(uM),decades(uP)] encloses [dM,dP],
+    //    entirely or partially.
     if (decades<smartGrid.minEedfDecay)
     {
+        // decades(uP) < dM: until decades(uP) >= dM, keep doubling uP,
+        // set uMax=uP, solve and recalculate decades(uP)
         while (decades<smartGrid.minEedfDecay)
         {
             uP *= 2;
@@ -296,6 +301,8 @@ void ElectronKinetics::solveSmartGrid2()
     }
     else if (decades>smartGrid.maxEedfDecay)
     {
+        // decades(uM) > dP: until decades(uM) <= dP, keep dividing uM by 2,
+        // set uMax=uM, solve and recalculate decades(uM)
         while (decades>smartGrid.maxEedfDecay)
         {
             uM /= 2;
@@ -305,6 +312,19 @@ void ElectronKinetics::solveSmartGrid2()
             std::cout << "uMax = " << grid.uMax() << ", decades = " << decades << std::endl;
         }
     }
+    else
+    {
+        // decades is already within the range: return early.
+        std::cout << "Decades is within range: keeping the initial uMax." << std::endl;
+        return;
+    }
+    // 2. If we reach this point, [decades(uM),decades(uP)] encloses
+    //    [dM,dP], or part of it, and uMax is equal to uM or uP.
+    //    while d(uMax) is not in [dM,dP], do a bisection of this interval:
+    //      - set uMax = (um+uP)/2, solve and update decades
+    //      - if d(uMax) is below dM, set uM=uMax
+    //        else
+    //        if d(uMax) is above dP, set uP=uMax
     while (decades<smartGrid.minEedfDecay || decades>smartGrid.maxEedfDecay)
     {
         // bisection step
