@@ -269,7 +269,7 @@ void GasMixtureBase::loadGasProperties(const json_type &cnf)
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
     std::smatch m;
 
-    for (const std::string &fractionStr : cnf.at("fraction"))
+    for (const std::string fractionStr : cnf.at("fraction"))
     {
         if (!std::regex_search(fractionStr, m, r))
             Log<Message>::Error("Could not parse gas fractions.");
