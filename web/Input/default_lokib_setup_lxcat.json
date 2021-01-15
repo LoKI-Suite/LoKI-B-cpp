@@ -22,8 +22,8 @@
     "growthModelType": "temporal",
     "includeEECollisions": false,
     "LXCatFiles": [
-      "http://localhost:3000/cross_section/set/by_name?name=N2&contributor=IST-Lisbon",
-      "http://localhost:3000/cross_section/set/by_name?name=N2-rot&contributor=IST-Lisbon"
+      "http://localhost:3001/cross_section/set/by_name?name=N2&contributor=IST-Lisbon&refstyle=bibtex",
+      "http://localhost:3001/cross_section/set/by_name?name=N2-rot&contributor=IST-Lisbon&refstyle=bibtex"
     ],
     "_LXCatFiles": [
       "JSON/v5/N2/with_ids/N2_LXCat.json",
