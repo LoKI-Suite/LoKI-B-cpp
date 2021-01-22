@@ -67,12 +67,15 @@
         create_module().then((_module) => {
           module = _module;
           try {
-            file.text().then((contents) => {
-              input = JSON.parse(contents);
-              lxcat_get(input);
-              const ret = module.run(JSON.stringify(input));
-              document.getElementById("answer").innerHTML = ret;
-            });
+            file
+              .text()
+              .then((contents) => {
+                input = JSON.parse(contents);
+                lxcat_get(input);
+                const ret = module.run(JSON.stringify(input));
+                document.getElementById("answer").innerHTML = ret;
+              })
+              .catch((e) => console.log(e));
           } catch (e) {
             console.log(e /*.stack*/);
           }
@@ -158,7 +161,11 @@
        */
       function handleJsonOutput(msg_ptr, msg_size) {
         const msg = new Uint8Array(module.HEAPU8.buffer, msg_ptr, msg_size);
-        const str = String.fromCharCode.apply(null, msg);
+        // const str = String.fromCharCode.apply(null, msg);
+        const str = msg.reduce(
+          (tot, i) => (tot += String.fromCharCode.apply(null, [i])),
+          ""
+        );
         const json = JSON.parse(str);
         console.log(json);
         document.getElementById("json-results").innerHTML = JSON.stringify(
