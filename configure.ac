@@ -24,6 +24,44 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PROG_CXX
 AC_PROG_CC
 
+CXXFLAGS="$CXXFLAGS -g -pedantic -Wall"
+
+dnl ***************************************************************************
+dnl
+dnl     C++ standard version
+dnl
+dnl Check that the compiler, with the provided or calculated compiler options,
+dnl is running in C++2017 (or later) mode.
+dnl
+dnl NOTE: once this has been commented in, the C++11 and ABI detection and
+dnl configury stuff below can be removed (as well as this message).
+dnl
+dnl ***************************************************************************
+
+dnl if test "Pasen" = "Pinksteren"; then
+
+AC_LANG_PUSH(C++)
+
+AC_TRY_COMPILE(
+  [ ],
+  [ static_assert(__cplusplus>=201703L, "No C++17 support."); ],
+  [ AC_MSG_NOTICE([C++17 detected. No futher action needed.]) ],
+  [
+    dnl The C++17 test failed. Add the -stc++17 flag and try again.
+    AC_MSG_WARN([No C++17 support. I will try again with compiler flag -std=c++17.])
+    CXXFLAGS="$CXXFLAGS -std=c++17"
+    AC_TRY_COMPILE(
+      [ ],
+      [ static_assert(__cplusplus>=201703L, "No C++17 support."); ],
+      [ ],
+      [
+        AC_MSG_ERROR([C++17 or later is required. Reconfigure with appropriate CXXFLAGS, or update your compiler.]) ]
+    )
+  ]
+)
+
+AC_LANG_POP(C++)
+
 # Checks for header files.
 
 # eigen
