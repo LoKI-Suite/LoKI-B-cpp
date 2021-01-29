@@ -27,8 +27,8 @@ class Collision
     {
     }
 
-    const CollisionType type() const { return m_type; }
-    const bool isReverse() const { return m_isReverse; }
+    CollisionType type() const { return m_type; }
+    bool isReverse() const { return m_isReverse; }
 
     /** Compare the stoichiometry and type of the reaction.
      */
