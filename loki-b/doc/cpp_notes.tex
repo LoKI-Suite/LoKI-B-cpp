@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{framed}
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{bm}
@@ -180,59 +181,89 @@ auxiary functions $g_x(u)$.
 
 \subsection{The CAR Implementation}
 
-The implementation of CAR processes needs some attention. There appears to be
-a problem in the code, but this may also be the result of a misunderstanding
-of the definition and/or units of the quantities involved.
+The CAR term in the EBE is described by equation 6c of \cite{Tejero2019}.
+It can be written in the form \eqref{eq:G(g)}, with
+\begin{align}
+  N\gamma g_{CAR} &= -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}, \\
+  c_{CAR} &= k_BT_e/e.
+\end{align}
+The frequency of the CAR cross section for a gas $k$ is presented just below
+equation 6d of \cite{Tejero2019}. Using the definition of the gas fraction
+$\chi_k$ from equation \eqref{eq:gamma} this becomes
+\begin{equation}
+  \nu_{0,k} = N_k\sqrt{2eu/m_e}\sigma_{0,k} = N\gamma\sqrt{u}\chi_k\sigma_{0,k}
+\end{equation}
+and substitution in the expression for $g_{CAR}$ yields
+\begin{equation}
+  g_{CAR} = -4u\sum\limits_k \chi_k\sigma_{0,k}B_k.
+  \label{eq:g_CAR}
+\end{equation}
+\begin{framed}
+  As discussed elsewhere, in the code we find $g_{CAR}$ defined without
+  the minus sign --- the same is true for other $g_x(u)$.
+\end{framed}
 
-The description of the CAR terms can be found in the LoKI-B paper \cite{Tejero2019}
-in equation 6c and in the text just below 6d. There the CAR cross section for a gas
-$k$ is stated to be
+The CAR cross section for a gas $k$ can be found in the LoKI-B paper \cite{Tejero2019}
+in the text below equation 6d, which states
 \begin{equation}
   \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
   \label{eq:sigma_CAR}
 \end{equation}
-where $a_0$ is the Bohr radius and $Q_k$ is the quadrupole moment of that gas
-{\em in atomic units}, $ea_0^2$.
+where $a_0$ is the Bohr radius and $Q_{k,au}$ is the quadrupole moment of that
+gas {\em in atomic units} ($ea_0^2$).
 This expression is also found in the user manual \cite{Manual_1_0_0} (below
 equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
 equation 8b). Those sources refer to the paper of Gerjuoy and Stein
 \cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
-To emphasize the units of $Q_{k,au}$, we have added the suffix $au$ in equation
+To emphasize that $Q_{k,au}$ is a dimensionless number (the numerical value
+that arises when atomic units are used), we have added the suffix $au$ in equation
 \eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
 
-The electron-neutral collision frequency that corresponds to the CAR cross
-section is presented just below equation 6d of \cite{Tejero2019}, it is given by
+Substitution of this expression in \eqref{eq:g_CAR} gives
 \begin{equation}
-  \nu_{0,k} = N_k\sqrt{2eu/m_e}\sigma_{0,k}.
+  g_{CAR} = -4u\frac{8\pi}{15}a_0^2\sum\limits_k \chi_k Q_{k,au}^2B_k.
 \end{equation}
-Using the definitions of $\gamma$ from equation \eqref{eq:gamma} and that of the
-gas fraction $\chi_k$ from equation \eqref{eq:chi_k}, this can be weritten as
+
+\begin{framed}
+Note (December 14 2020) ---
+In version 1.0.0 of the LoKI-B code (MATLAB), $\sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}a_0^2$,
+was used (without the square on $Q_{k,au}$). Since $Q_{k,au}=Q_k/(ea_0^2)$, where
+$Q_k$ is the value in SI units, that would result in $\sigma_{0,k}=(8\pi/15)Q_k/e$
+and in
 \begin{equation}
-  \nu_{0,k} = N\gamma\sqrt{u}\chi_k\sigma_{0,k}.
+  \sum\limits_k\chi_k\sigma_{0,k}B_k = \frac{8\pi}{15}\frac{1}{e}\sum\limits_k \chi_k Q_kB_k,
 \end{equation}
-This frequency appears in equation 6c of \cite{Tejero2019} in a factor
-\[
-  N\gamma g_{CAR} = -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}
-  = -\sum\limits_k 4B_k N\gamma u\chi_k\sigma_{0,k}
-  = -N\gamma 4u\sum\limits_k \chi_k\sigma_{0,k}B_k,
-\]
-which results in
-\begin{equation}
-  g_{CAR} = -4u\sum\limits_k \chi_k\sigma_{0,k}B_k.
-\end{equation}
-\begin{itemize}
-  \item As discussed elsewhere, in the code we find $g_{CAR}$ defined without
-        the minus sign (same is true for other $g_x(u)$;
-  \item In the code the cross section in the expression for $g_{CAR}$ is written as:
-  \[
-    \sigma_{0,k}
-    = \frac{8\pi}{15}\frac{Q_{k}}{e}
-    = \frac{8\pi}{15}\frac{Q_{k}}{ea_0^2}a_0^2
-    = \frac{8\pi}{15}Q_{k,au}a_0^2\quad\mbox{WRONG?}
-  \]
-  {\bf In other words: it is as if the code uses an expression with $Q_{k,au}$ instead
-  of $Q_{k,au}^2$.}
-\end{itemize}
+and this is what was found in the code in \SRC{Boltzmann.m} line 423,
+in function \SRC{evaluateCAROperator}:
+\begin{lstlisting}[language=matlab]
+sigma0B = 0;
+for gasName = boltzmann.CARgases
+  gasID = Gas.find(gasName, boltzmann.gasArray);
+  gas = boltzmann.gasArray(gasID);
+  sigma0B = sigma0B + gas.fraction*gas.electricQuadrupoleMoment*gas.rotationalConstant;
+end
+sigma0B = 8.0*pi*sigma0B/(15.0*Constant.electronCharge);
+\end{lstlisting}
+(Note that in the MATLAB code indeed \SRC{electricQuadrupoleMoment} is expressed
+in SI units, see file \SRC{Input/Databases/quadrupoleMoment.txt}.)
+
+Since $Q_{k,au}$ is usually of order unity, it is no surprise
+that this could go unnoticed. The implementation has been corrected to
+\begin{lstlisting}[language=matlab]
+a02 = Constant.bohrRadius*Constant.bohrRadius:
+sigma0B = 0;
+for gasName = boltzmann.CARgases
+  gasID = Gas.find(gasName, boltzmann.gasArray);
+  gas = boltzmann.gasArray(gasID);
+  Qau = gas.electricQuadrupoleMoment/(Constant.electronCharge*a02);
+  sigma0B = sigma0B + gas.fraction*Qau*Qau*gas.rotationalConstant;
+end
+sigma0B = (8.0*pi*a02/15.0)*sigma0B;
+\end{lstlisting}
+Previous versions of the C++ implementation had the same problem, it
+has been fixed along the same lines.
+
+\end{framed}
 
 
 \section{Discretization}
@@ -411,7 +442,142 @@ $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
 
 \section{Matrices \& Vectors}
 
+\subsection{Calculating the Maximum Relative Difference of Two Vectors}
+
+During the development of the C++ code, a nasty difference between MATLAB
+and C++ was discovered in the handling of NaN (not-a-number values) values,
+that are produced by such operations as $0.0/0.0$, $\infty\cdot 0.0$ and
+$\infty/\infty$, where $\infty$ indicates the platform's \SRC{inf} value.
+
+When looking for the maximum element of an array, MATLAB skips NaN's and
+returns the highes non-NaN element.
+\begin{lstlisting}[language=matlab]
+>> max(abs([0 0]./[1 0]))
+ans =
+     0
+\end{lstlisting}
+On the other hand, C++ with Eigen returns NaN. The last line of the code
+below shows the calculation that was previously in the C++ version of LoKI-B,
+it prints a NaN:
+\begin{lstlisting}[language=matlab]
+    #include <eigen3/Eigen/Dense>
+    ...
+    using Vector = Eigen::VectorXd;
+    Vector ev1(2); ev1[0] = 0.; ev1[0] = 0.;
+    Vector ev2(2); ev2[0] = 1.; ev2[0] = 0.;
+    std::cout << (ev1.array()/ev2.array()).cwiseAbs().maxCoeff() << std::endl;
+\end{lstlisting}
+For this reason, a member \SRC{maxRelDiff} has been introduced. That avoids
+the spurious NaN's by skipping over points for which both values (old and new)
+are different. NOTE that this implements the relative {\em difference}, using
+the averaged absolute values as reference, rather than the olf or new one.
+
+\subsection{Linear Systems, Matrix Inversion}
+
 Eigen, the various Hessenberg-solvers.
+
+\subsection{The Smart Grid}
+
+\subsubsection{Calculation of the Dynamic Range of the EEDF}
+
+The smart grid functionality can be used to let the program adjust the
+upper boundary of the energy grid such that the dynamic range of the
+EEDF is within a user-specified specific range. The number of decades
+that the EEDF drops is given by the expression
+\begin{equation}
+    N_d = \log_{10} f_{\mbox{max}} - \log_{10} f_{\mbox{min}}.
+\end{equation}
+LoKI-B assumes that the highest and lowest EEDF values are attained on
+the first and last energy grid point, respectively. This is the expression
+that is also implemented in the MATLAB version of LoKI-B. In case of
+an underflow for high energy values, such that $f_{\mbox{min}}=0$, while
+$f_{\mbox{max}}$ is finite, MATLAB produces the value \SRC{Inf}, since
+\SRC{log10} is specified to return \SRC{-Inf} for zero-valued arguments\footnote{
+See: \url{https://nl.mathworks.com/help/matlab/ref/log10.html}}.
+In such case, a test like \SRC{Inf > N_max} will evaluate as \SRC{true}
+and this tells LoKI-B to reduce the upper boundary of the energy grid.
+Also the C/C++ function \SRC{log10} is specified to return \SRC{-Inf}
+for zero-valued arguments.
+
+It is tempting to combine the logarithms in this expression, wich would
+result in
+\begin{equation}
+    N_d= \log_{10} \frac{f_{\mbox{max}}}{f_{\mbox{min}}}.
+\end{equation}
+It is important to realize that these expressions may give different
+results in the case of underflow, when {\em signed} zeros are produced:
+the IEE754 floating point standard recognizes \SRC{0.0} and the
+signed zero \SRC{-0.0} as separate numbers, although they do compare
+equal\footnote{See: \url{https://en.wikipedia.org/wiki/Signed_zero}}.
+However, for a positive finite number $f$ we have \SRC{f/(+0.0)=+Inf}
+and \SRC{f/(-0.0)=-Inf}, and while \SRC{log10(+Inf)=+Inf}, we have
+\SRC{log10(-Inf)=NaN}. This means that for a positive $f_{\mbox{max}}$ we get
+\begin{equation}
+    \log_{10} f_{\mbox{max}} - \log_{10}(\pm 0.0)
+  = \log_{10} f_{\mbox{max}} - (-\SRC{Inf}) = \SRC{+Inf}.
+\end{equation}
+whereas
+\begin{equation}
+  \log_{10} (f_{\mbox{max}}/(\pm 0.0)) = \log_{10}(\pm\SRC{Inf}),
+\end{equation}
+which gives \SRC{NaN} instead of \SRC{Inf} for a signed zero.
+
+In the C++ code we have implemented the function \SRC{calcDecades(v1,v2)}
+for this calculation. It has been implemented to return
+\SRC{log10(abs(v1/v2)}. Taking the absolute value allows the calculation
+to rely on only one calculation of a logithm, while avoiding the problem
+that a \SRC{NaN} is produced for signed zeros. It also allows a comparison
+of the size of scalars that are both negative or have different signs.
+Perhaps most importantly, it centralizes this simply but tricky bit of
+code, so it does not have to be repeated three times in the code.
+
+\subsection{A Bisecting Smart Grid Implementation}
+
+Let $[D_m,D_p]$ denote the user-specified dynamic range of the EEDF,
+and $D(u_x)$ be the dynamic range that is realized for an upper
+energy that is equal to $u_x$. The `smart grid feature' can be used
+to adjust $u_{\mbox{max}}$ such that $D(u_{\mbox{max}})\in[D_m,D_p]$.
+The original implementation uses an adjustment with a user-specified
+factor, first lowering $u_{\mbox{max}}$ until the lower boundary is
+respected, then increasing $u_{\mbox{max}}$ until the upper boundary
+is respected. This can be a slow process, and there is no guarantee
+that the criteria are actually met after the algorithm is finished:
+when the adjustment factor is too high, you may go from too low to
+too high in a single step. On the other hand, choosing a small
+adjustment factor will result in lots of iterations.
+
+For these reasons, an alternative implementation of the smart grid adjustment
+has been implemented in the C++ version of the code. The new algorithm consists
+of two parts. Firstly, values $u_m$ and $u_p$ are determined such that
+$[D(u_m),D(u_p)]$ has overlap with $[D_m,D_p]$. (The latter interval
+may be enclused entirely by the former, or the overlap may be partial).
+Secondly, the interval $[u_m,u_P]$ is bisected until $[D(u_m),D(u_p)]$
+is fully within the specified range and the final $u_{\mbox{max}}$ is
+chosen from $[u_m,u_P]$. In detail:
+\begin{enumerate}
+  \item Set $u_m=u_p=u_{\mbox{max}}$, solve the EEDF and calculate $D(u_M)$;
+	if that is in the required range, we are ready.
+  \item If $D(u_p)$ is below the required range, keep doubling $u_p$,
+	setting $u_{\mbox{max}}=u_p$,
+	solving the EEDF and calculating $D(u_p)$ unless it is in the
+	required range or above. Else:
+        If $D(u_m)$ is above the required range, keep halving $u_m$,
+	setting $u_{\mbox{max}}=u_m$,
+	solving the EEDF and calculating $D(u_m)$ unless it is in the
+	required range or below.
+  \item Until $D(u_{\mbox{max}})$ is in the specified range,
+	set $u_{\mbox{max}}=(u_m+u_p)/2$, solve the EEDF and calculate
+	$D(u_{\mbox{max}})$. If $D(u_{\mbox{max}})<D_m$,
+	set $u_m=u_{\mbox{max}}$, else if $D(u_{\mbox{max}})>D_p$,
+	set $u_p=u_{\mbox{max}}$. (This bisects the interval until
+	one of its end points matches the criterium.)
+\end{enumerate}
+\begin{framed}
+At present, the new implementation can be enabled only by
+commenting in the macro \SRC{LOKIB_USE_BISECTING_SMART_GRID}
+in \SRC{source/ElectronKinetics.cpp} and recompiling. This
+must be controllable from the input file instead.
+\end{framed}
 
 \section{Build System}
 

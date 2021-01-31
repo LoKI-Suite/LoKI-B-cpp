@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.rules
 
 VPATH=$(top_srcdir)/loki-b/source
 
+libloki_b_la_LDFLAGS = -no-undefined
 libloki_b_la_SOURCES = \
 	CrossSection.cpp \
 	EedfCollision.cpp \

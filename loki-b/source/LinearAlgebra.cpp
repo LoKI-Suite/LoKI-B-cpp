@@ -35,6 +35,37 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
+#include <stdexcept>
+
+namespace loki {
+
+double maxRelDiff(const Vector& v1, const Vector& v2)
+{
+//#define LOKIB_USE_OLD_MAXRELDIFF
+#ifdef LOKIB_USE_OLD_MAXRELDIFF
+    const double res = ((v2 - v1).cwiseAbs().array() / v2.array()).maxCoeff();
+#else
+    double res=-1.0;
+    assert(v1.size()==v2.size());
+    for (Vector::Index i=0; i!=v1.size(); ++i)
+    {
+        const double ref = (std::abs(v1(i)) + std::abs(v2(i)))/2;
+        if (ref!=0)
+        {
+            const double dif = std::abs(v1(i)-v2(i));
+            res = std::max(res,dif/ref);
+        }
+    }
+    if (res<0.0)
+    {
+        throw std::runtime_error("Maximum relative difference: vectors empty or zero.");
+    }
+#endif
+    // std::cout << "maxRelDiff: " << res << std::endl;
+    return res;
+}
+
+} // namespace loki
 
 namespace loki {
 namespace LinAlg {

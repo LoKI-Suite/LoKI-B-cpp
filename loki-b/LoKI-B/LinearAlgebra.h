@@ -64,6 +64,23 @@ using Matrix = Eigen::MatrixXd;
  */
 using SparseMatrix = Eigen::SparseMatrix<double>;
 
+/** Calculate and return the maximum relative difference of \a v1 and \a v2,
+ *  two vectors of the same size. The relative difference is calculated as
+ *  max_i(diff(i)/ref(i)). The reference value is calculated as
+ *  (abs(v1(i))+abs(v2(i)))/2. Indices i for which the reference value is
+ *  zero (this means: both elements are zero) are skipped.
+ *  If the vectors are empty or both zero-valued, a runtime_error is thrown.
+ *
+ *  If the macro LOKIB_USE_OLD_MAXRELDIFF is defined when the source file
+ *  is compiled, the old LoKI-B C++ algorithm will be used. That will generate
+ *  a NaN if both elements are zero for any index value.
+ *  NOTE: This is presently the case.
+ *
+ *  \author Jan van Dijk
+ *  \date   December 2020
+ */
+double maxRelDiff(const Vector& v1, const Vector& v2);
+
 } // namespace loki
 
 namespace loki {

@@ -74,7 +74,7 @@ CrossSection *EedfGas::elasticCrossSectionFromEffective(Grid *energyGrid)
 
     bool warn = false;
 
-    for (uint32_t i = 0; i < rawEl.size(); ++i)
+    for (Grid::Index i = 0; i < rawEl.size(); ++i)
     {
         if (rawEl[i] < 0.)
         {

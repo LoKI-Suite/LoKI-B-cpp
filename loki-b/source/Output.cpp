@@ -356,7 +356,7 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, co
     out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
     out["units"] = { "eV", "eV^-(3/2)", "1"};
     json_type& data = out["data"];
-    for (uint32_t i = 0; i < energies.size(); ++i)
+    for (Vector::Index i = 0; i < energies.size(); ++i)
     {
         data.push_back(json_type{energies[i], eedf[i], firstAnisotropy[i]});
     }

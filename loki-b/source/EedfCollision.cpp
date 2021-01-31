@@ -82,7 +82,7 @@ std::ostream &operator<<(std::ostream &os, const EedfCollision &collision)
     if (collision.type() == CollisionType::ionization)
         os << " e +";
 
-    for (uint32_t i = 0; i < collision.m_rhsHeavyStates.size(); ++i)
+    for (EedfCollision::StateVector::size_type i = 0; i != collision.m_rhsHeavyStates.size(); ++i)
     {
         os << ' ' << *collision.m_rhsHeavyStates[i];
         if (i < collision.m_rhsHeavyStates.size() - 1)

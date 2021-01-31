@@ -40,8 +40,8 @@ namespace loki
 {
 
 /** The (energy) Grid spans an energy interval [0,u_max]. This region is
- *  divided into Nc cells of size du, where du = u_max/Nc. The positions
- *  (energies) u_i of cell i is the central energy of cell i and is given by
+ *  divided into Nc cells of size du, where du = u_max/Nc. The position
+ *  (energy) u_i of cell i is the energy at its centre and is given by
  *  (i+0.5)*du, where i is in the interval [0,Nc-1]. The cells are bounded by
  *  Nc+1 nodes at locations u_i^node = i*du, where i is in the interval [0,Nc].
  *
@@ -59,7 +59,7 @@ namespace loki
  *  of cells and the energy of the last node.
  *
  *  Whereas the number of cells is fixed at construction time, the upper
- *  energy boundary can be modified later on, by passing a new value to
+ *  energy boundary can be modified later on by passing a new value in
  *  a call to the member function updateMaxEnergy. This functionality
  *  is used to implement the 'smart grid' functionality, in which the
  *  grid is adjusted to achieve a minimal or maximal dynamic range of the
