@@ -38,8 +38,14 @@ endif()
 #todo see how/when to set these two. For now, we rely on a 'system' eigen3/,
 #except for builds with MSVC: then we use the built-in Eigen.
 if(MSVC OR EMSCRIPTEN)
-set(inc_eigen include/eigen-3.3.7)
+  set(inc_eigen include/eigen-3.3.7/eigen3)
+else()
+  if ("x${EIGEN_PATH}" STREQUAL "x")
+    set (EIGEN_PATH "/usr/include/eigen3")
+  endif()
+  set(inc_eigen ${EIGEN_PATH})
 endif()
+message(STATUS "Using Eigen library at ${inc_eigen}.")
 set(inc_nlohmann include/nlohmann-3.7.0)
 
 # --- loki-b --- #
