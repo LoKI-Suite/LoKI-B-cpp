@@ -27,6 +27,8 @@ A Clang format style file is present at the root of this repository (`.clang-for
 1. run: `cmake -DCMAKE_BUILD_TYPE=Release -D<BACKEND_FLAG>=ON ..`
     - where `<BACKEND_FLAG>=USE_MKL/USE_OPENBLAS`, specifying the backend to supply to Eigen
     - this flag can also be omitted to build with pure Eigen
+    - LoKI-B assumes that Eigen is available in the directory /usr/include/eigen3. To specify
+      another path, run cmake with an additional option like -DEIGEN_PATH=/opt/include/eigen3
 1. run: `make -j <NUM_JOBS>`
     - where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when compiling; just use the number of physical cores in your system. Omit this flag to use the default settings.
     

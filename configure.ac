@@ -33,12 +33,7 @@ dnl
 dnl Check that the compiler, with the provided or calculated compiler options,
 dnl is running in C++2017 (or later) mode.
 dnl
-dnl NOTE: once this has been commented in, the C++11 and ABI detection and
-dnl configury stuff below can be removed (as well as this message).
-dnl
 dnl ***************************************************************************
-
-dnl if test "Pasen" = "Pinksteren"; then
 
 AC_LANG_PUSH(C++)
 
@@ -60,35 +55,34 @@ AC_TRY_COMPILE(
   ]
 )
 
-AC_LANG_POP(C++)
-
-# Checks for header files.
-
-# eigen
-AC_LANG_PUSH(C++)
+dnl ***************************************************************************
+dnl
+dnl     The Eigen headers and libraries
+dnl
+dnl ***************************************************************************
 AC_ARG_WITH(eigen,
-    [  --with-eigen(=eigen prefix)
-              use the Eigen library],
-    with_eigen="${withval}", with_eigen="yes")
+	[  --with-eigen(=location of the eigen3 directory)
+			  use the Eigen library. The default path is /usr/include/eigen3],
+	with_eigen="${withval}", with_eigen="yes")
 AC_MSG_CHECKING(--with-eigen)
 AC_MSG_RESULT($with_eigen)
+EIGEN_MATVEC_LIBS=
 EIGEN_CPPFLAGS=
 if test "$with_eigen" != "no" ; then
-  dnl Testsuites that rely on eigen
+  dnl Get the eigen3 dir and add that to the include path
   if test "$with_eigen" = "yes" ; then
-    AC_CHECK_HEADER(eigen3/Eigen/Core,
-      with_eigen=yes,
-      AC_MSG_ERROR(The eigen3 headers were not found. Please install these and reconfigure.))
+    dnl Assume eigen3 is in /usr/include/eigen3
+    EIGEN_CPPFLAGS="-I/usr/include/eigen3"
   else
     EIGEN_CPPFLAGS="-I$with_eigen"
-    CPPFLAGS="$CPPFLAGS $EIGEN_CPPFLAGS"
-    AC_CHECK_HEADER(eigen3/Eigen/Core,
-    with_eigen=yes,
-    AC_MSG_ERROR(The eigen3 headers were not found. Please install these and reconfigure.))
   fi
+  CPPFLAGS="$CPPFLAGS $EIGEN_CPPFLAGS"
+  dnl Check that we can find the Eigen headers in the specified location
+  AC_CHECK_HEADER(Eigen/Core,, AC_MSG_ERROR(Eigen3 was not found in include path $EIGEN_CPPFLAGS.))
+  dnl Subdirs for eigen-specific stuff
+  EIGEN_SUBDIR="eigen"
+  EIGEN_MATVEC_LIBS="$(pwd)/plmath/lib/eigen/libpleigen_lapack.la $LAPACK_LIBS"
   AC_DEFINE_UNQUOTED([HAVE_EIGEN],1,[Define if we have the Eigen matrix vector library])
-else
-  AC_MSG_ERROR(Eigen3 headers are required.)
 fi
 
 AC_SUBST(EIGEN_CPPFLAGS)
@@ -132,6 +126,8 @@ AC_TRY_CPP(
 )
 
 AC_SUBST(JSON_CPPFLAGS)
+
+AC_LANG_POP(C++)
 
 # documentation
 AC_ARG_WITH(doc,
