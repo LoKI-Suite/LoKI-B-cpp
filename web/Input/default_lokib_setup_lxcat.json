@@ -7,7 +7,7 @@
     "_reducedField": {
       "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6 }
     },
-    "electronTemperature": "0.03",
+    "electronTemperature": 0.03,
     "excitationFrequency": 0,
     "gasPressure": 133.32,
     "gasTemperature": 300,
@@ -41,23 +41,23 @@
     },
     "stateProperties": {
       "energy": [
-        "N2(X,v=*) = harmonicOscillatorEnergy",
-        "N2(X,v=0,J=*) = rigidRotorEnergy"
+        "N2(X^1S_g^+,v=*) = harmonicOscillatorEnergy",
+        "N2(X^1S_g^+,v=0,J=*) = rigidRotorEnergy"
       ],
       "statisticalWeight": [
-        "N2(X,v=*) = 1.0",
-        "N2(X,v=0,J=*) = rotationalDegeneracy_N2"
+        "N2(X^1S_g^+,v=*) = 1.0",
+        "N2(X^1S_g^+,v=0,J=*) = rotationalDegeneracy_N2"
       ],
       "population": [
-        "N2(X) = 1.0",
-        "N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature",
-        "N2_vibpop.txt"
+        "N2(X^1S_g^+) = 1.0",
+        "N2(X^1S_g^+,v=0) = 1.0",
+        "N2(X^1S_g^+,v=0,J=*) = boltzmannPopulation@gasTemperature"
       ]
     },
     "numerics": {
       "energyGrid": {
-        "maxEnergy": 20,
-        "cellNumber": 1000
+        "maxEnergy": 40,
+        "cellNumber": 2000
       },
       "maxPowerBalanceRelError": 1e-9,
       "nonLinearRoutines": {
