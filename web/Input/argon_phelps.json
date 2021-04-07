@@ -1,8 +1,8 @@
 {
   "workingConditions": {
-    "reducedField": 50,
-    "_reducedField": [10, 30, 50],
-    "electronTemperature": "0.03",
+    "_reducedField": 50,
+    "reducedField": [10, 30, 50],
+    "electronTemperature": 1,
     "excitationFrequency": 0,
     "gasPressure": 133.32,
     "gasTemperature": 300,
@@ -36,10 +36,10 @@
     },
     "numerics": {
       "energyGrid": {
-        "maxEnergy": 1,
+        "maxEnergy": 40,
         "cellNumber": 1000,
         "smartGrid": {
-          "minEedfDecay": 20,
+          "minEedfDecay": 15,
           "maxEedfDecay": 25,
           "updateFactor": 0.05
         }
