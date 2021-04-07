@@ -1,0 +1,9 @@
+*
+!*/
+!.gitignore
+
+!src/*
+!Input/*
+!index.html
+!schema.js
+!*.md

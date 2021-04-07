@@ -1,0 +1,23 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Load WebAssembly module -->
+    <script type="text/javascript" src="loki_bindings.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.13.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@4.13.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.8.0"></script>
+  </head>
+  <body>
+    <div><input type="file" id="file-input" accept=".json" /></div>
+    <div><button type="button" id="run-button">Run</button></div>
+    <div id="plotting-area"></div>
+    <div>Return value = <span id="answer" /></div>
+    <div>
+      <button type="button" id="ref-button" style="display: none">
+        Download references
+      </button>
+    </div>
+    <pre id="json-results"></pre>
+    <script type="module" src="index.js"></script>
+  </body>
+</html>
