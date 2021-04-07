@@ -40,17 +40,17 @@
 		},
 		"stateProperties": {
 			"energy": [
-				"N2(X,v=*) = harmonicOscillatorEnergy",
-				"N2(X,v=0,J=*) = rigidRotorEnergy"
+				"N2(X^1S_g^+,v=*) = harmonicOscillatorEnergy",
+				"N2(X^1S_g^+,v=0,J=*) = rigidRotorEnergy"
 			],
 			"statisticalWeight": [
-				"N2(X,v=*) = 1.0",
-				"N2(X,v=0,J=*) = rotationalDegeneracy_N2"
+				"N2(X^1S_g^+,v=*) = 1.0",
+				"N2(X^1S_g^+,v=0,J=*) = rotationalDegeneracy_N2"
 			],
 			"population": [
-				"N2(X) = 1.0",
-				"N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature",
-				"Nitrogen/N2_vibpop.txt"
+				"N2(X^1S_g^+) = 1.0",
+				"N2(X^1S_g^+,v=0,J=*) = boltzmannPopulation@gasTemperature",
+				"N2(X^1S_g^+,v=0) = 1.0"
 			]
 		},
 		"numerics": {
