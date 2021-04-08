@@ -2,7 +2,7 @@
   <head>
     <meta charset="UTF-8" />
     <!-- Load WebAssembly module -->
-    <script type="text/javascript" src="loki_bindings.js"></script>
+    <script type="module" src="loki_bindings.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega@5.13.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@4.13.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.8.0"></script>
@@ -72,7 +72,7 @@
               .then((contents) => {
                 input = JSON.parse(contents);
                 lxcat_get(input);
-                const ret = module.run(JSON.stringify(input));
+                const ret = module.run(JSON.stringify(input), plot);
                 document.getElementById("answer").innerHTML = ret;
               })
               .catch((e) => console.log(e));
