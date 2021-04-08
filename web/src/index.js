@@ -4,9 +4,11 @@ import { handleJsonOutput } from "./json_output.js";
 export let module;
 let file = "";
 let global_input = {};
+let results = {};
 
 const file_input = document.getElementById("file-input");
 const run_button = document.getElementById("run-button");
+const dl_button = document.getElementById("dl-button");
 const ref_button = document.getElementById("ref-button");
 
 const worker = new Worker("./worker.js");
@@ -22,13 +24,16 @@ worker.onmessage = ({ data }) => {
     plot(data.results);
   }
   if (data.type === "DONE") {
-    handleJsonOutput(data.results);
-    ref_button.style.display = "block";
+    // handleJsonOutput(data.results);
+    results = data.results;
+    dl_button.style.display = "inline-block";
+    ref_button.style.display = "inline-block";
   }
 };
 
 run_button.addEventListener("click", (_event) => {
   // Hide 'Download references' button
+  dl_button.style.display = "none";
   ref_button.style.display = "none";
 
   // Wait for input file to be loaded
@@ -42,6 +47,10 @@ run_button.addEventListener("click", (_event) => {
       });
     })
     .catch((err) => console.log(err));
+});
+
+dl_button.addEventListener("click", (_event) => {
+  download("results.json", results, "text/json");
 });
 
 ref_button.addEventListener("click", (_event) => {
@@ -63,18 +72,10 @@ ref_button.addEventListener("click", (_event) => {
   download("references.bib", references);
 });
 
-function download(filename, text) {
-  var element = document.createElement("a");
-  element.setAttribute(
-    "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(text)
-  );
-  element.setAttribute("download", filename);
-
-  element.style.display = "none";
-  document.body.appendChild(element);
-
-  element.click();
-
-  document.body.removeChild(element);
+function download(filename, object, type = "text/plain") {
+  var a = document.createElement("a");
+  var file = new Blob([object], { type });
+  a.href = URL.createObjectURL(file);
+  a.download = filename;
+  a.click();
 }
