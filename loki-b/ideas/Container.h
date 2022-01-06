@@ -83,7 +83,7 @@ public:
 private:
     Child* add_state(const std::string& info)
     {
-        return m_children.emplace_back(new Child(*static_cast<NodeT*>(this),info)).get();
+        return m_children.emplace_back(new Child(*static_cast<const NodeT*>(this),info)).get();
     }
     const Parent& m_parent;
     ChildContainer m_children;

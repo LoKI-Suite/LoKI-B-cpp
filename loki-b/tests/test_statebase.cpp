@@ -1,5 +1,5 @@
 /** \file
- *  Unit tests for class StateBase.
+ *  Unit tests for class Gas::State.
  *  \todo Add more tests, use a testing framework that can be reused for other
  *  test file as well
  *
@@ -7,17 +7,8 @@
  *  \date   July 2020
  */
 
-#include "LoKI-B/GasBase.h"
+#include "LoKI-B/Gas.h"
 #include "LoKI-B/Parse.h"
-
-// GasBase has a protected destructor. Derive a dummy class to allow the creation of an object.
-class TestGas : public loki::GasBase
-{
-public:
-    TestGas(const std::string& name) : loki::GasBase(name)
-    {
-    }
-};
 
 unsigned ntests=0;
 unsigned nerrors=0;
@@ -31,10 +22,10 @@ void test_state_string(const std::string str, bool should_pass)
 //        std::cout << "State string: '" << str << "'." << std::endl;
         const StateEntry e = propertyStateFromString(str);
 //        std::cout << "Entry: '" << e << "." << std::endl;
-        TestGas gas(e.gasName);
+        loki::Gas gas(e.gasName);
 //        std::cout << "Gas name: '" << gas.name << "'." << std::endl;
-        const GasBase::StateBase root{&gas};
-//        const GasBase::StateBase* s{gas.ensureState(e)};
+        const Gas::State root{&gas};
+//        const Gas::State* s{gas.ensureState(e)};
 //        std::cout << "State:" << std::endl;
 //        std::cout << s << std::endl;
     }

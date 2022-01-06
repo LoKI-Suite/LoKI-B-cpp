@@ -1,4 +1,4 @@
-#include "LoKI-B/GasMixtureBase.h"
+#include "LoKI-B/GasMixture.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
@@ -10,16 +10,47 @@
 namespace loki
 {
 
-GasBase *GasMixtureBase::addGas(GasBase *gas)
+GasMixture::~GasMixture()
 {
-    if (findGas(gas->name))
-    {
-        throw std::logic_error("Attempt to register gas with name '" + gas->name + "' twice.");
-    }
-    return m_gases.emplace_back(gas).get();
 }
 
-void GasMixtureBase::print(std::ostream &os)
+Gas *GasMixture::addGas(const std::string& name)
+{
+    if (findGas(name))
+    {
+        throw std::logic_error("Attempt to register gas with name '" + name + "' twice.");
+    }
+    return m_gases.emplace_back(new Gas(name)).get();
+}
+
+Gas *GasMixture::ensureGas(const std::string &name)
+{
+    Gas *gas = findGas(name);
+    if (!gas)
+    {
+        gas = addGas(name);
+    }
+    return gas;
+}
+
+Gas::State *GasMixture::ensureState(const StateEntry &entry)
+{
+    typename StateMap::iterator it = m_states.find(entry.m_id);
+    if (it != m_states.end())
+    {
+        return it->second;
+    }
+    Gas::State *state = ensureGas(entry.gasName)->ensureState(entry);
+    m_states[entry.m_id] = state;
+    return state;
+}
+
+Gas::State *GasMixture::findStateById(const std::string &stateId)
+{
+    typename StateMap::iterator it = m_states.find(stateId);
+    return it == m_states.end() ? nullptr : it->second;
+}
+void GasMixture::print(std::ostream &os)
 {
     for (const auto &gas : m_gases)
     {
@@ -28,7 +59,7 @@ void GasMixtureBase::print(std::ostream &os)
     }
 }
 
-void GasMixtureBase::checkGasFractions()
+void GasMixture::checkGasFractions()
 {
     double norm = 0;
 
@@ -41,33 +72,33 @@ void GasMixtureBase::checkGasFractions()
         Log<Message>::Error("Gas fractions are not properly normalized.");
 }
 
-void GasMixtureBase::checkPopulations()
+void GasMixture::checkPopulations()
 {
     for (auto &gas : m_gases)
         gas->checkPopulations();
 }
 
-GasBase *GasMixtureBase::findGas(const std::string &name)
+Gas *GasMixture::findGas(const std::string &name)
 {
     auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                           [&name](const std::unique_ptr<GasBase> &gas) { return gas->name == name; });
+                           [&name](const std::unique_ptr<Gas> &gas) { return gas->name == name; });
     return it == m_gases.end() ? nullptr : it->get();
 }
 
-GasBase::StateBase *GasMixtureBase::findState(const StateEntry &entry)
+Gas::State *GasMixture::findState(const StateEntry &entry)
 {
-    GasBase *gas = findGas(entry.gasName);
+    Gas *gas = findGas(entry.gasName);
     return gas ? gas->findState(entry) : nullptr;
 }
 
-GasBase::StateBase::ChildContainer GasMixtureBase::findStates(const StateEntry &entry)
+Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
 {
-    using ChildContainer = GasBase::StateBase::ChildContainer;
-    GasBase::StateBase* state = findState(entry);
+    using ChildContainer = Gas::State::ChildContainer;
+    Gas::State* state = findState(entry);
     return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
 }
 
-void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
+void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
                                        const WorkingConditions *workingConditions)
 {
 
@@ -94,7 +125,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
                 throw std::runtime_error("loadStateProperty: illegal "
                                 "state identifier '" + line + "'.");
             }
-            GasBase::StateBase::ChildContainer states = findStates(entry);
+            Gas::State::ChildContainer states = findStates(entry);
             if (states.empty())
             {
                 throw std::runtime_error("loadStateProperty: could not find "
@@ -173,7 +204,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
              */
             for (auto &entry : entries)
             {
-                GasBase::StateBase::ChildContainer states = findStates(entry.first);
+                Gas::State::ChildContainer states = findStates(entry.first);
                 if (states.empty())
                 {
                     throw std::runtime_error("loadStateProperty: could not find "
@@ -185,7 +216,7 @@ void GasMixtureBase::loadStateProperty(const std::vector<std::string> &entryVect
     }
 }
 
-void GasMixtureBase::evaluateReducedDensities()
+void GasMixture::evaluateReducedDensities()
 {
     for (auto &gas : m_gases)
     {
@@ -193,7 +224,7 @@ void GasMixtureBase::evaluateReducedDensities()
     }
 }
 
-void GasMixtureBase::loadStateProperties(const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
+void GasMixture::loadStateProperties(const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
 {
 
     loadStateProperty(setup.energy, StatePropertyType::energy, workingConditions);
@@ -203,7 +234,7 @@ void GasMixtureBase::loadStateProperties(const StatePropertiesSetup &setup, cons
     checkPopulations();
 }
 
-void GasMixtureBase::loadStateProperties(const json_type &cnf, const WorkingConditions *workingConditions)
+void GasMixture::loadStateProperties(const json_type &cnf, const WorkingConditions *workingConditions)
 {
 
     loadStateProperty(cnf.at("energy"), StatePropertyType::energy, workingConditions);
@@ -213,18 +244,18 @@ void GasMixtureBase::loadStateProperties(const json_type &cnf, const WorkingCond
     checkPopulations();
 }
 
-void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
+void GasMixture::loadGasProperties(const GasPropertiesSetup &setup)
 {
     readGasPropertyFile(m_gases, setup.mass, "mass", true,
-        [](GasBase& gas, double value) { gas.mass=value; } );
+        [](Gas& gas, double value) { gas.mass=value; } );
     readGasPropertyFile(m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
-        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+        [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
     readGasPropertyFile(m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
-        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+        [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
     readGasPropertyFile(m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
-        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+        [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
     readGasPropertyFile(m_gases, setup.rotationalConstant, "rotationalConstant", false,
-        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
+        [](Gas& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
@@ -238,7 +269,7 @@ void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
         const auto &name = m.str(1);
 
         auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<GasBase> &gas) { return (gas->name == name); });
+                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name == name); });
 
         if (it == m_gases.end())
             Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
@@ -252,18 +283,18 @@ void GasMixtureBase::loadGasProperties(const GasPropertiesSetup &setup)
     checkGasFractions();
 }
 
-void GasMixtureBase::loadGasProperties(const json_type &cnf)
+void GasMixture::loadGasProperties(const json_type &cnf)
 {
     readGasProperty(m_gases, cnf, "mass", true,
-        [](GasBase& gas, double value) { gas.mass=value; } );
+        [](Gas& gas, double value) { gas.mass=value; } );
     readGasProperty(m_gases, cnf, "harmonicFrequency", false,
-        [](GasBase& gas, double value) { gas.harmonicFrequency=value; } );
+        [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
     readGasProperty(m_gases, cnf, "anharmonicFrequency", false,
-        [](GasBase& gas, double value) { gas.anharmonicFrequency=value; } );
+        [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
     readGasProperty(m_gases, cnf, "electricQuadrupoleMoment", false,
-        [](GasBase& gas, double value) { gas.electricQuadrupoleMoment=value; } );
+        [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
     readGasProperty(m_gases, cnf, "rotationalConstant", false,
-        [](GasBase& gas, double value) { gas.rotationalConstant=value; } );
+        [](Gas& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
     const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
@@ -275,7 +306,7 @@ void GasMixtureBase::loadGasProperties(const json_type &cnf)
             Log<Message>::Error("Could not parse gas fractions.");
         const auto &name = m.str(1);
         auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<GasBase> &gas) { return (gas->name == name); });
+                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name == name); });
         if (it == m_gases.end())
             Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
         std::stringstream ss(m.str(2));

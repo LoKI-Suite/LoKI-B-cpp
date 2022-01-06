@@ -123,7 +123,7 @@ class StateVibrational;
 class StateRotational;
 
 // here we assemble the various pieces of the chain.
-// Root has the Gas as parent (todo: reconsider that), StateCharge as parent.
+// Root has the Gas as parent (todo: reconsider that), StateCharge as child type.
 
 class StateRoot : public Node<RootInfo,Gas,StateRoot,StateCharge>
 {

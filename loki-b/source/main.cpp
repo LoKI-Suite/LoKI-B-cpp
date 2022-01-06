@@ -31,10 +31,9 @@
 //  5. [DONE] Separate backend and front end
 
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
-                   const loki::Power &power, const std::vector<loki::EedfGas *> &gases,
+                   const loki::Power &power, const loki::EedfCollisionDataMixture &coll_data,
                    const loki::SwarmParameters &swarmParameters,
-                   const std::vector<loki::RateCoefficient> &rateCoefficients,
-                   const std::vector<loki::RateCoefficient> &extraRateCoefficients, const loki::Vector &firstAnisotropy)
+                   const loki::Vector &firstAnisotropy)
 {
     using namespace loki;
     writeGnuplot(std::cout, "Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);

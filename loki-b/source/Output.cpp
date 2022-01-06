@@ -3,7 +3,8 @@
 //
 
 #include "LoKI-B/Output.h"
-#include "LoKI-B/EedfCollision.h"
+#include "LoKI-B/EedfCollisions.h"
+#include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/StandardPaths.h"
 
@@ -89,9 +90,8 @@ Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
 }
 
 void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
-                       const std::vector<EedfGas *> &gases, const SwarmParameters &swarmParameters,
-                       const std::vector<RateCoefficient> &rateCoefficients,
-                       const std::vector<RateCoefficient> &extraRateCoefficients, const Vector &firstAnisotropy)
+                       const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
+                       const Vector &firstAnisotropy)
 {
     setDestination(jobManager->getCurrentJobFolder());
     if (saveEedf)
@@ -99,9 +99,9 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
     if (saveSwarm)
         writeSwarm(swarmParameters);
     if (savePower)
-        writePower(power, gases);
+        writePower(power, collData);
     if (saveRates)
-        writeRateCoefficients(rateCoefficients, extraRateCoefficients);
+        writeRateCoefficients(collData.m_rateCoefficients, collData.m_rateCoefficientsExtra);
     if (saveTable)
         writeLookuptable(power, swarmParameters);
 }
@@ -171,7 +171,7 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
     writeTerm(os,"Drift velocity","m/s",swarmParameters.driftVelocity);
 }
 
-void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
+void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
 {
     std::ofstream os(m_folder + "/" + m_subFolder + "/power_balance.txt");
     writeTerm(os, "Field","eVm3/s", power.field);
@@ -213,12 +213,12 @@ void FileOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Rotational collisions (net)","eVm3/s", power.rotational.net());
 
-    for (const auto &gas : gases)
+    for (const auto &cd : collData.data_per_gas())
     {
-        const GasPower &gasPower = gas->getPower();
+        const GasPower &gasPower = cd.getPower();
 
         os << std::endl;
-        os << std::string(37,'*') << ' ' << gas->name << ' ' << std::string(39 - gas->name.length(),'*') << std::endl;
+        os << std::string(37,'*') << ' ' << cd.gas().name << ' ' << std::string(39 - cd.gas().name.length(),'*') << std::endl;
         os << std::endl;
 
         writeTerm(os,"Excitation inelastic collisions","eVm3/s", gasPower.excitation.forward);
@@ -376,7 +376,7 @@ void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
     out.push_back( makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s") );
 }
 
-void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &gases) const
+void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
 {
     json_type& out = (*m_active)["power_balance"];
     out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
@@ -418,11 +418,11 @@ void JsonOutput::writePower(const Power &power, const std::vector<EedfGas *> &ga
 
     out.push_back( makeQuantity("Rotational collisions (net)", power.rotational.net(), "eV*m^3/s") );
 
-    for (const auto &gas : gases)
+    for (const auto &cd : collData.data_per_gas())
     {
-        const GasPower &gasPower = gas->getPower();
+        const GasPower &gasPower = cd.getPower();
 	json_type gas_out;
-        gas_out.push_back( { { "name", gas->name } } );
+        gas_out.push_back( { { "name", cd.gas().name } } );
         gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s") );
         gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s") );
         gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s") );

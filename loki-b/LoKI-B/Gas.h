@@ -10,33 +10,33 @@
 namespace loki
 {
 
-class GasBase
+class Gas
 {
   public:
-    class StateBase
+    class State
     {
       public:
-        using ChildContainer = std::vector<StateBase *>;
-        StateBase(const StateEntry &entry, GasBase *gas, StateBase &parent);
-        StateBase(GasBase *gas);
-        virtual ~StateBase();
+        using ChildContainer = std::vector<State *>;
+        State(const StateEntry &entry, Gas *gas, State &parent);
+        State(Gas *gas);
+        virtual ~State();
 
-        const GasBase &gas() const
+        const Gas &gas() const
         {
-            return *m_gas_base;
+            return *m_gas;
         }
-        GasBase &gas()
+        Gas &gas()
         {
-            return *m_gas_base;
+            return *m_gas;
         }
 
-        const StateBase *parent() const
+        const State *parent() const
         {
-            return m_parent_base;
+            return m_parent;
         }
-        StateBase *parent()
+        State *parent()
         {
-            return m_parent_base;
+            return m_parent;
         }
 
         const ChildContainer &children() const
@@ -54,7 +54,7 @@ class GasBase
          * object. If this state is present, it will be returned, otherwise a
          * null pointer is returned.
          */
-        StateBase *find(const StateEntry &entry);
+        State *find(const StateEntry &entry);
 
         /* Returns a vector containing the sibling states of the current state.
          * In case this state is electronic, this vector is obtained via the
@@ -88,29 +88,29 @@ class GasBase
          *  evaluateReducedDensities() on the gas.
          */
         void evaluateReducedDensities();
-        StateBase *ensure_state(const StateEntry &entry)
+        State *ensure_state(const StateEntry &entry)
         {
-            StateBase *state = find(entry);
+            State *state = find(entry);
             if (state)
             {
                 return state;
             }
-            state = new StateBase(entry, &gas(), *this);
+            state = new State(entry, &gas(), *this);
             add_child(state);
             return state;
         }
 
       protected:
-        void add_child(StateBase *child)
+        void add_child(State *child)
         {
             m_children.emplace_back(child);
         }
 
       private:
         /// \todo Make const?
-        GasBase *m_gas_base;
+        Gas *m_gas;
         /// \todo Make const?
-        StateBase *m_parent_base;
+        State *m_parent;
 
       public:
         /// \todo make private
@@ -139,10 +139,10 @@ class GasBase
         double m_population;
         double m_delta;
     };
-    /// \todo Get rid of StateBase, use State exclusively here and elsewhere.
-    using State = StateBase;
-    explicit GasBase(std::string name);
-    virtual ~GasBase();
+    /// \todo Get rid of State, use State exclusively here and elsewhere.
+    using State = State;
+    explicit Gas(std::string name);
+    virtual ~Gas();
     /** Prints the (first non-ionic then ionic) electronic states and their
      *  children.
      */
@@ -168,7 +168,7 @@ class GasBase
      *  \todo Document the semantics of this function, describe the differences
      *        with find, see if these members can be merged somehow.
      */
-    StateBase *findState(const StateEntry &entry);
+    State *findState(const StateEntry &entry);
     State *ensureState(const StateEntry &entry)
     {
         auto *state = get_root().ensure_state(entry);
@@ -190,7 +190,7 @@ class GasBase
     }
 
   public:
-    std::unique_ptr<StateBase> m_root;
+    std::unique_ptr<State> m_root;
 
     const std::string name;
     double mass;
@@ -203,7 +203,7 @@ class GasBase
     double fraction;
 };
 
-std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state);
+std::ostream &operator<<(std::ostream &os, const Gas::State &state);
 
 } // namespace loki
 

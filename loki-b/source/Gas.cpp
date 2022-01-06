@@ -1,4 +1,4 @@
-#include "LoKI-B/GasBase.h"
+#include "LoKI-B/Gas.h"
 #include "LoKI-B/Log.h"
 #include <algorithm>
 #include <cassert>
@@ -8,8 +8,8 @@
 namespace loki
 {
 
-GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &parent)
-    : m_gas_base(gas), m_parent_base(&parent), type(static_cast<StateType>(parent.type + 1)),
+Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
+    : m_gas(gas), m_parent(&parent), type(static_cast<StateType>(parent.type + 1)),
       charge(type == StateType::charge ? entry.charge : parent.charge),
       e(type == StateType::electronic ? entry.e : parent.e), v(type == StateType::vibrational ? entry.v : parent.v),
       J(type == StateType::rotational ? entry.J : parent.J), energy(-1), statisticalWeight(-1),
@@ -38,11 +38,11 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
      *        fraction is > 0. However, the gas fractions have not been loaded at this
      *        point, therefore this is now done in the "propagateFraction" function.
      */
-    // if (m_gas_base->fraction != 0 && type == StateType::charge && charge.empty())
+    // if (m_gas->fraction != 0 && type == StateType::charge && charge.empty())
     // {
     //     setpopulation(1);
     // }
-    assert(m_gas_base);
+    assert(m_gas);
 #if 0
     std::cout << "Created state: " << *this << ", type = " << type << std::endl;
     std::cout << " - entry: " << entry << std::endl;
@@ -50,21 +50,21 @@ GasBase::StateBase::StateBase(const StateEntry &entry, GasBase *gas, StateBase &
 #endif
 }
 
-GasBase::StateBase::StateBase(GasBase *gas)
-    : m_gas_base(gas), m_parent_base(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
+Gas::State::State(Gas *gas)
+    : m_gas(gas), m_parent(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
       v(std::string{}), J(std::string{}), energy(-1), statisticalWeight(-1), m_population(0), m_delta(0)
 {
-    assert(m_gas_base);
+    assert(m_gas);
 #if 0
-    std::cout << "StateBase::StateBase" << ", type = " << type << std::endl;
+    std::cout << "State::State" << ", type = " << type << std::endl;
 #endif
 }
 
-GasBase::StateBase::~StateBase()
+Gas::State::~State()
 {
 }
 
-bool GasBase::StateBase::operator>=(const StateEntry &entry)
+bool Gas::State::operator>=(const StateEntry &entry)
 {
     if (type > entry.level)
         return false;
@@ -111,7 +111,7 @@ bool GasBase::StateBase::operator>=(const StateEntry &entry)
     return true;
 }
 
-std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
+std::ostream &operator<<(std::ostream &os, const Gas::State &state)
 {
     os << state.gas().name;
 #if 0
@@ -151,7 +151,7 @@ std::ostream &operator<<(std::ostream &os, const GasBase::StateBase &state)
     return os;
 }
 
-void GasBase::StateBase::printChildren(std::ostream &os) const
+void Gas::State::printChildren(std::ostream &os) const
 {
     std::string space = "  ";
 
@@ -168,7 +168,7 @@ void GasBase::StateBase::printChildren(std::ostream &os) const
     }
 }
 
-void GasBase::StateBase::checkPopulations() const
+void Gas::State::checkPopulations() const
 {
     if (m_children.empty())
         return;
@@ -193,7 +193,7 @@ void GasBase::StateBase::checkPopulations() const
     }
 }
 
-void GasBase::StateBase::evaluateReducedDensities()
+void Gas::State::evaluateReducedDensities()
 {
     /* \todo This old implementation appears to assign the (neutral) gas delta to the charged species.
      *       Setting that to zero for now...
@@ -209,29 +209,29 @@ void GasBase::StateBase::evaluateReducedDensities()
     }
 }
 
-GasBase::StateBase *GasBase::StateBase::find(const StateEntry &entry)
+Gas::State *Gas::State::find(const StateEntry &entry)
 {
     auto it =
-        std::find_if(m_children.begin(), m_children.end(), [&entry](StateBase *child) { return *child >= entry; });
+        std::find_if(m_children.begin(), m_children.end(), [&entry](State *child) { return *child >= entry; });
     return it == m_children.end() ? nullptr : *it;
 }
 
-GasBase::GasBase(std::string name)
+Gas::Gas(std::string name)
     : m_root(new State(this)), name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
       rotationalConstant{-1}, electricDipoleMoment{-1}, electricQuadrupoleMoment{-1}, polarizability{-1}, fraction{0}
 {
 }
 
-GasBase::~GasBase()
+Gas::~Gas()
 {
 }
 
-void GasBase::print(std::ostream &os) const
+void Gas::print(std::ostream &os) const
 {
     m_root->printChildren(os);
 }
 
-void GasBase::propagateFraction()
+void Gas::propagateFraction()
 {
     if (fraction > 0)
     {
@@ -247,17 +247,17 @@ void GasBase::propagateFraction()
     }
 }
 
-void GasBase::checkPopulations()
+void Gas::checkPopulations()
 {
     m_root->checkPopulations();
 }
 
-void GasBase::evaluateReducedDensities()
+void Gas::evaluateReducedDensities()
 {
     m_root->evaluateReducedDensities();
 }
 
-GasBase::StateBase *GasBase::findState(const StateEntry &entry)
+Gas::State *Gas::findState(const StateEntry &entry)
 {
     // Find charge state.
 

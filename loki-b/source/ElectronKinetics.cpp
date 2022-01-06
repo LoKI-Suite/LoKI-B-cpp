@@ -54,7 +54,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.totalCrossSection());
+    // mixture.grid->getNodes(), mixture.collision_data().totalCrossSection());
 
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
@@ -63,7 +63,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.hasCollisions(CollisionType::ionization))
+        mixture.collision_data().hasCollisions(CollisionType::ionization))
     {
         ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
@@ -109,7 +109,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
         diagPattern.emplace_back(k, k, 0.);
     }
 
-    if (mixture.hasCollisions(CollisionType::attachment))
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
     {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
     }
@@ -160,7 +160,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
     // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.totalCrossSection());
+    // mixture.grid->getNodes(), mixture.collision_data().totalCrossSection());
 
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
@@ -169,7 +169,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
 
     if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.hasCollisions(CollisionType::ionization))
+        mixture.collision_data().hasCollisions(CollisionType::ionization))
     {
         ionizationMatrix.setZero(grid.nCells(), grid.nCells());
     }
@@ -215,7 +215,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
         diagPattern.emplace_back(k, k, 0.);
     }
 
-    if (mixture.hasCollisions(CollisionType::attachment))
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
     {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
     }
@@ -369,12 +369,12 @@ void ElectronKinetics::solve()
     }
 
     // evaluate derived data
-    mixture.evaluateRateCoefficients(eedf);
+    mixture.collision_data().evaluateRateCoefficients(grid,eedf);
     evaluateSwarmParameters();
     evaluateFirstAnisotropy();
 
-    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.gases(), swarmParameters,
-                         mixture.rateCoefficients, mixture.rateCoefficientsExtra, firstAnisotropy);
+    obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.collision_data(), swarmParameters,
+                         firstAnisotropy);
 
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
     const std::string xpm_fname{"system_matrix.xpm"};
@@ -478,7 +478,7 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
 
 void ElectronKinetics::evaluateMatrix()
 {
-    mixture.evaluateTotalAndElasticCS();
+    mixture.collision_data().evaluateTotalAndElasticCS(grid);
 
     evaluateElasticOperator();
 
@@ -489,10 +489,10 @@ void ElectronKinetics::evaluateMatrix()
 
     evaluateInelasticOperators();
 
-    if (mixture.hasCollisions(CollisionType::ionization))
+    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
         evaluateIonizationOperator();
 
-    if (mixture.hasCollisions(CollisionType::attachment))
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         evaluateAttachmentOperator();
 
     // Sort and erase duplicates.
@@ -503,7 +503,7 @@ void ElectronKinetics::evaluateMatrix()
 
 void ElectronKinetics::evaluateElasticOperator()
 {
-    g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.elasticCrossSection()) * 2;
+    g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.collision_data().elasticCrossSection()) * 2;
     g_c[0] = 0.;
     g_c[g_c.size() - 1] = 0.;
 
@@ -531,7 +531,7 @@ void ElectronKinetics::evaluateFieldOperator()
     const double me = Constant::electronMass;
     const double e = Constant::electronCharge;
 
-    const Vector &cs = mixture.totalCrossSection();
+    const Vector &cs = mixture.collision_data().totalCrossSection();
 
     // g_E gets its size in the constructor.
     g_E[0] = 0.;
@@ -624,11 +624,11 @@ void ElectronKinetics::evaluateInelasticOperators()
 
     inelasticMatrix.setZero();
 
-    for (const auto &gas : mixture.gases())
+    for (const auto &cd : mixture.collision_data().data_per_gas())
     {
         for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
         {
-            for (const auto &collision : gas->collisions(vecIndex) )
+            for (const auto &collision : cd.collisions(vecIndex) )
             {
                 const double threshold = collision->crossSection->threshold();
 
@@ -696,9 +696,9 @@ void ElectronKinetics::evaluateIonizationOperator()
     if (ionizationOperatorType != IonizationOperatorType::conservative)
         ionizationMatrix.setZero();
 
-    for (const auto &gas : mixture.gases())
+    for (const auto &cd : mixture.collision_data().data_per_gas())
     {
-        for (const auto &collision : gas->collisions(CollisionType::ionization))
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
         {
             const double threshold = collision->crossSection->threshold();
 
@@ -748,7 +748,7 @@ void ElectronKinetics::evaluateIonizationOperator()
                 }
                 break;
             case IonizationOperatorType::sdcs:
-                double W = gas->OPBParameter();
+                double W = cd.OPBParameter();
 
                 if (W < 0)
                     W = threshold;
@@ -828,9 +828,9 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
     const Grid::Index cellNumber = grid.nCells();
 
-    for (const auto &gas : mixture.gases())
+    for (const auto &cd : mixture.collision_data().data_per_gas())
     {
-        for (const auto &collision : gas->collisions(CollisionType::attachment))
+        for (const auto &collision : cd.collisions(CollisionType::attachment))
         {
             const double threshold = collision->crossSection->threshold();
 
@@ -838,7 +838,7 @@ void ElectronKinetics::evaluateAttachmentOperator()
                 continue;
 
             /* This should definitely not be in this (double) loop. Is this a constructor task?
-             * Can this just be replaced with 'gas->collisions(CollisionType::attachment).size()'
+             * Can this just be replaced with 'cd.collisions(CollisionType::attachment).size()'
              * in (other) places where this is now used?
              * Answer: no, this depends on uMax(), which may change for a smart grid. But it
              * could be done as an action when that changes.
@@ -967,7 +967,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     Vector cellTotalCrossSection(grid.nCells());
 
     for (Grid::Index i = 0; i < grid.nCells(); ++i)
-        cellTotalCrossSection[i] = .5 * (mixture.totalCrossSection()[i] + mixture.totalCrossSection()[i + 1]);
+        cellTotalCrossSection[i] = .5 * (mixture.collision_data().totalCrossSection()[i] + mixture.collision_data().totalCrossSection()[i + 1]);
 
     if (!mixture.CARGases().empty())
     {
@@ -1104,7 +1104,7 @@ void ElectronKinetics::solveSpatialGrowthMatrix()
     uint32_t iter = 0;
     bool hasConverged = false;
 
-    const Vector g_fieldSpatialBase = (EoN / 6) * grid.getNodes().array() / mixture.totalCrossSection().array();
+    const Vector g_fieldSpatialBase = (EoN / 6) * grid.getNodes().array() / mixture.collision_data().totalCrossSection().array();
 
     while (!hasConverged)
     {
@@ -1247,7 +1247,7 @@ void ElectronKinetics::solveTemporalGrowthMatrix()
         g_fieldTemporalGrowth[0] = 0.;
         for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
         {
-            const double totalCSI = mixture.totalCrossSection()[i] + growthFactor / std::sqrt(grid.getNode(i));
+            const double totalCSI = mixture.collision_data().totalCrossSection()[i] + growthFactor / std::sqrt(grid.getNode(i));
             g_fieldTemporalGrowth[i] =
                 (EoN * EoN / 3) * grid.getNode(i) /
                 (totalCSI + (m * WoN * WoN / (2 * e)) / (grid.getNode(i)*totalCSI));
@@ -1557,7 +1557,7 @@ void ElectronKinetics::evaluatePower()
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
                 // Diffusion and Mobility contributions
-                cellCrossSection[k] = .5 * (mixture.totalCrossSection()[k] + mixture.totalCrossSection()[k + 1]);
+                cellCrossSection[k] = .5 * (mixture.collision_data().totalCrossSection()[k] + mixture.collision_data().totalCrossSection()[k + 1]);
                 powerDiffusion += grid.getCell(k) * grid.getCell(k) * eedf[k] / cellCrossSection[k];
 
                 if (k > 0 && k < grid.nCells() - 1)
@@ -1596,10 +1596,10 @@ void ElectronKinetics::evaluatePower()
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
-    for (auto &gas : mixture.gases())
+    for (auto &cd : mixture.collision_data().data_per_gas())
     {
-        gas->evaluatePower(ionizationOperatorType, eedf);
-        power += gas->getPower();
+        cd.evaluatePower(ionizationOperatorType, eedf);
+        power += cd.getPower();
     }
 
     /// \todo Change inelastic/superelastic with inelastic, use inelastic.forward, inelastic.backward.
@@ -1655,7 +1655,7 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
 
-    Vector tCS(mixture.totalCrossSection());
+    Vector tCS(mixture.collision_data().totalCrossSection());
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
@@ -1684,14 +1684,14 @@ void ElectronKinetics::evaluateSwarmParameters()
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
 
-    for (const auto &gas : mixture.gases())
+    for (const auto &cd : mixture.collision_data().data_per_gas())
     {
-        for (const auto &collision : gas->collisions(CollisionType::ionization))
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
         {
             totalIonRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
         }
 
-        for (const auto &collision : gas->collisions(CollisionType::attachment))
+        for (const auto &collision : cd.collisions(CollisionType::attachment))
         {
             totalAttRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
         }
@@ -1725,7 +1725,7 @@ void ElectronKinetics::evaluateFirstAnisotropy()
     firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid.du();
     firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid.du());
 
-    Vector cellCrossSection = (mixture.totalCrossSection().segment(0, n) + mixture.totalCrossSection().segment(1, n)) / 2.;
+    Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
     if (includeNonConservativeIonization || includeNonConservativeAttachment)
     {

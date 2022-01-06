@@ -6,7 +6,7 @@
 #define LOKI_CPP_COLLISION_H
 
 #include "LoKI-B/Enumeration.h"
-#include "LoKI-B/GasBase.h"
+#include "LoKI-B/Gas.h"
 
 #include <map>
 #include <vector>
@@ -19,7 +19,7 @@ namespace loki
 class Collision
 {
   public:
-    using State = GasBase::State;
+    using State = Gas::State;
     using StateVector = std::vector<State *>;
     using CoeffVector = std::vector<uint16_t>;
 

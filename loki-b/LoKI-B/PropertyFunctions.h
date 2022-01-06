@@ -7,7 +7,7 @@
 
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Enumeration.h"
-#include "LoKI-B/GasBase.h"
+#include "LoKI-B/Gas.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/Enumeration.h"
@@ -19,7 +19,7 @@
  *
  *  The arguments are as follows.
  *
- *  1. A vector of pointers to the states (StateBase) of which to set the
+ *  1. A vector of pointers to the states (State) of which to set the
        property.
  *  2. A vector of doubles representing the arguments of the property function.
  *     As an example, in the case of boltzmannPopulation this vector contains a
@@ -41,7 +41,7 @@ namespace loki::PropertyFunctions
  *  StatePropertyType, it will assign the value to either the population, statisticalWeight or
  *  population member variables of the supplied state object.
  */
-inline void setStateProperty(GasBase::StateBase *state, const double &value, StatePropertyType type)
+inline void setStateProperty(Gas::State *state, const double &value, StatePropertyType type)
 {
     switch (type)
     {
@@ -57,7 +57,7 @@ inline void setStateProperty(GasBase::StateBase *state, const double &value, Sta
     }
 }
 
-inline void boltzmannPopulation(const std::vector<GasBase::StateBase *> &states, const std::vector<double> &arguments,
+inline void boltzmannPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                 StatePropertyType type)
 {
     if (type != StatePropertyType::population)
@@ -80,7 +80,7 @@ inline void boltzmannPopulation(const std::vector<GasBase::StateBase *> &states,
     }
 }
 
-inline void harmonicOscillatorEnergy(const std::vector<GasBase::StateBase *> &states,
+inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
                                      const std::vector<double> &arguments, StatePropertyType type)
 {
     if (type != StatePropertyType::energy)
@@ -108,7 +108,7 @@ inline void harmonicOscillatorEnergy(const std::vector<GasBase::StateBase *> &st
     }
 }
 
-inline void rigidRotorEnergy(const std::vector<GasBase::StateBase *> &states, const std::vector<double> &arguments,
+inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                              StatePropertyType type)
 {
     if (type != StatePropertyType::energy)
@@ -135,7 +135,7 @@ inline void rigidRotorEnergy(const std::vector<GasBase::StateBase *> &states, co
     }
 }
 
-inline void rotationalDegeneracy_N2(const std::vector<GasBase::StateBase *> &states,
+inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states,
                                     const std::vector<double> &arguments, StatePropertyType type)
 {
     if (type != StatePropertyType::statisticalWeight)
@@ -158,7 +158,7 @@ inline void rotationalDegeneracy_N2(const std::vector<GasBase::StateBase *> &sta
     }
 }
 
-inline void rotationalDegeneracy(const std::vector<GasBase::StateBase *> &states, const std::vector<double> &arguments,
+inline void rotationalDegeneracy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                  StatePropertyType type)
 {
     if (type != StatePropertyType::statisticalWeight)
@@ -181,7 +181,7 @@ inline void rotationalDegeneracy(const std::vector<GasBase::StateBase *> &states
     }
 }
 
-inline void constantValue(const std::vector<GasBase::StateBase *> &states, double value, StatePropertyType type)
+inline void constantValue(const std::vector<Gas::State *> &states, double value, StatePropertyType type)
 {
 
     //            if (arguments.size() != 1)
@@ -195,7 +195,7 @@ inline void constantValue(const std::vector<GasBase::StateBase *> &states, doubl
     }
 }
 
-inline void callByName(const std::string &name, const std::vector<GasBase::StateBase *> &states,
+inline void callByName(const std::string &name, const std::vector<Gas::State *> &states,
                        const std::vector<double> &arguments, StatePropertyType type)
 {
 

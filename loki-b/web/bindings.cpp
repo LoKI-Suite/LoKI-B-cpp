@@ -16,10 +16,8 @@ namespace loki {
 namespace web {
 
 void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc,
-                   const Power &power, const std::vector<EedfGas *> &gases,
+                   const Power &power, const EedfCollisionDataMixture& collData,
                    const SwarmParameters &swarmParameters,
-                   const std::vector<RateCoefficient> &rateCoefficients,
-                   const std::vector<RateCoefficient> &extraRateCoefficients,
                    const Vector &firstAnisotropy)
 {
     EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());

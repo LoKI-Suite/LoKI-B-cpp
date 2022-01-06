@@ -5,8 +5,8 @@
 #ifndef LOKI_CPP_ELECTRONKINETICS_H
 #define LOKI_CPP_ELECTRONKINETICS_H
 
-#include "LoKI-B/EedfCollision.h"
-#include "LoKI-B/EedfGasMixture.h"
+#include "LoKI-B/EedfCollisions.h"
+#include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Event.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/LinearAlgebra.h"
@@ -21,8 +21,8 @@ namespace loki
 {
 
 using ResultEvent =
-    Event<const Grid, const Vector, const WorkingConditions, const Power, const std::vector<EedfGas *>,
-          const SwarmParameters, const std::vector<RateCoefficient>, const std::vector<RateCoefficient>, const Vector>;
+    Event<const Grid, const Vector, const WorkingConditions, const Power, const EedfCollisionDataMixture&,
+          const SwarmParameters, const Vector>;
 
 class ElectronKinetics
 {
@@ -109,7 +109,7 @@ class ElectronKinetics
 
     WorkingConditions *workingConditions;
     Grid grid;
-    EedfGasMixture mixture;
+    EedfMixture mixture;
 
     EedfType eedfType;
     /** \todo This is not used anywhere at the moment.
