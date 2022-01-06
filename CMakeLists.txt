@@ -96,13 +96,12 @@ else()
 endif()
 
 set(cpp ${src}/CrossSection.cpp
-        ${src}/GasBase.cpp
-        ${src}/GasMixtureBase.cpp
+        ${src}/Gas.cpp
+        ${src}/GasMixture.cpp
         ${src}/Gnuplot.cpp
         ${src}/Grid.cpp
-        ${src}/EedfCollision.cpp
-        ${src}/EedfGas.cpp
-        ${src}/EedfGasMixture.cpp
+        ${src}/EedfCollisions.cpp
+        ${src}/EedfMixture.cpp
         ${src}/ElectronKinetics.cpp
         ${src}/Enumeration.cpp
         ${src}/JobSystem.cpp
@@ -117,12 +116,12 @@ set(cpp ${src}/CrossSection.cpp
         ${src}/StateEntry.cpp
         ${src}/WorkingConditions.cpp)
 # set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-#         ${h}/GasBase.h ${h}/GasMixtureBase.h ${h}/EedfGas.h ${h}/Constant.h
+#         ${h}/Gas.h ${h}/GasMixture.h ${h}/EedfGas.h ${h}/Constant.h
 #         ${h}/Collision.h
 #         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h ${h}/Matrix2Picture.h
 #         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
 #         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
-#         ${h}/EedfGasMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
+#         ${h}/EedfMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
 #         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
 #         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 

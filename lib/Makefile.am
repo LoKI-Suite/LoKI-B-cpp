@@ -7,13 +7,12 @@ VPATH=$(top_srcdir)/loki-b/source
 libloki_b_la_LDFLAGS = -no-undefined
 libloki_b_la_SOURCES = \
 	CrossSection.cpp \
-	EedfCollision.cpp \
-	EedfGas.cpp \
-	EedfGasMixture.cpp \
+	EedfCollisions.cpp \
 	ElectronKinetics.cpp \
+	EedfMixture.cpp \
 	Enumeration.cpp \
-	GasBase.cpp \
-	GasMixtureBase.cpp \
+	Gas.cpp \
+	GasMixture.cpp \
 	Gnuplot.cpp \
 	Grid.cpp \
 	JobSystem.cpp \
