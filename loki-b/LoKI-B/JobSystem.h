@@ -32,6 +32,7 @@
 #include "LoKI-B/json.h"
 #include <cstdlib>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
