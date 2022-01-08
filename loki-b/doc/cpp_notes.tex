@@ -75,6 +75,8 @@ of the gases and states.
 
 \subsection{The gamma constant}
 
+\label{sec:gamma-constant}
+
 Gamma has been introduced. This constant also appears in the BOLSIG+ paper
 \cite{Hagelaar2005}, where it introduced just below equation 6, and is defined
 as
@@ -96,6 +98,8 @@ but the presence of the subscript $k$ avoids any confusion with the
 constant $\gamma$, which in addition has the \SRC{SI::} prefix.
 
 \subsection{The functions $G_x(y)$ and $g_x(u)$}
+\label{sec:G_x,g_x}
+
 
 Many terms on the left-hand side of the 2-term approximation of the Boltzmann
 equation are written in terms of energy-derivatives of functions $G_x(u)$, where
@@ -154,11 +158,12 @@ auxiary functions $g_x(u)$.
         \]
         (Also see section \ref{sec:discretization}.)
   \item Note that the elements of $g_x(u)$ are also used to calculated the
-        elastic terms on the power balance, see \cite[eq. 24c]{Tejero2019} and
-        \cite[eq. 38c]{Manual_1_0_0}.\footnote{
+        elastic terms on the power balance, see \cite[eq. 24c]{Tejero2019},
+        \cite[eq. 38c]{Manual_1_0_0} and section \ref{sec:power-terms} of the
+	present text\footnote{
           In the code, a different expression is used, that appears to be
           based on partial integration of the expressions in the paper and
-          manual. This must be checked.}
+          manual. See section \ref{sec:power-terms}.}
         When the meaning of $g_x(u)$ is changed, also those expressions must
         be updated accordingly.
   \item In order to compare expressions with those in the BOLSIG+ paper
@@ -437,6 +442,56 @@ same derivative of $f(u)$,
 \end{equation}
 then use $f'(u_k)\doteq(f(u_{k+1})-f(u_{k-1}))/(2\Delta u)$ and
 $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
+
+\subsection{Power Terms}
+\label{sec:power-terms}
+
+In the code some integrals appear in a form that differs from that in the LoKI-B
+paper and manual. As an example, consider the energy gain and loss terms for CAR
+gases (see \cite[eqn 24a--h]{Tejero2019} and \cite[eqn 28a--h]{Manual_1_0_0}),
+\begin{equation}
+	\frac{\Theta^{gain}_{x=el,CAR}}{N} = -\int\limits_0^\infty g_x(u)c\DERIV{f(u)}{u}\dd{u}
+\end{equation}
+\begin{equation}
+	\frac{\Theta^{loss}_{x=el,CAR}}{N} = -\int\limits_0^\infty g_x(u)f(u)\dd{u}
+\end{equation}
+Partial integration of the expression for the gain yields
+\begin{equation}
+	\frac{\Theta^{gain}_{x=el,CAR}}{N}
+	=
+	-\left.g_x(u)f(u)\right|_0^\infty
+	+\int\limits_0^\infty \DERIV{g_x(u)}{u}cf(u)\dd{u}
+	=
+	\int\limits_0^\infty \DERIV{g_x(u)}{u}cf(u)\dd{u},
+\end{equation}
+where the fact that $g_x(u)$ vanishes for $u=0$ and the product $g_x(u)f(u)$ vanishes
+for $u\rightarrow\infty$. The resulting term can be approximated as
+\begin{equation}
+	\frac{\Theta^{gain}_{x=el,CAR}}{N}
+	\doteq
+	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})-g_x(u_{i-1/2})}{\Delta u}cf(u_i)\Delta{u}
+	=
+	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})-g_x(u_{i-1/2})\right]cf(u_i).
+\end{equation}
+The loss term can be approximated as
+\begin{equation}
+	\frac{\Theta^{loss}_{x=el,CAR}}{N}
+	\doteq
+	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})+g_x(u_{i-1/2})}{2}f(u_i)\Delta{u}
+	=
+	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})+g_x(u_{i-1/2})\right]\frac{\Delta u}{2}f(u_i).
+\end{equation}
+The net power is obtained by adding the gain and loss terms and results in
+the approximation
+\begin{equation}
+	\frac{\Theta^{gain}_{x=el,CAR}}{N}
+	\doteq
+	\sum_{i=0}^{N_c-1} \left[\left(c+\frac{\Delta u}{2}\right)g_x(u_{i+1/2})-\left(c-\frac{\Delta u}{2}\right)g_x(u_{i-1/2})\right]f(u_i).
+\end{equation}
+These approximate expressions for the gain and net power have been implemented in
+the code, except that in the code also an additional factor $\gamma$ appears (see
+sections \eqref{sec:G_x,g_x} and \eqref{sec:gamma-constant}).
+In the code the parenthesized coefficients are called \SRC{auxHigh} and \SRC{auxLow}.
 
 
 
