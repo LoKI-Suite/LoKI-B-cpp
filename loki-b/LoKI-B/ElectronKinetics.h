@@ -36,28 +36,44 @@ class ElectronKinetics
 
     ResultEvent obtainedNewEedf;
 
+    /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
+     *  depending on wether the smart grid option is enabled.
+     *  After completion, the power terms, rate coefficients, swarm parameters
+     *  and the first anisotropic term f1 are evaluated and the obtainedNewEedf
+     *  event is fired.
+     */
     void solve();
 
     const Grid *getGrid();
 
   private:
-    void evaluateMatrix();
-    void invertLinearMatrix();
+    /** Carry out initialization tasks. This function is called by both
+     *  constructor overloads after the argument-type-specific bits have
+     *  been done (those that depend on WorkingCondisions or JSON).
+     */
+    void initialize();
+    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
+     *  sum_i sqrt(u_i)*f[i]*du = 1.
+     *  Note: the incoming matrix is singular, the first equation (that is:
+     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
+     */
     void invertMatrix(Matrix &matrix);
-    void evaluateElasticOperator();
-    void evaluateFieldOperator();
-    void evaluateCAROperator();
-    void evaluateInelasticOperators();
-    void evaluateIonizationOperator();
-    void evaluateAttachmentOperator();
+    /** Update all terms that are needed later on to compose the boltzmannMatrix.
+     *  Note that this is called only in the constructor of this class and in
+     *  reply to an grid.updatedMaxEnergy event (which is triggered among others
+     *  by a smart grid iteration).
+     */
+    void evaluateMatrix();
+    /** solve the Boltzmann equation, taking into account only the linear terms.
+     */
+    void invertLinearMatrix();
+    /** solve the Boltzmann equation. An iterative procedure is used to handle
+     *  the non-linear terms.
+     */
     void mixingDirectSolutions();
-    void solveSpatialGrowthMatrix();
-    void solveTemporalGrowthMatrix();
-    void solveEEColl();
-    void evaluatePower();
-    void evaluateSwarmParameters();
-    void evaluateFirstAnisotropy();
-
+    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
+     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
+     */
     void solveSingle();
     void solveSmartGrid();
     /** An alternative for solveSmartGrid.
@@ -85,7 +101,7 @@ class ElectronKinetics
      *  for non-zero v we have calcDecades(0,v)=-Inf and calcDecades(v,0)=+Inf;
      *
      *  Loki-B uses this function to evaluate the dynamic range of the EEDF, and
-     *  calculate the energy grid accordingly.
+     *  calculate the energy grid accordingly ('smart grid').
      *
      *  Note that the abs is needed even if v1,v2 are non-negative. In case of
      *  underflow, LoKI-B may produce v1>0 and v2=-0. Such signed zero would
@@ -118,16 +134,14 @@ class ElectronKinetics
      *  in the MATLAB version.
      */
     uint8_t shapeParameter;
-    double mixingParameter;
+
+    /** Tolerance settings.
+     */
     double maxEedfRelError;
     double maxPowerBalanceRelError;
-    IonizationOperatorType ionizationOperatorType;
-    GrowthModelType growthModelType;
-
-    double CIEff{0.};
-    double alphaRedEff{0.};
 
     // support for elastic contributions
+    void evaluateElasticOperator();
     SparseMatrix elasticMatrix;
     Vector g_c;
 
@@ -135,9 +149,12 @@ class ElectronKinetics
      *                 (no ionization, attachment)? So only excitation? If so,
      *                 only electronic, or also vibrational, rotational?
      */
+    void evaluateInelasticOperators();
     Matrix inelasticMatrix;
 
     // Support for ionization.
+    IonizationOperatorType ionizationOperatorType;
+    void evaluateIonizationOperator();
     /** \todo Document whre/when ionConservativeMatrix is used. It is also used
      *        to obtain an initial guess if iterations are done, it seems.
      */
@@ -147,6 +164,7 @@ class ElectronKinetics
     Matrix ionizationMatrix;
 
     // Support for electron attachment
+    void evaluateAttachmentOperator();
     /** \todo Always used when attachment processes are present.
      *  Unlike ionConservativeMatrix, this does not depend on a setting, it seems.
      *  is that intended?
@@ -162,24 +180,36 @@ class ElectronKinetics
      * Depending on the growth model, more fields are used to handle these terms
      * (fieldMatrixSpatGrowth, g_fieldSpatialGrowth or fieldMatrixTempGrowth, g_fieldTemporalGrowth).
      */
+    void evaluateFieldOperator();
     SparseMatrix fieldMatrix;
     Vector g_E;
 
-    /// CARMatrix, g_CAR are relevant only when CAR gases are present (same for power.carXXX)
+    // support for CAR processes.
+    void evaluateCAROperator();
     SparseMatrix CARMatrix;
     Vector g_CAR;
 
-    // variables related to spatial growth
+    // use by spatial AND temporal growth
+    GrowthModelType growthModelType;
+    double mixingParameter;
+    double CIEff{0.};
+
+    // code related to spatial growth
+    void solveSpatialGrowthMatrix();
     SparseMatrix fieldMatrixSpatGrowth;
     SparseMatrix ionSpatialGrowthD;
     SparseMatrix ionSpatialGrowthU;
     Vector g_fieldSpatialGrowth;
+    double alphaRedEff{0.};
 
-    // variables related to temporal growth
+    // code related to temporal growth
+    void solveTemporalGrowthMatrix();
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
     Vector g_fieldTemporalGrowth;
 
+    // code related to ee colissions
+    void solveEEColl();
     /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
     bool includeEECollisions;
     /// \todo See if/when the 0-initialization is needed
@@ -191,6 +221,8 @@ class ElectronKinetics
     Matrix boltzmannMatrix;
     // the EEDF
     Vector eedf;
+
+    // storage and calculation of f1 (first anisotropic term)
     /** \todo Note that this is essentially output only.
      *  This is evaluated at the end of solve() by a call to
      *  evaluateFirstAnisotropy(), then passed on to
@@ -204,16 +236,23 @@ class ElectronKinetics
      *  and power.reference, which are used as part of a convergence
      *  criterium in solveEEColl().
      */
+    void evaluateFirstAnisotropy();
     Vector firstAnisotropy;
+
+    // storage and calculation of the power terms
+    void evaluatePower();
     Power power;
+
+    // storage and calculation of the swarm parameters
+    void evaluateSwarmParameters();
     SwarmParameters swarmParameters;
 
     /** \todo superElasticThresholds is only used in the disabled code path
      *  in invertMatrix that uses LinAlg::hessenbergReductionPartialPiv.
      *  It seems that all this should be removed or at least disabled as long
      *  as that code is not active.
-     */
     std::vector<uint32_t> superElasticThresholds;
+     */
 
     /* NOTE: the following three are not configuration parameters, but the
      * result of introspection of the reaction lists. The results also depend

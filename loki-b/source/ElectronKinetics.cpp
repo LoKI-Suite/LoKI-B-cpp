@@ -50,83 +50,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     this->growthModelType = setup.growthModelType;
     this->includeEECollisions = setup.includeEECollisions;
 
-    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
-    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
-
-    // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.collision_data().totalCrossSection());
-
-    inelasticMatrix.setZero(grid.nCells(), grid.nCells());
-
-    ionConservativeMatrix.setZero(grid.nCells(), grid.nCells());
-
-    attachmentConservativeMatrix.setZero(grid.nCells(), grid.nCells());
-
-    if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.collision_data().hasCollisions(CollisionType::ionization))
-    {
-        ionizationMatrix.setZero(grid.nCells(), grid.nCells());
-    }
-
-    A.setZero(grid.nCells());
-    B.setZero(grid.nCells());
-
-    boltzmannMatrix.setZero();
-
-    // SPARSE INITIALIZATION
-    std::vector<Eigen::Triplet<double>> tridiagPattern;
-    tridiagPattern.reserve(3 * grid.nCells() - 2);
-
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        if (k > 0)
-            tridiagPattern.emplace_back(k - 1, k, 0.);
-
-        tridiagPattern.emplace_back(k, k, 0.);
-
-        if (k < grid.nCells() - 1)
-            tridiagPattern.emplace_back(k + 1, k, 0.);
-    }
-
-    elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-    fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-
-    if (!mixture.CARGases().empty())
-        CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-
-    /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
-     *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
-     *        Then the pattern-code below can be removed, only a resize needed. Question:
-     *        does Eigen optimize matrix addition and multiplication for such matrices? That
-     *        is not immediately clear to me.
-     *        Same for the other constructor, of course.
-     */
-    std::vector<Eigen::Triplet<double>> diagPattern;
-    diagPattern.reserve(grid.nCells());
-
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        diagPattern.emplace_back(k, k, 0.);
-    }
-
-    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-    {
-        attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
-    }
-
-    if (growthModelType == GrowthModelType::spatial)
-    {
-        ionSpatialGrowthD.setFromTriplets(diagPattern.begin(), diagPattern.end());
-        ionSpatialGrowthU.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-        fieldMatrixSpatGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-    }
-    else if (growthModelType == GrowthModelType::temporal)
-    {
-        ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
-        fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-    }
-
-    this->evaluateMatrix();
+    initialize();
 }
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
@@ -156,6 +80,11 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     this->includeEECollisions = cnf.at("includeEECollisions");
 
+    initialize();
+}
+
+void ElectronKinetics::initialize()
+{
     grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
     workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
 
@@ -495,10 +424,12 @@ void ElectronKinetics::evaluateMatrix()
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         evaluateAttachmentOperator();
 
+    /** \todo see the comments about superElasticThresholds in the header file.
     // Sort and erase duplicates.
     std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
     superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                  superElasticThresholds.end());
+    */
 }
 
 void ElectronKinetics::evaluateElasticOperator()
@@ -664,8 +595,10 @@ void ElectronKinetics::evaluateInelasticOperators()
                         if (productDensity == 0)
                             continue;
 
+                        /** \todo see the comments about superElasticThresholds in the header file.
                         if (numThreshold > 1)
                             superElasticThresholds.emplace_back(numThreshold);
+                        */
 
                         if (numThreshold != 1)
                             hasSuperelastics = true;
