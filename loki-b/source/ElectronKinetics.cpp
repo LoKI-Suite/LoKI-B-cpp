@@ -336,8 +336,8 @@ void ElectronKinetics::invertLinearMatrix()
 
 void ElectronKinetics::invertMatrix(Matrix &matrix)
 {
-//#define LOKIB_TIM_INVERT_MATRIX
-#ifdef LOKIB_TIM_INVERT_MATRIX
+//#define LOKIB_TIME_INVERT_MATRIX
+#ifdef LOKIB_TIME_INVERT_MATRIX
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
 
@@ -398,7 +398,7 @@ void ElectronKinetics::invertMatrix(Matrix &matrix)
     // std::cout << "NORM: " <<  eedf.dot(grid.getCells().cwiseSqrt() * grid.du()) << std::endl;
     eedf /= eedf.dot(grid.getCells().cwiseSqrt() * grid.du());
 
-#ifdef LOKIB_TIM_INVERT_MATRIX
+#ifdef LOKIB_TIME_INVERT_MATRIX
     auto end = std::chrono::high_resolution_clock::now();
     std::cerr << "Inverted matrix elapsed time = "
               << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
