@@ -33,7 +33,9 @@ class ElectronKinetics
     ElectronKinetics(const ElectronKinetics &other) = delete;
     // use the detaul destructor
     ~ElectronKinetics() = default;
-
+    /** \todo Implement the 'rule of big 5': also delete the move constructor and
+     *  move and copy assignment.
+     */
     ResultEvent obtainedNewEedf;
 
     /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
