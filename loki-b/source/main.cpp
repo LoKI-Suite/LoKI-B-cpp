@@ -68,6 +68,7 @@ void handleExistingOutputPath(std::string &folder)
 
 
 int main(int argc, char **argv)
+try
 {
 #ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
     // see https://en.cppreference.com/w/cpp/numeric/fenv for making this portable. There are
@@ -77,73 +78,70 @@ int main(int argc, char **argv)
     //      problematic, since IEE754 describes clear semantics for thee cases.
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
-    try
-    {
-        /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
-         * be set up instead of af FileOutput object. The variable data_out will
-         * act as its output root object. Note that support is incomplete, see
-         * Output.cpp.
-         */
+    /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
+     * be set up instead of af FileOutput object. The variable data_out will
+     * act as its output root object. Note that support is incomplete, see
+     * Output.cpp.
+     */
+    /// \todo Make WRITE_OUTPUT_TO_JSON_OBJECT user-configurable, remove the macro
 //#define WRITE_OUTPUT_TO_JSON_OBJECT
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-        loki::json_type data_out;
+    loki::json_type data_out;
 #endif
-        auto begin = std::chrono::high_resolution_clock::now();
-        if (argc != 2)
-        {
-            throw std::runtime_error("Expected the input file as the single argument.");
-        }
-
-        std::unique_ptr<loki::Simulation> simulation;
-        std::string fileName(argv[1]);
-        if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
-        {
-            const loki::json_type cnf = loki::read_json_from_file(fileName);
-            simulation.reset(new loki::Simulation(cnf));
-            if (cnf.at("output").at("isOn"))
-            {
-                loki::Output* output =
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-                    new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions,
-                            &simulation->m_jobManager);
-#else
-                    new loki::FileOutput(cnf, &simulation->m_workingConditions,
-                            &simulation->m_jobManager, &handleExistingOutputPath);
-#endif
-                simulation->configureOutput(output);
-            }
-        }
-        else
-        {
-            const loki::Setup setup(argv[1]);
-            simulation.reset(new loki::Simulation(setup));
-            if (setup.output.isOn)
-            {
-                loki::Output* output = new loki::FileOutput(setup, &simulation->m_workingConditions,
-                        &simulation->m_jobManager, &handleExistingOutputPath);
-                simulation->configureOutput(output);
-            }
-        }
-
-        simulation->m_obtainedResults.addListener(handleResults);
-
-        simulation->run();
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cerr << "Simulation finished, elapsed time = "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-                  << "mus" << std::endl;
-
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-        std::cout << "Output data:" << std::endl;
-        std::cout << data_out.dump(2) << std::endl;
-#endif
-
-        return 0;
-    }
-    catch (const std::exception &e)
+    auto begin = std::chrono::high_resolution_clock::now();
+    if (argc != 2)
     {
-        std::cerr << e.what() << std::endl;
-        return 1;
+        throw std::runtime_error("Usage: loki <inputfile>");
     }
-}
 
+    std::unique_ptr<loki::Simulation> simulation;
+    std::string fileName(argv[1]);
+    if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
+    {
+        const loki::json_type cnf = loki::read_json_from_file(fileName);
+        simulation.reset(new loki::Simulation(cnf));
+        if (cnf.at("output").at("isOn"))
+        {
+            loki::Output* output =
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+                new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions,
+                        &simulation->m_jobManager);
+#else
+                new loki::FileOutput(cnf, &simulation->m_workingConditions,
+                        &simulation->m_jobManager, &handleExistingOutputPath);
+#endif
+            simulation->configureOutput(output);
+        }
+    }
+    else
+    {
+        const loki::Setup setup(argv[1]);
+        simulation.reset(new loki::Simulation(setup));
+        if (setup.output.isOn)
+        {
+            loki::Output* output = new loki::FileOutput(setup, &simulation->m_workingConditions,
+                    &simulation->m_jobManager, &handleExistingOutputPath);
+            simulation->configureOutput(output);
+        }
+    }
+
+    simulation->m_obtainedResults.addListener(handleResults);
+
+    simulation->run();
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cerr << "Simulation finished, elapsed time = "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
+              << "mus" << std::endl;
+
+#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+    std::cout << "Output data:" << std::endl;
+    std::cout << data_out.dump(2) << std::endl;
+#endif
+
+    return 0;
+}
+catch (const std::exception &e)
+{
+    std::cerr << e.what() << std::endl;
+    return 1;
+}
