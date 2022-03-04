@@ -248,7 +248,7 @@ if (DOXYGEN_FOUND)
     message("Doxygen build started")
 
     # to always build the doxygen docs, add option ALL to the following list.
-    add_custom_target( doc_doxygen
+    add_custom_target( doc_doxygen_loki_b
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
