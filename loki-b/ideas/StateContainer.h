@@ -210,8 +210,12 @@ inline StateRoot::StateRoot(Gas& gas)
 }
 
 inline Gas::Gas(const std::string& name)
-    : m_name(name),
-    m_states(new StateRoot(*this)), harmonicFrequency(-1), rotationalConstant(-1), fraction(1)
+    :
+    harmonicFrequency(-1),
+    rotationalConstant(-1),
+    fraction(1),
+    m_name(name),
+    m_states(new StateRoot(*this))
 {
 }
 

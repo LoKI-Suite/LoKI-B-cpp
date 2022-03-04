@@ -12,7 +12,7 @@ int main()
     StateCharge* N20 = N2_root->ensure_state("0");
     StateElectronic* N20X = N20->ensure_state("X");
     StateVibrational* N20X0 = N20X->ensure_state("0");
-    StateRotational* N20X01 = N20X0->ensure_state("1");
+    /* StateRotational* N20X01 =*/ N20X0->ensure_state("1");
     // and J=2...6
     N20X0->ensure_state("2");
     N20X0->ensure_state("3");
@@ -26,7 +26,7 @@ int main()
     mixture.ensure_state("N2","0","X","2");
     mixture.ensure_state("N2","0","X","3");
     // create N2(+)
-    StateCharge* N21 = N2_root->ensure_state("1");
+    /* StateCharge* N21 =*/ N2_root->ensure_state("1");
 
     PropertyFunctions::rotationalDegeneracy(N20X0->children(),{});
     /// \todo We need Gasmixture::getGas(string), that throws if the gas does not exists.
