@@ -142,7 +142,7 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 endif()
 
 # -- loki library -- #
-add_library(loki_l ${cpp} ${property_functions})
+add_library(loki_l SHARED ${cpp} ${property_functions})
 target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
 target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
 target_link_libraries(loki_l PRIVATE ${backend})
