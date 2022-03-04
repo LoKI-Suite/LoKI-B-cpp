@@ -46,7 +46,15 @@ else()
   set(inc_eigen ${EIGEN_PATH})
 endif()
 message(STATUS "Using Eigen library at ${inc_eigen}.")
-set(inc_nlohmann include/nlohmann-3.7.0)
+
+option(USE_BUILTIN_NLOHMANN_JSON "Use the version of nlohmann/json that is shipped with loki-b" OFF)
+if (USE_BUILTIN_NLOHMANN_JSON)
+  message("Using the nlohmann/json distribution that is shipped with LoKI-B")
+  set(inc_nlohmann include/nlohmann-3.7.0)
+else()
+  message("Using the system's nlohmann/json distribution")
+  set(inc_nlohmann )
+endif()
 
 # --- loki-b --- #
 set(src loki-b/source)
