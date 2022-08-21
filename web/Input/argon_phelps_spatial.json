@@ -18,7 +18,7 @@
     "includeEECollisions": false,
     "_LXCatFiles": ["Argon/Ar_LXCat.txt"],
     "LXCatFiles": [
-      "http://localhost:3001/cross_section/set/by_name?contributor=Phelps&name=argon-1983&refstyle=bibtex"
+      "http://localhost:3000/api/scat-css/125476/bibtex"
     ],
     "gasProperties": {
       "mass": "masses.txt",
