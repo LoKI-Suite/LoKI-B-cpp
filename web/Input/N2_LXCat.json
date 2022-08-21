@@ -1,7 +1,7 @@
 {
-  "states": [
-    { "particle": "e", "charge": -1, "id": "e" },
-    {
+  "states": {
+    "e": { "particle": "e", "charge": -1, "id": "e" },
+    "N2{X^1S_g^+}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -16,7 +16,7 @@
       ],
       "id": "N2{X^1S_g^+}"
     },
-    {
+    "N2{X^1S_g^+{v=0}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -32,7 +32,7 @@
       ],
       "id": "N2{X^1S_g^+{v=0}}"
     },
-    {
+    "N2{X^1S_g^+{v=1}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -48,7 +48,7 @@
       ],
       "id": "N2{X^1S_g^+{v=1}}"
     },
-    {
+    "N2{X^1S_g^+{v=2}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -64,7 +64,7 @@
       ],
       "id": "N2{X^1S_g^+{v=2}}"
     },
-    {
+    "N2{X^1S_g^+{v=3}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -80,7 +80,7 @@
       ],
       "id": "N2{X^1S_g^+{v=3}}"
     },
-    {
+    "N2{X^1S_g^+{v=4}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -96,7 +96,7 @@
       ],
       "id": "N2{X^1S_g^+{v=4}}"
     },
-    {
+    "N2{X^1S_g^+{v=5}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -112,7 +112,7 @@
       ],
       "id": "N2{X^1S_g^+{v=5}}"
     },
-    {
+    "N2{X^1S_g^+{v=6}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -128,7 +128,7 @@
       ],
       "id": "N2{X^1S_g^+{v=6}}"
     },
-    {
+    "N2{X^1S_g^+{v=7}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -144,7 +144,7 @@
       ],
       "id": "N2{X^1S_g^+{v=7}}"
     },
-    {
+    "N2{X^1S_g^+{v=8}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -160,7 +160,7 @@
       ],
       "id": "N2{X^1S_g^+{v=8}}"
     },
-    {
+    "N2{X^1S_g^+{v=9}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -176,7 +176,7 @@
       ],
       "id": "N2{X^1S_g^+{v=9}}"
     },
-    {
+    "N2{X^1S_g^+{v=10}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -192,7 +192,7 @@
       ],
       "id": "N2{X^1S_g^+{v=10}}"
     },
-    {
+    "N2{A^3S_u^+{v=0-4}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -214,7 +214,7 @@
       ],
       "id": "N2{A^3S_u^+{v=0-4}}"
     },
-    {
+    "N2{A^3S_u^+{v=5-9}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -236,7 +236,7 @@
       ],
       "id": "N2{A^3S_u^+{v=5-9}}"
     },
-    {
+    "N2{B^3P_g}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -244,7 +244,7 @@
       ],
       "id": "N2{B^3P_g}"
     },
-    {
+    "N2{W^3D_u}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -252,7 +252,7 @@
       ],
       "id": "N2{W^3D_u}"
     },
-    {
+    "N2{A^3S_u^+{v=10+}}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -268,7 +268,7 @@
       ],
       "id": "N2{A^3S_u^+{v=10+}}"
     },
-    {
+    "N2{B'^3S_u^-}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -283,7 +283,7 @@
       ],
       "id": "N2{B'^3S_u^-}"
     },
-    {
+    "N2{a'^1S_u^-}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -298,7 +298,7 @@
       ],
       "id": "N2{a'^1S_u^-}"
     },
-    {
+    "N2{a^1P_g}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -306,7 +306,7 @@
       ],
       "id": "N2{a^1P_g}"
     },
-    {
+    "N2{w^1D_u}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -314,7 +314,7 @@
       ],
       "id": "N2{w^1D_u}"
     },
-    {
+    "N2{C^3P_u}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -322,7 +322,7 @@
       ],
       "id": "N2{C^3P_u}"
     },
-    {
+    "N2{E^3S_g^+}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -337,7 +337,7 @@
       ],
       "id": "N2{E^3S_g^+}"
     },
-    {
+    "N2{a''^1S_g^+}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [
@@ -352,13 +352,13 @@
       ],
       "id": "N2{a''^1S_g^+}"
     },
-    {
+    "N2{sing-sup}": {
       "particle": "N2",
       "charge": 0,
       "electronic": [{ "e": "sing-sup", "summary": "sing-sup" }],
       "id": "N2{sing-sup}"
     },
-    {
+    "N2^+{X^2S_g^+}": {
       "particle": "N2",
       "charge": 1,
       "electronic": [
@@ -373,7 +373,7 @@
       ],
       "id": "N2^+{X^2S_g^+}"
     }
-  ],
+  },
   "processes": [
     {
       "reaction": {
@@ -7408,4 +7408,3 @@
     }
   ]
 }
-
