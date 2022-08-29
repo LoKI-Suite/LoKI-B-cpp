@@ -38,7 +38,8 @@ endif()
 #todo see how/when to set these two. For now, we rely on a 'system' eigen3/,
 #except for builds with MSVC: then we use the built-in Eigen.
 if(MSVC OR EMSCRIPTEN)
-  set(inc_eigen include/eigen-3.3.7/eigen3)
+  get_filename_component(EIGEN_ABSOLUTE_PATH include/eigen-3.3.7/eigen3 ABSOLUTE)
+  set(inc_eigen ${EIGEN_ABSOLUTE_PATH})
 else()
   if ("x${EIGEN_PATH}" STREQUAL "x")
     set (EIGEN_PATH "/usr/include/eigen3")
