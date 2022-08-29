@@ -100,29 +100,6 @@ else()
 	endif()
 endif()
 
-# --- loki-b --- #
-set(src ${CMAKE_CURRENT_SOURCE_DIR}/loki-b/source)
-set(h   ${CMAKE_CURRENT_SOURCE_DIR}/loki-b)
-set(ideas loki-b/ideas)
-set(tests loki-b/tests)
-
-# Specify the libraries to link for different backends.
-set(ob  openblas)
-set(mkl mkl_intel_lp64 mkl_core)
-
-# MSVC and Clang require to additionally link to the intel openmp library.
-# g++ can also use intel openmp threading, however GNU openmp seemed to perform better.
-# These settings might not yet work for Mac OS, as it is still untested.
-
-# [TODO] Test compiling with MKL using Clang and alter libraries where necessary.
-if(MSVC)
-  set(mkl ${mkl} mkl_intel_thread libiomp5md)
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(mkl ${mkl} mkl_intel_thread iomp5)
-else() # g++
-  set(mkl ${mkl} mkl_gnu_thread) #mkl_intel_thread iomp5
-endif()
-
 # Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_OPENBLAS "Use OpenBLAS" OFF)
@@ -133,18 +110,42 @@ endif()
 
 if(USE_MKL)
   message(STATUS "Using Intel MKL")
-  add_compile_definitions(EIGEN_USE_MKL_ALL)
-  set(backend ${mkl})
-  unset(USE_MKL CACHE)
+  target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_MKL_ALL)
+  if(NOT BLA_VENDOR)
+	 set(BLA_VENDOR Intel10_64lp)
+  endif()
+  find_package(BLAS REQUIRED)  
+  if(${CMAKE_VERSION} VERSION_LESS "3.18")
+ 	#This can be simplified when cmake versions older than 3.18 get less widespread
+	set(backend_libs  ${BLAS_LINKER_FLAGS} ${BLAS_LIBRARIES})
+  else()
+  	set(backend_libs  BLAS::BLAS)
+  endif()
 elseif(USE_OPENBLAS)
   message(STATUS "Using OpenBLAS")
-  add_compile_definitions(EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
-  set(backend ${ob})
-  unset(USE_OPENBLAS CACHE)
+  if(NOT BLA_VENDOR)
+	 set(BLA_VENDOR OpenBLAS)
+  endif()
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+  if(${CMAKE_VERSION} VERSION_LESS "3.18")
+ 	#This can be simplified when cmake versions older than 3.18 get less widespread
+	set(backend_libs  ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES} 
+					  ${BLAS_LINKER_FLAGS}   ${BLAS_LIBRARIES}  )
+  else()
+  	set(backend_libs  LAPACK::LAPACK BLAS::BLAS)
+  endif()
+  target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
 else()
   message(STATUS "Using Eigen internal expressions")
-  set(backend )
 endif()
+
+
+# --- loki-b --- #
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/loki-b/source)
+set(h   ${CMAKE_CURRENT_SOURCE_DIR}/loki-b)
+set(ideas loki-b/ideas)
+set(tests loki-b/tests)
 
 # set(headers ${h}/WorkingConditions.h ${h}/Grid.h
 #         ${h}/Gas.h ${h}/GasMixture.h ${h}/EedfGas.h ${h}/Constant.h
@@ -156,21 +157,6 @@ endif()
 #         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
 #         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 
-# Standard MKL directories on different operating systems.
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-  set(mkl_lib "/opt/intel/mkl/lib/intel64")
-  set(mkl_inc "/opt/intel/mkl/include")
-  set(mkl_comp "/opt/intel/lib")
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  set(mkl_inc "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/include")
-  set(mkl_lib "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/mkl/lib/intel64_win")
-  set(mkl_comp "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2020.0.166/windows/compiler/lib/intel64_win")
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-  # [TODO] Add Mac OS specific paths
-  set(mkl_lib "")
-  set(mkl_inc "")
-  set(mkl_comp "")
-endif()
 
 # -- loki library -- #
 add_subdirectory(lib)
