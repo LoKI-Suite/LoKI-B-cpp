@@ -1,15 +1,8 @@
 ACLOCAL_AMFLAGS=-I autodir
 
-SUBDIRS = lib . loki-b @DOC_SUBDIR@
+SUBDIRS = . lib app tests ideas @DOC_SUBDIR@
 
 include $(top_srcdir)/Makefile.rules
-
-VPATH=$(top_srcdir)/loki-b/source
-
-loki_SOURCES = main.cpp
-loki_LDADD = $(top_builddir)/lib/libloki-b.la
-
-bin_PROGRAMS = loki
 
 CROSSTOOLDIR=$(realpath $(shell dirname $(shell which $(CXX)))/..)
 CROSSDLLDIR=$(CROSSTOOLDIR)/$(host_triplet)/bin

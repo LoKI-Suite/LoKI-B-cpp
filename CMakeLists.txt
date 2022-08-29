@@ -157,98 +157,17 @@ set(tests loki-b/tests)
 #         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
 #         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
 
-
-# -- loki library -- #
-add_subdirectory(lib)
-
-# -- loki front ends -- #
-if(NOT EMSCRIPTEN)
-	# -- loki native default front end -- #
-	add_executable(loki ${src}/main.cpp)
-	target_link_libraries(loki PRIVATE loki-b)
-
-	# -- loki tests -- #
-	add_executable(test_parser ${tests}/test_parser.cpp)
-	target_link_libraries(test_parser PRIVATE loki-b)
-
-	add_executable(test_statebase ${tests}/test_statebase.cpp)
-	target_link_libraries(test_statebase PRIVATE loki-b)
-
-	add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
-	target_link_libraries(test_reaction_format PRIVATE loki-b)
-
-	add_executable(test_lut ${tests}/test_lut.cpp)
-	target_link_libraries(test_lut PRIVATE loki-b)
-
-	add_executable(bolsig_extract ${tests}/bolsig_extract.cpp)
-	target_link_libraries(bolsig_extract PRIVATE loki-b)
-
-	add_executable(compare_tables ${tests}/compare_tables.cpp)
-	target_link_libraries(compare_tables PRIVATE loki-b)
-
-	add_executable(test_druyvesteyn ${tests}/test_druyvesteyn.cpp)
-	target_link_libraries(test_druyvesteyn PRIVATE loki-b)
-
-	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
-	target_link_libraries(test_statecontainer PRIVATE loki-b)
-
-	add_executable(json2lxcat ${ideas}/json2lxcat.cpp)
-	target_include_directories(json2lxcat PRIVATE ${inc})
-	target_link_directories(json2lxcat PRIVATE build)
-	target_link_libraries(json2lxcat PRIVATE nlohmann_json::nlohmann_json)
-
-	enable_testing()
-	add_test(lut test_lut)
-	add_test(parser test_parser)
-	add_test(reaction_format test_reaction_format)
-	add_test(statebase test_statebase)
-	add_test(statecontainer test_statecontainer)
-	add_test(druyvesteyn test_druyvesteyn)
-else()
-	# -- WebAssembly -- #
-	message(STATUS "Compiling to WebAssembly.")
-	add_executable(loki_bindings loki-b/web/bindings.cpp)
-	target_include_directories(loki_bindings PRIVATE loki-b ${inc} /usr/lib/emscripten/system/include)
-	target_link_libraries(loki_bindings PRIVATE loki-b)
-	set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
-		-s ASSERTIONS=1 \
-		-s ALLOW_MEMORY_GROWTH=1 \
-		-s MODULARIZE=1 \
-		-s EXPORT_NAME=create_module \
-		-s EXTRA_EXPORTED_RUNTIME_METHODS=[\"FS\"] \
-		--bind \
-		--preload-file Input/default_lokib_setup.json \
-		--preload-file Input/N2_LXCat.json \
-		--preload-file Input/N2_rot_LXCat.json \
-		--preload-file Input/masses.txt \
-		--preload-file Input/harmonicFrequencies.txt \
-		--preload-file Input/rotationalConstants.txt \
-		--preload-file Input/N2_vibpop.txt \
-		--preload-file Input/OPBParameter.txt \
-		--preload-file Input/quadrupoleMoment.txt \
-		--preload-file Input/anharmonicFrequencies.txt")
-endif()
-
-# first we can indicate the documentation build as an option and set it to ON by default
-option(BUILD_DOC "Build documentation" ON)
-
 # check if Doxygen is installed
 find_package(Doxygen)
-if (DOXYGEN_FOUND)
-    # set input and output files
-    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in)
-    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile)
 
-    # request to configure the file
-    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-    message("Doxygen build started")
+enable_testing()
 
-    # to always build the doxygen docs, add option ALL to the following list.
-    add_custom_target( doc_doxygen_loki_b
-        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM )
-else (DOXYGEN_FOUND)
-  message("Doxygen needs to be installed to generate the doxygen documentation")
-endif (DOXYGEN_FOUND)
+add_subdirectory(lib)
+add_subdirectory(doc)
+if(EMSCRIPTEN)
+    add_subdirectory(web)
+else()
+    add_subdirectory(app)
+    add_subdirectory(tests)
+    add_subdirectory(ideas)
+endif(EMSCRIPTEN)

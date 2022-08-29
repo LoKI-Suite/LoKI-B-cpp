@@ -2,7 +2,7 @@ SUBDIRS = .
 
 include $(top_srcdir)/Makefile.rules
 
-VPATH=$(top_srcdir)/loki-b/source
+VPATH=$(top_srcdir)/source
 
 libloki_b_la_LDFLAGS = -no-undefined
 libloki_b_la_SOURCES = \

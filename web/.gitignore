@@ -1,8 +1,0 @@
-*
-!*/
-!.gitignore
-
-!Input/*
-!index.html
-!schema.js
-!*.md
