@@ -57,8 +57,8 @@ else()
 endif()
 
 # --- loki-b --- #
-set(src loki-b/source)
-set(h   loki-b/LoKI-B)
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/loki-b/source)
+set(h   ${CMAKE_CURRENT_SOURCE_DIR}/loki-b)
 set(inc ${inc_eigen} ${inc_nlohmann})
 set(ideas loki-b/ideas)
 set(tests loki-b/tests)
@@ -103,26 +103,6 @@ else()
   set(backend )
 endif()
 
-set(cpp ${src}/CrossSection.cpp
-        ${src}/Gas.cpp
-        ${src}/GasMixture.cpp
-        ${src}/Gnuplot.cpp
-        ${src}/Grid.cpp
-        ${src}/EedfCollisions.cpp
-        ${src}/EedfMixture.cpp
-        ${src}/ElectronKinetics.cpp
-        ${src}/Enumeration.cpp
-        ${src}/JobSystem.cpp
-        ${src}/json.cpp
-        ${src}/LinearAlgebra.cpp
-        ${src}/LookupTable.cpp
-        ${src}/Output.cpp
-        ${src}/Parse.cpp
-        ${src}/Power.cpp
-        ${src}/Setup.cpp
-        ${src}/Simulation.cpp
-        ${src}/StateEntry.cpp
-        ${src}/WorkingConditions.cpp)
 # set(headers ${h}/WorkingConditions.h ${h}/Grid.h
 #         ${h}/Gas.h ${h}/GasMixture.h ${h}/EedfGas.h ${h}/Constant.h
 #         ${h}/Collision.h
@@ -150,10 +130,7 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 endif()
 
 # -- loki library -- #
-add_library(loki_l SHARED ${cpp} ${property_functions})
-target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
-target_link_libraries(loki_l PRIVATE ${backend})
+add_subdirectory(lib)
 
 # -- loki front ends -- #
 if(NOT EMSCRIPTEN)
