@@ -21,7 +21,7 @@ set(cpp ${src}/CrossSection.cpp
         ${src}/WorkingConditions.cpp)
 
 add_library(loki-b SHARED ${cpp} ${property_functions})
-target_include_directories(loki-b PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(loki-b PRIVATE ${mkl_lib} ${mkl_comp})
-target_link_libraries(loki-b PRIVATE ${backend})
+target_include_directories(loki-b PUBLIC loki-b ${inc} ${mkl_inc})
+target_link_directories(loki-b PUBLIC ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki-b PUBLIC ${backend})
 
