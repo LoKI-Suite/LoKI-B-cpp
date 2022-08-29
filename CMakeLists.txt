@@ -18,17 +18,25 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
 
 else() # clang or g++
-    # warning flags: -Wall -Wextra -Werror
+
+	# warning flags: -Wall -Wextra -Werror
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        # specific to clang
-				message(STATUS "Using Clang")
-    else()
-        # extra for g++ (and compilers different to msvc and clang)
-    		message(STATUS "Using g++")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-    endif()
+endif()
+
+#Search for OpenMP, if it is found an OpenMP::OpenMP_CXX target is exported.
+#This target sets the appropriate compile/link flags (e.g. -fopenmp for GCC,
+#-Qiopenmp for Intel,  -fopenmp=libomp for Clang etc.). Most compilers come with
+#openmp support, but for some (e.g. Clang) you need to install additional
+#packages (e.g. libomp9-devel for clang9, or libomp-dev) 
+option(USE_OPENMP "Use OpenMP parallelization" ON)
+if(USE_OPENMP)
+	find_package(OpenMP)
+	if(OpenMP_CXX_FOUND)
+		set(LOKIB_USE_OPENMP ON)
+	else()
+		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP packages, or disable OpenMP support with -DUSE_OPENMP=OFF")
+	endif()
 endif()
 
 # the following two must be enabled to make the versions of Eigen / nlohmann
