@@ -1,4 +1,3 @@
-set(inc ${CMAKE_CURRENT_SOURCE_DIR}/../loki-b ${inc_eigen} ${inc_nlohmann})
 set(cpp ${src}/CrossSection.cpp
         ${src}/Gas.cpp
         ${src}/GasMixture.cpp
@@ -21,9 +20,9 @@ set(cpp ${src}/CrossSection.cpp
         ${src}/WorkingConditions.cpp)
 
 add_library(loki-b SHARED ${cpp} ${property_functions})
-target_include_directories(loki-b PUBLIC loki-b ${inc} ${mkl_inc})
+target_include_directories(loki-b PUBLIC loki-b ${mkl_inc} ${CMAKE_CURRENT_SOURCE_DIR}/../loki-b)
 target_link_directories(loki-b PUBLIC ${mkl_lib} ${mkl_comp})
-target_link_libraries(loki-b PUBLIC ${backend} )
+target_link_libraries(loki-b PUBLIC ${backend} Eigen3::Eigen nlohmann_json::nlohmann_json)
 if(USE_OPENMP)
    target_compile_definitions(loki-b PUBLIC USE_OPENMP)
    target_link_libraries(loki-b PUBLIC OpenMP::OpenMP_CXX )

@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 project(loki_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
+
+include(FetchContent)
 
 # --- Compiler flags --- #
 
@@ -24,6 +26,8 @@ else() # clang or g++
 
 endif()
 
+# --- OpenMP --- #
+
 #Search for OpenMP, if it is found an OpenMP::OpenMP_CXX target is exported.
 #This target sets the appropriate compile/link flags (e.g. -fopenmp for GCC,
 #-Qiopenmp for Intel,  -fopenmp=libomp for Clang etc.). Most compilers come with
@@ -32,42 +36,73 @@ endif()
 option(USE_OPENMP "Use OpenMP parallelization" ON)
 if(USE_OPENMP)
 	find_package(OpenMP)
-	if(OpenMP_CXX_FOUND)
-		set(LOKIB_USE_OPENMP ON)
-	else()
-		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP packages, or disable OpenMP support with -DUSE_OPENMP=OFF")
+	if(NOT OpenMP_CXX_FOUND)
+		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP package(s), or disable OpenMP support with -DUSE_OPENMP=OFF")
 	endif()
 endif()
 
-# the following two must be enabled to make the versions of Eigen / nlohmann
-# that are shipped with LoKI-B available. When disabled, eigen3/Eigen/...
-# and nlohmann/json.hpp will be resolved using the default include paths.
+# --- Eigen3 --- #
 
-#todo see how/when to set these two. For now, we rely on a 'system' eigen3/,
-#except for builds with MSVC: then we use the built-in Eigen.
-if(MSVC OR EMSCRIPTEN)
-  set(inc_eigen ${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3)
+option(USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
+
+if(USE_BUILTIN_EIGEN)
+	#Use Eigen from include/eigen-3.3.7/eigen3
+	#Do we need this?
+	if(NOT TARGET Eigen3::Eigen)
+		add_library(Eigen3::Eigen INTERFACE IMPORTED)
+		target_include_directories(Eigen3::Eigen INTERFACE ${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3)
+	endif()
 else()
-  if ("x${EIGEN_PATH}" STREQUAL "x")
-    set (EIGEN_PATH "/usr/include/eigen3")
-  endif()
-  set(inc_eigen ${EIGEN_PATH})
+	#Use Eigen found on the system, or download from git
+	find_package(Eigen3 3.3 NO_MODULE QUIET)
+	if(Eigen3_FOUND AND TARGET Eigen3::Eigen)
+		#We found Eigen: done
+		message(STATUS "System-installed Eigen found")
+	else()
+		#Eigen not found or bad configured: download source
+		message(STATUS "Using FetchContent to download Eigen (avoid this by installing Eigen3 or build with -DUSE_BUILTIN_EIGEN=ON)")
+		FetchContent_Declare(
+			Eigen
+			GIT_REPOSITORY    https://gitlab.com/libeigen/eigen.git
+			GIT_TAG           3.4.0
+		)
+		FetchContent_MakeAvailable(Eigen)
+	endif()
 endif()
-message(STATUS "Using Eigen library at ${inc_eigen}.")
+
+
+# --- nlohmann/json --- #
 
 option(USE_BUILTIN_NLOHMANN_JSON "Use the version of nlohmann/json that is shipped with loki-b" OFF)
-if (USE_BUILTIN_NLOHMANN_JSON)
-  message("Using the nlohmann/json distribution that is shipped with LoKI-B")
-  set(inc_nlohmann ${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0)
+
+if(USE_BUILTIN_NLOHMANN_JSON)
+	#Use nlohmann/json from include/nlohmann-3.7.0
+	#Do we need this?
+	if(NOT TARGET nlohmann_json::nlohmann_json)
+		add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
+		target_include_directories(nlohmann_json::nlohmann_json INTERFACE ${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0)
+	endif()
 else()
-  message("Using the system's nlohmann/json distribution")
-  set(inc_nlohmann )
+	#Use nlohmann/json found on the system, or download from git
+	find_package(nlohmann_json 3.7.0 QUIET)
+	if(nlohmann_json_FOUND AND TARGET nlohmann_json::nlohmann_json)
+		#We found nlohmann/json: done
+		message(STATUS "System-installed nlohmann/json found")
+	else()
+		#nlohmann/json not found or bad configured: download source (v 3.11.2)
+		message(STATUS "Using FetchContent to download nlohmann/json (avoid this by installing nlohman/json or build with -DUSE_BUILTIN_NLOHMANN_JSON=ON)")
+		FetchContent_Declare(
+			nlohmann_json
+			GIT_REPOSITORY    https://github.com/nlohmann/json.git
+			GIT_TAG           bc889af
+		)
+		FetchContent_MakeAvailable(nlohmann_json)
+	endif()
 endif()
 
 # --- loki-b --- #
 set(src ${CMAKE_CURRENT_SOURCE_DIR}/loki-b/source)
 set(h   ${CMAKE_CURRENT_SOURCE_DIR}/loki-b)
-set(inc ${inc_eigen} ${inc_nlohmann})
 set(ideas loki-b/ideas)
 set(tests loki-b/tests)
 
@@ -174,7 +209,7 @@ if(NOT EMSCRIPTEN)
 	add_executable(json2lxcat ${ideas}/json2lxcat.cpp)
 	target_include_directories(json2lxcat PRIVATE ${inc})
 	target_link_directories(json2lxcat PRIVATE build)
-	target_link_libraries(json2lxcat)
+	target_link_libraries(json2lxcat PRIVATE nlohmann_json::nlohmann_json)
 
 	enable_testing()
 	add_test(lut test_lut)
