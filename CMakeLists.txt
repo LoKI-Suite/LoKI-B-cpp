@@ -138,48 +138,48 @@ if(NOT EMSCRIPTEN)
 	add_executable(loki ${src}/main.cpp)
 	target_include_directories(loki PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(loki PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(loki PRIVATE loki_l ${backend})
+	target_link_libraries(loki PRIVATE loki-b ${backend})
 
 	# -- loki tests -- #
 	add_executable(test_parser ${tests}/test_parser.cpp)
 	target_include_directories(test_parser PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_parser PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_parser PRIVATE loki_l ${backend})
+	target_link_libraries(test_parser PRIVATE loki-b ${backend})
 
 	add_executable(test_statebase ${tests}/test_statebase.cpp)
 	target_include_directories(test_statebase PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statebase PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_statebase PRIVATE loki_l ${backend})
+	target_link_libraries(test_statebase PRIVATE loki-b ${backend})
 
 	add_executable(test_reaction_format ${tests}/test_reaction_format.cpp)
 	target_include_directories(test_reaction_format PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_reaction_format PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_reaction_format PRIVATE loki_l ${backend})
+	target_link_libraries(test_reaction_format PRIVATE loki-b ${backend})
 
 	add_executable(test_lut ${tests}/test_lut.cpp)
 	target_include_directories(test_lut PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_lut PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_lut PRIVATE loki_l ${backend})
+	target_link_libraries(test_lut PRIVATE loki-b ${backend})
 
 	add_executable(bolsig_extract ${tests}/bolsig_extract.cpp)
 	target_include_directories(bolsig_extract PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(bolsig_extract PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(bolsig_extract PRIVATE loki_l ${backend})
+	target_link_libraries(bolsig_extract PRIVATE loki-b ${backend})
 
 	add_executable(compare_tables ${tests}/compare_tables.cpp)
 	target_include_directories(compare_tables PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(compare_tables PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(compare_tables PRIVATE loki_l ${backend})
+	target_link_libraries(compare_tables PRIVATE loki-b ${backend})
 
 	add_executable(test_druyvesteyn ${tests}/test_druyvesteyn.cpp)
 	target_include_directories(test_druyvesteyn PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_druyvesteyn PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_druyvesteyn PRIVATE loki_l ${backend})
+	target_link_libraries(test_druyvesteyn PRIVATE loki-b ${backend})
 
 	add_executable(test_statecontainer ${ideas}/test_statecontainer.cpp)
 	target_include_directories(test_statecontainer PRIVATE loki-b ${inc} ${mkl_inc})
 	target_link_directories(test_statecontainer PRIVATE build ${mkl_lib} ${mkl_comp})
-	target_link_libraries(test_statecontainer PRIVATE loki_l ${backend})
+	target_link_libraries(test_statecontainer PRIVATE loki-b ${backend})
 
 	add_executable(json2lxcat ${ideas}/json2lxcat.cpp)
 	target_include_directories(json2lxcat PRIVATE ${inc})
@@ -198,7 +198,7 @@ else()
 	message(STATUS "Compiling to WebAssembly.")
 	add_executable(loki_bindings loki-b/web/bindings.cpp)
 	target_include_directories(loki_bindings PRIVATE loki-b ${inc} /usr/lib/emscripten/system/include)
-	target_link_libraries(loki_bindings PRIVATE loki_l)
+	target_link_libraries(loki_bindings PRIVATE loki-b)
 	set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
 		-s ASSERTIONS=1 \
 		-s ALLOW_MEMORY_GROWTH=1 \

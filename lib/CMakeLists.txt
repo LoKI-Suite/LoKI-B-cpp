@@ -20,8 +20,8 @@ set(cpp ${src}/CrossSection.cpp
         ${src}/StateEntry.cpp
         ${src}/WorkingConditions.cpp)
 
-add_library(loki_l SHARED ${cpp} ${property_functions})
-target_include_directories(loki_l PRIVATE loki-b ${inc} ${mkl_inc})
-target_link_directories(loki_l PRIVATE ${mkl_lib} ${mkl_comp})
-target_link_libraries(loki_l PRIVATE ${backend})
+add_library(loki-b SHARED ${cpp} ${property_functions})
+target_include_directories(loki-b PRIVATE loki-b ${inc} ${mkl_inc})
+target_link_directories(loki-b PRIVATE ${mkl_lib} ${mkl_comp})
+target_link_libraries(loki-b PRIVATE ${backend})
 
