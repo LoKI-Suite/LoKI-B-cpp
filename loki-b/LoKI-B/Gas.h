@@ -96,17 +96,13 @@ class Gas
                 return state;
             }
             state = new State(entry, &gas(), *this);
-            add_child(state);
+            m_children.emplace_back(state);
+            m_state_deleter.emplace_back(state);
             return state;
         }
 
-      protected:
-        void add_child(State *child)
-        {
-            m_children.emplace_back(child);
-        }
-
       private:
+
         /// \todo Make const?
         Gas *m_gas;
         /// \todo Make const?
@@ -138,6 +134,9 @@ class Gas
       private:
         double m_population;
         double m_delta;
+	// to ensure deletion of child states, they are also added to a
+	// vector of unique_ptr<const State>.
+	std::vector<std::unique_ptr<const State>> m_state_deleter;
     };
     /// \todo Get rid of State, use State exclusively here and elsewhere.
     using State = State;
