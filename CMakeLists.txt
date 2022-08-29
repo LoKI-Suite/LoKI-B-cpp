@@ -11,7 +11,7 @@ if(MSVC)
     # #define _USE_MATH_DEFINES for M_PI and M_E
     # #define _CRT_SECURE_NO_DEPRECATE to surpress fopen warnings (fopen_s is not available on other platforms)
     # #define _MSVC to alter a regular expression in the Parse class (since MSVC treats the $ command differently)
-    add_definitions(-D_USE_MATH_DEFINES -D_CRT_SECURE_NO_DEPRECATE -D_MSVC)
+    add_definitions(_USE_MATH_DEFINES _CRT_SECURE_NO_DEPRECATE _MSVC)
 
     # warning flag: /W4
     # there is no alternative for -march=native in MSVC, therefore important relevant compiler flags have to be set manually for now (avx, avx2, fma etc.).
@@ -92,12 +92,12 @@ endif()
 
 if(USE_MKL)
   message(STATUS "Using Intel MKL")
-  add_definitions(-DEIGEN_USE_MKL_ALL)
+  add_definitions(EIGEN_USE_MKL_ALL)
   set(backend ${mkl})
   unset(USE_MKL CACHE)
 elseif(USE_OPENBLAS)
   message(STATUS "Using OpenBLAS")
-  add_definitions(-DEIGEN_USE_LAPACKE -DEIGEN_USE_BLAS)
+  add_definitions(EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
   set(backend ${ob})
   unset(USE_OPENBLAS CACHE)
 else()
