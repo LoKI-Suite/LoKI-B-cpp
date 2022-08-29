@@ -92,7 +92,7 @@ endif()
 
 if(USE_MKL)
   message(STATUS "Using Intel MKL")
-  add_definitions(EIGEN_USE_MKL_ALL)
+  target_compile_definitions(Eigen3::eigen PUBLIC EIGEN_USE_MKL_ALL)
   set(backend ${mkl})
   unset(USE_MKL CACHE)
 elseif(USE_OPENBLAS)
