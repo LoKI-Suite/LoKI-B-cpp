@@ -13,7 +13,7 @@ Note that when compiling loki with a non-default backend, currently MKL or OpenB
 
 A Clang format style file is present at the root of this repository (`.clang-format`). To format all the source files, you can issue the following command from the repository root.
 
- - `clang-format -i -style=file loki-b/source/*.cpp loki-b/LoKI-B/*.h`
+ - `clang-format -i -style=file source/*.cpp LoKI-B/*.h app/*.cpp tests/*.cpp ideas/*.cpp web/bindings.cpp`
 
 ## Compilation instructions:
 

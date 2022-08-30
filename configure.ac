@@ -9,12 +9,13 @@ AC_CONFIG_MACRO_DIR([autodir])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects])
 AC_CONFIG_FILES([
 	Makefile
+	app/Makefile
 	doc/Makefile
 	doc/doxygen/Makefile
-	doc/doxygen/Doxyfile
+	doc/doxygen/loki-b.doxy
 	lib/Makefile
-	loki-b/Makefile
-	loki-b/tests/Makefile
+	ideas/Makefile
+	tests/Makefile
 	])
 
 LT_INIT([disable-static win32-dll])
@@ -150,10 +151,8 @@ AC_SUBST(DOC_SUBDIR)
 AM_CONDITIONAL([HAVE_DOXYGEN],
   [test -n "$DOXYGEN"])
 
-# set CMAKE variable
-CMAKE_CURRENT_BINARY_DIR=`pwd`
-AC_SUBST(CMAKE_CURRENT_BINARY_DIR)
-CMAKE_CURRENT_SOURCE_DIR=`cd ${srcdir} && pwd`
-AC_SUBST(CMAKE_CURRENT_SOURCE_DIR)
+# this is a cmake variable. Used in doc/doxygen/loki-b.doxy.in
+PROJECT_SOURCE_DIR=`cd ${srcdir} && pwd`
+AC_SUBST(PROJECT_SOURCE_DIR)
 
 AC_OUTPUT

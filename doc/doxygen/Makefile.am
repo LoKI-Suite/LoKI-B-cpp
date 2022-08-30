@@ -2,7 +2,7 @@ SUBDIRS =
 
 if HAVE_DOXYGEN
 doxyfile.stamp:
-	$(DOXYGEN) Doxyfile
+	$(DOXYGEN) loki-b.doxy
 	echo Timestamp > doxyfile.stamp
 
 CLEANFILES = doxyfile.stamp
