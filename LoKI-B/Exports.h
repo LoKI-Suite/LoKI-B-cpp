@@ -17,6 +17,10 @@
 #define lokib_export
 #endif
 
+#else
+
+#define lokib_export
+
 #endif // _MSC_VER
 
 #endif // H_LOKI_B_EXPORTS_H
