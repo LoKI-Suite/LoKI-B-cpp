@@ -140,23 +140,6 @@ else()
   message(STATUS "Using Eigen internal expressions")
 endif()
 
-
-# --- loki-b --- #
-set(src ${CMAKE_CURRENT_SOURCE_DIR}/loki-b/source)
-set(h   ${CMAKE_CURRENT_SOURCE_DIR}/loki-b)
-set(ideas loki-b/ideas)
-set(tests loki-b/tests)
-
-# set(headers ${h}/WorkingConditions.h ${h}/Grid.h
-#         ${h}/Gas.h ${h}/GasMixture.h ${h}/EedfGas.h ${h}/Constant.h
-#         ${h}/Collision.h
-#         ${h}/Setup.h ${h}/Enumeration.h ${h}/Parse.h ${h}/Matrix2Picture.h
-#         ${h}/Event.h ${h}/Simulation.h ${h}/ElectronKinetics.h
-#         ${h}/Log.h ${h}/GasMixture.h ${h}/CrossSection.h
-#         ${h}/EedfMixture.h ${h}/EedfCollision.h ${h}/StateEntry.h
-#         ${h}/Power.h ${h}/MacroscopicQuantities.h ${h}/Output.h ${h}/PropertyFunctions.h
-#         ${h}/StandardPaths.h ${h}/JobSystem.h ${h}/json.h)
-
 # check if Doxygen is installed
 find_package(Doxygen)
 
