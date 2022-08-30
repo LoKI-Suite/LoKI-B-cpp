@@ -1,6 +1,5 @@
 {
   "workingConditions": {
-    "_reducedField": 50,
     "reducedField": [10, 30, 50],
     "electronTemperature": 1,
     "excitationFrequency": 0,
@@ -16,7 +15,6 @@
     "ionizationOperatorType": "usingSDCS",
     "growthModelType": "temporal",
     "includeEECollisions": false,
-    "_LXCatFiles": ["Argon/Ar_LXCat.txt"],
     "LXCatFiles": [
       "http://localhost:3000/api/scat-css/125476/bibtex"
     ],

@@ -1,12 +1,6 @@
 {
   "workingConditions": {
     "reducedField": 50,
-    "_reducedField": "linspace(50,100,6)",
-    "_reducedField": { "value": 50 },
-    "_reducedField": ["linspace", 50, 100, 6],
-    "_reducedField": {
-      "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6 }
-    },
     "electronTemperature": 0.03,
     "excitationFrequency": 0,
     "gasPressure": 133.32,
@@ -25,11 +19,6 @@
       "http://localhost:3000/api/scat-css/246492/bibtex",
       "http://localhost:3000/api/scat-css/247565/bibtex"
     ],
-    "_LXCatFiles": [
-      "JSON/v5/N2/with_ids/N2_LXCat.json",
-      "JSON/v5/N2/with_ids/N2_rot_LXCat.json"
-    ],
-    "_LXCatFiles": ["Nitrogen/N2_LXCat.txt", "Nitrogen/N2_rot_LXCat.txt"],
     "gasProperties": {
       "mass": "masses.txt",
       "fraction": ["N2 = 1"],
