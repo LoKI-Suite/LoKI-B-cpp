@@ -28,3 +28,4 @@ if(USE_OPENMP)
    target_link_libraries(loki-b PUBLIC OpenMP::OpenMP_CXX )
 endif()
 
+install(TARGETS loki-b)

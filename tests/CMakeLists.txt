@@ -24,3 +24,5 @@ add_test(parser test_parser)
 add_test(reaction_format test_reaction_format)
 add_test(statebase test_statebase)
 add_test(druyvesteyn test_druyvesteyn)
+
+install(TARGETS test_lut test_parser test_reaction_format test_statebase test_druyvesteyn)

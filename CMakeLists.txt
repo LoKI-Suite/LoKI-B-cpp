@@ -142,6 +142,7 @@ find_package(Doxygen)
 
 enable_testing()
 
+add_subdirectory(Input)
 add_subdirectory(lib)
 add_subdirectory(doc)
 if(EMSCRIPTEN)
