@@ -28,16 +28,16 @@
  *  \date   21. May 2019
  */
 
-
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/StateEntry.h"
 
 #include <cassert>
-#include <iostream>
-#include <stdexcept>
-#include <regex>
 #include <fstream>
+#include <iostream>
+#include <regex>
+#include <stdexcept>
 
 namespace loki
 {
@@ -67,11 +67,10 @@ VectorType remove_electron_entries(const Collision::StateVector &parts, const Ve
 EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
     : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
-      m_lhsHeavyStates(remove_electron_entries(lhsStates,lhsStates)),
-      m_lhsHeavyCoeffs(remove_electron_entries(lhsStates,lhsCoeffs)),
-      m_rhsHeavyStates(remove_electron_entries(rhsStates,rhsStates)),
-      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates,rhsCoeffs)),
-      m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
+      m_lhsHeavyStates(remove_electron_entries(lhsStates, lhsStates)),
+      m_lhsHeavyCoeffs(remove_electron_entries(lhsStates, lhsCoeffs)),
+      m_rhsHeavyStates(remove_electron_entries(rhsStates, rhsStates)),
+      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates, rhsCoeffs)), m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
 {
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
@@ -240,7 +239,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             }
 
             collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() *
-                            (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+                                (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
         {
@@ -275,7 +274,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             }
 
             collPower.forward = -SI::gamma * getTarget()->delta() * grid->getCell(lmin) * grid->du() *
-                            eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
+                                eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
         }
     }
     else if (type() == CollisionType::attachment)
@@ -311,7 +310,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
     m_ineRateCoeff = SI::gamma * grid->du() *
-                   cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
+                     cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
 
     if (isReverse())
     {
@@ -356,11 +355,9 @@ std::string EedfCollision::typeAsString() const
     }
 }
 
-EedfCollisionDataGas::EedfCollisionDataGas(Gas& gas)
-    : m_gas(gas),
-    m_collisions(static_cast<uint8_t>(CollisionType::size)),
-    m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
-    m_OPBParameter(0.)
+EedfCollisionDataGas::EedfCollisionDataGas(Gas &gas)
+    : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
+      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)), m_OPBParameter(0.)
 {
 }
 
@@ -518,7 +515,7 @@ bool EedfCollisionDataGas::isDummy() const
     return true;
 }
 
-std::vector<EedfCollisionDataGas::State*> EedfCollisionDataGas::findStatesToUpdate()
+std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate()
 {
     std::vector<State *> statesToUpdate;
 
@@ -545,11 +542,11 @@ std::vector<EedfCollisionDataGas::State*> EedfCollisionDataGas::findStatesToUpda
     return statesToUpdate;
 }
 
-const GasPower& EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
+const GasPower &EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
 {
     m_power.ionization = (ionType == IonizationOperatorType::conservative)
-        ? evaluateConservativePower(collisions(CollisionType::ionization), eedf)
-        : evaluateNonConservativePower(collisions(CollisionType::ionization), ionType, eedf);
+                             ? evaluateConservativePower(collisions(CollisionType::ionization), eedf)
+                             : evaluateNonConservativePower(collisions(CollisionType::ionization), ionType, eedf);
     m_power.attachment = evaluateNonConservativePower(collisions(CollisionType::attachment), ionType, eedf);
     m_power.excitation = evaluateConservativePower(collisions(CollisionType::excitation), eedf);
     m_power.vibrational = evaluateConservativePower(collisions(CollisionType::vibrational), eedf);
@@ -557,12 +554,13 @@ const GasPower& EedfCollisionDataGas::evaluatePower(const IonizationOperatorType
     return m_power;
 }
 
-const GasPower& EedfCollisionDataGas::getPower() const
+const GasPower &EedfCollisionDataGas::getPower() const
 {
     return m_power;
 }
 
-PowerTerm EedfCollisionDataGas::evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const
+PowerTerm EedfCollisionDataGas::evaluateConservativePower(const CollisionVector &collisionVector,
+                                                          const Vector &eedf) const
 {
     PowerTerm collPower;
 
@@ -579,7 +577,8 @@ PowerTerm EedfCollisionDataGas::evaluateConservativePower(const CollisionVector 
 }
 
 PowerTerm EedfCollisionDataGas::evaluateNonConservativePower(const CollisionVector &collisionVector,
-                                                const IonizationOperatorType ionType, const Vector &eedf) const
+                                                             const IonizationOperatorType ionType,
+                                                             const Vector &eedf) const
 {
     PowerTerm collPower;
 
@@ -599,10 +598,11 @@ EedfCollisionDataMixture::EedfCollisionDataMixture()
 {
 }
 
-EedfCollision* EedfCollisionDataMixture::addCollision(CollisionType type,
-    const Collision::StateVector &lhsStates, const Collision::CoeffVector &lhsCoeffs,
-    const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
-    bool reverseAlso, bool isExtra)
+EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
+                                                      const Collision::CoeffVector &lhsCoeffs,
+                                                      const Collision::StateVector &rhsStates,
+                                                      const Collision::CoeffVector &rhsCoeffs, bool reverseAlso,
+                                                      bool isExtra)
 {
     // 1. Create the collision object (but do not configure a CrossSection
     //    object yet).
@@ -619,8 +619,8 @@ EedfCollision* EedfCollisionDataMixture::addCollision(CollisionType type,
             Log<DoubleCollision>::Warning(*c.m_coll);
 //#define ALLOW_DUPLICATE_PROCESSES
 #ifdef ALLOW_DUPLICATE_PROCESSES
-                // duplicates are allowed. The warning is emitted,
-                // but no further action needed
+            // duplicates are allowed. The warning is emitted,
+            // but no further action needed
 #else
             return nullptr;
 #endif
@@ -630,7 +630,7 @@ EedfCollision* EedfCollisionDataMixture::addCollision(CollisionType type,
     //    Use coll from here on. The reason is that the ownership of the
     //    pointer is taken by the gas-specific collision container, to which
     //    it will be added below.
-    Collision* coll = coll_uptr.release();
+    Collision *coll = coll_uptr.release();
     // 4. Register the collision with the (single) gas that is the target of the
     //    binary electron-heavy process, add it to our own list of collisions,
     //    mark the process type is being present and return the (released) pointer
@@ -639,22 +639,22 @@ EedfCollision* EedfCollisionDataMixture::addCollision(CollisionType type,
     //    checked by the EedfCollision constructor, and the target 'X' is returned
     //    by its member getTarget().
     get_data_for(coll->getTarget()->gas()).addCollision(coll, isExtra);
-    m_collisions.emplace_back(CollisionEntry{coll,isExtra});
+    m_collisions.emplace_back(CollisionEntry{coll, isExtra});
     m_hasCollisions[static_cast<uint8_t>(coll->type())] = true;
     return coll;
 }
 
-EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixture& composition, const StateEntry &entry)
+EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixture &composition, const StateEntry &entry)
 {
     // find the state in the composition object (and let that create it if it does not
     // yet exist)
-    State* state = composition.ensureState(entry);
+    State *state = composition.ensureState(entry);
     // check that an entry exists in the for the state's gas in the m_data_per_gas
     // array; create such entry if that is not the case
     auto it = m_data_per_gas.begin();
-    for ( ; it != m_data_per_gas.end(); ++it)
+    for (; it != m_data_per_gas.end(); ++it)
     {
-        if (&state->gas()==&it->gas())
+        if (&state->gas() == &it->gas())
         {
             break;
         }
@@ -666,7 +666,8 @@ EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixtur
     return state;
 }
 
-void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, GasMixture& composition, Grid *energyGrid, bool isExtra)
+void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, GasMixture &composition, Grid *energyGrid,
+                                                     bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
     /** \todo Valid doubles like 1.57e1 are not matched, in which case the threshold
@@ -737,13 +738,14 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, Ga
                 std::vector<State *> rhsStates;
                 for (auto &stateEntry : entry_lhsStates)
                 {
-                    lhsStates.emplace_back(ensureState(composition,stateEntry));
+                    lhsStates.emplace_back(ensureState(composition, stateEntry));
                 }
                 for (auto &stateEntry : entry_rhsStates)
                 {
-                    rhsStates.emplace_back(ensureState(composition,stateEntry));
+                    rhsStates.emplace_back(ensureState(composition, stateEntry));
                 }
-                Collision* coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs, reverseAlso,isExtra);
+                Collision *coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
+                                               reverseAlso, isExtra);
                 if (coll)
                 {
                     const bool isElasticOrEffective =
@@ -764,81 +766,77 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, Ga
     }
 }
 
-void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture& composition, Grid *energyGrid, bool isExtra)
+void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture &composition, Grid *energyGrid,
+                                                  bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
 
     // 1. read the states
-    const json_type &scnf = mcnf.at("states");
-    for (json_type::const_iterator it = scnf.begin(); it != scnf.end(); ++it)
+    for (const auto &[key, value] : mcnf.at("states").items())
     {
-        const StateEntry entry{entryFromJSON(it.key(),it.value())};
-        ensureState(composition,entry);
+        ensureState(composition, entryFromJSON(key, value));
     }
     // 2. read the processes
-    for (json_type::const_iterator sit = mcnf.at("sets").begin(); sit != mcnf.at("sets").end(); ++sit)
+    for (const auto &pcnf : mcnf.at("processes"))
     {
-        for (json_type::const_iterator it = sit->at("processes").begin(); it != sit->at("processes").end(); ++it)
+        try
         {
-            try
+            const json_type &rcnf = pcnf.at("reaction");
+
+            std::vector<uint16_t> lhsCoeffs, rhsCoeffs;
+
+            // 1. Create vectors of pointers to the states that appear
+            //    on the left and right-hand sides of the process.
+            std::vector<State *> lhsStates;
+            std::vector<State *> rhsStates;
+            for (const auto &t : rcnf.at("lhs"))
             {
-                const json_type &rcnf = it->at("reaction");
-
-                std::vector<uint16_t> lhsCoeffs, rhsCoeffs;
-
-                // 1. Create vectors of pointers to the states that appear
-                //    on the left and right-hand sides of the process.
-                std::vector<State *> lhsStates;
-                std::vector<State *> rhsStates;
-                for (const auto &t : rcnf.at("lhs"))
+                const std::string &stateName(t.at("state"));
+                State *state = composition.findStateById(stateName);
+                if (!state)
                 {
-                    const std::string &stateName(t.at("state"));
-                    State *state = composition.findStateById(stateName);
-                    if (!state)
-                    {
-                        throw std::runtime_error("Could not find state '" + stateName + "'.");
-                    }
-                    lhsStates.push_back(state);
-                    lhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
+                    throw std::runtime_error("Could not find state '" + stateName + "'.");
                 }
-                for (const auto &t : rcnf.at("rhs"))
-                {
-                    const std::string &stateName(t.at("state"));
-                    State *state = composition.findStateById(stateName);
-                    if (!state)
-                    {
-                        throw std::runtime_error("Could not find state '" + stateName + "'.");
-                    }
-                    rhsStates.push_back(state);
-                    rhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
-                }
-
-                const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
-                const bool reverseAlso = rcnf.at("reversible");
-
-        	Collision* coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso,isExtra);
-                if (coll)
-                {
-                    const bool isElasticOrEffective =
-                        (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
-                    coll->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, *it));
-                }
+                lhsStates.push_back(state);
+                lhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
             }
-            catch (std::exception &exc)
+            for (const auto &t : rcnf.at("rhs"))
             {
-                throw std::runtime_error("Error while parsing reaction from section '" + it->dump(1) + "':\n" +
-                                         std::string(exc.what()));
+                const std::string &stateName(t.at("state"));
+                State *state = composition.findStateById(stateName);
+                if (!state)
+                {
+                    throw std::runtime_error("Could not find state '" + stateName + "'.");
+                }
+                rhsStates.push_back(state);
+                rhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
             }
+
+            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
+            const bool reverseAlso = rcnf.at("reversible");
+
+            Collision *coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
+            if (coll)
+            {
+                const bool isElasticOrEffective =
+                    (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
+                coll->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
+            }
+        }
+        catch (std::exception &exc)
+        {
+            throw std::runtime_error("Error while parsing reaction from section '" + pcnf.dump(1) + "':\n" +
+                                     std::string(exc.what()));
         }
     }
     Log<Message>::Notify("Finished loading collisions.");
 }
 
-const EedfCollisionDataGas& EedfCollisionDataMixture::get_data_for(const Gas& gas) const
+const EedfCollisionDataGas &EedfCollisionDataMixture::get_data_for(const Gas &gas) const
 {
-    for (const auto& cd : m_data_per_gas)
+    for (const auto &cd : m_data_per_gas)
     {
-        if(&gas==&cd.gas())
+        if (&gas == &cd.gas())
         {
             return cd;
         }
@@ -846,18 +844,18 @@ const EedfCollisionDataGas& EedfCollisionDataMixture::get_data_for(const Gas& ga
     throw std::runtime_error("Could not find per-gas collision data for '" + gas.name + "'.");
 }
 
-EedfCollisionDataGas& EedfCollisionDataMixture::get_data_for(const Gas& gas)
+EedfCollisionDataGas &EedfCollisionDataMixture::get_data_for(const Gas &gas)
 {
-    return const_cast<EedfCollisionDataGas&>(static_cast<const EedfCollisionDataMixture&>(*this).get_data_for(gas));
+    return const_cast<EedfCollisionDataGas &>(static_cast<const EedfCollisionDataMixture &>(*this).get_data_for(gas));
 }
 
-void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid& grid)
+void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
 {
     // 1. resize and zero-initialize the elastic and total cross sections
     m_elasticCrossSection.setZero(grid.nCells() + 1);
     m_totalCrossSection.setZero(grid.nCells() + 1);
 
-    for (const auto& cd : data_per_gas())
+    for (const auto &cd : data_per_gas())
     {
         if (cd.isDummy())
         {
@@ -873,15 +871,11 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid& grid)
         // 3. add inelastic terms (also from reverse processes, if enabled)
         //    (note: here inelastic also includes non-conserving process:
         //    ionization, attachment)
-        for (auto ctype : {
-                    CollisionType::excitation,
-                    CollisionType::vibrational,
-                    CollisionType::rotational,
-                    CollisionType::ionization,
-                    CollisionType::attachment } )
+        for (auto ctype : {CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational,
+                           CollisionType::ionization, CollisionType::attachment})
 
         {
-            for (auto &collision : cd.collisions(ctype) )
+            for (auto &collision : cd.collisions(ctype))
             {
                 m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
 
@@ -896,8 +890,7 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid& grid)
     }
 }
 
-
-void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid& grid, const Vector &eedf)
+void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const Vector &eedf)
 {
     m_rateCoefficients.clear();
     m_rateCoefficientsExtra.clear();
@@ -913,14 +906,13 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid& grid, const 
      * personally I (JvD) think that this should not matter,
      * and makes the code a LOT easier (not just the code below).
      */
-    for (auto& c : m_collisions)
+    for (auto &c : m_collisions)
     {
-        std::vector<RateCoefficient>& rcVector = c.m_isExtra
-            ?  m_rateCoefficientsExtra : m_rateCoefficients;
+        std::vector<RateCoefficient> &rcVector = c.m_isExtra ? m_rateCoefficientsExtra : m_rateCoefficients;
         rcVector.emplace_back(c.m_coll->evaluateRateCoefficient(eedf));
     }
 #else
-    for (const auto& cd : data_per_gas())
+    for (const auto &cd : data_per_gas())
     {
         for (auto &collVec : cd.collisions())
         {
