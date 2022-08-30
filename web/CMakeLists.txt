@@ -19,5 +19,14 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
 	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_vibpop.txt@Input/ \
 	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/OPBParameter.txt@Input/ \
 	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/quadrupoleMoment.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/anharmonicFrequencies.txt@Input/")
+	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/anharmonicFrequencies.txt@Input/"
+)
+
+set_target_properties( loki_bindings
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
+)
+
 
