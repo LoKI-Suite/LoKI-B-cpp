@@ -91,7 +91,7 @@ class EedfCollisionDataGas
 {
 public:
     using State = Gas::State;
-    using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
+    using CollisionVector = std::vector<std::shared_ptr<EedfCollision>>;
     using CollisionsType = std::vector<CollisionVector>;
     explicit EedfCollisionDataGas(Gas& gas);
     // We need to store the collisions per Gas since we need to calculate
