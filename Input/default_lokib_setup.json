@@ -43,8 +43,8 @@
       ],
       "population": [
         "N2(X^1S_g^+) = 1.0",
-        "N2(X^1S_g^+,v=0,J=*) = boltzmannPopulation@gasTemperature",
-        "N2(X^1S_g^+,v=0) = 1.0"
+        "N2(X^1S_g^+,v=0) = 1.0",
+        "N2(X^1S_g^+,v=0,J=*) = boltzmannPopulation@gasTemperature"
       ]
     },
     "numerics": {

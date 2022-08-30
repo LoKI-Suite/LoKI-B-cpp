@@ -6,21 +6,20 @@ target_include_directories(loki_bindings PRIVATE loki-b /usr/lib/emscripten/syst
 target_link_libraries(loki_bindings PRIVATE loki-b)
 
 set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
-	-s ASSERTIONS=1 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-	-s MODULARIZE=1 \
-	-s EXPORT_NAME=create_module \
-	-s EXPORTED_RUNTIME_METHODS=FS,run \
-	--bind \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_LXCat.json@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_rot_LXCat.json@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/masses.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/harmonicFrequencies.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/rotationalConstants.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_vibpop.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/OPBParameter.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/quadrupoleMoment.txt@Input/ \
-	--preload-file ${PROJECT_SOURCE_DIR}/web/Input/anharmonicFrequencies.txt@Input/")
+  -s ASSERTIONS=1 \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s MODULARIZE=1 \
+  -s EXPORT_NAME=create_module \
+  -s EXPORTED_RUNTIME_METHODS=FS,run \
+  --bind \
+  --preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_LXCat.json@JSON/N2/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_rot_LXCat.json@JSON/N2/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/masses.txt@Input/Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/harmonicFrequencies.txt@Input/Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/rotationalConstants.txt@Input/Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/OPBParameter.txt@Input/Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/quadrupoleMoment.txt@Input/Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/anharmonicFrequencies.txt@Input/Databases/")
 
 # FIXME: The generated files should be placed in `web/wasm`. However, this is
 # currently not possible due to a bug in emscripten
