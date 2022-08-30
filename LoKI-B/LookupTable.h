@@ -31,6 +31,7 @@
 
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/Exports.h"
 #include <iostream>
 #include <cassert>
 
@@ -56,7 +57,7 @@ namespace loki {
  *  \author Jan van Dijk and Daan Boer
  *  \date November 2020
  */
-class LookupTable
+class lokib_export LookupTable
 {
 public:
     /// the type of the vector that is used for storing table values

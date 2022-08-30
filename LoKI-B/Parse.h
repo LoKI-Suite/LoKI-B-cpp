@@ -29,6 +29,7 @@
 #ifndef LOKI_CPP_PARSE_H
 #define LOKI_CPP_PARSE_H
 
+#include "LoKI-B/Exports.h"
 #include <string>
 #include <iosfwd>
 
@@ -39,13 +40,13 @@ namespace Parse {
  *  the conversion was successful, false otherwise. In the latter case the
  *  \a value is undefined after returning from this function.
  */
-bool getValue(const std::string &valueString, double &value);
+lokib_export bool getValue(const std::string &valueString, double &value);
 
 /** Parse \a valueString into a double and return the result. If the conversion
  *  fails or is incomplete (trailing characters are present), a
  *  std::runtime_error is thrown.
  */
-double getValue(const std::string &valueString);
+lokib_export double getValue(const std::string &valueString);
 
 /** Replace all occurrences of \a key in \a str with \a repl.
  *  The function correctly handles the case that \a key is a substring of \a repl.
@@ -59,7 +60,7 @@ double getValue(const std::string &valueString);
  *  \author Jan van Dijk
  *  \date   May 2013
  */
-std::string& searchAndReplaceInPlace(
+lokib_export std::string& searchAndReplaceInPlace(
                             std::string& str,
                             const std::string& key,
                             const std::string& repl);
@@ -76,7 +77,7 @@ std::string& searchAndReplaceInPlace(
  *  \author Jan van Dijk
  *  \date   January 2014
  */
-std::string searchAndReplaceCopy(
+lokib_export std::string searchAndReplaceCopy(
                             const std::string& str,
                             const std::string& key,
                             const std::string& repl);
@@ -102,7 +103,7 @@ std::string searchAndReplaceCopy(
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
-bool removeComments(std::istream& is, std::string &dest);
+lokib_export bool removeComments(std::istream& is, std::string &dest);
 
 /** Open file \a fileName for reading, call removeComments() to remove
  *  comments, trailing whitespace and empty lines from the stream, and
@@ -120,7 +121,7 @@ bool removeComments(std::istream& is, std::string &dest);
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
-bool stringBufferFromFile(const std::string &fileName, std::string &dest);
+lokib_export bool stringBufferFromFile(const std::string &fileName, std::string &dest);
 
 } // namespace Parse
 } // namespace loki

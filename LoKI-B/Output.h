@@ -16,13 +16,14 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/Exports.h"
 
 namespace loki
 {
 
 class EedfCollisionDataMixture;
 
-class Output
+class lokib_export Output
 {
 public:
     virtual ~Output();
@@ -45,7 +46,7 @@ private:
     bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
 
-class FileOutput : public Output
+class lokib_export FileOutput : public Output
 {
 public:
     using PathExistsHandler = std::function<void(std::string&)>;
@@ -69,7 +70,7 @@ private:
     mutable bool m_initTable;
 };
 
-class JsonOutput : public Output
+class lokib_export JsonOutput : public Output
 {
 public:
     JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);

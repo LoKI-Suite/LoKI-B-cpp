@@ -11,13 +11,14 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/Exports.h"
 
 #include <memory>
 
 namespace loki
 {
 
-class Simulation
+class lokib_export Simulation
 {
 public:
     WorkingConditions m_workingConditions;

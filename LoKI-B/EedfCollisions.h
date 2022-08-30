@@ -91,9 +91,15 @@ class EedfCollisionDataGas
 {
 public:
     using State = Gas::State;
-    using CollisionVector = std::vector<std::shared_ptr<EedfCollision>>;
+    using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
     using CollisionsType = std::vector<CollisionVector>;
     explicit EedfCollisionDataGas(Gas& gas);
+    EedfCollisionDataGas(const Gas&) = delete;
+    EedfCollisionDataGas(EedfCollisionDataGas&&) = default;
+    EedfCollisionDataGas& operator=(const EedfCollisionDataGas&) = delete;
+    EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
+    ~EedfCollisionDataGas() {}
+
     // We need to store the collisions per Gas since we need to calculate
     // the mass ratio when evaluating the total and elastic cross-sections.
     const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
