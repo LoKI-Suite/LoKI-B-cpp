@@ -102,25 +102,22 @@ endif()
 
 # Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
-option(USE_OPENBLAS "Use OpenBLAS" OFF)
+option(USE_OPENBLAS "Use (Open)BLAS" OFF)
 
 if (USE_MKL AND USE_OPENBLAS)
   message(SEND_ERROR "Multiple backends defined, please just select one.")
 endif()
 
 if(USE_MKL)
-  message(STATUS "Using Intel MKL")
-  target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_MKL_ALL)
-  if(NOT BLA_VENDOR)
-	 set(BLA_VENDOR Intel10_64lp)
-  endif()
-  find_package(BLAS REQUIRED)  
-  if(${CMAKE_VERSION} VERSION_LESS "3.18")
- 	#This can be simplified when cmake versions older than 3.18 get less widespread
-	set(backend_libs  ${BLAS_LINKER_FLAGS} ${BLAS_LIBRARIES})
-  else()
-  	set(backend_libs  BLAS::BLAS)
-  endif()
+	message(STATUS "Using Intel MKL")
+	target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_MKL_ALL)
+	#This has only been tested with the Intel OneAPI toolkit, version 2021.3
+	#According to documentation, version 2021.3 and higher should correctly 
+	#export a MKLConfig.cmake file, which can be picked up by cmake:
+	#https://www.intel.com/content/www/us/en/develop/documentation/onemkl-macos-developer-guide/top/getting-started/cmake-config-for-onemkl.html
+	find_package(MKL CONFIG REQUIRED)
+	message(STATUS "${MKL_IMPORTED_TARGETS}")
+	set(backend_libs MKL::MKL)
 elseif(USE_OPENBLAS)
   message(STATUS "Using OpenBLAS")
   if(NOT BLA_VENDOR)
