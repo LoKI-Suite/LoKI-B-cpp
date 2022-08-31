@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(loki_cpp)
+file(STRINGS "VERSION.txt" PROJECT_VERSION)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -116,6 +117,8 @@ else()
 	endif()
 endif()
 
+# --- OpenBLAS/MKL --- #
+
 # Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_OPENBLAS "Use (Open)BLAS" OFF)
@@ -169,3 +172,48 @@ endif(EMSCRIPTEN)
 add_subdirectory(LoKI-B)
 add_subdirectory(Input)
 add_subdirectory(doc)
+
+
+# --- Install --- #
+
+## Installing / Exporting ##
+#  Guided by: https://cmake.org/cmake/help/git-master/guide/tutorial/Adding%20Export%20Configuration.html
+#  This SHOULD make the package findable by a simple find_package(loki_cpp) call
+
+include(CMakePackageConfigHelpers)
+
+# Export a file that lists the exported targets
+install(EXPORT loki_cpp-targets
+  FILE loki_cpp-targets.cmake
+  DESTINATION lib/cmake/loki_cpp
+  NAMESPACE loki_cpp::
+)
+
+# generate the config file itself (loaded and run by find_package)
+configure_package_config_file(${PROJECT_SOURCE_DIR}/CMake/loki_cpp-config.cmake.in
+  "${PROJECT_BINARY_DIR}/cmake/loki_cpp-config.cmake"
+  INSTALL_DESTINATION "lib/cmake/loki_cpp"
+  NO_SET_AND_CHECK_MACRO
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+#Generate the version file (used by find_package to decide if the version is high enough)
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/cmake/loki_cpp-config-version.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+#Install the version and config files
+#typically to /usr/local/lib/cmake/BOLSIG
+install(FILES
+  ${PROJECT_BINARY_DIR}/cmake/loki_cpp-config.cmake
+  ${PROJECT_BINARY_DIR}/cmake/loki_cpp-config-version.cmake
+  DESTINATION lib/cmake/loki_cpp
+)
+
+#Make this project available in the build directory as well
+export(EXPORT loki_cpp-targets
+  FILE "${PROJECT_BINARY_DIR}/loki_cpp-targets.cmake"
+  NAMESPACE loki_cpp::
+)
