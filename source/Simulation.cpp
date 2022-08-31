@@ -47,18 +47,6 @@ Simulation::Simulation(const json_type &cnf)
                          ", number of jobs = ", m_jobManager.njobs());
 }
 
-void Simulation::configureOutput(Output* output)
-{
-    m_output.reset(output);
-    /** \todo Fix the case that output==nullptr. In that case we should remove the
-     *  listener from m_electronKinetics->obtainedNewEedf.
-     */
-    if (m_electronKinetics.get())
-    {
-        m_electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, m_output.get());
-    }
-}
-
 void Simulation::run()
 {
     if (m_electronKinetics.get())
