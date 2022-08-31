@@ -1,29 +1,31 @@
+#include <cstdint>
 #include <iostream>
 
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
-#include "emscripten/em_asm.h"
 #include <chrono>
 #include <exception>
 #include <sstream>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
+#include <emscripten/em_asm.h>
 
-namespace loki {
-namespace web {
+namespace loki
+{
+namespace web
+{
 
-void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc,
-                   const Power &power, const EedfCollisionDataMixture& collData,
-                   const SwarmParameters &swarmParameters,
+void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
+                   const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
                    const Vector &firstAnisotropy)
 {
     EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
 }
 
-int run(std::string file_contents)
+int run(std::string file_contents, emscripten::val callback, emscripten::val output)
 {
     try
     {
@@ -37,15 +39,22 @@ int run(std::string file_contents)
          * object that will populate the JSON data object.
          */
         json_type data_out;
-        simulation->configureOutput(new JsonOutput(data_out, cnf,
-                            &simulation->m_workingConditions, &simulation->m_jobManager));
-        /** \todo Perhaps the above should be controlled by cnf.at("output").at("isOn").
-         *  \todo Now that JsonOutput works, we have two ouput mechanisms in place: handleResults
-         *        and handleJSONOutput. I think we need only one. It may be useful to
-         *        send intermediate/incremental output to JS, and let that concatenate
-         *        the bits and pieces.
+        simulation->configureOutput(
+            new JsonOutput(data_out, cnf, &simulation->m_workingConditions, &simulation->m_jobManager));
+        /** \todo Perhaps the above should be controlled by
+         * cnf.at("output").at("isOn"). \todo Now that JsonOutput works, we have
+         * two ouput mechanisms in place: handleResults and handleJSONOutput. I
+         * think we need only one. It may be useful to send
+         * intermediate/incremental output to JS, and let that concatenate the
+         * bits and pieces.
          */
-        simulation->m_obtainedResults.addListener(handleResults);
+        simulation->m_obtainedResults.addListener(
+            [callback](const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
+                       const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
+                       const Vector &firstAnisotropy) {
+                callback(reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
+                         reinterpret_cast<uintptr_t>(eedf.data()), eedf.size());
+            });
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
@@ -53,8 +62,8 @@ int run(std::string file_contents)
                              std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count(), "mus");
 
         // generate output
-        const std::string msg=data_out.dump();
-        EM_ASM({ handleJsonOutput($0, $1); }, msg.data(), msg.size());
+        const std::string msg = data_out.dump();
+        output(msg);
 
         return 0;
     }
@@ -72,4 +81,3 @@ EMSCRIPTEN_BINDINGS(loki)
 {
     emscripten::function("run", &loki::web::run);
 }
-

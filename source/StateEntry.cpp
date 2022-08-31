@@ -3,8 +3,8 @@
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/StandardPaths.h"
 #include <fstream>
-#include <stdexcept>
 #include <regex>
+#include <stdexcept>
 
 namespace loki
 {
@@ -173,10 +173,10 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
                     {
                         throw std::runtime_error("Found trailing characters '" + stateRemainder + "'.");
                     }
-                    StateType stateType =
-                        J.empty() == false
-                            ? rotational
-                            : v.empty() == false ? vibrational : e.empty() == false ? electronic : charge;
+                    StateType stateType = J.empty() == false   ? rotational
+                                          : v.empty() == false ? vibrational
+                                          : e.empty() == false ? electronic
+                                                               : charge;
                     entries.push_back(StateEntry(id, stateType, g, q, e, v, J));
                     if (stoiCoeff)
                     {
@@ -231,7 +231,7 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
     }
 }
 
-StateEntry entryFromJSON(const std::string& id, const json_type &cnf)
+StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const std::string gasName = cnf.at("particle");
     // this is how it is now done for the electron for legacy input
@@ -242,92 +242,99 @@ StateEntry entryFromJSON(const std::string& id, const json_type &cnf)
     }
     const int charge_int = cnf.at("charge").get<int>();
     const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
-    const json_type &el_cnf = cnf.at("electronic");
-    if (el_cnf.size() != 1)
-    {
-        throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
-    }
     // e,v,J are the strings that are passed to the StateEntry constructor.
-    const std::string e = el_cnf[0].at("e");
-    std::string v, J;
-    if (el_cnf[0].contains("vibrational"))
+    std::string e, v, J;
+    if (cnf.contains("electronic"))
     {
-        const json_type &vib_cnf = el_cnf[0].at("vibrational");
-        if (vib_cnf.size() == 0)
+        const json_type &el_cnf = cnf.at("electronic");
+        if (el_cnf.size() != 1)
         {
-            throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+            throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
         }
-        else if (vib_cnf.size() == 1)
+        e = el_cnf[0].at("summary");
+        if (el_cnf[0].contains("vibrational"))
         {
-            // we expect a number, but sometimes a string is encountered, like "10+"
-            v = vib_cnf[0].at("v").type() == json_type::value_t::string ? vib_cnf[0].at("v").get<std::string>()
-                                                                        : std::to_string(vib_cnf[0].at("v").get<int>());
-            if (vib_cnf[0].contains("rotational"))
+            const json_type &vib_cnf = el_cnf[0].at("vibrational");
+            if (vib_cnf.size() == 0)
             {
-                const json_type &rot_cnf = vib_cnf[0].at("rotational");
-                if (rot_cnf.size() == 0)
+                throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+            }
+            else if (vib_cnf.size() == 1)
+            {
+                // we expect a number, but sometimes a string is encountered, like "10+"
+                v = vib_cnf[0].at("v").type() == json_type::value_t::string
+                        ? vib_cnf[0].at("v").get<std::string>()
+                        : std::to_string(vib_cnf[0].at("v").get<int>());
+
+                if (vib_cnf[0].contains("rotational"))
                 {
-                    throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
-                }
-                else if (rot_cnf.size() == 1)
-                {
-                    J = std::to_string(rot_cnf[0].at("J").get<int>());
-                }
-                else
-                {
-                    // For "v" and "J" we assume that the entries form a continuous value-range.
-                    std::set<unsigned> J_vals;
-                    for (const auto &Jentry : rot_cnf)
+                    const json_type &rot_cnf = vib_cnf[0].at("rotational");
+                    if (rot_cnf.size() == 0)
                     {
-                        J_vals.insert(Jentry.at("J").get<int>());
+                        throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
                     }
-                    if (J_vals.size() != rot_cnf.size())
+                    else if (rot_cnf.size() == 1)
                     {
-                        throw std::runtime_error("Duplicate J entries encountered.");
+                        J = std::to_string(rot_cnf[0].at("J").get<int>());
                     }
-                    int nJ = *J_vals.rbegin() + 1 - *J_vals.begin();
-                    if (nJ != int(J_vals.size()))
+                    else
                     {
-                        throw std::runtime_error("Expected a contiguous J-range.");
+                        // For "v" and "J" we assume that the entries form a continuous value-range.
+                        std::set<unsigned> J_vals;
+                        for (const auto &Jentry : rot_cnf)
+                        {
+                            J_vals.insert(Jentry.at("J").get<int>());
+                        }
+                        if (J_vals.size() != rot_cnf.size())
+                        {
+                            throw std::runtime_error("Duplicate J entries encountered.");
+                        }
+                        int nJ = *J_vals.rbegin() + 1 - *J_vals.begin();
+                        if (nJ != int(J_vals.size()))
+                        {
+                            throw std::runtime_error("Expected a contiguous J-range.");
+                        }
+                        J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
                     }
-                    J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
                 }
             }
-        }
-        else
-        {
-            std::set<unsigned> v_vals;
-            for (const auto &ventry : vib_cnf)
+            else
             {
-                if (ventry.contains("rotational"))
+                std::set<unsigned> v_vals;
+                for (const auto &ventry : vib_cnf)
                 {
-                    throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                             "multiple virbational states are specified.");
+                    if (ventry.contains("rotational"))
+                    {
+                        throw std::runtime_error("Rotational states identifiers are not allowed when "
+                                                 "multiple virbational states are specified.");
+                    }
+                    v_vals.insert(ventry.at("v").get<int>());
                 }
-                v_vals.insert(ventry.at("v").get<int>());
+                // For "v" and "J" we assume that the entries form a continuous value-range.
+                if (v_vals.size() != vib_cnf.size())
+                {
+                    throw std::runtime_error("Duplicate v entries encountered.");
+                }
+                int nv = *v_vals.rbegin() + 1 - *v_vals.begin();
+                if (nv != int(v_vals.size()))
+                {
+                    throw std::runtime_error("Expected a contiguous v-range.");
+                }
+                v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
             }
-            // For "v" and "J" we assume that the entries form a continuous value-range.
-            if (v_vals.size() != vib_cnf.size())
-            {
-                throw std::runtime_error("Duplicate v entries encountered.");
-            }
-            int nv = *v_vals.rbegin() + 1 - *v_vals.begin();
-            if (nv != int(v_vals.size()))
-            {
-                throw std::runtime_error("Expected a contiguous v-range.");
-            }
-            v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
         }
     }
-    StateType stateType =
-        J.empty() == false ? rotational : v.empty() == false ? vibrational : e.empty() == false ? electronic : charge;
+    StateType stateType = J.empty() == false   ? rotational
+                          : v.empty() == false ? vibrational
+                          : e.empty() == false ? electronic
+                                               : charge;
     return StateEntry{id, stateType, gasName, charge_str, e, v, J};
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
     std::smatch m;
 
     if (!std::regex_search(propertyString, m, reState))
@@ -364,8 +371,7 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
     std::string fileBuffer;
     if (!Parse::stringBufferFromFile(fileName, fileBuffer))
     {
-        Log<Message>::Error("Could not open state property file '"
-                            + fileName + "' for reading.");
+        Log<Message>::Error("Could not open state property file '" + fileName + "' for reading.");
     }
     std::stringstream ss{fileBuffer};
     std::string line;
@@ -378,19 +384,16 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
         std::smatch m;
         if (!std::regex_search(line, m, expr))
         {
-            throw std::runtime_error("Syntax error in file '"
-                            + fileName + "', line '"
-                            + line + "': expected a state name and a numeric argument.");
+            throw std::runtime_error("Syntax error in file '" + fileName + "', line '" + line +
+                                     "': expected a state name and a numeric argument.");
         }
         const std::string stateString = m.str(1);
         const std::string valueString = m.str(2);
         double value;
         if (!Parse::getValue(valueString, value))
         {
-            throw std::runtime_error("Syntax error in file '"
-                            + fileName + "', line '"
-                            + line + "': could not convert argument '"
-                            + valueString + "' to a number.");
+            throw std::runtime_error("Syntax error in file '" + fileName + "', line '" + line +
+                                     "': could not convert argument '" + valueString + "' to a number.");
         }
         entries.emplace_back(propertyStateFromString(stateString), value);
     }
