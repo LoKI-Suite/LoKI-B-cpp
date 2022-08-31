@@ -61,36 +61,32 @@ auto json = R"json(
                     ]
                 }
             },
-            "sets": [
-                        {
-                "processes": [
-                    {
-                        "reaction": {
-                            "lhs": [
-                                { "state": "e", "count": 1 },
-                                { "state": "X(0)", "count": 1 }
-                        ],
-                        "rhs": [
+            "processes": [
+                {
+                    "reaction": {
+                        "lhs": [
                             { "state": "e", "count": 1 },
                             { "state": "X(0)", "count": 1 }
-                        ],
-                        "reversible": false,
-                        "type_tags": ["Elastic"]
-                        },
-                        "parameters": ["m/M = 0.00025"],
-                        "reference": [
-                            "Analytical test, constant cross section"
-                        ],
-                        "labels": ["Energy", "Cross section"],
-                        "units": ["eV", "m2"],
-                        "threshold": 0,
-                        "data": [
-                            [0.000000e+0, 1.000000e-19],
-                            [1.000000e+3, 1.000000e-19]
-                        ]
-                    }
-                ]
-            }
+                    ],
+                    "rhs": [
+                        { "state": "e", "count": 1 },
+                        { "state": "X(0)", "count": 1 }
+                    ],
+                    "reversible": false,
+                    "type_tags": ["Elastic"]
+                    },
+                    "parameters": ["m/M = 0.00025"],
+                    "reference": [
+                        "Analytical test, constant cross section"
+                    ],
+                    "labels": ["Energy", "Cross section"],
+                    "units": ["eV", "m2"],
+                    "threshold": 0,
+                    "data": [
+                        [0.000000e+0, 1.000000e-19],
+                        [1.000000e+3, 1.000000e-19]
+                    ]
+                }
             ]
         },
         "gasProperties": {
