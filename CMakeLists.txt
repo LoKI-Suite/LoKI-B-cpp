@@ -26,6 +26,22 @@ else() # clang or g++
 
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  #Put all dlls and executables in a single folder. This
+  #enables all regtests and executables to find the dlls.
+  #Probably there is a nicer way (a copy step at the end of
+  #the compile that copies all dlls next to the executables?)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+else()
+  #Set RPATH for linux systems, such that loki-b keeps working
+  #when installed.
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif()
+
+
 # --- OpenMP --- #
 
 #Search for OpenMP, if it is found an OpenMP::OpenMP_CXX target is exported.
