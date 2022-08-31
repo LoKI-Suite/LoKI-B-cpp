@@ -12,8 +12,8 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
   -s EXPORT_NAME=create_module \
   -s EXPORTED_RUNTIME_METHODS=FS,run \
   --bind \
-  --preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_LXCat.json@JSON/N2/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/web/Input/N2_rot_LXCat.json@JSON/N2/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/JSON/N2/N2_LXCat.json@JSON/N2/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/Input/JSON/N2/N2_rot_LXCat.json@JSON/N2/ \
   --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/masses.txt@Input/Databases/ \
   --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/harmonicFrequencies.txt@Input/Databases/ \
   --preload-file ${PROJECT_SOURCE_DIR}/Input/Databases/rotationalConstants.txt@Input/Databases/ \

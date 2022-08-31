@@ -16,16 +16,16 @@
     "growthModelType": "spatial",
     "includeEECollisions": false,
     "LXCatFiles": [
-      "http://localhost:3000/api/scat-css/125476/bibtex"
+      "http://localhost:3000/api/scat-css/1171607/bibtex"
     ],
     "gasProperties": {
-      "mass": "masses.txt",
+      "mass": "Databases/masses.txt",
       "fraction": ["Ar = 1"],
-      "harmonicFrequency": "harmonicFrequencies.txt",
-      "anharmonicFrequency": "anharmonicFrequencies.txt",
-      "rotationalConstant": "rotationalConstants.txt",
-      "electricQuadrupoleMoment": "quadrupoleMoment.txt",
-      "OPBParameter": "OPBParameter.txt"
+      "harmonicFrequency": "Databases/harmonicFrequencies.txt",
+      "anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
+      "rotationalConstant": "Databases/rotationalConstants.txt",
+      "electricQuadrupoleMoment": "Databases/quadrupoleMoment.txt",
+      "OPBParameter": "Databases/OPBParameter.txt"
     },
     "stateProperties": {
       "population": ["Ar(^1S_0) = 1.0"],
