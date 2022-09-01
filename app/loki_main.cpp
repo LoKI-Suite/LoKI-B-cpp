@@ -8,6 +8,7 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include "LoKI-B/Gnuplot.h"
+#include "LoKI-B/Output.h"
 #include <chrono>
 #include <exception>
 
@@ -71,11 +72,12 @@ int main(int argc, char **argv)
 try
 {
 #ifdef LOKIB_ENABLE_FPU_EXCEPTIONS
-    // see https://en.cppreference.com/w/cpp/numeric/fenv for making this portable. There are
-    // also other possibilities, like translating the FPU exception into a C++ exception that
-    // can then be handled gracefully by the program... so it seems.
-    // NOTE that division by zero (of a non-zero value) and overflows are not necessarily
-    //      problematic, since IEE754 describes clear semantics for thee cases.
+    /* see https://en.cppreference.com/w/cpp/numeric/fenv for making this portable. There are
+     * also other possibilities, like translating the FPU exception into a C++ exception that
+     * can then be handled gracefully by the program... so it seems.
+     * NOTE that division by zero (of a non-zero value) and overflows are not necessarily
+     *      problematic, since IEE754 describes clear semantics for these cases.
+     */
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
     /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
@@ -95,6 +97,7 @@ try
     }
 
     std::unique_ptr<loki::Simulation> simulation;
+    std::unique_ptr<loki::Output> output;
     std::string fileName(argv[1]);
     if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
     {
@@ -102,15 +105,16 @@ try
         simulation.reset(new loki::Simulation(cnf));
         if (cnf.at("output").at("isOn"))
         {
-            loki::Output* output =
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
+            output.reset(
                 new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions,
-                        &simulation->m_jobManager);
+                        &simulation->m_jobManager));
 #else
+            output.reset(
                 new loki::FileOutput(cnf, &simulation->m_workingConditions,
-                        &simulation->m_jobManager, &handleExistingOutputPath);
+                        &simulation->m_jobManager, &handleExistingOutputPath));
 #endif
-            simulation->configureOutput(output);
+            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
         }
     }
     else
@@ -119,9 +123,10 @@ try
         simulation.reset(new loki::Simulation(setup));
         if (setup.output.isOn)
         {
-            loki::Output* output = new loki::FileOutput(setup, &simulation->m_workingConditions,
-                    &simulation->m_jobManager, &handleExistingOutputPath);
-            simulation->configureOutput(output);
+            output.reset(
+                new loki::FileOutput(setup, &simulation->m_workingConditions,
+                    &simulation->m_jobManager, &handleExistingOutputPath));
+            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
         }
     }
 

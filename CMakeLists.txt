@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(loki_cpp)
+file(STRINGS "VERSION.txt" PROJECT_VERSION)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -25,6 +26,22 @@ else() # clang or g++
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
 
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  #Put all dlls and executables in a single folder. This
+  #enables all regtests and executables to find the dlls.
+  #Probably there is a nicer way (a copy step at the end of
+  #the compile that copies all dlls next to the executables?)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+else()
+  #Set RPATH for linux systems, such that loki-b keeps working
+  #when installed.
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif()
+
 
 # --- OpenMP --- #
 
@@ -100,6 +117,8 @@ else()
 	endif()
 endif()
 
+# --- OpenBLAS/MKL --- #
+
 # Specify the linear algebra backend to use (default is pure Eigen).
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_OPENBLAS "Use (Open)BLAS" OFF)
@@ -143,7 +162,6 @@ find_package(Doxygen)
 enable_testing()
 
 add_subdirectory(lib)
-add_subdirectory(doc)
 if(EMSCRIPTEN)
     add_subdirectory(web)
 else()
@@ -151,3 +169,51 @@ else()
     add_subdirectory(tests)
     add_subdirectory(ideas)
 endif(EMSCRIPTEN)
+add_subdirectory(LoKI-B)
+add_subdirectory(Input)
+add_subdirectory(doc)
+
+
+# --- Install --- #
+
+## Installing / Exporting ##
+#  Guided by: https://cmake.org/cmake/help/git-master/guide/tutorial/Adding%20Export%20Configuration.html
+#  This SHOULD make the package findable by a simple find_package(loki_cpp) call
+
+include(CMakePackageConfigHelpers)
+
+# Export a file that lists the exported targets
+install(EXPORT loki_cpp-targets
+  FILE loki_cpp-targets.cmake
+  DESTINATION lib/cmake/loki_cpp
+  NAMESPACE loki_cpp::
+)
+
+# generate the config file itself (loaded and run by find_package)
+configure_package_config_file(${PROJECT_SOURCE_DIR}/CMake/loki_cpp-config.cmake.in
+  "${PROJECT_BINARY_DIR}/cmake/loki_cpp-config.cmake"
+  INSTALL_DESTINATION "lib/cmake/loki_cpp"
+  NO_SET_AND_CHECK_MACRO
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+#Generate the version file (used by find_package to decide if the version is high enough)
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/cmake/loki_cpp-config-version.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+#Install the version and config files
+#typically to /usr/local/lib/cmake/BOLSIG
+install(FILES
+  ${PROJECT_BINARY_DIR}/cmake/loki_cpp-config.cmake
+  ${PROJECT_BINARY_DIR}/cmake/loki_cpp-config-version.cmake
+  DESTINATION lib/cmake/loki_cpp
+)
+
+#Make this project available in the build directory as well
+export(EXPORT loki_cpp-targets
+  FILE "${PROJECT_BINARY_DIR}/loki_cpp-targets.cmake"
+  NAMESPACE loki_cpp::
+)
