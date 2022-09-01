@@ -45,6 +45,26 @@ class WorkingConditions
 
     void updateReducedField(double value);
     void updateElectronTemperature(double value);
+    /** Return a string-identifier that identifies the present case (set of
+     *  working conditions, that is). This can be used in output generation
+     *  tasks. As an example, file output can use the identifier as a directory
+     *  name in which the results for this run are stored, while JSON output can
+     *  use the identifier as the nama of the section for that output.
+     *
+     *  Note that at present the m_currentJobFolder is not updated automatically
+     *  by this class when, for example, a new value of the reduced field is
+     *  configured. It must rather be set by client code after new parameters
+     *  have been configured.
+     *
+     *  \sa setCurrentJobFolder
+     */
+    std::string getCurrentJobFolder() const { return m_currentJobFolder; }
+    /** Set the string that identifies the present case. See member
+     *  setCurrentJobFolder for further details.
+     *
+     *  \sa getCurrentJobFolder
+     */
+    void setCurrentJobFolder(const std::string& folder) { m_currentJobFolder = folder; }
 
     /** \todo Technically we only need one 'updatedGasTemperature' event,
      *        since we can control the order of the listeners.
@@ -87,6 +107,7 @@ private:
     double m_excitationFrequency;
     using ArgumentMap = std::map<std::string, const double *>;
     ArgumentMap m_argumentMap;
+    std::string m_currentJobFolder;
 };
 
 } // namespace loki

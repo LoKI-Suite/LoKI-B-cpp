@@ -31,8 +31,8 @@ public:
                    const EedfCollisionDataMixture& collData, const SwarmParameters &swarmParameters,
                    const Vector &firstAnisotropy);
 protected:
-    Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    Output(const Setup &setup, const WorkingConditions *workingConditions);
+    Output(const json_type &cnf, const WorkingConditions *workingConditions);
     virtual void setDestination(const std::string& subFolder)=0;
     virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const=0;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const=0;
@@ -50,9 +50,9 @@ class lokib_export FileOutput : public Output
 {
 public:
     using PathExistsHandler = std::function<void(std::string&)>;
-    FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+    FileOutput(const Setup &setup, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler);
-    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler);
 protected:
     virtual void setDestination(const std::string& subFolder);
@@ -73,8 +73,8 @@ private:
 class lokib_export JsonOutput : public Output
 {
 public:
-    JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions);
+    JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions);
 protected:
     virtual void setDestination(const std::string& subFolder);
     virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;

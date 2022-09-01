@@ -27,6 +27,8 @@
  *  \date   2 May 2019 (first C++ version)
  */
 
+#include <iostream>
+
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
@@ -34,7 +36,7 @@
 #include "LoKI-B/Output.h"
 #include <chrono>
 #include <exception>
-#include <iostream>
+#include <fstream>
 
 //#define LOKIB_ENABLE_FPU_EXCEPTIONS
 
@@ -91,67 +93,54 @@ try
      */
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
-    /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
-     * be set up instead of af FileOutput object. The variable data_out will
-     * act as its output root object. Note that support is incomplete, see
-     * Output.cpp.
-     */
-    /// \todo Make WRITE_OUTPUT_TO_JSON_OBJECT user-configurable, remove the macro
-//#define WRITE_OUTPUT_TO_JSON_OBJECT
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-    loki::json_type data_out;
-#endif
+
     auto begin = std::chrono::high_resolution_clock::now();
     if (argc != 2)
     {
         throw std::runtime_error("Usage: loki <inputfile>");
     }
+    const loki::json_type cnf = loki::read_json_from_file(argv[1]);
 
-    std::unique_ptr<loki::Simulation> simulation;
+    loki::WorkingConditions workingConditions(cnf.at("workingConditions"));
+    loki::ElectronKinetics electron_kinetics(cnf.at("electronKinetics"), &workingConditions);;
+
     std::unique_ptr<loki::Output> output;
-    std::string fileName(argv[1]);
-    if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
+    std::unique_ptr<loki::json_type> data_out;
+    if (cnf.at("output").at("isOn"))
     {
-        const loki::json_type cnf = loki::read_json_from_file(fileName);
-        simulation.reset(new loki::Simulation(cnf));
-        if (cnf.at("output").at("isOn"))
-        {
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-            output.reset(
-                new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions);
-#else
-            output.reset(
-                new loki::FileOutput(cnf, &simulation->m_workingConditions,
-                        &handleExistingOutputPath));
-#endif
-            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
-        }
+        data_out.reset(new loki::json_type);
+        output.reset(new loki::JsonOutput(*data_out, cnf, &workingConditions));
+        electron_kinetics.obtainedNewEedf.addListener(&loki::Output::saveCycle, output.get());
     }
-    else
+    electron_kinetics.obtainedNewEedf.addListener(handleResults);
+
+    /* we bypass the job manager. Instead we select some case parameter values
+     * (in this case only for E/N), install those values and call solve()
+     * ourselves.
+     */
+    for (double E_N : {0.1, 1., 10.})
     {
-        const loki::Setup setup(argv[1]);
-        simulation.reset(new loki::Simulation(setup));
-        if (setup.output.isOn)
-        {
-            output.reset(
-                new loki::FileOutput(setup, &simulation->m_workingConditions,
-                    &handleExistingOutputPath));
-            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
-        }
+        std::cout << "Running loki for E/N = " << E_N << " Td" << std::endl;
+        workingConditions.updateReducedField(E_N);
+        std::stringstream id;
+        id << "ReducedField_" << E_N;
+        workingConditions.setCurrentJobFolder(id.str());
+        electron_kinetics.solve();
     }
 
-    simulation->m_obtainedResults.addListener(handleResults);
-
-    simulation->run();
     auto end = std::chrono::high_resolution_clock::now();
     std::cerr << "Simulation finished, elapsed time = "
               << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
               << "mus" << std::endl;
 
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-    std::cout << "Output data:" << std::endl;
-    std::cout << data_out.dump(2) << std::endl;
-#endif
+    if (data_out.get())
+    {
+        std::string fname = "results.json";
+        std::cout << "Output data (JSON format) will be written to file '"
+            << fname << "'." << std::endl;
+        std::ofstream ofs(fname);
+        ofs << data_out->dump(2) << std::endl;
+    }
 
     return 0;
 }

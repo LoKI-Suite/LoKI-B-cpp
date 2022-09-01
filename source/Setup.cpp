@@ -279,7 +279,6 @@ bool Setup::parseFile(const std::string &fileName)
 #else
     const std::string inputPath("../input/");
 #endif
-
     if (!Parse::stringBufferFromFile(inputPath + fileName, fileContent))
     {
         Log<FileError>::Error(inputPath + fileName);

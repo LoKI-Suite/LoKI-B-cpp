@@ -20,8 +20,8 @@ Output::~Output()
 {
 }
 
-Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), jobManager(jobManager)
+Output::Output(const Setup &s, const WorkingConditions *workingConditions)
+    : workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -54,9 +54,8 @@ Output::Output(const Setup &s, const WorkingConditions *workingConditions, const
     }
 }
 
-Output::Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions),
-      jobManager(jobManager)
+Output::Output(const json_type &cnf, const WorkingConditions *workingConditions)
+    : workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -93,7 +92,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
                        const Vector &firstAnisotropy)
 {
-    setDestination(jobManager->getCurrentJobFolder());
+    setDestination(wc.getCurrentJobFolder());
     if (saveEedf)
         writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
     if (saveSwarm)
@@ -106,9 +105,9 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeLookuptable(power, swarmParameters);
 }
 
-FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler)
- : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
+ : Output(setup,workingConditions), m_folder(OUTPUT "/" + setup.output.folder)
 {
     m_initTable = true;
     createPath(handler);
@@ -116,9 +115,9 @@ FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingCondi
     ofs << setup.fileContent << std::endl;
 }
 
-FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler)
- : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
+ : Output(cnf,workingConditions), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
     m_initTable = true;
     createPath(handler);
@@ -328,14 +327,14 @@ void FileOutput::createPath(const PathExistsHandler& handler)
     }
 }
 
-JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
- : Output(setup,workingConditions,jobManager), m_root(root), m_active(nullptr)
+JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions)
+ : Output(setup,workingConditions), m_root(root), m_active(nullptr)
 {
     m_root["setup"] = setup.fileContent;
 }
 
-JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
- : Output(cnf,workingConditions,jobManager), m_root(root), m_active(nullptr)
+JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions)
+ : Output(cnf,workingConditions), m_root(root), m_active(nullptr)
 {
     m_root["setup"] = cnf;
 }

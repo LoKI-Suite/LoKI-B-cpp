@@ -79,6 +79,7 @@ void Simulation::run()
         m_jobManager.prepareFirstJob();
         do
         {
+            m_workingConditions.setCurrentJobFolder(m_jobManager.getCurrentJobFolder());
             m_electronKinetics->solve();
         } while (m_jobManager.prepareNextJob());
     }

@@ -8,8 +8,10 @@ endfunction (target_add_test)
 add_executable(json2lxcat json2lxcat.cpp)
 target_link_libraries(json2lxcat PRIVATE nlohmann_json::nlohmann_json)
 
+add_executable(loki_steps loki_steps.cpp)
+target_link_libraries(loki_steps PRIVATE loki-b)
+target_add_test(loki_steps)
+
 add_executable(test_statecontainer test_statecontainer.cpp)
 target_link_libraries(test_statecontainer PRIVATE loki-b)
 target_add_test(test_statecontainer)
-
-
