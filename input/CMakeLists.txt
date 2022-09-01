@@ -4,7 +4,7 @@
 
 install(
     DIRECTORY .
-    DESTINATION Input
+    DESTINATION input
     FILES_MATCHING
     PATTERN "*.in"
     PATTERN "*.json"

@@ -277,7 +277,7 @@ bool Setup::parseFile(const std::string &fileName)
 #ifdef EMSCRIPTEN
     const std::string inputPath{""};
 #else
-    const std::string inputPath("../Input/");
+    const std::string inputPath("../input/");
 #endif
 
     if (!Parse::stringBufferFromFile(inputPath + fileName, fileContent))

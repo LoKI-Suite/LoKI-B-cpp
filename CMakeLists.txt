@@ -170,7 +170,7 @@ else()
     add_subdirectory(ideas)
 endif(EMSCRIPTEN)
 add_subdirectory(LoKI-B)
-add_subdirectory(Input)
+add_subdirectory(input)
 add_subdirectory(doc)
 
 
