@@ -9,7 +9,7 @@
 
 namespace loki
 {
-#define INPUT "../Input"
+#define INPUT "../input"
 #define OUTPUT "Output"
 } // namespace loki
 
