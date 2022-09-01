@@ -16,8 +16,8 @@
     "growthModelType": "temporal",
     "includeEECollisions": false,
     "LXCatFiles": [
-      "http://localhost:3000/api/scat-css/1302488/bibtex",
-      "http://localhost:3000/api/scat-css/1303613/bibtex"
+      "http://localhost:3000/api/scat-css/1302488?refstyle=bibtex",
+      "http://localhost:3000/api/scat-css/1303613?refstyle=bibtex"
     ],
     "gasProperties": {
       "mass": "Databases/masses.txt",

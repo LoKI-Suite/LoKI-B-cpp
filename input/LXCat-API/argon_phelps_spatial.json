@@ -16,7 +16,7 @@
     "growthModelType": "spatial",
     "includeEECollisions": false,
     "LXCatFiles": [
-      "http://localhost:3000/api/scat-css/1171607/bibtex"
+      "http://localhost:3000/api/scat-css/1171607?refstyle=bibtex"
     ],
     "gasProperties": {
       "mass": "Databases/masses.txt",
