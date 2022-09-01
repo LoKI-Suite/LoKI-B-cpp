@@ -9,7 +9,6 @@
 #include <functional>
 
 #include "LoKI-B/Grid.h"
-#include "LoKI-B/JobSystem.h"
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/Power.h"
@@ -42,7 +41,6 @@ protected:
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
     const WorkingConditions *workingConditions;
 private:
-    const JobManager *jobManager;
     bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
 
