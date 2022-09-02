@@ -58,100 +58,56 @@ if(USE_OPENMP)
 	endif()
 endif()
 
-# --- Eigen3 --- #
-
-option(USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
-
-if(USE_BUILTIN_EIGEN)
-	#Use Eigen from include/eigen-3.3.7/eigen3
-	#Do we need this?
-	if(NOT TARGET Eigen3::Eigen)
-		add_library(Eigen3::Eigen INTERFACE IMPORTED)
-		target_include_directories(Eigen3::Eigen INTERFACE ${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3)
-	endif()
-else()
-	#Use Eigen found on the system, or download from git
-	find_package(Eigen3 3.3 NO_MODULE QUIET)
-	if(Eigen3_FOUND AND TARGET Eigen3::Eigen)
-		#We found Eigen: done
-		message(STATUS "System-installed Eigen found")
-	else()
-		#Eigen not found or bad configured: download source
-		message(STATUS "Using FetchContent to download Eigen (avoid this by installing Eigen3 or build with -DUSE_BUILTIN_EIGEN=ON)")
-		FetchContent_Declare(
-			Eigen
-			GIT_REPOSITORY    https://gitlab.com/libeigen/eigen.git
-			GIT_TAG           3.4.0
-		)
-		FetchContent_MakeAvailable(Eigen)
-	endif()
-endif()
-
 
 # --- nlohmann/json --- #
 
 option(USE_BUILTIN_NLOHMANN_JSON "Use the version of nlohmann/json that is shipped with loki-b" OFF)
 
 if(USE_BUILTIN_NLOHMANN_JSON)
-	#Use nlohmann/json from include/nlohmann-3.7.0
-	#Do we need this?
-	if(NOT TARGET nlohmann_json::nlohmann_json)
-		add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
-		target_include_directories(nlohmann_json::nlohmann_json INTERFACE ${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0)
-	endif()
+	#Use built-in nlohmann/json from include/nlohmann-3.7.0
+	message(STATUS "Using built-in nlohmann_json")
 else()
 	#Use nlohmann/json found on the system, or download from git
-	find_package(nlohmann_json 3.7.0 QUIET)
-	if(nlohmann_json_FOUND AND TARGET nlohmann_json::nlohmann_json)
-		#We found nlohmann/json: done
-		message(STATUS "System-installed nlohmann/json found")
-	else()
-		#nlohmann/json not found or bad configured: download source (v 3.11.2)
-		message(STATUS "Using FetchContent to download nlohmann/json (avoid this by installing nlohman/json or build with -DUSE_BUILTIN_NLOHMANN_JSON=ON)")
-		FetchContent_Declare(
-			nlohmann_json
-			GIT_REPOSITORY    https://github.com/nlohmann/json.git
-			GIT_TAG           bc889af
-		)
-		FetchContent_MakeAvailable(nlohmann_json)
-	endif()
+	message(STATUS "Using system-installed nlohmann/json.")
+	find_package(nlohmann_json 3.7.0 REQUIRED)
+endif()
+
+
+# --- Eigen3 --- #
+
+option(USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
+
+if(USE_BUILTIN_EIGEN)
+	#Use built-in Eigen from include/eigen-3.3.7/eigen3
+	message(STATUS "Using built-in Eigen")
+else()
+	#Use Eigen found on the system, or download from git
+	message(STATUS "Using System-installed Eigen")
+	find_package(Eigen3 3.3 NO_MODULE REQUIRED)
 endif()
 
 # --- OpenBLAS/MKL --- #
 
 # Specify the linear algebra backend to use (default is pure Eigen).
-option(USE_MKL "Use Intel MKL" OFF)
-option(USE_OPENBLAS "Use (Open)BLAS" OFF)
+option(USE_MKL "Use Intel MKL as backend for Eigen" OFF)
+option(USE_OPENBLAS "Use (Open)BLAS as backend for Eigen" OFF)
 
 if (USE_MKL AND USE_OPENBLAS)
   message(SEND_ERROR "Multiple backends defined, please just select one.")
 endif()
 
 if(USE_MKL)
-	message(STATUS "Using Intel MKL")
-	target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_MKL_ALL)
-	#This has only been tested with the Intel OneAPI toolkit, version 2021.3
-	#According to documentation, version 2021.3 and higher should correctly 
-	#export a MKLConfig.cmake file, which can be picked up by cmake:
-	#https://www.intel.com/content/www/us/en/develop/documentation/onemkl-macos-developer-guide/top/getting-started/cmake-config-for-onemkl.html
-	find_package(MKL CONFIG REQUIRED)
-	message(STATUS "${MKL_IMPORTED_TARGETS}")
-	set(backend_libs MKL::MKL)
+  message(STATUS "Using Intel MKL")
+  #This has only been tested with the Intel OneAPI toolkit, version 2021.3
+  #According to documentation, version 2021.3 and higher should correctly 
+  #export a MKLConfig.cmake file, which can be picked up by cmake:
+  #https://www.intel.com/content/www/us/en/develop/documentation/onemkl-macos-developer-guide/top/getting-started/cmake-config-for-onemkl.html
+  find_package(MKL CONFIG REQUIRED)
+  message(STATUS "${MKL_IMPORTED_TARGETS}")
 elseif(USE_OPENBLAS)
-  message(STATUS "Using OpenBLAS")
-  if(NOT BLA_VENDOR)
-	 set(BLA_VENDOR OpenBLAS)
-  endif()
+  message(STATUS "Using (Open)BLAS")
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)
-  if(${CMAKE_VERSION} VERSION_LESS "3.18")
- 	#This can be simplified when cmake versions older than 3.18 get less widespread
-	set(backend_libs  ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES} 
-					  ${BLAS_LINKER_FLAGS}   ${BLAS_LIBRARIES}  )
-  else()
-  	set(backend_libs  LAPACK::LAPACK BLAS::BLAS)
-  endif()
-  target_compile_definitions(Eigen3::Eigen INTERFACE EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
 else()
   message(STATUS "Using Eigen internal expressions")
 endif()
