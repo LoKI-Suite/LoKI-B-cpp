@@ -5,7 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 using json_type = nlohmann::json;
 
