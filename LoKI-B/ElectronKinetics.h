@@ -26,11 +26,12 @@ using ResultEvent =
 
 class ElectronKinetics
 {
-  public:
+protected:
     ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
     // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
+public:
     // use the detaul destructor
     ~ElectronKinetics() = default;
     /** \todo Implement the 'rule of big 5': also delete the move constructor and
@@ -130,12 +131,6 @@ class ElectronKinetics
     EedfMixture mixture;
 
     EedfType eedfType;
-    /** \todo This is not used anywhere at the moment.
-     *  This is used only when EEDFType is equal to 'prescribed'.
-     *  This is not yet implemented in the C++ version, but present
-     *  in the MATLAB version.
-     */
-    uint8_t shapeParameter;
 
     /** Tolerance settings.
      */
@@ -266,6 +261,30 @@ class ElectronKinetics
     bool includeNonConservativeIonization{false};
     bool includeNonConservativeAttachment{false};
     bool hasSuperelastics{false};
+};
+
+class ElectronKineticsBoltzmann : public ElectronKinetics
+{
+public:
+    ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions);
+private:
+    /// shared constructor tasks
+    void initialize();
+};
+
+class ElectronKineticsPrescribed : public ElectronKinetics
+{
+public:
+    ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions);
+private:
+    /// shared constructor tasks
+    void initialize();
+    /** The parameter that controls the shape of the eedf (1 Maxwellian,
+     *  2 Druyvesteyn)
+     */
+    const uint8_t shapeParameter;
 };
 
 } // namespace loki

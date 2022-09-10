@@ -102,7 +102,7 @@ try
     const loki::json_type cnf = loki::read_json_from_file(argv[1]);
 
     loki::WorkingConditions workingConditions(cnf.at("workingConditions"));
-    loki::ElectronKinetics electron_kinetics(cnf.at("electronKinetics"), &workingConditions);;
+    loki::ElectronKineticsBoltzmann electron_kinetics(cnf.at("electronKinetics"), &workingConditions);;
 
     std::unique_ptr<loki::Output> output;
     std::unique_ptr<loki::json_type> data_out;

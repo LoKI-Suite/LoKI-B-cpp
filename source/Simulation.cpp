@@ -45,7 +45,7 @@ Simulation::Simulation(const loki::Setup &setup)
     {
         initializeJobs(setup.workingConditions);
 
-        m_electronKinetics = std::make_unique<ElectronKinetics>(setup.electronKinetics, &m_workingConditions);
+        m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(setup.electronKinetics, &m_workingConditions);
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
@@ -65,7 +65,7 @@ Simulation::Simulation(const json_type &cnf)
     {
         initializeJobs(cnf.at("workingConditions"));
 
-        m_electronKinetics = std::make_unique<ElectronKinetics>(cnf.at("electronKinetics"), &m_workingConditions);
+        m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(cnf.at("electronKinetics"), &m_workingConditions);
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),

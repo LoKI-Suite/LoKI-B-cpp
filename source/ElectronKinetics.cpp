@@ -42,7 +42,6 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       eedf(grid.nCells())
 {
     this->eedfType = setup.eedfType;
-    this->shapeParameter = setup.shapeParameter;
     this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
     this->maxEedfRelError = setup.numerics.nonLinearRoutines.maxEedfRelError;
     this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
@@ -72,7 +71,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     eedf(grid.nCells())
 {
     this->eedfType = getEedfType(cnf.at("eedfType"));
-    this->shapeParameter = cnf.contains("shapeParameter") ? cnf.at("shapeParameter").get<unsigned>() : 0;
     this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
     this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
@@ -1347,7 +1345,7 @@ void ElectronKinetics::solveEEColl()
     bool hasConverged = false;
     uint32_t iter = 0;
 
-    /** Mee is ignored in solveEEColl. How does that result in differences with
+    /** \todo Mee is ignored in solveEEColl. How does that result in differences with
      *  respect to the MATLAB version.
      */
     /// In this implementation we completely skip the Mee matrix, saving both memory and time.
@@ -1699,17 +1697,40 @@ void ElectronKinetics::evaluateFirstAnisotropy()
             (cellCrossSection.array() + WoN * WoN * me / (2. * e * grid.getCells().array() * cellCrossSection.array()));
     }
 }
-} // namespace loki
 
-// Code to print a matrix
-//            for (Grid::Index i = 0; i < grid.nCells(); ++i) {
-//                for (Grid::Index j = 0; j < grid.nCells(); ++j) {
-//                    printf("%.16e", matrix(i, j));
-//
-//                    if (j < grid.nCells() - 1) {
-//                        printf("\t");
-//                    }
-//                }
-//
-//                printf("\n");
-//            }
+ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
+: ElectronKinetics(setup,workingConditions)
+{
+    initialize();
+}
+
+ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
+: ElectronKinetics(cnf,workingConditions)
+{
+    initialize();
+}
+
+void ElectronKineticsBoltzmann::initialize()
+{
+}
+
+ElectronKineticsPrescribed::ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
+: ElectronKinetics(setup,workingConditions),
+  shapeParameter(setup.shapeParameter)
+{
+    initialize();
+}
+
+ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions)
+: ElectronKinetics(cnf,workingConditions),
+  shapeParameter(cnf.at("shapeParameter").get<unsigned>())
+{
+    initialize();
+}
+
+void ElectronKineticsPrescribed::initialize()
+{
+}
+
+
+} // namespace loki
