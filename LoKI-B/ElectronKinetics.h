@@ -21,8 +21,8 @@ namespace loki
 {
 
 using ResultEvent =
-    Event<const Grid, const Vector, const WorkingConditions, const Power, const EedfCollisionDataMixture&,
-          const SwarmParameters, const Vector>;
+    Event<const Grid&, const Vector&, const WorkingConditions&, const Power&, const EedfCollisionDataMixture&,
+          const SwarmParameters&, const Vector*>;
 
 class ElectronKinetics
 {

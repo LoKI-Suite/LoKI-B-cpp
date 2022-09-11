@@ -45,7 +45,7 @@
 void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki::WorkingConditions &wc,
                    const loki::Power &power, const loki::EedfCollisionDataMixture &coll_data,
                    const loki::SwarmParameters &swarmParameters,
-                   const loki::Vector &firstAnisotropy)
+                   const loki::Vector *firstAnisotropy)
 {
     using namespace loki;
     writeGnuplot(std::cout, "Eedf", "Energy (eV)", "Eedf (Au)", grid.getCells(), eedf);
@@ -68,7 +68,7 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
     //         std::cerr << grid.getCell(i) << "\t" << cellCrossSection[i] << '\n';
     // }
 
-    //    writeGnuplot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
+    // if (firstAnisotropy)   writeGnuplot("First Anisotropy", "Energy (eV)", "First Anisotropy (Au)", grid.getCells(), firstAnisotropy);
 }
 
 void handleExistingOutputPath(std::string &folder)

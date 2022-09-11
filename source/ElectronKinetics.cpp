@@ -303,7 +303,7 @@ void ElectronKinetics::solve()
     evaluateFirstAnisotropy();
 
     obtainedNewEedf.emit(grid, eedf, *workingConditions, power, mixture.collision_data(), swarmParameters,
-                         firstAnisotropy);
+                         &firstAnisotropy);
 
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
     const std::string xpm_fname{"system_matrix.xpm"};

@@ -12,6 +12,9 @@ target_link_libraries(bolsig_extract PRIVATE loki-b)
 add_executable(compare_tables compare_tables.cpp)
 target_link_libraries(compare_tables PRIVATE loki-b)
 
+add_executable(test_events test_events.cpp)
+target_link_libraries(test_events PRIVATE loki-b)
+
 add_executable(test_lut test_lut.cpp)
 target_link_libraries(test_lut PRIVATE loki-b)
 
@@ -27,6 +30,7 @@ target_link_libraries(test_statebase PRIVATE loki-b)
 add_executable(test_druyvesteyn test_druyvesteyn.cpp)
 target_link_libraries(test_druyvesteyn PRIVATE loki-b)
 
+target_add_test(test_events)
 target_add_test(test_lut)
 target_add_test(test_parser)
 target_add_test(test_reaction_format)

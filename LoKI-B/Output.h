@@ -28,12 +28,12 @@ public:
     virtual ~Output();
     void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                    const EedfCollisionDataMixture& collData, const SwarmParameters &swarmParameters,
-                   const Vector &firstAnisotropy);
+                   const Vector *firstAnisotropy);
 protected:
     Output(const Setup &setup, const WorkingConditions *workingConditions);
     Output(const json_type &cnf, const WorkingConditions *workingConditions);
     virtual void setDestination(const std::string& subFolder)=0;
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const=0;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const=0;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const=0;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const=0;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
@@ -54,7 +54,7 @@ public:
         const PathExistsHandler& handler);
 protected:
     virtual void setDestination(const std::string& subFolder);
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
@@ -75,7 +75,7 @@ public:
     JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions);
 protected:
     virtual void setDestination(const std::string& subFolder);
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
