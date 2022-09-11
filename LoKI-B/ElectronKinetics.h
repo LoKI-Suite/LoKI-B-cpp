@@ -33,14 +33,13 @@ protected:
     ElectronKinetics(const ElectronKinetics &other) = delete;
 public:
     // use the detaul destructor
-    ~ElectronKinetics() = default;
+    virtual ~ElectronKinetics() = default;
     /** \todo Implement the 'rule of big 5': also delete the move constructor and
      *  move and copy assignment.
      */
     ResultEvent obtainedNewEedf;
 
-    /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
-     *  depending on wether the smart grid option is enabled.
+    /** solve the Boltzmann equation.
      *  After completion, the power terms, rate coefficients, swarm parameters
      *  and the first anisotropic term f1 are evaluated and the obtainedNewEedf
      *  event is fired.
@@ -49,55 +48,21 @@ public:
 
     const Grid &getGrid() const { return grid; }
 
-  private:
+protected:
+
+    virtual void doSolve()=0;
+
+private:
+
+    /// \todo See what can be made private. Introduce accessors where necessary.
+protected:
+
     /** Carry out initialization tasks. This function is called by both
      *  constructor overloads after the argument-type-specific bits have
      *  been done (those that depend on WorkingCondisions or JSON).
      */
     void initialize();
-    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
-     *  sum_i sqrt(u_i)*f[i]*du = 1.
-     *  Note: the incoming matrix is singular, the first equation (that is:
-     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
-     */
-    void invertMatrix(Matrix &matrix);
-    /** Update all terms that are needed later on to compose the boltzmannMatrix.
-     *  Note that this is called only in the constructor of this class and in
-     *  reply to an grid.updatedMaxEnergy event (which is triggered among others
-     *  by a smart grid iteration).
-     */
     void evaluateMatrix();
-    /** solve the Boltzmann equation, taking into account only the linear terms.
-     */
-    void invertLinearMatrix();
-    /** solve the Boltzmann equation. An iterative procedure is used to handle
-     *  the non-linear terms.
-     */
-    void mixingDirectSolutions();
-    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
-     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
-     */
-    void solveSingle();
-    void solveSmartGrid();
-    /** An alternative for solveSmartGrid.
-     *
-     *  0. introduce uM, uP and set these to uMax, the initial value of the
-     *     upper boundary.
-     *  1. do a calculation and calculate 'decades'.
-     *  2. If necessary, widen the interval [uM,uP].
-     *     - if decades is below the interval:
-     *         while decades is below the interval:
-     *          - double uP, set uMax=uP, solve and recalculate 'decades'
-     *     - else if decades is above the interval:
-     *         while decades is above the interval:
-     *          - divide uM by 2, set uMax=uM, solve and recalculate 'decades'
-     *  3. While decades is not in the range, use bisection:
-     *      - Set uMax = (uM+uP)/2
-     *      - solve and calculate decades.
-     *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax
-     */
-    void solveSmartGrid2();
-
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
      *  Furthermore, calcDecades(v1,v2)=-calcDecades(v2,v1) and in particular,
@@ -127,6 +92,7 @@ public:
     }
 
     WorkingConditions *workingConditions;
+
     Grid grid;
     EedfMixture mixture;
 
@@ -192,7 +158,6 @@ public:
     double CIEff{0.};
 
     // code related to spatial growth
-    void solveSpatialGrowthMatrix();
     SparseMatrix fieldMatrixSpatGrowth;
     SparseMatrix ionSpatialGrowthD;
     SparseMatrix ionSpatialGrowthU;
@@ -200,44 +165,14 @@ public:
     double alphaRedEff{0.};
 
     // code related to temporal growth
-    void solveTemporalGrowthMatrix();
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
     Vector g_fieldTemporalGrowth;
 
-    // code related to ee colissions
-    void solveEEColl();
-    /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
-    bool includeEECollisions;
-    /// \todo See if/when the 0-initialization is needed
-    double alphaEE{0.};
-    Matrix BAee;
-    Vector A;
-    Vector B;
-
-    Matrix boltzmannMatrix;
     // the EEDF
     Vector eedf;
 
-    // storage and calculation of f1 (first anisotropic term)
-    /** \todo Note that this is essentially output only.
-     *  This is evaluated at the end of solve() by a call to
-     *  evaluateFirstAnisotropy(), then passed on to
-     *  obtainedNewEedf.emit(), so output can be generated.
-     *  This is just one example of variables of this type.
-     *  It would be good to separate the variables that are
-     *  needed for the calculation from those that are more
-     *  of the postprecessing type.
-     *  Another example is swarmParameters. Also power is mostly
-     *  like this, with the exception of power.electronElectron
-     *  and power.reference, which are used as part of a convergence
-     *  criterium in solveEEColl().
-     */
-    void evaluateFirstAnisotropy();
-    Vector firstAnisotropy;
-
-    // storage and calculation of the power terms
-    void evaluatePower();
+    // storage of the power terms
     Power power;
 
     // storage and calculation of the swarm parameters
@@ -268,9 +203,87 @@ class ElectronKineticsBoltzmann : public ElectronKinetics
 public:
     ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions);
+protected:
+    /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
+     *  depending on wether the smart grid option is enabled.
+     */
+    virtual void doSolve();
 private:
     /// shared constructor tasks
     void initialize();
+    /** solve the Boltzmann equation, taking into account only the linear terms.
+     */
+    void invertLinearMatrix();
+    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
+     *  sum_i sqrt(u_i)*f[i]*du = 1.
+     *  Note: the incoming matrix is singular, the first equation (that is:
+     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
+     */
+    void invertMatrix(Matrix &matrix);
+    void solveSpatialGrowthMatrix();
+    void solveTemporalGrowthMatrix();
+    // code related to ee colissions
+    void solveEEColl();
+    /** Update all terms that are needed later on to compose the boltzmannMatrix.
+     *  Note that this is called only in the constructor of this class and in
+     *  reply to an grid.updatedMaxEnergy event (which is triggered among others
+     *  by a smart grid iteration).
+     */
+    /** solve the Boltzmann equation. An iterative procedure is used to handle
+     *  the non-linear terms.
+     */
+    void mixingDirectSolutions();
+    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
+     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
+     */
+    void solveSingle();
+    void solveSmartGrid();
+    /** An alternative for solveSmartGrid.
+     *
+     *  0. introduce uM, uP and set these to uMax, the initial value of the
+     *     upper boundary.
+     *  1. do a calculation and calculate 'decades'.
+     *  2. If necessary, widen the interval [uM,uP].
+     *     - if decades is below the interval:
+     *         while decades is below the interval:
+     *          - double uP, set uMax=uP, solve and recalculate 'decades'
+     *     - else if decades is above the interval:
+     *         while decades is above the interval:
+     *          - divide uM by 2, set uMax=uM, solve and recalculate 'decades'
+     *  3. While decades is not in the range, use bisection:
+     *      - Set uMax = (uM+uP)/2
+     *      - solve and calculate decades.
+     *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax
+     */
+    void solveSmartGrid2();
+    // storage and calculation of f1 (first anisotropic term)
+    /** \todo Note that this is essentially output only.
+     *  This is evaluated at the end of solve() by a call to
+     *  evaluateFirstAnisotropy(), then passed on to
+     *  obtainedNewEedf.emit(), so output can be generated.
+     *  This is just one example of variables of this type.
+     *  It would be good to separate the variables that are
+     *  needed for the calculation from those that are more
+     *  of the postprecessing type.
+     *  Another example is swarmParameters. Also power is mostly
+     *  like this, with the exception of power.electronElectron
+     *  and power.reference, which are used as part of a convergence
+     *  criterium in solveEEColl().
+     */
+    void evaluateFirstAnisotropy();
+    Vector firstAnisotropy;
+    // calculation of the power terms
+    void evaluatePower();
+
+    Matrix boltzmannMatrix;
+    /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
+    bool includeEECollisions;
+    /// \todo See if/when the 0-initialization is needed
+    double alphaEE{0.};
+    Matrix BAee;
+    Vector A;
+    Vector B;
+
 };
 
 class ElectronKineticsPrescribed : public ElectronKinetics
@@ -278,9 +291,15 @@ class ElectronKineticsPrescribed : public ElectronKinetics
 public:
     ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions);
+protected:
+    virtual void doSolve();
 private:
     /// shared constructor tasks
     void initialize();
+    /// Use arguments g, Te, prepare to make this a free function
+    void evaluateEEDF(double g, double Te);
+    // calculation of the power terms
+    void evaluatePower();
     /** The parameter that controls the shape of the eedf (1 Maxwellian,
      *  2 Druyvesteyn)
      */

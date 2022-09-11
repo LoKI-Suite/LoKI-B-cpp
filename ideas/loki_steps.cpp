@@ -102,7 +102,20 @@ try
     const loki::json_type cnf = loki::read_json_from_file(argv[1]);
 
     loki::WorkingConditions workingConditions(cnf.at("workingConditions"));
-    loki::ElectronKineticsBoltzmann electron_kinetics(cnf.at("electronKinetics"), &workingConditions);;
+    std::unique_ptr<loki::ElectronKinetics> electron_kinetics;
+    const std::string eedfType = cnf.at("electronKinetics").at("eedfType");
+    if (eedfType=="boltzmann")
+    {
+	electron_kinetics.reset(new loki::ElectronKineticsBoltzmann(cnf.at("electronKinetics"), &workingConditions));
+    }
+    else if (eedfType=="prescribed")
+    {
+	electron_kinetics.reset(new loki::ElectronKineticsPrescribed(cnf.at("electronKinetics"), &workingConditions));
+    }
+    else
+    {
+        throw std::runtime_error("Bad value of 'eedfType': expected 'boltzmann' or 'prescribed'.");
+    }
 
     std::unique_ptr<loki::Output> output;
     std::unique_ptr<loki::json_type> data_out;
@@ -110,22 +123,41 @@ try
     {
         data_out.reset(new loki::json_type);
         output.reset(new loki::JsonOutput(*data_out, cnf, &workingConditions));
-        electron_kinetics.obtainedNewEedf.addListener(&loki::Output::saveCycle, output.get());
+        electron_kinetics->obtainedNewEedf.addListener(&loki::Output::saveCycle, output.get());
     }
-    electron_kinetics.obtainedNewEedf.addListener(handleResults);
+    electron_kinetics->obtainedNewEedf.addListener(handleResults);
 
     /* we bypass the job manager. Instead we select some case parameter values
      * (in this case only for E/N), install those values and call solve()
      * ourselves.
      */
-    for (double E_N : {0.1, 1., 10.})
+    if (eedfType=="boltzmann")
     {
-        std::cout << "Running loki for E/N = " << E_N << " Td" << std::endl;
-        workingConditions.updateReducedField(E_N);
-        std::stringstream id;
-        id << "ReducedField_" << E_N;
-        workingConditions.setCurrentJobFolder(id.str());
-        electron_kinetics.solve();
+        for (double E_N : {0.1, 1., 10.})
+        {
+            std::cout << "Running loki for E/N = " << E_N << " Td" << std::endl;
+            workingConditions.updateReducedField(E_N);
+            std::stringstream id;
+            id << "ReducedField_" << E_N;
+            workingConditions.setCurrentJobFolder(id.str());
+            electron_kinetics->solve();
+        }
+    }
+    else if (eedfType=="prescribed")
+    {
+        for (double Te : {0.1, 1., 10.})
+        {
+            std::cout << "Running loki for Te = " << Te << " eV" << std::endl;
+            workingConditions.updateElectronTemperature(Te);
+            std::stringstream id;
+            id << "Te_" << Te;
+            workingConditions.setCurrentJobFolder(id.str());
+            electron_kinetics->solve();
+        }
+    }
+    else
+    {
+        throw std::runtime_error("Bad value of 'eedfType': expected 'boltzmann' or 'prescribed'.");
     }
 
     auto end = std::chrono::high_resolution_clock::now();
