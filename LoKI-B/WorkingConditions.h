@@ -32,6 +32,8 @@ class WorkingConditions
     // Copying this object is not allowed.
     WorkingConditions(const WorkingConditions &other) = delete;
 
+    /// \todo This is input only for the prescribed EEDF case
+    double electronTemperature() const { return m_electronTemperature; }
     double gasTemperature() const { return m_gasTemperature; }
     double gasDensity() const { return m_gasDensity; }
     double electronDensity() const { return m_electronDensity; }
