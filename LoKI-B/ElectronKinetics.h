@@ -46,7 +46,7 @@ class ElectronKinetics
      */
     void solve();
 
-    const Grid *getGrid();
+    const Grid &getGrid() const { return grid; }
 
   private:
     /** Carry out initialization tasks. This function is called by both

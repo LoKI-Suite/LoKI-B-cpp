@@ -312,11 +312,6 @@ void ElectronKinetics::solve()
 #endif
 }
 
-const Grid *ElectronKinetics::getGrid()
-{
-    return &grid;
-}
-
 void ElectronKinetics::invertLinearMatrix()
 {
     if (!mixture.CARGases().empty())
