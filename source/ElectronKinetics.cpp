@@ -79,12 +79,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
 void ElectronKinetics::initialize()
 {
-    grid.updatedMaxEnergy.addListener(&ElectronKinetics::evaluateMatrix, this);
-    workingConditions->updatedReducedField.addListener(&ElectronKinetics::evaluateFieldOperator, this);
-
-    // this->plot("Total Elastic Cross Section N2", "Energy (eV)", "Cross Section (m^2)",
-    // mixture.grid->getNodes(), mixture.collision_data().totalCrossSection());
-
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 
     ionConservativeMatrix.setZero(grid.nCells(), grid.nCells());
@@ -148,40 +142,11 @@ void ElectronKinetics::initialize()
         ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
         fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
     }
-
-    this->evaluateMatrix();
 }
 
 void ElectronKinetics::solve()
 {
     doSolve();
-}
-
-void ElectronKinetics::evaluateMatrix()
-{
-    mixture.collision_data().evaluateTotalAndElasticCS(grid);
-
-    evaluateElasticOperator();
-
-    evaluateFieldOperator();
-
-    if (!mixture.CARGases().empty())
-        evaluateCAROperator();
-
-    evaluateInelasticOperators();
-
-    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        evaluateIonizationOperator();
-
-    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-        evaluateAttachmentOperator();
-
-    /** \todo see the comments about superElasticThresholds in the header file.
-    // Sort and erase duplicates.
-    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
-    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
-                                 superElasticThresholds.end());
-    */
 }
 
 void ElectronKinetics::evaluateElasticOperator()
@@ -648,6 +613,37 @@ void ElectronKineticsBoltzmann::initialize()
     boltzmannMatrix.setZero(grid.nCells(), grid.nCells());
     A.setZero(grid.nCells());
     B.setZero(grid.nCells());
+
+    this->evaluateMatrix();
+    grid.updatedMaxEnergy.addListener(&ElectronKineticsBoltzmann::evaluateMatrix, this);
+    workingConditions->updatedReducedField.addListener(&ElectronKineticsBoltzmann::evaluateFieldOperator, this);
+}
+
+void ElectronKineticsBoltzmann::evaluateMatrix()
+{
+    mixture.collision_data().evaluateTotalAndElasticCS(grid);
+
+    evaluateElasticOperator();
+
+    evaluateFieldOperator();
+
+    if (!mixture.CARGases().empty())
+        evaluateCAROperator();
+
+    evaluateInelasticOperators();
+
+    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+        evaluateIonizationOperator();
+
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
+        evaluateAttachmentOperator();
+
+    /** \todo see the comments about superElasticThresholds in the header file.
+    // Sort and erase duplicates.
+    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
+    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
+                                 superElasticThresholds.end());
+    */
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -1735,6 +1731,36 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, Wor
 
 void ElectronKineticsPrescribed::initialize()
 {
+    this->evaluateMatrix();
+    grid.updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
+    workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
+}
+
+void ElectronKineticsPrescribed::evaluateMatrix()
+{
+    mixture.collision_data().evaluateTotalAndElasticCS(grid);
+
+    evaluateElasticOperator();
+
+    evaluateFieldOperator();
+
+    if (!mixture.CARGases().empty())
+        evaluateCAROperator();
+
+    evaluateInelasticOperators();
+
+    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+        evaluateIonizationOperator();
+
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
+        evaluateAttachmentOperator();
+
+    /** \todo see the comments about superElasticThresholds in the header file.
+    // Sort and erase duplicates.
+    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
+    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
+                                 superElasticThresholds.end());
+    */
 }
 
 void ElectronKineticsPrescribed::doSolve()
@@ -1760,7 +1786,7 @@ void ElectronKineticsPrescribed::doSolve()
     evaluateEEDF(shapeParameter,Te);
 
     /** \todo Eliminate differences in power checking wrt he MATLAB code for the
-     *  prescribed EEDF case. As an example, that uses the dissipayion to make the
+     *  prescribed EEDF case. As an example, that uses the dissipation to make the
      *  balance correct, it appears.
      *
      *  Also remove the need to provide/calculate g_fieldTemporalGrowth, g_fieldSpatialGrowth.
@@ -1818,7 +1844,7 @@ void ElectronKineticsPrescribed::evaluatePower()
     const double auxHigh = kTg + grid.du() * .5; // aux1
     const double auxLow  = kTg - grid.du() * .5; // aux2
 
-    // reset by an assignment to a default-constructed Power object
+    // reset by an assignment of a default-constructed Power object
     power = Power();
 
     double elasticNet = 0., elasticGain = 0.;

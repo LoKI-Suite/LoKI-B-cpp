@@ -62,7 +62,6 @@ protected:
      *  been done (those that depend on WorkingCondisions or JSON).
      */
     void initialize();
-    void evaluateMatrix();
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
      *  Furthermore, calcDecades(v1,v2)=-calcDecades(v2,v1) and in particular,
@@ -211,6 +210,7 @@ protected:
 private:
     /// shared constructor tasks
     void initialize();
+    void evaluateMatrix();
     /** solve the Boltzmann equation, taking into account only the linear terms.
      */
     void invertLinearMatrix();
@@ -296,6 +296,7 @@ protected:
 private:
     /// shared constructor tasks
     void initialize();
+    void evaluateMatrix();
     /// Use arguments g, Te, prepare to make this a free function
     void evaluateEEDF(double g, double Te);
     // calculation of the power terms

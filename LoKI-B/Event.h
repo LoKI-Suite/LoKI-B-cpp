@@ -32,6 +32,7 @@
 #include <functional>
 #include <vector>
 #include <iostream>
+#include <type_traits>
 
 namespace loki
 {
@@ -84,9 +85,10 @@ class Event
     /** This overload adds a callback function that is created from a member
      *  function pointer \a f and the object \a c on which \a f is to be called.
      */
-    template <class C>
-    void addListener(void (C::*f)(T... Args), C *c)
+    template <class B, class C>
+    void addListener(void (B::*f)(T... Args), C *c)
     {
+        static_assert(std::is_base_of_v<B,C>);
         m_callbacks.emplace_back([c, f](T... t) -> void { (c->*f)(t...); });
     }
     /// an overload of addListener that accepts a constant object and member function
