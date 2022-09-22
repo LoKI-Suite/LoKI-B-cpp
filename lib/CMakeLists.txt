@@ -30,13 +30,17 @@ target_include_directories(loki-b  PUBLIC
 target_compile_definitions(loki-b PUBLIC LOKIB_BUILDING_LIBLOKIB)
 
 if(USE_BUILTIN_NLOHMANN_JSON)
-	target_include_directories(loki-b PUBLIC ${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0)
+  target_include_directories(loki-b PUBLIC 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0>
+  )
 else()
 	target_link_libraries(loki-b PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
 if(USE_BUILTIN_EIGEN)
-	target_include_directories(loki-b PUBLIC ${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3)
+  target_include_directories(loki-b PUBLIC 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3>
+  )
 else()
 	target_link_libraries(loki-b  PUBLIC Eigen3::Eigen)
 endif()
