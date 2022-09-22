@@ -14,6 +14,7 @@
 #include "LoKI-B/Power.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/Operators.h"
 
 // TODO: comment ElectronKinetics class
 
@@ -97,15 +98,7 @@ protected:
 
     EedfType eedfType;
 
-    /** Tolerance settings.
-     */
-    double maxEedfRelError;
-    double maxPowerBalanceRelError;
-
-    // support for elastic contributions
-    void evaluateElasticOperator();
-    SparseMatrix elasticMatrix;
-    Vector g_c;
+    ElasticOperator elasticOperator;
 
     /** \todo Clarify: does inelastic mean particle-conserving inelastic only
      *                 (no ionization, attachment)? So only excitation? If so,
@@ -147,26 +140,7 @@ protected:
     Vector g_E;
 
     // support for CAR processes.
-    void evaluateCAROperator();
-    SparseMatrix CARMatrix;
-    Vector g_CAR;
-
-    // use by spatial AND temporal growth
-    GrowthModelType growthModelType;
-    double mixingParameter;
-    double CIEff{0.};
-
-    // code related to spatial growth
-    SparseMatrix fieldMatrixSpatGrowth;
-    SparseMatrix ionSpatialGrowthD;
-    SparseMatrix ionSpatialGrowthU;
-    Vector g_fieldSpatialGrowth;
-    double alphaRedEff{0.};
-
-    // code related to temporal growth
-    SparseMatrix fieldMatrixTempGrowth;
-    SparseMatrix ionTemporalGrowth;
-    Vector g_fieldTemporalGrowth;
+    std::unique_ptr<CAROperator> carOperator;
 
     // the EEDF
     Vector eedf;
@@ -174,8 +148,6 @@ protected:
     // storage of the power terms
     Power power;
 
-    // storage and calculation of the swarm parameters
-    void evaluateSwarmParameters();
     SwarmParameters swarmParameters;
 
     /** \todo superElasticThresholds is only used in the disabled code path
@@ -274,7 +246,11 @@ private:
     Vector firstAnisotropy;
     // calculation of the power terms
     void evaluatePower();
+    // storage and calculation of the swarm parameters
+    void evaluateSwarmParameters();
 
+    SparseMatrix elasticMatrix;
+    SparseMatrix CARMatrix;
     Matrix boltzmannMatrix;
     /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
     bool includeEECollisions;
@@ -283,6 +259,28 @@ private:
     Matrix BAee;
     Vector A;
     Vector B;
+
+    double CIEff{0.};
+
+    // use by spatial AND temporal growth
+    GrowthModelType growthModelType;
+
+    // code related to spatial growth
+    SparseMatrix fieldMatrixSpatGrowth;
+    SparseMatrix ionSpatialGrowthD;
+    SparseMatrix ionSpatialGrowthU;
+    Vector g_fieldSpatialGrowth;
+    double alphaRedEff{0.};
+
+    // code related to temporal growth
+    SparseMatrix fieldMatrixTempGrowth;
+    SparseMatrix ionTemporalGrowth;
+    Vector g_fieldTemporalGrowth;
+    double mixingParameter;
+    /** Tolerance settings.
+     */
+    double maxEedfRelError;
+    double maxPowerBalanceRelError;
 
 };
 
@@ -301,6 +299,8 @@ private:
     void evaluateEEDF(double g, double Te);
     // calculation of the power terms
     void evaluatePower();
+    // storage and calculation of the swarm parameters
+    void evaluateSwarmParameters();
     /** The parameter that controls the shape of the eedf (1 Maxwellian,
      *  2 Druyvesteyn)
      */

@@ -27,25 +27,14 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     : workingConditions(workingConditions),
       grid(setup.numerics.energyGrid),
       mixture(&grid, setup, workingConditions),
-      elasticMatrix(grid.nCells(), grid.nCells()),
-      g_c(grid.getNodes().size()),
       attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
       attachmentMatrix(grid.nCells(), grid.nCells()),
       fieldMatrix(grid.nCells(), grid.nCells()),
       g_E(grid.getNodes().size()),
-      fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
-      ionSpatialGrowthD(grid.nCells(), grid.nCells()),
-      ionSpatialGrowthU(grid.nCells(), grid.nCells()),
-      fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
-      ionTemporalGrowth(grid.nCells(), grid.nCells()),
       eedf(grid.nCells())
 {
     this->eedfType = setup.eedfType;
-    this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
-    this->maxEedfRelError = setup.numerics.nonLinearRoutines.maxEedfRelError;
-    this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
     this->ionizationOperatorType = setup.ionizationOperatorType;
-    this->growthModelType = setup.growthModelType;
 
     initialize();
 }
@@ -54,25 +43,14 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     : workingConditions(workingConditions),
     grid(cnf.at("numerics").at("energyGrid")),
     mixture(&grid, cnf, workingConditions),
-    elasticMatrix(grid.nCells(), grid.nCells()),
-    g_c(grid.nCells()),
     attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
     attachmentMatrix(grid.nCells(), grid.nCells()),
     fieldMatrix(grid.nCells(), grid.nCells()),
     g_E(grid.getNodes().size()),
-    fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
-    ionSpatialGrowthD(grid.nCells(), grid.nCells()),
-    ionSpatialGrowthU(grid.nCells(), grid.nCells()),
-    fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
-    ionTemporalGrowth(grid.nCells(), grid.nCells()),
     eedf(grid.nCells())
 {
     this->eedfType = getEedfType(cnf.at("eedfType"));
-    this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
-    this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
-    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
     this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
-    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
 
     initialize();
 }
@@ -106,11 +84,12 @@ void ElectronKinetics::initialize()
             tridiagPattern.emplace_back(k + 1, k, 0.);
     }
 
-    elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
     fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
 
     if (!mixture.CARGases().empty())
-        CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    {
+        carOperator.reset(new CAROperator(mixture.CARGases()));
+    }
 
     /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
      *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
@@ -130,46 +109,11 @@ void ElectronKinetics::initialize()
     {
         attachmentMatrix.setFromTriplets(diagPattern.begin(), diagPattern.end());
     }
-
-    if (growthModelType == GrowthModelType::spatial)
-    {
-        ionSpatialGrowthD.setFromTriplets(diagPattern.begin(), diagPattern.end());
-        ionSpatialGrowthU.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-        fieldMatrixSpatGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-    }
-    else if (growthModelType == GrowthModelType::temporal)
-    {
-        ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
-        fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-    }
 }
 
 void ElectronKinetics::solve()
 {
     doSolve();
-}
-
-void ElectronKinetics::evaluateElasticOperator()
-{
-    g_c = grid.getNodes().cwiseAbs2().cwiseProduct(mixture.collision_data().elasticCrossSection()) * 2;
-    g_c[0] = 0.;
-    g_c[g_c.size() - 1] = 0.;
-
-    const double Tg = workingConditions->gasTemperature();
-    const double c_el = Constant::kBeV * Tg;
-
-    const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
-    const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        elasticMatrix.coeffRef(k, k) = -(g_c[k] * factor1 + g_c[k + 1] * factor2);
-
-        if (k > 0)
-            elasticMatrix.coeffRef(k, k - 1) = g_c[k] * factor2;
-
-        if (k < grid.nCells() - 1)
-            elasticMatrix.coeffRef(k, k + 1) = g_c[k + 1] * factor1;
-    }
 }
 
 void ElectronKinetics::evaluateFieldOperator()
@@ -201,68 +145,6 @@ void ElectronKinetics::evaluateFieldOperator()
 
         if (k < grid.nCells() - 1)
             fieldMatrix.coeffRef(k, k + 1) = g_E[k + 1] / sqStep;
-    }
-}
-
-/** \todo In the code all the G's are divided by N*sqrt(2*e/m_e),
- *  compared to the LoKI-B paper \cite Tejero2019, it seems.
- *  That explains why, in the code below, you see gas->fraction,
- *  whereas in the paper you see N_k. It would be good to have a
- *  document where the equations are written *exactly* as in the code.
- *  Also g is defined without the minus sign that appears in the definition
- *  in the paper. All in all, CARmatrix seems to be defined such that
- *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
- */
-void ElectronKinetics::evaluateCAROperator()
-{
-    /* When comparing this with Tejero2019, realize that in that paper,
-     * equation 6c, the following symbols are used for a gas k:
-     *
-     * B_k: rotationalConstant
-     * Q_{k,au}: quadruple moment in (atomic) units e*a_0^2. Here e is
-     *   the elementary charge and a_0 the Bohr radius. (NOTE that the
-     *   variable electricQuadrupoleMoment in the code is in SI units Cm^2.)
-     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see \cite Tejero below
-     * equation 6d, \cite Ridenti below equation 8b or Gerjuoy and Stein,
-     * equation 20.
-     *
-     * For mixtures, the terms B_k*sigma_k in the expression for g_CAR must be
-     * weighted with the molar fractions. The code first calculates this weighted
-     * sum sigma0B, which gives
-     *
-     *   sum_k chi_k*B_k*sigma_k = (8./15)*pi*a_0^2* sum_k chi_k*B_k*Q_{k,au}^2
-     *
-     * NOTE: in the first public release of LoKI-B Q_{k,au} was used instead
-     *       of Q_{k,au}^2. That will be fixed in version 2.0.0.
-     */
-    const double a02 = Constant::bohrRadius*Constant::bohrRadius;
-    double sigma0B = 0.;
-    for (const auto &gas : mixture.CARGases())
-    {
-        const double Qau = gas->electricQuadrupoleMoment/(Constant::electronCharge*a02);
-        sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
-    }
-    sigma0B *= (8.*Constant::pi*a02/15.)*sigma0B;
-
-    g_CAR = grid.getNodes() * (4. * sigma0B);
-    // Boundary conditions. See Tejero2019 below equation 16b.
-    g_CAR[0] = 0.;
-    g_CAR[grid.nCells()] = 0.;
-
-    const double Tg = workingConditions->gasTemperature();
-    const double c_CAR = Constant::kBeV * Tg;
-
-    const double factor1 = (c_CAR / grid.du() + 0.5) / grid.du();
-    const double factor2 = (c_CAR / grid.du() - 0.5) / grid.du();
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        CARMatrix.coeffRef(k, k) = -(g_CAR[k] * factor1 + g_CAR[k + 1] * factor2);
-
-        if (k > 0)
-            CARMatrix.coeffRef(k, k - 1) = g_CAR[k] * factor2;
-
-        if (k < grid.nCells() - 1)
-            CARMatrix.coeffRef(k, k + 1) = g_CAR[k + 1] * factor1;
     }
 }
 
@@ -299,7 +181,8 @@ void ElectronKinetics::evaluateInelasticOperators()
                         if (k < cellNumber - numThreshold)
                             inelasticMatrix(k, k + numThreshold) +=
                                 targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
-
+                        /** \todo Clarify. See the comments on the (conserving) attachment operator.
+                         */
                         inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
                     }
 
@@ -498,8 +381,6 @@ void ElectronKinetics::evaluateAttachmentOperator()
              */
             includeNonConservativeAttachment = true;
 
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
-
             /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
              *        in the two places where it is needed (one if the merger below can be done).
              */
@@ -514,6 +395,10 @@ void ElectronKinetics::evaluateAttachmentOperator()
             for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
+            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            /* This is an optimization: do not add a source and a sink that cancel out.
+             * When this happens, the (minor) energy gain is ignored.
+             */
             if (numThreshold == 0)
                 continue;
 
@@ -523,6 +408,16 @@ void ElectronKinetics::evaluateAttachmentOperator()
              */
             for (Grid::Index k = 0; k < cellNumber; ++k)
             {
+                /** \todo Explain the structore of this term. Explain that this is conserving,
+                 *  how we can see that (integral source must be zero).
+                 */
+                /** \todo Is this really a conserving term? It appears that this loses electrons
+                 *  if the argument of the following if-statement is false (that is: for
+                 *  electrons with at a distance smaller than the attachment energy from uMax.
+                 *  Of course this is in practice only a minor problem. It can be fixed by
+                 *  also having the sink inside the if-statement, so we simply discard the
+                 *  processes that produce electrons with an energy that cannot be represented.
+                 */
                 if (k < cellNumber - numThreshold)
                     attachmentConservativeMatrix(k, k + numThreshold) +=
                         targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
@@ -533,78 +428,35 @@ void ElectronKinetics::evaluateAttachmentOperator()
     }
 }
 
-void ElectronKinetics::evaluateSwarmParameters()
-{
-    const Grid::Index n = grid.nCells();
-
-    const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
-
-    Vector tCS(mixture.collision_data().totalCrossSection());
-
-    if (growthModelType == GrowthModelType::temporal && nonConservative)
-    {
-        tCS.tail(grid.nCells()).array() += (CIEff/SI::gamma) / grid.getNodes().tail(n).cwiseSqrt().array();
-    }
-
-    swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid.du() *
-                                   grid.getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-
-    swarmParameters.redMobCoeff = -SI::gamma / 3. *
-                                  grid.getNodes()
-                                      .segment(1, n - 1)
-                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                                      .cwiseQuotient(tCS.segment(1, n - 1))
-                                      .sum();
-
-    if (growthModelType == GrowthModelType::spatial && nonConservative)
-    {
-        swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
-                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
-    }
-    else
-    {
-        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
-    }
-
-    double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
-
-    for (const auto &cd : mixture.collision_data().data_per_gas())
-    {
-        for (const auto &collision : cd.collisions(CollisionType::ionization))
-        {
-            totalIonRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
-        }
-
-        for (const auto &collision : cd.collisions(CollisionType::attachment))
-        {
-            totalAttRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
-        }
-    }
-
-    swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
-    swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
-
-    swarmParameters.meanEnergy = grid.du() * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
-
-    swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
-
-    swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
-
-    // TODO: is this correct? (simulations after the first will have a different value for Te).
-    workingConditions->updateElectronTemperature(swarmParameters.Te);
-}
-
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
 : ElectronKinetics(setup,workingConditions),
-includeEECollisions(setup.includeEECollisions)
+includeEECollisions(setup.includeEECollisions),
+    fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthD(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthU(grid.nCells(), grid.nCells()),
+    fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
+    ionTemporalGrowth(grid.nCells(), grid.nCells())
 {
+    this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
+    this->maxEedfRelError = setup.numerics.nonLinearRoutines.maxEedfRelError;
+    this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
+    this->growthModelType = setup.growthModelType;
     initialize();
 }
 
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(cnf,workingConditions),
-includeEECollisions(cnf.at("includeEECollisions"))
+includeEECollisions(cnf.at("includeEECollisions")),
+    fieldMatrixSpatGrowth(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthD(grid.nCells(), grid.nCells()),
+    ionSpatialGrowthU(grid.nCells(), grid.nCells()),
+    fieldMatrixTempGrowth(grid.nCells(), grid.nCells()),
+    ionTemporalGrowth(grid.nCells(), grid.nCells())
 {
+    this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
+    this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
+    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
+    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     initialize();
 }
 
@@ -614,21 +466,71 @@ void ElectronKineticsBoltzmann::initialize()
     A.setZero(grid.nCells());
     B.setZero(grid.nCells());
 
-    this->evaluateMatrix();
+    // SPARSE INITIALIZATION
+    /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
+     *        That saves a lot of time initializing and makes accessing easier (no 'coeffRef').
+     *        Then the pattern-code below can be removed, only a resize needed. Question:
+     *        does Eigen optimize matrix addition and multiplication for such matrices? That
+     *        is not immediately clear to me.
+     */
+    std::vector<Eigen::Triplet<double>> diagPattern;
+    diagPattern.reserve(grid.nCells());
+
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        diagPattern.emplace_back(k, k, 0.);
+    }
+    std::vector<Eigen::Triplet<double>> tridiagPattern;
+    tridiagPattern.reserve(3 * grid.nCells() - 2);
+
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        if (k > 0)
+            tridiagPattern.emplace_back(k - 1, k, 0.);
+
+        tridiagPattern.emplace_back(k, k, 0.);
+
+        if (k < grid.nCells() - 1)
+            tridiagPattern.emplace_back(k + 1, k, 0.);
+    }
+    elasticMatrix.resize(grid.nCells(), grid.nCells());
+    elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    if (carOperator.get())
+    {
+        CARMatrix.resize(grid.nCells(), grid.nCells());
+        CARMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    }
+    if (growthModelType == GrowthModelType::spatial)
+    {
+        ionSpatialGrowthD.setFromTriplets(diagPattern.begin(), diagPattern.end());
+        ionSpatialGrowthU.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+        fieldMatrixSpatGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    }
+    else if (growthModelType == GrowthModelType::temporal)
+    {
+        ionTemporalGrowth.setFromTriplets(diagPattern.begin(), diagPattern.end());
+        fieldMatrixTempGrowth.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    }
+
     grid.updatedMaxEnergy.addListener(&ElectronKineticsBoltzmann::evaluateMatrix, this);
     workingConditions->updatedReducedField.addListener(&ElectronKineticsBoltzmann::evaluateFieldOperator, this);
+    /// \todo Do this here? Not all parameters may have been set at this point.
+    this->evaluateMatrix();
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
 {
+    const double Tg = workingConditions->gasTemperature();
     mixture.collision_data().evaluateTotalAndElasticCS(grid);
 
-    evaluateElasticOperator();
+    elasticOperator.evaluate(grid,mixture.collision_data().elasticCrossSection(),Tg,elasticMatrix);
 
     evaluateFieldOperator();
 
-    if (!mixture.CARGases().empty())
-        evaluateCAROperator();
+    if (carOperator.get())
+    {
+        carOperator->evaluate(grid,Tg,CARMatrix);
+    }
 
     evaluateInelasticOperators();
 
@@ -1192,8 +1094,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     BAee.setZero(grid.nCells(), grid.nCells());
 
-    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt()),
-                 energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
+    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+    const Vector energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
 
     for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
     {
@@ -1563,34 +1465,15 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 
 void ElectronKineticsBoltzmann::evaluatePower()
 {
-    const double kTg = Constant::kBeV * workingConditions->gasTemperature();
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
+    const double Tg = workingConditions->gasTemperature();
 
     // reset by an assignment of a default-constructed Power object
     power = Power();
 
-    double elasticNet = 0., elasticGain = 0.;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    elasticOperator.evaluatePower(grid,eedf,Tg,power.elasticNet,power.elasticGain,power.elasticLoss);
+    if (carOperator.get())
     {
-        elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxHigh);
-        elasticGain += eedf[k] * (g_c[k + 1] - g_c[k]);
-    }
-    power.elasticNet = SI::gamma * elasticNet;
-    power.elasticGain = SI::gamma * kTg * elasticGain;
-    power.elasticLoss = power.elasticNet - power.elasticGain;
-
-    if (!mixture.CARGases().empty())
-    {
-        double carNet = 0., carGain = 0.;
-        for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
-        {
-            carNet += eedf[k] * (g_CAR[k + 1] * auxLow - g_CAR[k] * auxHigh);
-            carGain += eedf[k] * (g_CAR[k + 1] - g_CAR[k]);
-        }
-        power.carNet = SI::gamma * carNet;
-        power.carGain = SI::gamma * kTg * carGain;
-        power.carLoss = power.carNet - power.carGain;
+        carOperator->evaluatePower(grid,eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
 
     if (includeNonConservativeIonization || includeNonConservativeAttachment)
@@ -1711,6 +1594,67 @@ std::cout << "EE POWER: " << power.electronElectron << std::endl;
     power.reference = totalGain;
 }
 
+void ElectronKineticsBoltzmann::evaluateSwarmParameters()
+{
+    const Grid::Index n = grid.nCells();
+
+    const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
+
+    Vector tCS(mixture.collision_data().totalCrossSection());
+
+    if (growthModelType == GrowthModelType::temporal && nonConservative)
+    {
+        tCS.tail(grid.nCells()).array() += (CIEff/SI::gamma) / grid.getNodes().tail(n).cwiseSqrt().array();
+    }
+
+    swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid.du() *
+                                   grid.getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+
+    swarmParameters.redMobCoeff = -SI::gamma / 3. *
+                                  grid.getNodes()
+                                      .segment(1, n - 1)
+                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                                      .cwiseQuotient(tCS.segment(1, n - 1))
+                                      .sum();
+
+    if (growthModelType == GrowthModelType::spatial && nonConservative)
+    {
+        swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
+                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+    }
+    else
+    {
+        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+    }
+
+    double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
+        {
+            totalIonRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
+        }
+
+        for (const auto &collision : cd.collisions(CollisionType::attachment))
+        {
+            totalAttRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
+        }
+    }
+
+    swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
+    swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
+
+    swarmParameters.meanEnergy = grid.du() * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
+
+    swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
+
+    swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
+
+    // TODO: is this correct? (simulations after the first will have a different value for Te).
+    workingConditions->updateElectronTemperature(swarmParameters.Te);
+}
+
 
 
 
@@ -1731,21 +1675,24 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, Wor
 
 void ElectronKineticsPrescribed::initialize()
 {
-    this->evaluateMatrix();
     grid.updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
     workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
+    /// \todo Do this here? Not all parameters may have been set at this point.
+    this->evaluateMatrix();
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
 {
     mixture.collision_data().evaluateTotalAndElasticCS(grid);
 
-    evaluateElasticOperator();
+    elasticOperator.evaluate(grid,mixture.collision_data().elasticCrossSection());
 
     evaluateFieldOperator();
 
-    if (!mixture.CARGases().empty())
-        evaluateCAROperator();
+    if (carOperator.get())
+    {
+        carOperator->evaluate(grid);
+    }
 
     evaluateInelasticOperators();
 
@@ -1785,29 +1732,7 @@ void ElectronKineticsPrescribed::doSolve()
     }
     evaluateEEDF(shapeParameter,Te);
 
-    /** \todo Eliminate differences in power checking wrt he MATLAB code for the
-     *  prescribed EEDF case. As an example, that uses the dissipation to make the
-     *  balance correct, it appears.
-     *
-     *  Also remove the need to provide/calculate g_fieldTemporalGrowth, g_fieldSpatialGrowth.
-     *  These are not calculated at present for the prescribed case
-     *  For now, set these to zero, since these are referred to in the
-     *  power evaluation. See how MATLAB handles these terms when an EEDF
-     *  is prescribed.
-     */
-    g_fieldTemporalGrowth.setZero(grid.getNodes().size());
-    g_fieldSpatialGrowth.setZero(grid.getNodes().size());
-
     evaluatePower();
-    /** \todo Should the power balance be checked in the prescribed case? Such check
-     *  appears to be missing the in the MATLAB version.
-     */
-    // we finished the solution procedure. If the power balance is
-    // still not good, issue a warning.
-    if (power.relativeBalance > maxPowerBalanceRelError)
-    {
-        Log<PowerBalanceError>::Warning(maxPowerBalanceRelError);
-    }
 
     // evaluate derived data
     mixture.collision_data().evaluateRateCoefficients(grid,eedf);
@@ -1840,36 +1765,18 @@ void ElectronKineticsPrescribed::evaluateEEDF(double g, double Te)
 
 void ElectronKineticsPrescribed::evaluatePower()
 {
-    const double kTg = Constant::kBeV * workingConditions->gasTemperature();
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
+    const double Tg = workingConditions->gasTemperature();
 
     // reset by an assignment of a default-constructed Power object
     power = Power();
 
-    double elasticNet = 0., elasticGain = 0.;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        elasticNet += eedf[k] * (g_c[k + 1] * auxLow - g_c[k] * auxHigh);
-        elasticGain += eedf[k] * (g_c[k + 1] - g_c[k]);
-    }
-    power.elasticNet = SI::gamma * elasticNet;
-    power.elasticGain = SI::gamma * kTg * elasticGain;
-    power.elasticLoss = power.elasticNet - power.elasticGain;
+    elasticOperator.evaluatePower(grid,eedf,Tg,power.elasticNet,power.elasticGain,power.elasticLoss);
 
-    if (!mixture.CARGases().empty())
+    if (carOperator.get())
     {
-        double carNet = 0., carGain = 0.;
-        for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
-        {
-            carNet += eedf[k] * (g_CAR[k + 1] * auxLow - g_CAR[k] * auxHigh);
-            carGain += eedf[k] * (g_CAR[k + 1] - g_CAR[k]);
-        }
-        power.carNet = SI::gamma * carNet;
-        power.carGain = SI::gamma * kTg * carGain;
-        power.carLoss = power.carNet - power.carGain;
+        carOperator->evaluatePower(grid,eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
-
+#if 0
     if (includeNonConservativeIonization || includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
@@ -1986,6 +1893,70 @@ void ElectronKineticsPrescribed::evaluatePower()
         + power.electronElectron;
     power.relativeBalance = std::abs(power.balance) / totalGain;
     power.reference = totalGain;
+#endif
+}
+
+void ElectronKineticsPrescribed::evaluateSwarmParameters()
+{
+    const Grid::Index n = grid.nCells();
+
+    //const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
+
+    Vector tCS(mixture.collision_data().totalCrossSection());
+
+#if 0
+    if (growthModelType == GrowthModelType::temporal && nonConservative)
+    {
+        tCS.tail(grid.nCells()).array() += (CIEff/SI::gamma) / grid.getNodes().tail(n).cwiseSqrt().array();
+    }
+#endif
+
+    swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid.du() *
+                                   grid.getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+
+    swarmParameters.redMobCoeff = -SI::gamma / 3. *
+                                  grid.getNodes()
+                                      .segment(1, n - 1)
+                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                                      .cwiseQuotient(tCS.segment(1, n - 1))
+                                      .sum();
+
+//    if (growthModelType == GrowthModelType::spatial && nonConservative)
+//    {
+//        swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
+//                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+//    }
+//    else
+//    {
+        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+//    }
+
+    double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
+        {
+            totalIonRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
+        }
+
+        for (const auto &collision : cd.collisions(CollisionType::attachment))
+        {
+            totalAttRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
+        }
+    }
+
+    swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
+    swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
+
+    swarmParameters.meanEnergy = grid.du() * (grid.getCells().array().pow(1.5) * eedf.array()).sum();
+
+    swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
+
+    swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
+
+    // TODO: is this correct? (simulations after the first will have a different value for Te).
+    workingConditions->updateElectronTemperature(swarmParameters.Te);
 }
 
 } // namespace loki
