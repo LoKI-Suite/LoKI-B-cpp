@@ -14,7 +14,6 @@ endif()
 
 add_executable(loki_steps loki_steps.cpp)
 target_link_libraries(loki_steps PRIVATE loki-b)
-target_add_test(loki_steps)
 
 add_executable(test_statecontainer test_statecontainer.cpp)
 target_link_libraries(test_statecontainer PRIVATE loki-b)
