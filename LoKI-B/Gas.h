@@ -3,6 +3,7 @@
 
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/StateEntry.h"
+#include "LoKI-B/Exports.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -10,16 +11,20 @@
 namespace loki
 {
 
-class Gas
+class lokib_export Gas
 {
   public:
-    class State
+    class lokib_export State
     {
       public:
         using ChildContainer = std::vector<State *>;
         State(const StateEntry &entry, Gas *gas, State &parent);
         State(Gas *gas);
-        virtual ~State();
+        State(const State&) = delete;
+        State(State&&) = default;
+        State& operator=(const State&) = delete;
+        State& operator=(State&&) = delete;
+	virtual ~State();
 
         const Gas &gas() const
         {
@@ -202,7 +207,7 @@ class Gas
     double fraction;
 };
 
-std::ostream &operator<<(std::ostream &os, const Gas::State &state);
+lokib_export std::ostream &operator<<(std::ostream &os, const Gas::State &state);
 
 } // namespace loki
 

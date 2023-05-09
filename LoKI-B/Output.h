@@ -9,31 +9,31 @@
 #include <functional>
 
 #include "LoKI-B/Grid.h"
-#include "LoKI-B/JobSystem.h"
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/Power.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
+#include "LoKI-B/Exports.h"
 
 namespace loki
 {
 
 class EedfCollisionDataMixture;
 
-class Output
+class lokib_export Output
 {
 public:
     virtual ~Output();
     void saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                    const EedfCollisionDataMixture& collData, const SwarmParameters &swarmParameters,
-                   const Vector &firstAnisotropy);
+                   const Vector *firstAnisotropy);
 protected:
-    Output(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    Output(const Setup &setup, const WorkingConditions *workingConditions);
+    Output(const json_type &cnf, const WorkingConditions *workingConditions);
     virtual void setDestination(const std::string& subFolder)=0;
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const=0;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const=0;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const=0;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const=0;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
@@ -41,21 +41,20 @@ protected:
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
     const WorkingConditions *workingConditions;
 private:
-    const JobManager *jobManager;
     bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
 
-class FileOutput : public Output
+class lokib_export FileOutput : public Output
 {
 public:
     using PathExistsHandler = std::function<void(std::string&)>;
-    FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+    FileOutput(const Setup &setup, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler);
-    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+    FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler);
 protected:
     virtual void setDestination(const std::string& subFolder);
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
@@ -69,14 +68,14 @@ private:
     mutable bool m_initTable;
 };
 
-class JsonOutput : public Output
+class lokib_export JsonOutput : public Output
 {
 public:
-    JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager);
-    JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager);
+    JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions);
+    JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions);
 protected:
     virtual void setDestination(const std::string& subFolder);
-    virtual void writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const;
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const;
     virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,

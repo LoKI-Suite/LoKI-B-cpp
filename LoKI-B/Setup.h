@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "LoKI-B/Enumeration.h"
+#include "LoKI-B/Exports.h"
 
 namespace loki
 {
@@ -32,7 +33,7 @@ namespace loki
  * which is then filled.
  */
 
-struct SetupBase
+struct lokib_export SetupBase
 {
 
     template <class SubStructure>
@@ -95,7 +96,7 @@ protected:
  * It is a substructure of the electronKineticsSetup class.
  */
 
-struct WorkingConditionsSetup : public SetupBase
+struct lokib_export WorkingConditionsSetup : public SetupBase
 {
     std::string reducedField;
     std::string electronTemperature;
@@ -143,7 +144,7 @@ struct GasPropertiesSetup : public SetupBase
  * It is a substructure of the ElectronKineticsSetup class.
  */
 
-struct StatePropertiesSetup : public SetupBase
+struct lokib_export StatePropertiesSetup : public SetupBase
 {
     std::vector<std::string> energy, statisticalWeight, population;
 
@@ -159,7 +160,7 @@ struct StatePropertiesSetup : public SetupBase
  * It is a substructure of the EnergyGrid class.
  */
 
-struct SmartGridSetup : public SetupBase
+struct lokib_export SmartGridSetup : public SetupBase
 {
     uint32_t minEedfDecay = 0, maxEedfDecay = 0;
     double updateFactor = 0;
@@ -174,7 +175,7 @@ struct SmartGridSetup : public SetupBase
  * It is a substructure of the NumericsSetup class.
  */
 
-struct EnergyGridSetup : public SetupBase
+struct lokib_export EnergyGridSetup : public SetupBase
 {
     double maxEnergy;
     uint32_t cellNumber;
@@ -190,7 +191,7 @@ struct EnergyGridSetup : public SetupBase
  * It is a substructure of the NonLinearRoutinesSetup class.
  */
 
-struct OdeSetParametersSetup : public SetupBase
+struct lokib_export OdeSetParametersSetup : public SetupBase
 {
     double maxStep;
 
@@ -204,7 +205,7 @@ struct OdeSetParametersSetup : public SetupBase
  * It is a substructure of the NumericsSetup class.
  */
 
-struct NonLinearRoutinesSetup : public SetupBase
+struct lokib_export NonLinearRoutinesSetup : public SetupBase
 {
     std::string algorithm;
     double mixingParameter, maxEedfRelError;
@@ -220,7 +221,7 @@ struct NonLinearRoutinesSetup : public SetupBase
  * It is a substructure of the ElectronKineticsSetup class.
  */
 
-struct NumericsSetup : public SetupBase
+struct lokib_export NumericsSetup : public SetupBase
 {
     EnergyGridSetup energyGrid;
     double maxPowerBalanceRelError = -1.;
@@ -238,7 +239,7 @@ struct NumericsSetup : public SetupBase
  * It is a substructure of the Setup class.
  */
 
-struct ElectronKineticsSetup : public SetupBase
+struct lokib_export ElectronKineticsSetup : public SetupBase
 {
     bool isOn{false};
     EedfType eedfType;
@@ -266,7 +267,7 @@ struct ElectronKineticsSetup : public SetupBase
  * It is a substructure of the Setup class.
  */
 
-struct OutputSetup : public SetupBase
+struct lokib_export OutputSetup : public SetupBase
 {
     bool isOn;
     std::string folder;
@@ -282,7 +283,7 @@ struct OutputSetup : public SetupBase
  * information from the setup file in a formatted way.
  */
 
-class Setup : public SetupBase
+class lokib_export Setup : public SetupBase
 {
 
   public:

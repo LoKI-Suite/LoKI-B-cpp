@@ -9,6 +9,7 @@ test_statecontainer_SOURCES = test_statecontainer.cpp
 test_statecontainer_LDADD = $(LOKIB_LIBS)
 
 bin_PROGRAMS = \
+	json2lxcat \
 	test_statecontainer
 
 TESTS = \

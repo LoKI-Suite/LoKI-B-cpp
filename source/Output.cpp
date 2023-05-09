@@ -20,8 +20,8 @@ Output::~Output()
 {
 }
 
-Output::Output(const Setup &s, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions), jobManager(jobManager)
+Output::Output(const Setup &s, const WorkingConditions *workingConditions)
+    : workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -54,9 +54,8 @@ Output::Output(const Setup &s, const WorkingConditions *workingConditions, const
     }
 }
 
-Output::Output(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
-    : workingConditions(workingConditions),
-      jobManager(jobManager)
+Output::Output(const json_type &cnf, const WorkingConditions *workingConditions)
+    : workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -91,9 +90,9 @@ Output::Output(const json_type &cnf, const WorkingConditions *workingConditions,
 
 void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
-                       const Vector &firstAnisotropy)
+                       const Vector *firstAnisotropy)
 {
-    setDestination(jobManager->getCurrentJobFolder());
+    setDestination(wc.getCurrentJobFolder());
     if (saveEedf)
         writeEedf(eedf, firstAnisotropy, energyGrid.getCells());
     if (saveSwarm)
@@ -106,9 +105,9 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeLookuptable(power, swarmParameters);
 }
 
-FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager,
+FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler)
- : Output(setup,workingConditions,jobManager), m_folder(OUTPUT "/" + setup.output.folder)
+ : Output(setup,workingConditions), m_folder(OUTPUT "/" + setup.output.folder)
 {
     m_initTable = true;
     createPath(handler);
@@ -116,9 +115,9 @@ FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingCondi
     ofs << setup.fileContent << std::endl;
 }
 
-FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager,
+FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler)
- : Output(cnf,workingConditions,jobManager), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
+ : Output(cnf,workingConditions), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
 {
     m_initTable = true;
     createPath(handler);
@@ -142,17 +141,22 @@ void FileOutput::writeTerm(std::ostream& os, const std::string& name, const std:
     os << std::endl;
 }
 
-void FileOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+void FileOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
 {
     std::ofstream os(m_folder + "/" + m_subFolder + "/eedf.txt");
-    os << "Energy (eV)          EEDF (eV^-(3/2))     First Anisotropy" << std::endl;
+    os << "Energy (eV)          EEDF (eV^-(3/2))";
+    if (firstAnisotropy)
+        os << "     First Anisotropy" << std::endl;
     for (Vector::Index i = 0; i < energies.size(); ++i)
     {
         os << std::scientific << std::setprecision(14) << energies[i];
         os << ' ';
         os << std::scientific << std::setprecision(14) << eedf[i];
-        os << ' ';
-        os << std::scientific << std::setprecision(14) << firstAnisotropy[i];
+        if (firstAnisotropy)
+        {
+            os << ' ';
+            os << std::scientific << std::setprecision(14) << (*firstAnisotropy)[i];
+        }
         os << std::endl;
     }
 }
@@ -194,6 +198,7 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
     writeTerm(os,"Relative Power Balance", "%", power.relativeBalance * 100);
     writeTerm(os,"Elastic collisions (gain)","eVm3/s", power.elasticGain);
     writeTerm(os,"Elastic collisions (loss)","eVm3/s", power.elasticLoss,true);
+    writeTerm(os,"Elastic electron-electron","eVm3/s", power.electronElectron,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Elastic collisions (net)","eVm3/s", power.elasticNet);
     writeTerm(os,"CAR (gain)","eVm3/s", power.carGain);
@@ -328,14 +333,14 @@ void FileOutput::createPath(const PathExistsHandler& handler)
     }
 }
 
-JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions, const JobManager *jobManager)
- : Output(setup,workingConditions,jobManager), m_root(root), m_active(nullptr)
+JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions)
+ : Output(setup,workingConditions), m_root(root), m_active(nullptr)
 {
     m_root["setup"] = setup.fileContent;
 }
 
-JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions, const JobManager *jobManager)
- : Output(cnf,workingConditions,jobManager), m_root(root), m_active(nullptr)
+JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions)
+ : Output(cnf,workingConditions), m_root(root), m_active(nullptr)
 {
     m_root["setup"] = cnf;
 }
@@ -350,15 +355,30 @@ json_type JsonOutput::makeQuantity(const std::string& name, double value, const 
     return { { name, { { "value", value }, { "unit", unit } } } };
 }
 
-void JsonOutput::writeEedf(const Vector &eedf, const Vector &firstAnisotropy, const Vector &energies) const
+void JsonOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
 {
     json_type& out = (*m_active)["eedf"];
-    out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
-    out["units"] = { "eV", "eV^-(3/2)", "1"};
+    if (firstAnisotropy)
+    {
+        out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
+        out["units"] = { "eV", "eV^-(3/2)", "1"};
+    }
+    else
+    {
+        out["labels"] = { "Energy", "EEDF"};
+        out["units"] = { "eV", "eV^-(3/2)"};
+    }
     json_type& data = out["data"];
     for (Vector::Index i = 0; i < energies.size(); ++i)
     {
-        data.push_back(json_type{energies[i], eedf[i], firstAnisotropy[i]});
+        if (firstAnisotropy)
+        {
+            data.push_back(json_type{energies[i], eedf[i], (*firstAnisotropy)[i]});
+        }
+        else
+        {
+            data.push_back(json_type{energies[i], eedf[i]});
+        }
     }
 }
 

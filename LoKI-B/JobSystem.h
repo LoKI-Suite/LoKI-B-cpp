@@ -30,6 +30,7 @@
 #define LOKI_CPP_JOBSYSTEM_H
 
 #include "LoKI-B/json.h"
+#include "LoKI-B/Exports.h"
 #include <cstdlib>
 #include <functional>
 #include <memory>
@@ -47,7 +48,7 @@ namespace loki
  *  That member must be implemented by derived classes to do the
  *  actual calculation and retrun the value.
  */
-class Range
+class lokib_export Range
 {
   public:
     using size_type = std::size_t;
@@ -112,15 +113,18 @@ class Range
  *  that contains the names and active values of the parameters, separated
  *  by underscore characters.
  */
-class JobManager
+class lokib_export JobManager
 {
   public:
     using size_type = std::size_t;
     using callback_type = std::function<void(double)>;
 
     JobManager();
+    JobManager(const JobManager&) = delete;
+    JobManager(JobManager&&);
+    JobManager& operator=(const JobManager&) = delete;
+    JobManager& operator=(const JobManager&&) = delete;
     ~JobManager();
-    JobManager(const JobManager &other) = delete;
 
     void addParameter(const std::string &name, const callback_type callback, const Range *range);
     void prepareFirstJob();

@@ -277,6 +277,8 @@ JobManager::JobManager() : m_jobIndex(0)
 {
 }
 
+JobManager::JobManager(JobManager&&) = default;
+
 JobManager::~JobManager()
 {
 }

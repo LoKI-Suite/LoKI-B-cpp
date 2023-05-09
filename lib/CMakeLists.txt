@@ -1,29 +1,71 @@
-set(cpp ../source/CrossSection.cpp
-        ../source/Gas.cpp
-        ../source/GasMixture.cpp
-        ../source/Gnuplot.cpp
-        ../source/Grid.cpp
-        ../source/EedfCollisions.cpp
-        ../source/EedfMixture.cpp
-        ../source/ElectronKinetics.cpp
-        ../source/Enumeration.cpp
-        ../source/JobSystem.cpp
-        ../source/json.cpp
-        ../source/LinearAlgebra.cpp
-        ../source/LookupTable.cpp
-        ../source/Output.cpp
-        ../source/Parse.cpp
-        ../source/Power.cpp
-        ../source/Setup.cpp
-        ../source/Simulation.cpp
-        ../source/StateEntry.cpp
-        ../source/WorkingConditions.cpp)
+add_library(loki-b SHARED)
+target_sources(loki-b PRIVATE
+   ../source/CrossSection.cpp
+   ../source/Gas.cpp
+   ../source/GasMixture.cpp
+   ../source/Gnuplot.cpp
+   ../source/Grid.cpp
+   ../source/EedfCollisions.cpp
+   ../source/EedfMixture.cpp
+   ../source/ElectronKinetics.cpp
+   ../source/Enumeration.cpp
+   ../source/JobSystem.cpp
+   ../source/json.cpp
+   ../source/LinearAlgebra.cpp
+   ../source/LookupTable.cpp
+   ../source/Output.cpp
+   ../source/Parse.cpp
+   ../source/Power.cpp
+   ../source/Setup.cpp
+   ../source/Simulation.cpp
+   ../source/StateEntry.cpp
+   ../source/WorkingConditions.cpp
+)
 
-add_library(loki-b SHARED ${cpp} ${property_functions})
-target_include_directories(loki-b PUBLIC loki-b  ${PROJECT_SOURCE_DIR})
-target_link_libraries(loki-b PUBLIC ${backend_libs} Eigen3::Eigen nlohmann_json::nlohmann_json)
-if(USE_OPENMP)
-   target_compile_definitions(loki-b PUBLIC USE_OPENMP)
-   target_link_libraries(loki-b PUBLIC OpenMP::OpenMP_CXX )
+target_include_directories(loki-b  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:.>  
+)
+
+target_compile_definitions(loki-b PUBLIC LOKIB_BUILDING_LIBLOKIB)
+
+if(USE_BUILTIN_NLOHMANN_JSON)
+  target_include_directories(loki-b PUBLIC 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0>
+  )
+else()
+	target_link_libraries(loki-b PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
+if(USE_BUILTIN_EIGEN)
+  target_include_directories(loki-b PUBLIC 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3>
+  )
+else()
+	target_link_libraries(loki-b  PUBLIC Eigen3::Eigen)
+endif()
+
+if(USE_MKL)
+  target_link_libraries(loki-b PUBLIC MKL::MKL)
+  target_compile_definitions(loki-b PUBLIC EIGEN_USE_MKL_ALL)  
+endif()
+
+if(USE_OPENBLAS)
+  #Once the minimum cmake version is bumped to 3.18 or higher, the following two lines
+  #may be replaced with a more prefered:
+  #target_link_libaries(loki-b INTERFACE BLAS::BLAS LAPACK::LAPACK)
+  target_link_libraries(loki-b PUBLIC ${LAPACK_LINKER_FLAGS} ${BLAS_LIBRARIES}   )
+  target_link_options(loki-b  PUBLIC ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})  
+  target_compile_definitions(loki-b  PUBLIC EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
+endif()
+
+if(USE_OPENMP)
+   #OpenMP is only used in source files, so this dependency is private
+   target_compile_definitions(loki-b PRIVATE USE_OPENMP)
+   target_link_libraries(loki-b PRIVATE OpenMP::OpenMP_CXX )
+endif()
+
+install(
+   TARGETS loki-b
+   EXPORT loki_cpp-targets
+)

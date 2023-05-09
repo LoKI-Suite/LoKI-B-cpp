@@ -1,6 +1,31 @@
-//
-// Created by daan on 13-5-19.
-//
+/** \file
+ *
+ *  Implementation of LoKI-B's Simulation class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2022 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   13 May 2019 (first C++ version)
+ */
 
 #include "LoKI-B/Simulation.h"
 
@@ -47,18 +72,6 @@ Simulation::Simulation(const json_type &cnf)
                          ", number of jobs = ", m_jobManager.njobs());
 }
 
-void Simulation::configureOutput(Output* output)
-{
-    m_output.reset(output);
-    /** \todo Fix the case that output==nullptr. In that case we should remove the
-     *  listener from m_electronKinetics->obtainedNewEedf.
-     */
-    if (m_electronKinetics.get())
-    {
-        m_electronKinetics->obtainedNewEedf.addListener(&Output::saveCycle, m_output.get());
-    }
-}
-
 void Simulation::run()
 {
     if (m_electronKinetics.get())
@@ -66,6 +79,7 @@ void Simulation::run()
         m_jobManager.prepareFirstJob();
         do
         {
+            m_workingConditions.setCurrentJobFolder(m_jobManager.getCurrentJobFolder());
             m_electronKinetics->solve();
         } while (m_jobManager.prepareNextJob());
     }

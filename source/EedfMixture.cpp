@@ -119,7 +119,7 @@ void EedfMixture::loadCollisions(const std::vector<std::string> &files, Grid *en
 #ifdef EMSCRIPTEN
     const std::string inputPath{""};
 #else
-    const std::string inputPath{"../Input/"};
+    const std::string inputPath{"../input/"};
 #endif
 
     for (const std::string &f : files)

@@ -3,6 +3,7 @@
 
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/Output.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include <chrono>
@@ -20,12 +21,12 @@ namespace web
 
 void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                    const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
-                   const Vector &firstAnisotropy)
+                   const Vector *firstAnisotropy)
 {
     EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
 }
 
-int run(std::string file_contents, emscripten::val callback, emscripten::val output)
+int run(std::string file_contents, emscripten::val callback, emscripten::val output_callback)
 {
     try
     {
@@ -34,13 +35,13 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
         std::stringstream ss(file_contents);
         const json_type cnf = read_json_from_stream(ss);
 
-        std::unique_ptr<Simulation> simulation(new Simulation(cnf));
         /* Create a json object that holds the output and set up a JSONOutput
          * object that will populate the JSON data object.
          */
         json_type data_out;
-        simulation->configureOutput(
-            new JsonOutput(data_out, cnf, &simulation->m_workingConditions, &simulation->m_jobManager));
+
+        std::unique_ptr<Simulation> simulation(new Simulation(cnf));
+        std::unique_ptr<Output> output(new JsonOutput(data_out, cnf, &simulation->m_workingConditions));
         /** \todo Perhaps the above should be controlled by
          * cnf.at("output").at("isOn"). \todo Now that JsonOutput works, we have
          * two ouput mechanisms in place: handleResults and handleJSONOutput. I
@@ -51,10 +52,11 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
         simulation->m_obtainedResults.addListener(
             [callback](const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
-                       const Vector &firstAnisotropy) {
+                       const Vector *firstAnisotropy) {
                 callback(reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
                          reinterpret_cast<uintptr_t>(eedf.data()), eedf.size());
             });
+        simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
 
         simulation->run();
         auto end = std::chrono::high_resolution_clock::now();
@@ -63,7 +65,7 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
 
         // generate output
         const std::string msg = data_out.dump();
-        output(msg);
+        output_callback(msg);
 
         return 0;
     }

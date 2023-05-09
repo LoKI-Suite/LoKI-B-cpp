@@ -3,6 +3,7 @@ SUBDIRS = .
 include $(top_srcdir)/Makefile.rules
 
 VPATH=$(top_srcdir)/source
+AM_CPPFLAGS += -DLOKIB_BUILDING_LIBLOKIB
 
 libloki_b_la_LDFLAGS = -no-undefined
 libloki_b_la_SOURCES = \

@@ -1,8 +1,19 @@
+#This custom target_add_test function also handles target relocation 
+#by the CMAKE_RUNTIME_OUTPUT_DIRECTORY directive. see also: 
+#https://stackoverflow.com/questions/21394768/cmake-cannot-find-test-if-cmake-runtime-output-directory-is-changed
+function (target_add_test target)
+  add_test (NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+endfunction (target_add_test)
+
+
 add_executable(bolsig_extract bolsig_extract.cpp)
 target_link_libraries(bolsig_extract PRIVATE loki-b)
 
 add_executable(compare_tables compare_tables.cpp)
 target_link_libraries(compare_tables PRIVATE loki-b)
+
+add_executable(test_events test_events.cpp)
+target_link_libraries(test_events PRIVATE loki-b)
 
 add_executable(test_lut test_lut.cpp)
 target_link_libraries(test_lut PRIVATE loki-b)
@@ -19,8 +30,9 @@ target_link_libraries(test_statebase PRIVATE loki-b)
 add_executable(test_druyvesteyn test_druyvesteyn.cpp)
 target_link_libraries(test_druyvesteyn PRIVATE loki-b)
 
-add_test(lut test_lut)
-add_test(parser test_parser)
-add_test(reaction_format test_reaction_format)
-add_test(statebase test_statebase)
-add_test(druyvesteyn test_druyvesteyn)
+target_add_test(test_events)
+target_add_test(test_lut)
+target_add_test(test_parser)
+target_add_test(test_reaction_format)
+target_add_test(test_statebase)
+target_add_test(test_druyvesteyn)

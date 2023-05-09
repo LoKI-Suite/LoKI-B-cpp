@@ -1,7 +1,7 @@
 {
   "workingConditions": {
-    "reducedField": [10, 30, 50],
-    "electronTemperature": 1,
+    "reducedField": 50,
+    "electronTemperature": 0.03,
     "excitationFrequency": 0,
     "gasPressure": 133.32,
     "gasTemperature": 300,
@@ -13,14 +13,15 @@
     "isOn": true,
     "eedfType": "boltzmann",
     "ionizationOperatorType": "usingSDCS",
-    "growthModelType": "spatial",
+    "growthModelType": "temporal",
     "includeEECollisions": false,
     "LXCatFiles": [
-      "http://localhost:3000/api/scat-css/1171607/bibtex"
+      "http://localhost:3000/api/scat-css/1302488?refstyle=bibtex",
+      "http://localhost:3000/api/scat-css/1303613?refstyle=bibtex"
     ],
     "gasProperties": {
       "mass": "Databases/masses.txt",
-      "fraction": ["Ar = 1"],
+      "fraction": ["N2 = 1"],
       "harmonicFrequency": "Databases/harmonicFrequencies.txt",
       "anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
       "rotationalConstant": "Databases/rotationalConstants.txt",
@@ -28,19 +29,24 @@
       "OPBParameter": "Databases/OPBParameter.txt"
     },
     "stateProperties": {
-      "population": ["Ar(^1S_0) = 1.0"],
-      "energy": [],
-      "statisticalWeight": []
+      "energy": [
+        "N2(X^1S_g^+,v=*) = harmonicOscillatorEnergy",
+        "N2(X^1S_g^+,v=0,J=*) = rigidRotorEnergy"
+      ],
+      "statisticalWeight": [
+        "N2(X^1S_g^+,v=*) = 1.0",
+        "N2(X^1S_g^+,v=0,J=*) = rotationalDegeneracy_N2"
+      ],
+      "population": [
+        "N2(X^1S_g^+) = 1.0",
+        "N2(X^1S_g^+,v=0) = 1.0",
+        "N2(X^1S_g^+,v=0,J=*) = boltzmannPopulation@gasTemperature"
+      ]
     },
     "numerics": {
       "energyGrid": {
         "maxEnergy": 40,
-        "cellNumber": 1000,
-        "smartGrid": {
-          "minEedfDecay": 20,
-          "maxEedfDecay": 25,
-          "updateFactor": 0.05
-        }
+        "cellNumber": 2000
       },
       "maxPowerBalanceRelError": 1e-9,
       "nonLinearRoutines": {

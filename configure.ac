@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 AC_INIT([loki-b],
-	[m4_esyscmd_s([cat VERSION])],
+	[m4_esyscmd_s([cat VERSION.txt])],
 	[loki@tecnico.ulisboa.pt])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])

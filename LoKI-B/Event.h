@@ -63,13 +63,13 @@ class Event
      *  be called with an argument list that is defined by the list of template
      *  arguments.
      */
-    using Callback = std::function<void(T &...)>;
+    using Callback = std::function<void(T...)>;
 
     /** Call all registered callback functions with arguments \a args.
      *  The callbacks are called in the order of registration with the
      *  event object.
      */
-    void emit(T &... args) const
+    void emit(T... args) const
     {
         for (const auto &callback : m_callbacks)
         {
@@ -85,15 +85,15 @@ class Event
      *  function pointer \a f and the object \a c on which \a f is to be called.
      */
     template <class C>
-    void addListener(void (C::*f)(T &... Args), C *c)
+    void addListener(void (C::*f)(T... Args), C *c)
     {
-        m_callbacks.emplace_back([c, f](T &... t) -> void { (c->*f)(t...); });
+        m_callbacks.emplace_back([c, f](T... t) -> void { (c->*f)(t...); });
     }
     /// an overload of addListener that accepts a constant object and member function
     template <class C>
-    void addListener(void (C::*f)(T &... Args) const, const C *c)
+    void addListener(void (C::*f)(T... Args) const, const C *c)
     {
-        m_callbacks.emplace_back([c, f](T &... t) -> void { (c->*f)(t...); });
+        m_callbacks.emplace_back([c, f](T... t) -> void { (c->*f)(t...); });
     }
 
   private:

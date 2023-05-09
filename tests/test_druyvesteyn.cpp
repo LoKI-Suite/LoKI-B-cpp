@@ -162,7 +162,7 @@ void checkRMSE(const loki::Grid &grid,
     const loki::Power &power,
     const loki::EedfCollisionDataMixture& gases,
     const loki::SwarmParameters &swarmParameters,
-    const loki::Vector &firstAnisotropy)
+    const loki::Vector *firstAnisotropy)
 {
     using namespace loki;
     if (grid.getCells().size() != eedf.size())

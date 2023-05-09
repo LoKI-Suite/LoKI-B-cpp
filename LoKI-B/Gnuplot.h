@@ -3,10 +3,11 @@
 
 #include <string>
 #include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/Exports.h"
 
 namespace loki {
 
-void writeGnuplot(std::ostream& os, const std::string &title, const std::string &xlabel, const std::string &ylabel, const Vector &x,
+lokib_export void writeGnuplot(std::ostream& os, const std::string &title, const std::string &xlabel, const std::string &ylabel, const Vector &x,
           const Vector &y);
 
 } // namespace loki
