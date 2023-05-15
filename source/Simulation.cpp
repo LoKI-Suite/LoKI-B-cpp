@@ -36,16 +36,19 @@ Simulation::Simulation(const loki::Setup &setup)
     : m_workingConditions(setup.workingConditions),
     m_jobManager()
 {
-    if (setup.electronKinetics.eedfType != EedfType::boltzmann)
-    {
-        throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
-    }
-
     if (setup.electronKinetics.isOn)
     {
-        initializeJobs(setup.workingConditions);
-
-        m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(setup.electronKinetics, &m_workingConditions);
+        switch (setup.electronKinetics.eedfType)
+	{
+            case EedfType::boltzmann:
+                initializeJobs(setup.workingConditions,true);
+                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(setup.electronKinetics, &m_workingConditions);
+            break;
+            case EedfType::prescribed:
+                initializeJobs(setup.workingConditions,false);
+                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(setup.electronKinetics, &m_workingConditions);
+            break;
+        }
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
@@ -56,16 +59,19 @@ Simulation::Simulation(const json_type &cnf)
     : m_workingConditions(cnf.at("workingConditions")),
     m_jobManager()
 {
-    if (getEedfType(cnf.at("electronKinetics").at("eedfType")) != EedfType::boltzmann)
-    {
-        throw std::runtime_error("Only EEDF type 'boltzmann' is supported at present.");
-    }
-
     if (cnf.at("electronKinetics").at("isOn"))
     {
-        initializeJobs(cnf.at("workingConditions"));
-
-        m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(cnf.at("electronKinetics"), &m_workingConditions);
+        switch (getEedfType(cnf.at("electronKinetics").at("eedfType")))
+	{
+            case EedfType::boltzmann:
+                initializeJobs(cnf.at("workingConditions"),true);
+                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(cnf.at("electronKinetics"), &m_workingConditions);
+            break;
+            case EedfType::prescribed:
+                initializeJobs(cnf.at("workingConditions"),false);
+                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(cnf.at("electronKinetics"), &m_workingConditions);
+            break;
+        }
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
     }
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
@@ -89,37 +95,70 @@ Simulation::~Simulation()
 {
 }
 
-void Simulation::initializeJobs(const WorkingConditionsSetup &setup)
+void Simulation::initializeJobs(const WorkingConditionsSetup &setup, bool useReducedFieldParameter)
 {
-
-    // Repeat this for any other fields that can be declared as a range.
-    try
+    if (useReducedFieldParameter)
     {
-        m_jobManager.addParameter(
-            "ReducedField",
-            std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
-            Range::create(setup.reducedField));
+        // Repeat this for any other fields that can be declared as a range.
+        try
+        {
+            m_jobManager.addParameter(
+                "ReducedField",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
+                Range::create(setup.reducedField));
+        }
+        catch (std::exception &exc)
+        {
+            Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
+        }
     }
-    catch (std::exception &exc)
+    else
     {
-        Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
+        // Repeat this for any other fields that can be declared as a range.
+        try
+        {
+            m_jobManager.addParameter(
+                "ElectronTemperature",
+                std::bind(&WorkingConditions::updateElectronTemperature, std::ref(m_workingConditions), std::placeholders::_1),
+                Range::create(setup.electronTemperature));
+        }
+        catch (std::exception &exc)
+        {
+            Log<Message>::Error("Error setting up electron temperature: '" + std::string(exc.what()));
+        }
     }
 }
 
-void Simulation::initializeJobs(const json_type &cnf)
+void Simulation::initializeJobs(const json_type &cnf, bool useReducedFieldParameter)
 {
-
-    // Repeat this for any other fields that can be declared as a range.
-    try
+    if (useReducedFieldParameter)
     {
-        m_jobManager.addParameter(
-            "ReducedField",
-            std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
-            Range::create(cnf.at("reducedField")));
+        // Repeat this for any other fields that can be declared as a range.
+        try
+        {
+            m_jobManager.addParameter(
+                "ReducedField",
+                std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
+                Range::create(cnf.at("reducedField")));
+        }
+        catch (std::exception &exc)
+        {
+            Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
+        }
     }
-    catch (std::exception &exc)
+    else
     {
-        Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
+        try
+        {
+            m_jobManager.addParameter(
+                "ElectronTemperature",
+                std::bind(&WorkingConditions::updateElectronTemperature, std::ref(m_workingConditions), std::placeholders::_1),
+                Range::create(cnf.at("electronTemperature")));
+        }
+        catch (std::exception &exc)
+        {
+            Log<Message>::Error("Error setting up electron temperature: '" + std::string(exc.what()));
+        }
     }
 }
 
