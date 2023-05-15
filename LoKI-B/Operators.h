@@ -62,6 +62,22 @@ namespace loki {
         Vector g;
     };
 
+    class FieldOperator
+    {
+    public:
+        FieldOperator(const Grid& grid);
+        /// updates member g
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN);
+        /// updates member g, then the field matrix \a mat
+	void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat);
+        /** \todo This expression returns the power that is absorbed from the field
+         *  in the case that no temporal or spatial growth terms are present. We have
+         *  to see where/when to handle the various growth scenarios.
+         */
+        void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
+        Vector g;
+    };
+
 
 } // namespace loki
 

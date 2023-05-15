@@ -27,10 +27,9 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     : workingConditions(workingConditions),
       grid(setup.numerics.energyGrid),
       mixture(&grid, setup, workingConditions),
+      fieldOperator(grid),
       attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
       attachmentMatrix(grid.nCells(), grid.nCells()),
-      fieldMatrix(grid.nCells(), grid.nCells()),
-      g_E(grid.getNodes().size()),
       eedf(grid.nCells())
 {
     this->eedfType = setup.eedfType;
@@ -43,10 +42,9 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     : workingConditions(workingConditions),
     grid(cnf.at("numerics").at("energyGrid")),
     mixture(&grid, cnf, workingConditions),
+    fieldOperator(grid),
     attachmentConservativeMatrix(grid.nCells(), grid.nCells()),
     attachmentMatrix(grid.nCells(), grid.nCells()),
-    fieldMatrix(grid.nCells(), grid.nCells()),
-    g_E(grid.getNodes().size()),
     eedf(grid.nCells())
 {
     this->eedfType = getEedfType(cnf.at("eedfType"));
@@ -84,8 +82,6 @@ void ElectronKinetics::initialize()
             tridiagPattern.emplace_back(k + 1, k, 0.);
     }
 
-    fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
-
     if (!mixture.CARGases().empty())
     {
         carOperator.reset(new CAROperator(mixture.CARGases()));
@@ -116,36 +112,11 @@ void ElectronKinetics::solve()
     doSolve();
 }
 
-void ElectronKinetics::evaluateFieldOperator()
+void ElectronKineticsBoltzmann::evaluateFieldOperator()
 {
     const double EoN = workingConditions->reducedFieldSI();
     const double WoN = workingConditions->reducedExcFreqSI();
-    const double me = Constant::electronMass;
-    const double e = Constant::electronCharge;
-
-    const Vector &cs = mixture.collision_data().totalCrossSection();
-
-    // g_E gets its size in the constructor.
-    g_E[0] = 0.;
-    for (Grid::Index i=1; i!= g_E.size()-1; ++i)
-    {
-        g_E[i] = (EoN * EoN / 3) * grid.getNode(i) /
-          (cs[i] + (me * WoN * WoN / (2 * e)) / (grid.getNode(i)*cs[i]));
-    }
-    g_E[g_E.size() - 1] = 0.;
-
-    const double sqStep = grid.du() * grid.du();
-
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        fieldMatrix.coeffRef(k, k) = -(g_E[k] + g_E[k + 1]) / sqStep;
-
-        if (k > 0)
-            fieldMatrix.coeffRef(k, k - 1) = g_E[k] / sqStep;
-
-        if (k < grid.nCells() - 1)
-            fieldMatrix.coeffRef(k, k + 1) = g_E[k + 1] / sqStep;
-    }
+    fieldOperator.evaluate(grid,mixture.collision_data().totalCrossSection(),EoN,WoN,fieldMatrix);
 }
 
 void ElectronKinetics::evaluateInelasticOperators()
@@ -495,6 +466,8 @@ void ElectronKineticsBoltzmann::initialize()
     }
     elasticMatrix.resize(grid.nCells(), grid.nCells());
     elasticMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
+    fieldMatrix.resize(grid.nCells(), grid.nCells()),
+    fieldMatrix.setFromTriplets(tridiagPattern.begin(), tridiagPattern.end());
     if (carOperator.get())
     {
         CARMatrix.resize(grid.nCells(), grid.nCells());
@@ -1480,6 +1453,10 @@ void ElectronKineticsBoltzmann::evaluatePower()
     {
         if (growthModelType == GrowthModelType::temporal)
         {
+            // the calculation of field is identical to that in fieldOperator, except
+            // for the usage of g_fieldTemporalGrowth instead of fieldOperator.g;
+            // the former is based on a totalCS that has an additional term
+            // growthFactor / std::sqrt(grid.getNode(i)).
             double field = 0., growthModel = 0.;
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
@@ -1491,13 +1468,15 @@ void ElectronKineticsBoltzmann::evaluatePower()
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
-            double field = 0., correction = 0., powerDiffusion = 0., powerMobility = 0.;
+            // first term 'field': same as in the case that there is no growth
+            double field = 0.;
+            fieldOperator.evaluatePower(grid,eedf,field);
+            // now calculate the additional terms
+            double correction = 0., powerDiffusion = 0., powerMobility = 0.;
             Vector cellCrossSection(grid.nCells());
 
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
-                /// \todo check that it is correct that g_E (local) is used in a spatial growth simulation)
-                field += eedf[k] * (g_E[k + 1] - g_E[k]);
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
                 // Diffusion and Mobility contributions
@@ -1515,7 +1494,9 @@ void ElectronKineticsBoltzmann::evaluatePower()
              *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
              *  have different dimensions (factor energy).
              */
-            power.field = SI::gamma * (field + grid.du() * correction);
+            // Note that field is calculated by fieldOperator.evaluatePower, which already
+            // adds the factor SI::gamma.
+            power.field = field + SI::gamma * grid.du() * correction;
             power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid.du() / 3. * powerDiffusion +
                                 SI::gamma * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
                                     (grid.getCell(0) * grid.getCell(0) * eedf[1] / cellCrossSection[0] -
@@ -1526,12 +1507,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
     }
     else
     {
-        double field = 0;
-        for (Grid::Index k = 0; k < grid.nCells(); ++k)
-        {
-            field += eedf[k] * (g_E[k + 1] - g_E[k]);
-        }
-        power.field = SI::gamma * field;
+        fieldOperator.evaluatePower(grid,eedf,power.field);
     }
 
     if (includeEECollisions)
@@ -1678,7 +1654,14 @@ void ElectronKineticsPrescribed::initialize()
     grid.updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
     workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
     /// \todo Do this here? Not all parameters may have been set at this point.
-    this->evaluateMatrix();
+    evaluateMatrix();
+}
+
+void ElectronKineticsPrescribed::evaluateFieldOperator()
+{
+    const double EoN = workingConditions->reducedFieldSI();
+    const double WoN = workingConditions->reducedExcFreqSI();
+    fieldOperator.evaluate(grid,mixture.collision_data().totalCrossSection(),EoN,WoN);
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
@@ -1781,6 +1764,10 @@ void ElectronKineticsPrescribed::evaluatePower()
     {
         if (growthModelType == GrowthModelType::temporal)
         {
+            // the calculation of field is identical to that in fieldOperator, except
+            // for the usage of g_fieldTemporalGrowth instead of fieldOperator.g;
+            // the former is based on a totalCS that has an additional term
+            // growthFactor / std::sqrt(grid.getNode(i)).
             double field = 0., growthModel = 0.;
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
@@ -1792,13 +1779,17 @@ void ElectronKineticsPrescribed::evaluatePower()
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
-            double field = 0., correction = 0., powerDiffusion = 0., powerMobility = 0.;
+            // first term 'field': same as in the case that there is no growth
+            double field = 0.;
+            fieldOperator.evaluatePower(grid,eedf,field);
+            // now calculate the additional terms
+            double correction = 0., powerDiffusion = 0., powerMobility = 0.;
             Vector cellCrossSection(grid.nCells());
 
             for (Grid::Index k = 0; k < grid.nCells(); ++k)
             {
-                /// \todo check that it is correct that g_E (local) is used in a spatial growth simulation)
-                field += eedf[k] * (g_E[k + 1] - g_E[k]);
+                /// \todo check that it is correct that g_E (fieldOperator.g) (local) is used in a spatial growth simulation)
+                field += eedf[k] * (fieldOperator.g[k + 1] - fieldOperator.g[k]);
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
 
                 // Diffusion and Mobility contributions
@@ -1816,7 +1807,9 @@ void ElectronKineticsPrescribed::evaluatePower()
              *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
              *  have different dimensions (factor energy).
              */
-            power.field = SI::gamma * (field + grid.du() * correction);
+            // Note that field is calculated by fieldOperator.evaluatePower, which already
+            // adds the factor SI::gamma.
+            power.field = field + SI::gamma * grid.du() * correction;
             power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid.du() / 3. * powerDiffusion +
                                 SI::gamma * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
                                     (grid.getCell(0) * grid.getCell(0) * eedf[1] / cellCrossSection[0] -
@@ -1827,12 +1820,7 @@ void ElectronKineticsPrescribed::evaluatePower()
     }
     else
     {
-        double field = 0;
-        for (Grid::Index k = 0; k < grid.nCells(); ++k)
-        {
-            field += eedf[k] * (g_E[k + 1] - g_E[k]);
-        }
-        power.field = SI::gamma * field;
+        fieldOperator.evaluatePower(grid,eedf,power.field);
     }
 #if 0
     if (includeEECollisions)

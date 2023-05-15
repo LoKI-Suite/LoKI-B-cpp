@@ -1,6 +1,8 @@
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
 
+#include <cassert>
+
 namespace loki {
 
 CAROperator::CAROperator(const CARGases& cg)
@@ -115,6 +117,53 @@ void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
     loss = net-gain;
+}
+
+FieldOperator::FieldOperator(const Grid& grid)
+ : g(grid.getNodes().size())
+{
+}
+
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN)
+{
+    assert(g.size()==grid.getNodes().size());
+    const double me = Constant::electronMass;
+    const double e = Constant::electronCharge;
+    g[0] = 0.;
+    for (Grid::Index i=1; i!= g.size()-1; ++i)
+    {
+        g[i] = (EoN * EoN / 3) * grid.getNode(i) /
+          (totalCS[i] + (me * WoN * WoN / (2 * e)) / (grid.getNode(i)*totalCS[i]));
+    }
+    g[g.size() - 1] = 0.;
+}
+
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
+{
+    // update g
+    evaluate(grid,totalCS,EoN,WoN);
+    const double sqStep = grid.du() * grid.du();
+
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        mat.coeffRef(k, k) = -(g[k] + g[k + 1]) / sqStep;
+
+        if (k > 0)
+            mat.coeffRef(k, k - 1) = g[k] / sqStep;
+
+        if (k < grid.nCells() - 1)
+            mat.coeffRef(k, k + 1) = g[k + 1] / sqStep;
+    }
+}
+
+void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
+{
+    power = 0;
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        power += eedf[k] * (g[k + 1] - g[k]);
+    }
+    power *= SI::gamma;
 }
 
 } // namespace loki

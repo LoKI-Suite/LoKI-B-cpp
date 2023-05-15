@@ -100,6 +100,13 @@ protected:
 
     ElasticOperator elasticOperator;
 
+    /* Support for the E-field terms.
+     * Depending on the growth model, more fields are used to handle these terms
+     * (fieldMatrixSpatGrowth, g_fieldSpatialGrowth or fieldMatrixTempGrowth, g_fieldTemporalGrowth).
+     */
+    FieldOperator fieldOperator;
+
+
     /** \todo Clarify: does inelastic mean particle-conserving inelastic only
      *                 (no ionization, attachment)? So only excitation? If so,
      *                 only electronic, or also vibrational, rotational?
@@ -130,14 +137,6 @@ protected:
      *  is that intended?
      */
     SparseMatrix attachmentMatrix;
-
-    /* Support for the E-field terms.
-     * Depending on the growth model, more fields are used to handle these terms
-     * (fieldMatrixSpatGrowth, g_fieldSpatialGrowth or fieldMatrixTempGrowth, g_fieldTemporalGrowth).
-     */
-    void evaluateFieldOperator();
-    SparseMatrix fieldMatrix;
-    Vector g_E;
 
     // support for CAR processes.
     std::unique_ptr<CAROperator> carOperator;
@@ -250,6 +249,8 @@ private:
     void evaluateSwarmParameters();
 
     SparseMatrix elasticMatrix;
+    void evaluateFieldOperator();
+    SparseMatrix fieldMatrix;
     SparseMatrix CARMatrix;
     Matrix boltzmannMatrix;
     /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
@@ -294,6 +295,7 @@ protected:
 private:
     /// shared constructor tasks
     void initialize();
+    void evaluateFieldOperator();
     void evaluateMatrix();
     /// Use arguments g, Te, prepare to make this a free function
     void evaluateEEDF(double g, double Te);
