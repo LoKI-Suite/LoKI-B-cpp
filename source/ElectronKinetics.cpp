@@ -1696,7 +1696,7 @@ void ElectronKineticsPrescribed::evaluateMatrix()
 void ElectronKineticsPrescribed::doSolve()
 {
     /** This implements the logic from the MATLAB code in Prescribed.m:
-     *  1. Inspect smatGrid(). When active, calculate the number of decades as the
+     *  1. Inspect smartGrid(). When active, calculate the number of decades as the
      *     mean value of the minumum and maximum numbers of dcades and calculate
      *     u_max from the result. Update the grid accordingly.
      *  2. Assign values to eedf using the shape parameter and the present value of Te
