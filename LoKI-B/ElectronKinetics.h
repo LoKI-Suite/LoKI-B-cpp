@@ -253,13 +253,8 @@ private:
     SparseMatrix fieldMatrix;
     SparseMatrix CARMatrix;
     Matrix boltzmannMatrix;
-    /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
     bool includeEECollisions;
-    /// \todo See if/when the 0-initialization is needed
-    double alphaEE{0.};
-    Matrix BAee;
-    Vector A;
-    Vector B;
+    ElectronElectronOperator eeOperator;
 
     double CIEff{0.};
 

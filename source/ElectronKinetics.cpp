@@ -434,8 +434,7 @@ includeEECollisions(cnf.at("includeEECollisions")),
 void ElectronKineticsBoltzmann::initialize()
 {
     boltzmannMatrix.setZero(grid.nCells(), grid.nCells());
-    A.setZero(grid.nCells());
-    B.setZero(grid.nCells());
+    eeOperator.initialize(grid);
 
     // SPARSE INITIALIZATION
     /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
@@ -681,8 +680,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (includeEECollisions)
     {
-        A = alphaEE / grid.du() * (BAee.transpose() * eedf);
-        B = alphaEE / grid.du() * (BAee * eedf);
+        eeOperator.A = eeOperator.alphaEE / grid.du() * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = eeOperator.alphaEE / grid.du() * (eeOperator.BAee * eedf);
     }
 
     /** \todo The name is incorrect. This is not the integrand since it already includes
@@ -825,15 +824,15 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k) +
-                                                           ionSpatialGrowthD.coeff(k, k) - (A[k] + B[k]));
+                                                           ionSpatialGrowthD.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]));
 
             if (k > 0)
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k - 1) + A[k - 1]);
+                                                                      ionSpatialGrowthU.coeff(k, k - 1) + eeOperator.A[k - 1]);
 
             if (k < grid.nCells() - 1)
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k + 1) + B[k + 1]);
+                                                                      ionSpatialGrowthU.coeff(k, k + 1) + eeOperator.B[k + 1]);
         }
 
         Vector eedfNew = eedf;
@@ -909,8 +908,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (includeEECollisions)
     {
-        A = alphaEE / grid.du() * (BAee.transpose() * eedf);
-        B = alphaEE / grid.du() * (BAee * eedf);
+        eeOperator.A = eeOperator.alphaEE / grid.du() * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = eeOperator.alphaEE / grid.du() * (eeOperator.BAee * eedf);
     }
 
     const Vector integrandCI = (SI::gamma * grid.du())
@@ -960,13 +959,13 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k) +
-                                                           ionTemporalGrowth.coeff(k, k) - (A[k] + B[k]));
+                                                           ionTemporalGrowth.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]));
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + A[k - 1]);
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + eeOperator.A[k - 1]);
 
             if (k < grid.nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + B[k + 1]);
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + eeOperator.B[k + 1]);
         }
 
         eedfNew = eedf;
@@ -1065,7 +1064,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    BAee.setZero(grid.nCells(), grid.nCells());
+    eeOperator.BAee.setZero(grid.nCells(), grid.nCells());
 
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
     const Vector energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
@@ -1074,12 +1073,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
     {
 
         for (Grid::Index i = 1; i <= j; ++i)
-            BAee(i, j) = energyArray[i];
+            eeOperator.BAee(i, j) = energyArray[i];
 
         const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
 
         for (Grid::Index i = j + 1; i < grid.nCells(); ++i)
-            BAee(i, j) = value;
+            eeOperator.BAee(i, j) = value;
     }
 
     // detailed balance condition
@@ -1088,14 +1087,10 @@ void ElectronKineticsBoltzmann::solveEEColl()
     {
         for (Grid::Index i = 1; i < grid.nCells(); ++i)
         {
-            BAee(i, j) = std::sqrt(BAee(i, j) * BAee(j + 1, i - 1));
+            eeOperator.BAee(i, j) = std::sqrt(eeOperator.BAee(i, j) * eeOperator.BAee(j + 1, i - 1));
         }
     }
 
-    /** \todo These four declarations can be moved to the beginning of the
-     *        while loop. Then the calculation does not have to repeated
-     *        at the end of that loop (and the decls. can be made constant).
-     */
     double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
     double Te = 2. / 3. * meanEnergy;
     double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
@@ -1115,18 +1110,18 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
-        A = (alpha / grid.du()) * (BAee.transpose() * eedf);
-        B = (alpha / grid.du()) * (BAee * eedf);
+        eeOperator.A = (alpha / grid.du()) * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = (alpha / grid.du()) * (eeOperator.BAee * eedf);
 
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] - 1.e20 * (A[k] + B[k]);
+            boltzmannMatrix(k, k) = baseDiag[k] - 1.e20 * (eeOperator.A[k] + eeOperator.B[k]);
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * A[k - 1];
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * eeOperator.A[k - 1];
 
             if (k < grid.nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * B[k + 1];
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * eeOperator.B[k + 1];
         }
 
         invertMatrix(boltzmannMatrix);
@@ -1183,7 +1178,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
         iter++;
     }
 
-    alphaEE = alpha;
+    eeOperator.alphaEE = alpha;
 
     std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
 }
@@ -1225,10 +1220,10 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 
     if (includeEECollisions)
     {
-        alphaEE = 0.;
-        BAee.setZero(numCells, numCells);
-        A.setZero();
-        B.setZero();
+        eeOperator.alphaEE = 0.;
+        eeOperator.BAee.setZero(numCells, numCells);
+        eeOperator.A.setZero();
+        eeOperator.B.setZero();
 
         if (!includeGrowthModel)
         {
@@ -1512,8 +1507,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
 
     if (includeEECollisions)
     {
-        power.electronElectron = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
-std::cout << "EE POWER: " << power.electronElectron << std::endl;
+        eeOperator.evaluatePower(grid,eedf,power.electronElectron);
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.

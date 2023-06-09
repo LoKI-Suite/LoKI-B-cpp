@@ -78,6 +78,18 @@ namespace loki {
         Vector g;
     };
 
+    class ElectronElectronOperator
+    {
+    public:
+        ElectronElectronOperator();
+        void initialize(const Grid& grid);
+        void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
+        double alphaEE;
+        Matrix BAee;
+        Vector A;
+        Vector B;
+    };
+
 
 } // namespace loki
 

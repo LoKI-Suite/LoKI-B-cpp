@@ -166,4 +166,21 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
     power *= SI::gamma;
 }
 
+ElectronElectronOperator::ElectronElectronOperator()
+{
+    alphaEE=0.0;
+}
+
+void ElectronElectronOperator::initialize(const Grid& grid)
+{
+    A.setZero(grid.nCells());
+    B.setZero(grid.nCells());
+}
+
+void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
+{
+        power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
+        //std::cout << "EE POWER: " << power << std::endl;
+}
+
 } // namespace loki
