@@ -53,16 +53,8 @@ protected:
 
     virtual void doSolve()=0;
 
-private:
-
     /// \todo See what can be made private. Introduce accessors where necessary.
-protected:
 
-    /** Carry out initialization tasks. This function is called by both
-     *  constructor overloads after the argument-type-specific bits have
-     *  been done (those that depend on WorkingCondisions or JSON).
-     */
-    void initialize();
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
      *  Furthermore, calcDecades(v1,v2)=-calcDecades(v2,v1) and in particular,
@@ -166,6 +158,15 @@ protected:
     bool includeNonConservativeIonization{false};
     bool includeNonConservativeAttachment{false};
     bool hasSuperelastics{false};
+
+private:
+
+    /** Carry out initialization tasks. This function is called by both
+     *  constructor overloads after the argument-type-specific bits have
+     *  been done (those that depend on WorkingCondisions or JSON).
+     */
+    void initialize();
+
 };
 
 class ElectronKineticsBoltzmann : public ElectronKinetics
