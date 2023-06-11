@@ -1825,6 +1825,8 @@ void ElectronKineticsPrescribed::evaluatePower()
         power.electronElectron = (-SI::gamma * grid().du() * grid().du()) * (A - B).dot(eedf);
     }
 #endif
+#endif
+#if 1
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
