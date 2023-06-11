@@ -32,7 +32,6 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       attachmentMatrix(grid.nCells(), grid.nCells()),
       eedf(grid.nCells())
 {
-    this->eedfType = setup.eedfType;
     this->ionizationOperatorType = setup.ionizationOperatorType;
 
     initialize();
@@ -47,7 +46,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     attachmentMatrix(grid.nCells(), grid.nCells()),
     eedf(grid.nCells())
 {
-    this->eedfType = getEedfType(cnf.at("eedfType"));
     this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
 
     initialize();

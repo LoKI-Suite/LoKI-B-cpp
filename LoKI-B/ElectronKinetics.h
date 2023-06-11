@@ -88,8 +88,6 @@ protected:
     Grid grid;
     EedfMixture mixture;
 
-    EedfType eedfType;
-
     ElasticOperator elasticOperator;
 
     /* Support for the E-field terms.
