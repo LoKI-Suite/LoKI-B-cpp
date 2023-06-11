@@ -106,7 +106,7 @@ public:
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
     void addCollision(EedfCollision *collision, bool isExtra);
-    void checkElasticCollisions(State *electron, Grid *energyGrid);
+    void checkElasticCollisions(State *electron, const Grid *energyGrid);
     bool isDummy() const;
     const GasPower &getPower() const;
     /** \todo Non-constant because m_power is changed. See if m_power must managed here.
@@ -121,7 +121,7 @@ private:
      * (together with the public checkElasticCollisions).
      */
     void setDefaultEffPop(State *ground);
-    CrossSection *elasticCrossSectionFromEffective(Grid *energyGrid);
+    CrossSection *elasticCrossSectionFromEffective(const Grid *energyGrid);
     std::vector<State *> findStatesToUpdate();
     // two helpers for evaluating power terms
     PowerTerm evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
@@ -158,7 +158,7 @@ public:
      *  storage of the collisions.
      *  \todo Explain isExtra.
      */
-    void loadCollisionsClassic(const std::string &file, GasMixture& composition, Grid *energyGrid, bool isExtra);
+    void loadCollisionsClassic(const std::string &file, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     /** Loads the collisions from a json mixture section. Such section must contain two
      *  subsections: an object "states" that consists of key-value pairs that represent
@@ -172,7 +172,7 @@ public:
      *  \todo The meta information in the set objects ("_id", "complete", "description",
      *  "contributor" etc. are ignored so far.
      */
-    void loadCollisionsJSON(const json_type &mcnf, GasMixture& composition, Grid *energyGrid, bool isExtra);
+    void loadCollisionsJSON(const json_type &mcnf, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     const EedfCollisionDataGasArray& data_per_gas() const { return m_data_per_gas; }
     EedfCollisionDataGasArray& data_per_gas() { return m_data_per_gas; }

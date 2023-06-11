@@ -47,10 +47,13 @@ public:
      */
     void solve();
 
-    const Grid &getGrid() const { return grid; }
-
+    const Grid &grid() const { return m_grid; }
 protected:
-
+    /** Calls updateMaxEnergy(uMax) on the grid. This function allows us to
+     *  keep the grid member private and expose only a non-constant reference
+     *  to the grid (via member grid()).
+     */
+    void updateMaxEnergy(double uMax);
     virtual void doSolve()=0;
 
     /// \todo See what can be made private. Introduce accessors where necessary.
@@ -82,10 +85,10 @@ protected:
     {
         return std::log10(std::abs(v1/v2));
     }
-
     WorkingConditions *workingConditions;
-
-    Grid grid;
+private:
+    Grid m_grid;
+protected:
     EedfMixture mixture;
 
     ElasticOperator elasticOperator;
