@@ -107,17 +107,6 @@ protected:
     void evaluateInelasticOperators();
     Matrix inelasticMatrix;
 
-    // Support for ionization.
-    IonizationOperatorType ionizationOperatorType;
-    void evaluateIonizationOperator();
-    /** \todo Document whre/when ionConservativeMatrix is used. It is also used
-     *        to obtain an initial guess if iterations are done, it seems.
-     */
-    Matrix ionConservativeMatrix;
-    /** This appears to be NOT used for IonizationOperatorType::conservative
-     */
-    Matrix ionizationMatrix;
-
     // Support for electron attachment
     void evaluateAttachmentOperator();
     /** \todo Always used when attachment processes are present.
@@ -149,14 +138,13 @@ protected:
     std::vector<uint32_t> superElasticThresholds;
      */
 
-    /* NOTE: the following three are not configuration parameters, but the
+    /* NOTE: the following two are not configuration parameters, but the
      * result of introspection of the reaction lists. The results also depend
      * on uMax.
      * \bug It seems that the values are not always reset to false before making
      *      them conditionally true during introspection. (That is needed when uMax
      *      changes.)
      */
-    bool includeNonConservativeIonization{false};
     bool includeNonConservativeAttachment{false};
     bool hasSuperelastics{false};
 
@@ -255,6 +243,9 @@ private:
     SparseMatrix fieldMatrix;
     SparseMatrix CARMatrix;
     Matrix boltzmannMatrix;
+    // Support for ionization.
+    IonizationOperator ionizationOperator;
+
     bool includeEECollisions;
     ElectronElectronOperator eeOperator;
 

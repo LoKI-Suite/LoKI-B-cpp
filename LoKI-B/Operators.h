@@ -3,6 +3,7 @@
 
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/EedfMixture.h"
 #include <vector>
 
 namespace loki {
@@ -90,6 +91,28 @@ namespace loki {
         Vector B;
     };
 
+    class IonizationOperator
+    {
+    public:
+        IonizationOperator(IonizationOperatorType type);
+        void evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture);
+        const IonizationOperatorType ionizationOperatorType;
+        /** \todo Document whre/when ionConservativeMatrix is used. It is also used
+         *        to obtain an initial guess if iterations are done, it seems.
+         */
+        Matrix ionConservativeMatrix;
+        /** This appears to be NOT used for IonizationOperatorType::conservative
+         */
+        Matrix ionizationMatrix;
+        /* NOTE: the following is not a configuration parameter, but the
+         * result of introspection of the reaction lists. The results also depend
+         * on uMax.
+         * \bug It seems that the value is not always reset to false before making
+         *      it conditionally true during introspection. (That is needed when uMax
+         *      changes.)
+         */
+        bool includeNonConservativeIonization;
+    };
 
 } // namespace loki
 

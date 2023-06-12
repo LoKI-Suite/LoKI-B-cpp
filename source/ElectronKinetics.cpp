@@ -32,8 +32,6 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
       attachmentMatrix(grid().nCells(), grid().nCells()),
       eedf(grid().nCells())
 {
-    this->ionizationOperatorType = setup.ionizationOperatorType;
-
     initialize();
 }
 
@@ -46,24 +44,13 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     attachmentMatrix(grid().nCells(), grid().nCells()),
     eedf(grid().nCells())
 {
-    this->ionizationOperatorType = getIonizationOperatorType(cnf.at("ionizationOperatorType"));
-
     initialize();
 }
 
 void ElectronKinetics::initialize()
 {
     inelasticMatrix.setZero(grid().nCells(), grid().nCells());
-
-    ionConservativeMatrix.setZero(grid().nCells(), grid().nCells());
-
     attachmentConservativeMatrix.setZero(grid().nCells(), grid().nCells());
-
-    if (ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.collision_data().hasCollisions(CollisionType::ionization))
-    {
-        ionizationMatrix.setZero(grid().nCells(), grid().nCells());
-    }
 
     // SPARSE INITIALIZATION
     std::vector<Eigen::Triplet<double>> tridiagPattern;
@@ -113,13 +100,6 @@ void ElectronKinetics::updateMaxEnergy(double uMax)
 void ElectronKinetics::solve()
 {
     doSolve();
-}
-
-void ElectronKineticsBoltzmann::evaluateFieldOperator()
-{
-    const double EoN = workingConditions->reducedFieldSI();
-    const double WoN = workingConditions->reducedExcFreqSI();
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,fieldMatrix);
 }
 
 void ElectronKinetics::evaluateInelasticOperators()
@@ -190,140 +170,6 @@ void ElectronKinetics::evaluateInelasticOperators()
                     }
                 }
             }
-        }
-    }
-}
-
-void ElectronKinetics::evaluateIonizationOperator()
-{
-    bool hasValidCollisions = false;
-
-    ionConservativeMatrix.setZero();
-
-    if (ionizationOperatorType != IonizationOperatorType::conservative)
-        ionizationMatrix.setZero();
-
-    for (const auto &cd : mixture.collision_data().data_per_gas())
-    {
-        for (const auto &collision : cd.collisions(CollisionType::ionization))
-        {
-            const double threshold = collision->crossSection->threshold();
-
-            if (threshold > grid().getNode(grid().nCells()))
-                continue;
-
-            hasValidCollisions = true;
-
-            const double delta = collision->getTarget()->delta();
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid().du()));
-
-            Vector cellCrossSection(grid().nCells());
-
-            for (Grid::Index i = 0; i < grid().nCells(); ++i)
-                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
-
-            switch (ionizationOperatorType)
-            {
-            case IonizationOperatorType::conservative:
-                break;
-
-            case IonizationOperatorType::oneTakesAll:
-                for (Grid::Index k = 0; k < grid().nCells(); ++k)
-                {
-                    if (k < grid().nCells() - numThreshold)
-                        ionizationMatrix(k, k + numThreshold) +=
-                            delta * grid().getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
-
-                    const double term = delta * grid().getCell(k) * cellCrossSection(k);
-
-                    ionizationMatrix(k, k) -= term;
-                    ionizationMatrix(0, k) += term;
-                }
-                break;
-
-            case IonizationOperatorType::equalSharing:
-                for (Grid::Index k = 0; k < grid().nCells(); ++k)
-                {
-                    ionizationMatrix(k, k) -= delta * grid().getCell(k) * cellCrossSection[k];
-
-                    if (k < (grid().nCells() - numThreshold) / 2)
-                    {
-                        const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
-
-                        ionizationMatrix(k, i) += 4 * delta * grid().getCell(i) * cellCrossSection(i);
-                    }
-                }
-                break;
-            case IonizationOperatorType::sdcs:
-                double W = cd.OPBParameter();
-
-                if (W < 0)
-                    W = threshold;
-
-                for (Grid::Index k = 0; k < grid().nCells(); ++k)
-                {
-                    const Grid::Index end = std::min(2 * (k + 1) + numThreshold, grid().nCells());
-
-                    if (k > numThreshold)
-                    {
-                        const Grid::Index half = (k + 1 - numThreshold) / 2;
-                        const double numerator = 1 / std::atan((grid().getCell(k) - threshold) / (2 * W));
-                        double sum = 0.;
-
-                        for (Grid::Index i = 0; i < half; ++i)
-                            sum += numerator / (W + grid().getCell(i) * grid().getCell(i) / W);
-
-                        ionizationMatrix(k, k) -= delta * grid().du() * grid().getCell(k) * cellCrossSection[k] * sum;
-                    }
-
-                    /** \todo If k + numThreshold + 1 >= grid().nCells(), the term is ignored.
-                     *        Document (in the document, not necessarily here) what are the
-                     *        consequences of that.
-                     */
-                    if (k + numThreshold + 1 < grid().nCells())
-                    {
-                        for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
-                        {
-                            ionizationMatrix(k, i) += delta * grid().du() * grid().getCell(i) * cellCrossSection[i] /
-                                                      (std::atan((grid().getCell(i) - threshold) / (2 * W)) *
-                                                       (W + std::pow(grid().getCell(i - k - numThreshold - 1), 2) / W));
-                        }
-                    }
-
-                    /** \todo The following comment needs to be sorted out (possible index errors).
-                     *  \todo Document what is done here (algorithm) and how it is implemented.
-                     */
-
-                    /** \todo This last section might need some adjustments because of indexing
-                     *  differences between Matlab and C++ (since indexes are multiplied here).
-                     */
-
-                    for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid().nCells(); ++i)
-                    {
-                        ionizationMatrix(k, i) += delta * grid().du() * grid().getCell(i) * cellCrossSection[i] /
-                                                  (std::atan((grid().getCell(i) - threshold) / (2 * W)) *
-                                                   (W + std::pow(grid().getCell(k), 2) / W));
-                    }
-                }
-                break;
-            }
-
-            // Evaluation of the conservative ionization operator
-
-            if (numThreshold == 0)
-                continue;
-
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
-            {
-                if (k < grid().nCells() - numThreshold)
-                    ionConservativeMatrix(k, k + numThreshold) +=
-                        delta * grid().getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
-
-                ionConservativeMatrix(k, k) -= delta * grid().getCell(k) * cellCrossSection[k];
-            }
-
-            if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
-                includeNonConservativeIonization = true;
         }
     }
 }
@@ -404,7 +250,8 @@ void ElectronKinetics::evaluateAttachmentOperator()
 
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
 : ElectronKinetics(setup,workingConditions),
-includeEECollisions(setup.includeEECollisions),
+    ionizationOperator(setup.ionizationOperatorType),
+    includeEECollisions(setup.includeEECollisions),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -420,7 +267,8 @@ includeEECollisions(setup.includeEECollisions),
 
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(cnf,workingConditions),
-includeEECollisions(cnf.at("includeEECollisions")),
+    ionizationOperator(getIonizationOperatorType(cnf.at("ionizationOperatorType"))),
+    includeEECollisions(cnf.at("includeEECollisions")),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -437,6 +285,15 @@ includeEECollisions(cnf.at("includeEECollisions")),
 void ElectronKineticsBoltzmann::initialize()
 {
     boltzmannMatrix.setZero(grid().nCells(), grid().nCells());
+
+    /// \todo the following two tasks should probably be part of the IonizationOperator constructor
+    ionizationOperator.ionConservativeMatrix.setZero(grid().nCells(), grid().nCells());
+    if (ionizationOperator.ionizationOperatorType != IonizationOperatorType::conservative &&
+        mixture.collision_data().hasCollisions(CollisionType::ionization))
+    {
+        ionizationOperator.ionizationMatrix.setZero(grid().nCells(), grid().nCells());
+    }
+
     eeOperator.initialize(grid());
 
     // SPARSE INITIALIZATION
@@ -493,6 +350,13 @@ void ElectronKineticsBoltzmann::initialize()
     this->evaluateMatrix();
 }
 
+void ElectronKineticsBoltzmann::evaluateFieldOperator()
+{
+    const double EoN = workingConditions->reducedFieldSI();
+    const double WoN = workingConditions->reducedExcFreqSI();
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,fieldMatrix);
+}
+
 void ElectronKineticsBoltzmann::evaluateMatrix()
 {
     const double Tg = workingConditions->gasTemperature();
@@ -510,7 +374,7 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     evaluateInelasticOperators();
 
     if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        evaluateIonizationOperator();
+        ionizationOperator.evaluateIonizationOperator(grid(),mixture);
 
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         evaluateAttachmentOperator();
@@ -567,12 +431,12 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     if (!mixture.CARGases().empty())
     {
         /// \todo Document all the scalings ('1e20') in this file. Are these really needed?
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionConservativeMatrix +
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionConservativeMatrix +
                                    attachmentConservativeMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionConservativeMatrix +
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationOperator.ionConservativeMatrix +
                                    attachmentConservativeMatrix);
     }
 
@@ -661,11 +525,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentMatrix);
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -691,7 +555,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
      *        du and does not yet have the factor f(u).
      */
     Vector integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
-                         (ionizationMatrix + attachmentMatrix);
+                         (ionizationOperator.ionizationMatrix + attachmentMatrix);
 
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3;
@@ -889,11 +753,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationMatrix + attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentMatrix);
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -917,7 +781,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     const Vector integrandCI = (SI::gamma * grid().du())
                     * Vector::Ones(grid().nCells()).transpose()
-                    * (ionizationMatrix + attachmentMatrix);
+                    * (ionizationOperator.ionizationMatrix + attachmentMatrix);
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3.;
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
@@ -1006,19 +870,19 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     // Splitting all possible options for the best performance.
 
-    if (includeNonConservativeIonization || includeNonConservativeAttachment)
+    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::spatial)
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
                                            fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
             }
             else
             {
                 boltzmannMatrix =
-                    1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
+                    1.e20 * (ionizationOperator.ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
                              fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
             }
         }
@@ -1026,12 +890,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
                                            ionTemporalGrowth + fieldMatrixTempGrowth);
             }
             else
             {
-                boltzmannMatrix = 1.e20 * (ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentMatrix + elasticMatrix + inelasticMatrix +
                                            CARMatrix + ionTemporalGrowth + fieldMatrixTempGrowth);
             }
         }
@@ -1040,12 +904,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
     {
         if (mixture.CARGases().empty())
         {
-            boltzmannMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
+            boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
                                        inelasticMatrix + fieldMatrix);
         }
         else
         {
-            boltzmannMatrix = 1.e20 * (ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
+            boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentConservativeMatrix + elasticMatrix +
                                        inelasticMatrix + fieldMatrix + CARMatrix);
         }
     }
@@ -1145,7 +1009,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 hasConverged = true;
             }
         }
-        else if (iter == 300 && !(includeNonConservativeAttachment || includeNonConservativeIonization))
+        else if (iter == 300 && !(includeNonConservativeAttachment || ionizationOperator.includeNonConservativeIonization))
         {
             hasConverged = true;
             Log<Message>::Warning("Electron-electron iterative scheme did not converge.");
@@ -1198,7 +1062,7 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
     // Declare function pointer
     void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
 
-    const bool includeGrowthModel = includeNonConservativeAttachment || includeNonConservativeIonization;
+    const bool includeGrowthModel = includeNonConservativeAttachment || ionizationOperator.includeNonConservativeIonization;
 
     if (includeGrowthModel)
     {
@@ -1265,7 +1129,7 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 
 void ElectronKineticsBoltzmann::solveSingle()
 {
-    if (includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
+    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment || includeEECollisions)
     {
         this->mixingDirectSolutions();
     }
@@ -1389,7 +1253,7 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
-    if (includeNonConservativeIonization || includeNonConservativeAttachment)
+    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
         {
@@ -1447,7 +1311,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
 
-    if (includeNonConservativeIonization || includeNonConservativeAttachment)
+    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
         {
@@ -1516,7 +1380,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
     {
-        cd.evaluatePower(ionizationOperatorType, eedf);
+        cd.evaluatePower(ionizationOperator.ionizationOperatorType, eedf);
         power += cd.getPower();
     }
 
@@ -1571,7 +1435,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 {
     const Grid::Index n = grid().nCells();
 
-    const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
+    const bool nonConservative = (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment);
 
     Vector tCS(mixture.collision_data().totalCrossSection());
 
@@ -1636,6 +1500,10 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const ElectronKineticsSet
 : ElectronKinetics(setup,workingConditions),
   shapeParameter(setup.shapeParameter)
 {
+    if (setup.ionizationOperatorType != IonizationOperatorType::conservative)
+    {
+        throw std::runtime_error("ionizationOperatorType must be 'conservative' for EEDF type 'Prescribed'.");
+    }
     initialize();
 }
 
@@ -1643,6 +1511,10 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, Wor
 : ElectronKinetics(cnf,workingConditions),
   shapeParameter(cnf.at("shapeParameter").get<unsigned>())
 {
+    if (getIonizationOperatorType(cnf.at("ionizationOperatorType")) != IonizationOperatorType::conservative)
+    {
+        throw std::runtime_error("ionizationOperatorType must be 'conservative' for EEDF type 'Prescribed'.");
+    }
     initialize();
 }
 
@@ -1676,8 +1548,8 @@ void ElectronKineticsPrescribed::evaluateMatrix()
 
     evaluateInelasticOperators();
 
-    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        evaluateIonizationOperator();
+//    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+//        evaluateIonizationOperator();
 
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         evaluateAttachmentOperator();
@@ -1757,7 +1629,7 @@ void ElectronKineticsPrescribed::evaluatePower()
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
 #if 0
-    if (includeNonConservativeIonization || includeNonConservativeAttachment)
+    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
         {
@@ -1831,6 +1703,10 @@ void ElectronKineticsPrescribed::evaluatePower()
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
     {
+        // note: in the constructor it is tested that this was specified by the user.
+        // other types do not make sense for the prescribed eedf case, in which also
+        // no growth model is assumed.
+        const IonizationOperatorType ionizationOperatorType = IonizationOperatorType::conservative;
         cd.evaluatePower(ionizationOperatorType, eedf);
         power += cd.getPower();
     }
@@ -1887,7 +1763,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
 {
     const Grid::Index n = grid().nCells();
 
-    //const bool nonConservative = (includeNonConservativeIonization || includeNonConservativeAttachment);
+    //const bool nonConservative = (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment);
 
     Vector tCS(mixture.collision_data().totalCrossSection());
 

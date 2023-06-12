@@ -183,4 +183,147 @@ void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eed
         //std::cout << "EE POWER: " << power << std::endl;
 }
 
+IonizationOperator::IonizationOperator(IonizationOperatorType type)
+: ionizationOperatorType(type), includeNonConservativeIonization(false)
+{
+}
+
+void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture)
+{
+    bool hasValidCollisions = false;
+
+    ionConservativeMatrix.setZero();
+
+    if (ionizationOperatorType != IonizationOperatorType::conservative)
+        ionizationMatrix.setZero();
+    /** \todo the following line seems to be missing. See the notes in the
+     *  class declaration of this member
+     */
+    //includeNonConservativeIonization = false;
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
+        {
+            const double threshold = collision->crossSection->threshold();
+
+            if (threshold > grid.getNode(grid.nCells()))
+                continue;
+
+            hasValidCollisions = true;
+
+            const double delta = collision->getTarget()->delta();
+            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+
+            Vector cellCrossSection(grid.nCells());
+
+            for (Grid::Index i = 0; i < grid.nCells(); ++i)
+                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+
+            switch (ionizationOperatorType)
+            {
+            case IonizationOperatorType::conservative:
+                break;
+
+            case IonizationOperatorType::oneTakesAll:
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    if (k < grid.nCells() - numThreshold)
+                        ionizationMatrix(k, k + numThreshold) +=
+                            delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+
+                    const double term = delta * grid.getCell(k) * cellCrossSection(k);
+
+                    ionizationMatrix(k, k) -= term;
+                    ionizationMatrix(0, k) += term;
+                }
+                break;
+
+            case IonizationOperatorType::equalSharing:
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+
+                    if (k < (grid.nCells() - numThreshold) / 2)
+                    {
+                        const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
+
+                        ionizationMatrix(k, i) += 4 * delta * grid.getCell(i) * cellCrossSection(i);
+                    }
+                }
+                break;
+            case IonizationOperatorType::sdcs:
+                double W = cd.OPBParameter();
+
+                if (W < 0)
+                    W = threshold;
+
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    const Grid::Index end = std::min(2 * (k + 1) + numThreshold, grid.nCells());
+
+                    if (k > numThreshold)
+                    {
+                        const Grid::Index half = (k + 1 - numThreshold) / 2;
+                        const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
+                        double sum = 0.;
+
+                        for (Grid::Index i = 0; i < half; ++i)
+                            sum += numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
+
+                        ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
+                    }
+
+                    /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
+                     *        Document (in the document, not necessarily here) what are the
+                     *        consequences of that.
+                     */
+                    if (k + numThreshold + 1 < grid.nCells())
+                    {
+                        for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                        {
+                            ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
+                                                      (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                       (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
+                        }
+                    }
+
+                    /** \todo The following comment needs to be sorted out (possible index errors).
+                     *  \todo Document what is done here (algorithm) and how it is implemented.
+                     */
+
+                    /** \todo This last section might need some adjustments because of indexing
+                     *  differences between Matlab and C++ (since indexes are multiplied here).
+                     */
+
+                    for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
+                    {
+                        ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
+                                                  (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                   (W + std::pow(grid.getCell(k), 2) / W));
+                    }
+                }
+                break;
+            }
+
+            // Evaluation of the conservative ionization operator
+
+            if (numThreshold == 0)
+                continue;
+
+            for (Grid::Index k = 0; k < grid.nCells(); ++k)
+            {
+                if (k < grid.nCells() - numThreshold)
+                    ionConservativeMatrix(k, k + numThreshold) +=
+                        delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+
+                ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+            }
+
+            if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
+                includeNonConservativeIonization = true;
+        }
+    }
+}
+
 } // namespace loki
