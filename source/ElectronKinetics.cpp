@@ -25,10 +25,11 @@ namespace loki
 
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
     : workingConditions(workingConditions),
-      m_grid(setup.numerics.energyGrid),
-      mixture(&grid(), setup, workingConditions),
-      fieldOperator(grid()),
-      eedf(grid().nCells())
+    m_grid(setup.numerics.energyGrid),
+    mixture(&grid(), setup, workingConditions),
+    fieldOperator(grid()),
+    inelasticOperator(grid()),
+    eedf(grid().nCells())
 {
     initialize();
 }
@@ -38,6 +39,7 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
     m_grid(cnf.at("numerics").at("energyGrid")),
     mixture(&grid(), cnf, workingConditions),
     fieldOperator(grid()),
+    inelasticOperator(grid()),
     eedf(grid().nCells())
 {
     initialize();
@@ -45,8 +47,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
 void ElectronKinetics::initialize()
 {
-    inelasticMatrix.setZero(grid().nCells(), grid().nCells());
-
     // SPARSE INITIALIZATION
     std::vector<Eigen::Triplet<double>> tridiagPattern;
     tridiagPattern.reserve(3 * grid().nCells() - 2);
@@ -76,78 +76,6 @@ void ElectronKinetics::updateMaxEnergy(double uMax)
 void ElectronKinetics::solve()
 {
     doSolve();
-}
-
-void ElectronKinetics::evaluateInelasticOperators()
-{
-    const Grid::Index cellNumber = grid().nCells();
-
-    inelasticMatrix.setZero();
-
-    for (const auto &cd : mixture.collision_data().data_per_gas())
-    {
-        for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
-        {
-            for (const auto &collision : cd.collisions(vecIndex) )
-            {
-                const double threshold = collision->crossSection->threshold();
-
-                if (threshold < grid().du() || threshold > grid().getNodes()[grid().nCells()])
-                    continue;
-
-                const double targetDensity = collision->getTarget()->delta();
-
-                if (targetDensity != 0)
-                {
-                    const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid().du()));
-
-                    Vector cellCrossSection(cellNumber);
-
-                    for (Grid::Index i = 0; i < cellNumber; ++i)
-                        cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
-
-                    for (Grid::Index k = 0; k < cellNumber; ++k)
-                    {
-                        if (k < cellNumber - numThreshold)
-                            inelasticMatrix(k, k + numThreshold) +=
-                                targetDensity * grid().getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
-                        /** \todo Clarify. See the comments on the (conserving) attachment operator.
-                         */
-                        inelasticMatrix(k, k) -= targetDensity * grid().getCells()[k] * cellCrossSection[k];
-                    }
-
-                    if (collision->isReverse())
-                    {
-                        const double swRatio = collision->getTarget()->statisticalWeight /
-                                               collision->m_rhsHeavyStates[0]->statisticalWeight;
-                        const double productDensity = collision->m_rhsHeavyStates[0]->delta();
-
-                        if (productDensity == 0)
-                            continue;
-
-                        /** \todo see the comments about superElasticThresholds in the header file.
-                        if (numThreshold > 1)
-                            superElasticThresholds.emplace_back(numThreshold);
-                        */
-
-                        if (numThreshold != 1)
-                            hasSuperelastics = true;
-
-                        for (Grid::Index k = 0; k < cellNumber; ++k)
-                        {
-                            if (k >= numThreshold)
-                                inelasticMatrix(k, k - numThreshold) +=
-                                    swRatio * productDensity * grid().getCells()[k] * cellCrossSection[k];
-
-                            if (k < cellNumber - numThreshold)
-                                inelasticMatrix(k, k) -= swRatio * productDensity * grid().getCells()[k + numThreshold] *
-                                                         cellCrossSection[k + numThreshold];
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
@@ -280,7 +208,7 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
         carOperator->evaluate(grid(),Tg,CARMatrix);
     }
 
-    evaluateInelasticOperators();
+    inelasticOperator.evaluateInelasticOperators(grid(),mixture);
 
     if (mixture.collision_data().hasCollisions(CollisionType::ionization))
         ionizationOperator.evaluateIonizationOperator(grid(),mixture);
@@ -340,12 +268,12 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     if (!mixture.CARGases().empty())
     {
         /// \todo Document all the scalings ('1e20') in this file. Are these really needed?
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionConservativeMatrix +
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
                                    attachmentOperator.attachmentConservativeMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationOperator.ionConservativeMatrix +
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
                                    attachmentOperator.attachmentConservativeMatrix);
     }
 
@@ -359,7 +287,7 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
 
-    if (!hasSuperelastics)
+    if (!inelasticOperator.hasSuperelastics)
     {
         eedf.setZero();
         eedf[0] = 1.;
@@ -434,11 +362,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -662,11 +590,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -785,13 +713,13 @@ void ElectronKineticsBoltzmann::solveEEColl()
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
                                            fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
             }
             else
             {
                 boltzmannMatrix =
-                    1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticMatrix + CARMatrix +
+                    1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix + CARMatrix +
                              fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
             }
         }
@@ -799,12 +727,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
                                            ionTemporalGrowth + fieldMatrixTempGrowth);
             }
             else
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticMatrix +
+                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
                                            CARMatrix + ionTemporalGrowth + fieldMatrixTempGrowth);
             }
         }
@@ -814,12 +742,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
         if (mixture.CARGases().empty())
         {
             boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
-                                       inelasticMatrix + fieldMatrix);
+                                       inelasticOperator.inelasticMatrix + fieldMatrix);
         }
         else
         {
             boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
-                                       inelasticMatrix + fieldMatrix + CARMatrix);
+                                       inelasticOperator.inelasticMatrix + fieldMatrix + CARMatrix);
         }
     }
 
@@ -1455,7 +1383,7 @@ void ElectronKineticsPrescribed::evaluateMatrix()
         carOperator->evaluate(grid());
     }
 
-    evaluateInelasticOperators();
+    inelasticOperator.evaluateInelasticOperators(grid(),mixture);
 }
 
 void ElectronKineticsPrescribed::doSolve()

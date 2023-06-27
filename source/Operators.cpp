@@ -166,6 +166,84 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
     power *= SI::gamma;
 }
 
+InelasticOperator::InelasticOperator(const Grid& grid)
+: hasSuperelastics(false)
+{
+    inelasticMatrix.setZero(grid.nCells(), grid.nCells());
+}
+
+void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
+{
+    const Grid::Index cellNumber = grid.nCells();
+
+    inelasticMatrix.setZero();
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
+        {
+            for (const auto &collision : cd.collisions(vecIndex) )
+            {
+                const double threshold = collision->crossSection->threshold();
+
+                if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
+                    continue;
+
+                const double targetDensity = collision->getTarget()->delta();
+
+                if (targetDensity != 0)
+                {
+                    const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+
+                    Vector cellCrossSection(cellNumber);
+
+                    for (Grid::Index i = 0; i < cellNumber; ++i)
+                        cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+
+                    for (Grid::Index k = 0; k < cellNumber; ++k)
+                    {
+                        if (k < cellNumber - numThreshold)
+                            inelasticMatrix(k, k + numThreshold) +=
+                                targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                        /** \todo Clarify. See the comments on the (conserving) attachment operator.
+                         */
+                        inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                    }
+
+                    if (collision->isReverse())
+                    {
+                        const double swRatio = collision->getTarget()->statisticalWeight /
+                                               collision->m_rhsHeavyStates[0]->statisticalWeight;
+                        const double productDensity = collision->m_rhsHeavyStates[0]->delta();
+
+                        if (productDensity == 0)
+                            continue;
+
+                        /** \todo see the comments about superElasticThresholds in the header file.
+                        if (numThreshold > 1)
+                            superElasticThresholds.emplace_back(numThreshold);
+                        */
+
+                        if (numThreshold != 1)
+                            hasSuperelastics = true;
+
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        {
+                            if (k >= numThreshold)
+                                inelasticMatrix(k, k - numThreshold) +=
+                                    swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
+
+                            if (k < cellNumber - numThreshold)
+                                inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCells()[k + numThreshold] *
+                                                         cellCrossSection[k + numThreshold];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 ElectronElectronOperator::ElectronElectronOperator()
 {
     alphaEE=0.0;

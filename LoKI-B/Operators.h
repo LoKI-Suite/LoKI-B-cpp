@@ -79,6 +79,27 @@ namespace loki {
         Vector g;
     };
 
+    class InelasticOperator
+    {
+    public:
+	InelasticOperator(const Grid& grid);
+
+        /** \todo Clarify: does inelastic mean particle-conserving inelastic only
+         *                 (no ionization, attachment)? So only excitation? If so,
+         *                 only electronic, or also vibrational, rotational?
+         */
+        void evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture);
+        Matrix inelasticMatrix;
+        /* NOTE: the following is not a configuration parameter, but the
+         * result of introspection of the reaction lists. The results also depend
+         * on uMax.
+         * \bug It seems that the value is not always reset to false before making
+         *      it conditionally true during introspection. (That is needed when uMax
+         *      changes.)
+         */
+        bool hasSuperelastics;
+    };
+
     class ElectronElectronOperator
     {
     public:
