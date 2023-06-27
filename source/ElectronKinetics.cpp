@@ -267,14 +267,13 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     if (!mixture.CARGases().empty())
     {
-        /// \todo Document all the scalings ('1e20') in this file. Are these really needed?
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
-                                   attachmentOperator.attachmentConservativeMatrix);
+        boltzmannMatrix = elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
+                                   attachmentOperator.attachmentConservativeMatrix;
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
-                                   attachmentOperator.attachmentConservativeMatrix);
+        boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
+                                   attachmentOperator.attachmentConservativeMatrix;
     }
 
     invertMatrix(boltzmannMatrix);
@@ -362,11 +361,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -527,16 +526,16 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k) +
-                                                           ionSpatialGrowthD.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]));
+            boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
+                                                           ionSpatialGrowthD.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k - 1) + eeOperator.A[k - 1]);
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
+                                                                      ionSpatialGrowthU.coeff(k, k - 1) + eeOperator.A[k - 1];
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k + 1) + eeOperator.B[k + 1]);
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
+                                                                      ionSpatialGrowthU.coeff(k, k + 1) + eeOperator.B[k + 1];
         }
 
         Vector eedfNew = eedf;
@@ -590,11 +589,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (!mixture.CARGases().empty())
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = elasticMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
     }
     else
     {
-        boltzmannMatrix = 1.e20 * (elasticMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        boltzmannMatrix = elasticMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -662,14 +661,14 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k) +
-                                                           ionTemporalGrowth.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]));
+            boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
+                                                           ionTemporalGrowth.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k - 1) + eeOperator.A[k - 1]);
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1) + eeOperator.A[k - 1];
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * (fieldMatrixTempGrowth.coeff(k, k + 1) + eeOperator.B[k + 1]);
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1) + eeOperator.B[k + 1];
         }
 
         eedfNew = eedf;
@@ -711,27 +710,27 @@ void ElectronKineticsBoltzmann::solveEEColl()
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
-                                           fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
+                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
+                                           fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
             }
             else
             {
                 boltzmannMatrix =
-                    1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix + CARMatrix +
-                             fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth);
+                    ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix + CARMatrix +
+                             fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
             }
         }
         else if (growthModelType == GrowthModelType::temporal)
         {
             if (mixture.CARGases().empty())
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
-                                           ionTemporalGrowth + fieldMatrixTempGrowth);
+                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
+                                           ionTemporalGrowth + fieldMatrixTempGrowth;
             }
             else
             {
-                boltzmannMatrix = 1.e20 * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
-                                           CARMatrix + ionTemporalGrowth + fieldMatrixTempGrowth);
+                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
+                                           CARMatrix + ionTemporalGrowth + fieldMatrixTempGrowth;
             }
         }
     }
@@ -739,13 +738,13 @@ void ElectronKineticsBoltzmann::solveEEColl()
     {
         if (mixture.CARGases().empty())
         {
-            boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
-                                       inelasticOperator.inelasticMatrix + fieldMatrix);
+            boltzmannMatrix = ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
+                                       inelasticOperator.inelasticMatrix + fieldMatrix;
         }
         else
         {
-            boltzmannMatrix = 1.e20 * (ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
-                                       inelasticOperator.inelasticMatrix + fieldMatrix + CARMatrix);
+            boltzmannMatrix = ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
+                                       inelasticOperator.inelasticMatrix + fieldMatrix + CARMatrix;
         }
     }
 
@@ -825,13 +824,13 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] - 1.e20 * (eeOperator.A[k] + eeOperator.B[k]);
+            boltzmannMatrix(k, k) = baseDiag[k] - eeOperator.A[k] + eeOperator.B[k];
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + 1.e20 * eeOperator.A[k - 1];
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + eeOperator.A[k - 1];
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + 1.e20 * eeOperator.B[k + 1];
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + eeOperator.B[k + 1];
         }
 
         invertMatrix(boltzmannMatrix);
