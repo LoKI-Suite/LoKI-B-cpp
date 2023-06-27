@@ -700,13 +700,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
 void ElectronKineticsBoltzmann::solveEEColl()
 {
-    const double e = Constant::electronCharge;
-    const double e0 = Constant::vacuumPermittivity;
-    const double ne = workingConditions->electronDensity();
-    const double n0 = workingConditions->gasDensity();
-
     // Splitting all possible options for the best performance.
 
+    /** \todo What if only one of the following is true? Then we use e.g. the ionizationMatrix, while includeNonConservativeIonization==false.
+     *  Is that correct?
+     */
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::spatial)
@@ -750,6 +748,14 @@ void ElectronKineticsBoltzmann::solveEEColl()
                                        inelasticOperator.inelasticMatrix + fieldMatrix + CARMatrix);
         }
     }
+
+    /// \todo Make the remainder of this function a member of the eeOperator, passing the boltzmannMatrix as arument?
+
+    const double e = Constant::electronCharge;
+    const double e0 = Constant::vacuumPermittivity;
+    const double ne = workingConditions->electronDensity();
+    const double n0 = workingConditions->gasDensity();
+
 
     // Storing the initial diagonals of the matrix in three separate vectors.
     // This allows us to skip the usage of 'matrixAux', saving a good amount of
@@ -1376,6 +1382,10 @@ void ElectronKineticsPrescribed::evaluateMatrix()
 
     elasticOperator.evaluate(grid(),mixture.collision_data().elasticCrossSection());
 
+    /** This is most probably not correct. For the Prescribed EEDF mode, an equivalent
+     *  field must be determined from the enery balance, whereas evaluateFieldOperator()
+     *  uses the prescribed E/N.
+     */
     evaluateFieldOperator();
 
     if (carOperator.get())
