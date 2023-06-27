@@ -1456,19 +1456,6 @@ void ElectronKineticsPrescribed::evaluateMatrix()
     }
 
     evaluateInelasticOperators();
-
-//    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-//        evaluateIonizationOperator();
-
-//    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-//        evaluateAttachmentOperator();
-
-    /** \todo see the comments about superElasticThresholds in the header file.
-    // Sort and erase duplicates.
-    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
-    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
-                                 superElasticThresholds.end());
-    */
 }
 
 void ElectronKineticsPrescribed::doSolve()
@@ -1537,77 +1524,6 @@ void ElectronKineticsPrescribed::evaluatePower()
     {
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
-#if 0
-    if (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment)
-    {
-        if (growthModelType == GrowthModelType::temporal)
-        {
-            // the calculation of field is identical to that in fieldOperator, except
-            // for the usage of g_fieldTemporalGrowth instead of fieldOperator.g;
-            // the former is based on a totalCS that has an additional term
-            // growthFactor / std::sqrt(grid().getNode(i)).
-            double field = 0., growthModel = 0.;
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
-            {
-                field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
-                growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
-            }
-            power.field = SI::gamma * field;
-            power.eDensGrowth = -CIEff * grid().du() * growthModel;
-        }
-        else if (growthModelType == GrowthModelType::spatial)
-        {
-            // first term 'field': same as in the case that there is no growth
-            double field = 0.;
-            fieldOperator.evaluatePower(grid(),eedf,field);
-            // now calculate the additional terms
-            double correction = 0., powerDiffusion = 0., powerMobility = 0.;
-            Vector cellCrossSection(grid().nCells());
-
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
-            {
-                /// \todo check that it is correct that g_E (fieldOperator.g) (local) is used in a spatial growth simulation)
-                field += eedf[k] * (fieldOperator.g[k + 1] - fieldOperator.g[k]);
-                correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
-
-                // Diffusion and Mobility contributions
-                cellCrossSection[k] = .5 * (mixture.collision_data().totalCrossSection()[k] + mixture.collision_data().totalCrossSection()[k + 1]);
-                powerDiffusion += grid().getCell(k) * grid().getCell(k) * eedf[k] / cellCrossSection[k];
-
-                if (k > 0 && k < grid().nCells() - 1)
-                {
-                    powerMobility +=
-                        grid().getCell(k) * grid().getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
-                }
-            }
-
-            /** \todo field and correction are both of the form 'eedf*g'.
-             *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
-             *  have different dimensions (factor energy).
-             */
-            // Note that field is calculated by fieldOperator.evaluatePower, which already
-            // adds the factor SI::gamma.
-            power.field = field + SI::gamma * grid().du() * correction;
-            power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
-                                SI::gamma * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
-                                    (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
-                                     grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
-                                         eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
-                                     powerMobility);
-        }
-    }
-    else
-    {
-        fieldOperator.evaluatePower(grid(),eedf,power.field);
-    }
-#if 0
-    if (includeEECollisions)
-    {
-        power.electronElectron = (-SI::gamma * grid().du() * grid().du()) * (A - B).dot(eedf);
-    }
-#endif
-#endif
-#if 1
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
@@ -1665,23 +1581,13 @@ void ElectronKineticsPrescribed::evaluatePower()
         + power.electronElectron;
     power.relativeBalance = std::abs(power.balance) / totalGain;
     power.reference = totalGain;
-#endif
 }
 
 void ElectronKineticsPrescribed::evaluateSwarmParameters()
 {
     const Grid::Index n = grid().nCells();
 
-    //const bool nonConservative = (ionizationOperator.includeNonConservativeIonization || includeNonConservativeAttachment);
-
     Vector tCS(mixture.collision_data().totalCrossSection());
-
-#if 0
-    if (growthModelType == GrowthModelType::temporal && nonConservative)
-    {
-        tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
-    }
-#endif
 
     swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
@@ -1693,15 +1599,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
 
-//    if (growthModelType == GrowthModelType::spatial && nonConservative)
-//    {
-//        swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
-//                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
-//    }
-//    else
-//    {
-        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
-//    }
+    swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
 
