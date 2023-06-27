@@ -326,4 +326,78 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
     }
 }
 
+void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)
+{
+    attachmentMatrix.setZero();
+    attachmentConservativeMatrix.setZero();
+
+    const Grid::Index cellNumber = grid.nCells();
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::attachment))
+        {
+            const double threshold = collision->crossSection->threshold();
+
+            if (threshold > grid.getNode(cellNumber))
+                continue;
+
+            /* This should definitely not be in this (double) loop. Is this a constructor task?
+             * Can this just be replaced with 'cd.collisions(CollisionType::attachment).size()'
+             * in (other) places where this is now used?
+             * Answer: no, this depends on uMax(), which may change for a smart grid. But it
+             * could be done as an action when that changes.
+             */
+            /** \bug This should be reset to false at the beginning of this function
+             *       because the results may change when uMax is changed.
+             */
+            includeNonConservativeAttachment = true;
+
+            /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
+             *        in the two places where it is needed (one if the merger below can be done).
+             */
+            Vector cellCrossSection(cellNumber);
+
+            const double targetDensity = collision->getTarget()->delta();
+
+            /// \todo Merge with the subsequent k-loop.
+            for (Grid::Index i = 0; i < cellNumber; ++i)
+                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+
+            for (Grid::Index k = 0; k < cellNumber; ++k)
+                attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+
+            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            /* This is an optimization: do not add a source and a sink that cancel out.
+             * When this happens, the (minor) energy gain is ignored.
+             */
+            if (numThreshold == 0)
+                continue;
+
+            /** Can we also merge with this loop?
+             *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
+             *  given the amount of work done.
+             */
+            for (Grid::Index k = 0; k < cellNumber; ++k)
+            {
+                /** \todo Explain the structore of this term. Explain that this is conserving,
+                 *  how we can see that (integral source must be zero).
+                 */
+                /** \todo Is this really a conserving term? It appears that this loses electrons
+                 *  if the argument of the following if-statement is false (that is: for
+                 *  electrons with at a distance smaller than the attachment energy from uMax.
+                 *  Of course this is in practice only a minor problem. It can be fixed by
+                 *  also having the sink inside the if-statement, so we simply discard the
+                 *  processes that produce electrons with an energy that cannot be represented.
+                 */
+                if (k < cellNumber - numThreshold)
+                    attachmentConservativeMatrix(k, k + numThreshold) +=
+                        targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+
+                attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+            }
+        }
+    }
+}
+
 } // namespace loki
