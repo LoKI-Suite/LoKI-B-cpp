@@ -265,15 +265,11 @@ void ElectronKineticsBoltzmann::doSolve()
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
-    if (!mixture.CARGases().empty())
-    {
-        boltzmannMatrix = elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
+    boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
                                    attachmentOperator.attachmentConservativeMatrix;
-    }
-    else
+    if (carOperator)
     {
-        boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionConservativeMatrix +
-                                   attachmentOperator.attachmentConservativeMatrix;
+        boltzmannMatrix += CARMatrix;
     }
 
     invertMatrix(boltzmannMatrix);
@@ -359,13 +355,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     for (Grid::Index i = 0; i < grid().nCells(); ++i)
         cellTotalCrossSection[i] = .5 * (mixture.collision_data().totalCrossSection()[i] + mixture.collision_data().totalCrossSection()[i + 1]);
 
-    if (!mixture.CARGases().empty())
+    boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
+    if (carOperator)
     {
-        boltzmannMatrix = elasticMatrix + fieldMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
-    }
-    else
-    {
-        boltzmannMatrix = elasticMatrix + fieldMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
+        boltzmannMatrix += CARMatrix;
     }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
@@ -582,19 +575,16 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
 void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 {
+    boltzmannMatrix = elasticMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
+    if (carOperator)
+    {
+        boltzmannMatrix += CARMatrix;
+    }
+
     const double e = Constant::electronCharge;
     const double m = Constant::electronMass;
     const double EoN = workingConditions->reducedFieldSI();
     const double WoN = workingConditions->reducedExcFreqSI();
-
-    if (!mixture.CARGases().empty())
-    {
-        boltzmannMatrix = elasticMatrix + CARMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
-    }
-    else
-    {
-        boltzmannMatrix = elasticMatrix + inelasticOperator.inelasticMatrix + ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
-    }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
 
@@ -708,44 +698,23 @@ void ElectronKineticsBoltzmann::solveEEColl()
     {
         if (growthModelType == GrowthModelType::spatial)
         {
-            if (mixture.CARGases().empty())
-            {
-                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
+            boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
                                            fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
-            }
-            else
-            {
-                boltzmannMatrix =
-                    ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix + CARMatrix +
-                             fieldMatrix + ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth;
-            }
         }
         else if (growthModelType == GrowthModelType::temporal)
         {
-            if (mixture.CARGases().empty())
-            {
-                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
+            boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
                                            ionTemporalGrowth + fieldMatrixTempGrowth;
-            }
-            else
-            {
-                boltzmannMatrix = ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix + elasticMatrix + inelasticOperator.inelasticMatrix +
-                                           CARMatrix + ionTemporalGrowth + fieldMatrixTempGrowth;
-            }
         }
     }
     else
     {
-        if (mixture.CARGases().empty())
-        {
-            boltzmannMatrix = ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
+        boltzmannMatrix = ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
                                        inelasticOperator.inelasticMatrix + fieldMatrix;
-        }
-        else
-        {
-            boltzmannMatrix = ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix + elasticMatrix +
-                                       inelasticOperator.inelasticMatrix + fieldMatrix + CARMatrix;
-        }
+    }
+    if (carOperator)
+    {
+        boltzmannMatrix += CARMatrix;
     }
 
     /// \todo Make the remainder of this function a member of the eeOperator, passing the boltzmannMatrix as arument?
