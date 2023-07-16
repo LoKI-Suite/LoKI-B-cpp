@@ -942,11 +942,11 @@ void ElectronKineticsBoltzmann::solveSingle()
 {
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment || includeEECollisions)
     {
-        this->mixingDirectSolutions();
+        mixingDirectSolutions();
     }
     else
     {
-        this->invertLinearMatrix();
+        invertLinearMatrix();
     }
 }
 
