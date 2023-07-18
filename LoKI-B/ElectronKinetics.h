@@ -14,6 +14,7 @@
 #include "LoKI-B/Power.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
+#include "LoKI-B/Operators.h"
 
 // TODO: comment ElectronKinetics class
 
@@ -26,76 +27,36 @@ using ResultEvent =
 
 class ElectronKinetics
 {
-  public:
+protected:
     ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
     // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
+public:
     // use the detaul destructor
-    ~ElectronKinetics() = default;
+    virtual ~ElectronKinetics() = default;
     /** \todo Implement the 'rule of big 5': also delete the move constructor and
      *  move and copy assignment.
      */
     ResultEvent obtainedNewEedf;
 
-    /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
-     *  depending on wether the smart grid option is enabled.
+    /** solve the Boltzmann equation.
      *  After completion, the power terms, rate coefficients, swarm parameters
      *  and the first anisotropic term f1 are evaluated and the obtainedNewEedf
      *  event is fired.
      */
     void solve();
 
-    const Grid &getGrid() const { return grid; }
+    const Grid &grid() const { return m_grid; }
+protected:
+    /** Calls updateMaxEnergy(uMax) on the grid. This function allows us to
+     *  keep the grid member private and expose only a non-constant reference
+     *  to the grid (via member grid()).
+     */
+    void updateMaxEnergy(double uMax);
+    virtual void doSolve()=0;
 
-  private:
-    /** Carry out initialization tasks. This function is called by both
-     *  constructor overloads after the argument-type-specific bits have
-     *  been done (those that depend on WorkingCondisions or JSON).
-     */
-    void initialize();
-    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
-     *  sum_i sqrt(u_i)*f[i]*du = 1.
-     *  Note: the incoming matrix is singular, the first equation (that is:
-     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
-     */
-    void invertMatrix(Matrix &matrix);
-    /** Update all terms that are needed later on to compose the boltzmannMatrix.
-     *  Note that this is called only in the constructor of this class and in
-     *  reply to an grid.updatedMaxEnergy event (which is triggered among others
-     *  by a smart grid iteration).
-     */
-    void evaluateMatrix();
-    /** solve the Boltzmann equation, taking into account only the linear terms.
-     */
-    void invertLinearMatrix();
-    /** solve the Boltzmann equation. An iterative procedure is used to handle
-     *  the non-linear terms.
-     */
-    void mixingDirectSolutions();
-    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
-     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
-     */
-    void solveSingle();
-    void solveSmartGrid();
-    /** An alternative for solveSmartGrid.
-     *
-     *  0. introduce uM, uP and set these to uMax, the initial value of the
-     *     upper boundary.
-     *  1. do a calculation and calculate 'decades'.
-     *  2. If necessary, widen the interval [uM,uP].
-     *     - if decades is below the interval:
-     *         while decades is below the interval:
-     *          - double uP, set uMax=uP, solve and recalculate 'decades'
-     *     - else if decades is above the interval:
-     *         while decades is above the interval:
-     *          - divide uM by 2, set uMax=uM, solve and recalculate 'decades'
-     *  3. While decades is not in the range, use bisection:
-     *      - Set uMax = (uM+uP)/2
-     *      - solve and calculate decades.
-     *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax
-     */
-    void solveSmartGrid2();
+    /// \todo See what can be made private. Introduce accessors where necessary.
 
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
@@ -124,106 +85,108 @@ class ElectronKinetics
     {
         return std::log10(std::abs(v1/v2));
     }
-
     WorkingConditions *workingConditions;
-    Grid grid;
+private:
+    Grid m_grid;
+protected:
     EedfMixture mixture;
 
-    EedfType eedfType;
-    /** \todo This is not used anywhere at the moment.
-     *  This is used only when EEDFType is equal to 'prescribed'.
-     *  This is not yet implemented in the C++ version, but present
-     *  in the MATLAB version.
-     */
-    uint8_t shapeParameter;
-
-    /** Tolerance settings.
-     */
-    double maxEedfRelError;
-    double maxPowerBalanceRelError;
-
-    // support for elastic contributions
-    void evaluateElasticOperator();
-    SparseMatrix elasticMatrix;
-    Vector g_c;
-
-    /** \todo Clarify: does inelastic mean particle-conserving inelastic only
-     *                 (no ionization, attachment)? So only excitation? If so,
-     *                 only electronic, or also vibrational, rotational?
-     */
-    void evaluateInelasticOperators();
-    Matrix inelasticMatrix;
-
-    // Support for ionization.
-    IonizationOperatorType ionizationOperatorType;
-    void evaluateIonizationOperator();
-    /** \todo Document whre/when ionConservativeMatrix is used. It is also used
-     *        to obtain an initial guess if iterations are done, it seems.
-     */
-    Matrix ionConservativeMatrix;
-    /** This appears to be NOT used for IonizationOperatorType::conservative
-     */
-    Matrix ionizationMatrix;
-
-    // Support for electron attachment
-    void evaluateAttachmentOperator();
-    /** \todo Always used when attachment processes are present.
-     *  Unlike ionConservativeMatrix, this does not depend on a setting, it seems.
-     *  is that intended?
-     */
-    Matrix attachmentConservativeMatrix;
-    /** \todo Always used when attachment processes are present.
-     *  Unlike ionizationMatrix, this does not depend on a setting, it seems.
-     *  is that intended?
-     */
-    SparseMatrix attachmentMatrix;
+    ElasticOperator elasticOperator;
 
     /* Support for the E-field terms.
      * Depending on the growth model, more fields are used to handle these terms
      * (fieldMatrixSpatGrowth, g_fieldSpatialGrowth or fieldMatrixTempGrowth, g_fieldTemporalGrowth).
      */
-    void evaluateFieldOperator();
-    SparseMatrix fieldMatrix;
-    Vector g_E;
+    FieldOperator fieldOperator;
+
+    InelasticOperator inelasticOperator;
 
     // support for CAR processes.
-    void evaluateCAROperator();
-    SparseMatrix CARMatrix;
-    Vector g_CAR;
+    std::unique_ptr<CAROperator> carOperator;
 
-    // use by spatial AND temporal growth
-    GrowthModelType growthModelType;
-    double mixingParameter;
-    double CIEff{0.};
-
-    // code related to spatial growth
-    void solveSpatialGrowthMatrix();
-    SparseMatrix fieldMatrixSpatGrowth;
-    SparseMatrix ionSpatialGrowthD;
-    SparseMatrix ionSpatialGrowthU;
-    Vector g_fieldSpatialGrowth;
-    double alphaRedEff{0.};
-
-    // code related to temporal growth
-    void solveTemporalGrowthMatrix();
-    SparseMatrix fieldMatrixTempGrowth;
-    SparseMatrix ionTemporalGrowth;
-    Vector g_fieldTemporalGrowth;
-
-    // code related to ee colissions
-    void solveEEColl();
-    /// \todo alphaEE, BAee, A,B are relevant only when EE collisions are configured
-    bool includeEECollisions;
-    /// \todo See if/when the 0-initialization is needed
-    double alphaEE{0.};
-    Matrix BAee;
-    Vector A;
-    Vector B;
-
-    Matrix boltzmannMatrix;
     // the EEDF
     Vector eedf;
 
+    // storage of the power terms
+    Power power;
+
+    SwarmParameters swarmParameters;
+
+    /** \todo superElasticThresholds is only used in the disabled code path
+     *  in invertMatrix that uses LinAlg::hessenbergReductionPartialPiv.
+     *  It seems that all this should be removed or at least disabled as long
+     *  as that code is not active.
+    std::vector<uint32_t> superElasticThresholds;
+     */
+
+private:
+
+    /** Carry out initialization tasks. This function is called by both
+     *  constructor overloads after the argument-type-specific bits have
+     *  been done (those that depend on WorkingCondisions or JSON).
+     */
+    void initialize();
+};
+
+class ElectronKineticsBoltzmann : public ElectronKinetics
+{
+public:
+    ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions);
+protected:
+    /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
+     *  depending on wether the smart grid option is enabled.
+     */
+    virtual void doSolve();
+private:
+    /// shared constructor tasks
+    void initialize();
+    void evaluateMatrix();
+    /** solve the Boltzmann equation, taking into account only the linear terms.
+     */
+    void invertLinearMatrix();
+    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
+     *  sum_i sqrt(u_i)*f[i]*du = 1.
+     *  Note: the incoming matrix is singular, the first equation (that is:
+     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
+     */
+    void invertMatrix(Matrix &matrix);
+    void solveSpatialGrowthMatrix();
+    void solveTemporalGrowthMatrix();
+    // code related to ee colissions
+    void solveEEColl();
+    /** Update all terms that are needed later on to compose the boltzmannMatrix.
+     *  Note that this is called only in the constructor of this class and in
+     *  reply to an grid.updatedMaxEnergy event (which is triggered among others
+     *  by a smart grid iteration).
+     */
+    /** solve the Boltzmann equation. An iterative procedure is used to handle
+     *  the non-linear terms.
+     */
+    void mixingDirectSolutions();
+    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
+     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
+     */
+    void solveSingle();
+    void solveSmartGrid();
+    /** An alternative for solveSmartGrid.
+     *
+     *  0. introduce uM, uP and set these to uMax, the initial value of the
+     *     upper boundary.
+     *  1. do a calculation and calculate 'decades'.
+     *  2. If necessary, widen the interval [uM,uP].
+     *     - if decades is below the interval:
+     *         while decades is below the interval:
+     *          - double uP, set uMax=uP, solve and recalculate 'decades'
+     *     - else if decades is above the interval:
+     *         while decades is above the interval:
+     *          - divide uM by 2, set uMax=uM, solve and recalculate 'decades'
+     *  3. While decades is not in the range, use bisection:
+     *      - Set uMax = (uM+uP)/2
+     *      - solve and calculate decades.
+     *      - if decades is below the intervael uM <- uMax, otherwise uP <- uMax
+     */
+    void solveSmartGrid2();
     // storage and calculation of f1 (first anisotropic term)
     /** \todo Note that this is essentially output only.
      *  This is evaluated at the end of solve() by a call to
@@ -240,32 +203,71 @@ class ElectronKinetics
      */
     void evaluateFirstAnisotropy();
     Vector firstAnisotropy;
-
-    // storage and calculation of the power terms
+    // calculation of the power terms
     void evaluatePower();
-    Power power;
-
     // storage and calculation of the swarm parameters
     void evaluateSwarmParameters();
-    SwarmParameters swarmParameters;
 
-    /** \todo superElasticThresholds is only used in the disabled code path
-     *  in invertMatrix that uses LinAlg::hessenbergReductionPartialPiv.
-     *  It seems that all this should be removed or at least disabled as long
-     *  as that code is not active.
-    std::vector<uint32_t> superElasticThresholds;
-     */
+    SparseMatrix elasticMatrix;
+    void evaluateFieldOperator();
+    SparseMatrix fieldMatrix;
+    SparseMatrix CARMatrix;
 
-    /* NOTE: the following three are not configuration parameters, but the
-     * result of introspection of the reaction lists. The results also depend
-     * on uMax.
-     * \bug It seems that the values are not always reset to false before making
-     *      them conditionally true during introspection. (That is needed when uMax
-     *      changes.)
+    AttachmentOperator attachmentOperator;
+
+    Matrix boltzmannMatrix;
+    // Support for ionization.
+    IonizationOperator ionizationOperator;
+
+    bool includeEECollisions;
+    ElectronElectronOperator eeOperator;
+
+    double CIEff{0.};
+
+    // use by spatial AND temporal growth
+    GrowthModelType growthModelType;
+
+    // code related to spatial growth
+    SparseMatrix fieldMatrixSpatGrowth;
+    SparseMatrix ionSpatialGrowthD;
+    SparseMatrix ionSpatialGrowthU;
+    Vector g_fieldSpatialGrowth;
+    double alphaRedEff{0.};
+
+    // code related to temporal growth
+    SparseMatrix fieldMatrixTempGrowth;
+    SparseMatrix ionTemporalGrowth;
+    Vector g_fieldTemporalGrowth;
+    double mixingParameter;
+    /** Tolerance settings.
      */
-    bool includeNonConservativeIonization{false};
-    bool includeNonConservativeAttachment{false};
-    bool hasSuperelastics{false};
+    double maxEedfRelError;
+    double maxPowerBalanceRelError;
+
+};
+
+class ElectronKineticsPrescribed : public ElectronKinetics
+{
+public:
+    ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions);
+protected:
+    virtual void doSolve();
+private:
+    /// shared constructor tasks
+    void initialize();
+    void evaluateFieldOperator();
+    void evaluateMatrix();
+    /// Use arguments g, Te, prepare to make this a free function
+    void evaluateEEDF(double g, double Te);
+    // calculation of the power terms
+    void evaluatePower();
+    // storage and calculation of the swarm parameters
+    void evaluateSwarmParameters();
+    /** The parameter that controls the shape of the eedf (1 Maxwellian,
+     *  2 Druyvesteyn)
+     */
+    const uint8_t shapeParameter;
 };
 
 } // namespace loki

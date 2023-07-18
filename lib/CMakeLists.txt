@@ -13,6 +13,7 @@ target_sources(loki-b PRIVATE
    ../source/json.cpp
    ../source/LinearAlgebra.cpp
    ../source/LookupTable.cpp
+   ../source/Operators.cpp
    ../source/Output.cpp
    ../source/Parse.cpp
    ../source/Power.cpp

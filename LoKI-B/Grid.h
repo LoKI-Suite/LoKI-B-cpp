@@ -119,9 +119,10 @@ public:
      */
     void updateMaxEnergy(double uMax);
 
-    /** Events
+    /** Event. This is mutable, so a new listener can be added to a constant
+     *  grid object.
      */
-    Event<> updatedMaxEnergy;
+    mutable Event<> updatedMaxEnergy;
 
     /** Smart grid parameters.
      */

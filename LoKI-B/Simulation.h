@@ -87,8 +87,8 @@ public:
 
 private:
 
-    void initializeJobs(const WorkingConditionsSetup &setup);
-    void initializeJobs(const json_type &cnf);
+    void initializeJobs(const WorkingConditionsSetup &setup, bool useReducedFieldParameter);
+    void initializeJobs(const json_type &cnf, bool useReducedFieldParameter);
 
     std::unique_ptr<ElectronKinetics> m_electronKinetics;
 

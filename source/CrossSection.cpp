@@ -9,7 +9,7 @@
 namespace loki
 {
 
-CrossSection::CrossSection(Grid *energyGrid, bool isElasticOrEffective, const json_type &cnf)
+CrossSection::CrossSection(const Grid *energyGrid, bool isElasticOrEffective, const json_type &cnf)
     : m_threshold(cnf.contains("threshold") ? cnf.at("threshold").get<double>() : 0.0),
     m_energyGrid(energyGrid),
     m_isElasticOrEffective(isElasticOrEffective),
@@ -19,7 +19,7 @@ CrossSection::CrossSection(Grid *energyGrid, bool isElasticOrEffective, const js
     energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
 
-CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
+CrossSection::CrossSection(double threshold, const Grid *energyGrid, bool isElasticOrEffective, std::istream &in)
     : m_threshold(threshold),
     m_energyGrid(energyGrid),
     m_isElasticOrEffective(isElasticOrEffective),
@@ -29,7 +29,7 @@ CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrE
     energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
 
-CrossSection::CrossSection(double threshold, Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
+CrossSection::CrossSection(double threshold, const Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                            Vector rawCrossSection)
     : m_threshold(threshold),
     m_energyGrid(energyGrid),

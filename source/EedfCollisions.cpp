@@ -373,7 +373,7 @@ void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
         .emplace_back(collision);
 }
 
-void EedfCollisionDataGas::checkElasticCollisions(State *electron, Grid *energyGrid)
+void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *energyGrid)
 {
     if (isDummy())
         return;
@@ -398,7 +398,7 @@ void EedfCollisionDataGas::checkElasticCollisions(State *electron, Grid *energyG
     }
 }
 
-CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(Grid *energyGrid)
+CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid *energyGrid)
 {
     /** \todo What happens / should happen if more than one effective collision
      *  is specified? Is that an input error? The code below only uses the first.
@@ -666,7 +666,7 @@ EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixtur
     return state;
 }
 
-void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, GasMixture &composition, Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, GasMixture &composition, const Grid *energyGrid,
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
@@ -766,7 +766,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, Ga
     }
 }
 
-void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture &composition, Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture &composition, const Grid *energyGrid,
                                                   bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");

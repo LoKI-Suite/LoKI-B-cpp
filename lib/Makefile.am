@@ -19,6 +19,7 @@ libloki_b_la_SOURCES = \
 	JobSystem.cpp \
 	LinearAlgebra.cpp \
 	LookupTable.cpp \
+	Operators.cpp \
 	Output.cpp \
 	Parse.cpp \
 	Power.cpp \

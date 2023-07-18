@@ -10,7 +10,7 @@
 namespace loki
 {
 
-EedfMixture::EedfMixture(Grid *grid, const ElectronKineticsSetup &setup,
+EedfMixture::EedfMixture(const Grid *grid, const ElectronKineticsSetup &setup,
                                const WorkingConditions *workingConditions)
 {
     loadCollisions(setup.LXCatFiles, grid);
@@ -64,7 +64,7 @@ EedfMixture::EedfMixture(Grid *grid, const ElectronKineticsSetup &setup,
     //        this->evaluateTotalAndElasticCS();
 }
 
-EedfMixture::EedfMixture(Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
+EedfMixture::EedfMixture(const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
 {
     if (cnf.contains("mixture"))
     {
@@ -113,7 +113,7 @@ EedfMixture::EedfMixture(Grid *grid, const json_type &cnf, const WorkingConditio
     //        this->evaluateTotalAndElasticCS();
 }
 
-void EedfMixture::loadCollisions(const std::vector<std::string> &files, Grid *energyGrid, bool isExtra)
+void EedfMixture::loadCollisions(const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
 #ifdef EMSCRIPTEN
