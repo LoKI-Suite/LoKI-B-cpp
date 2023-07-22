@@ -793,7 +793,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] - eeOperator.A[k] + eeOperator.B[k];
+            boltzmannMatrix(k, k) = baseDiag[k] - (eeOperator.A[k] + eeOperator.B[k]);
 
             if (k > 0)
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + eeOperator.A[k - 1];
