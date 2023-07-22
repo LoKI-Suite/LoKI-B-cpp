@@ -4,6 +4,7 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{bm}
+\usepackage{siunitx}
 % the next block is the modern way of achieving 'a4wide'
 \usepackage{geometry}
 \usepackage{layout}
@@ -20,6 +21,13 @@
 
 \input{../../doc/listings}
 \input{../../doc/loki_defs}
+
+% boldface matrix and vector
+\newcommand{\bmat}[1]{{\ensuremath{\bm {#1}}}}
+\newcommand{\bvec}[1]{{\ensuremath{\bm {#1}}}}
+% diag - make a diagonal matrix from a vector.
+\DeclareMathOperator{\diag}{diag}
+
 
 \bibliographystyle{unsrt}
 
@@ -270,6 +278,205 @@ has been fixed along the same lines.
 
 \end{framed}
 
+\subsection{The Electron-Electron Collision Operator}
+
+The electron-electron operator is defined by a flux function $G_{ee}(u)$ \cite[eqn. 6d]{Tejero2019},
+which is given by
+\begin{equation}
+	G_{ee}(u) = -2\nu_{ee}u^{3/2}\left[I(u)f(u) + J(u)\DERIV{f}{u}\right];
+\end{equation}
+in the text below that equation, the electron-electron collision frequency is given as
+\begin{align}
+	\nu_{ee} &= 4\pi\left(\frac{e^2}{4\pi\epsilon_0 m_e}\right)^2\frac{\ln\Lambda_c}{v^3}n_e, \\
+	\Lambda_c &= 12\pi\lambda_D^3n_e,
+\end{align}
+where $\lambda_D$ is the Debye length. We assume that the usual expression for electrons
+with ion shielding is assumed, in which case (NOTE: with $T^{si}_e$ in SI units $\si{K}$
+and $T_e$ the expression in electron-volt, used in LoKI-B)
+\begin{equation}
+	\lambda_D
+	= \sqrt{\frac{\epsilon_0kT^{si}_e}{n_e e^2}}
+	= \sqrt{\frac{\epsilon_0(kT^{si}_e/e)}{n_e e}}
+	= \sqrt{\frac{\epsilon_0T_e}{n_e e}}
+\end{equation}
+The `Spitzer integrals' $I(u)$ and $J(u)$ are not spelled out; references
+to \cite{Allis1956} and to \cite{Ferreira2000} are provided for these expressions.
+In \cite[eqns. 59--62]{Ferreira2000} we find:
+\begin{align}
+	I(u) &= \int\limits_0^u f(u')\sqrt{u'}\dd{u'}, \\
+	J(u) &= \frac{2}{3}\left(
+		\int\limits_0^u f(u')(u')^{3/2}\dd{u'}
+		+
+		u^{3/2}\int\limits_u^\infty f(u')\dd{u'}
+		\right).
+\end{align}
+Tejero et al. \cite{Tejero2019} provide a reference to \cite{Shkarofsky1966}. Note that in the latter source
+this material can be found around page 284, but that a speed-representation of the Boltzmann equation is used,
+rather than an energy representation.
+
+In the implementation of the Boltzmann equation in the LoKI-B code, the operator
+appears as a term \cite[eqn. 38]{Manual_2_2_0}
+\begin{equation}
+	-\frac{1}{N\gamma}\DERIV{G_{ee}(u)}{u}
+	=
+	\DERIV{}{u}\left(\frac{2\nu_{ee}u^{3/2}}{N\gamma}\left[I(u)f(u) + J(u)\DERIV{f}{u}\right]\right)
+	:=
+	\DERIV{}{u}\left(g_{ee}\left[I(u)f(u) + J(u)\DERIV{f}{u}\right]\right),
+\end{equation}
+with \cite[eqn. 37a]{Manual_2_2_0}
+\begin{equation}
+	g_{ee}(u) = \frac{2\nu_{ee}u^{3/2}}{N\gamma}.
+\end{equation}
+
+Let us first take a look at this factor $g_{ee}(u)$. Using its definition and the relation $v=\gamma\sqrt{u}$, we find
+\begin{equation}
+	g_{ee}(u)
+	= 8\pi\left(\frac{e^2}{4\pi\epsilon_0 m_e}\right)^2\frac{\ln\Lambda_c}{\gamma^4}\frac{n_e}{N}
+	= 8\pi\left(\frac{e^2}{4\pi\epsilon_0 m_e}\right)^2\left(\ln\Lambda_c\right)\frac{m_e^2}{4e^2}\frac{n_e}{N}
+	= \frac{e^2}{8\pi\epsilon_0^2}\frac{n_e}{N}\ln\Lambda_c.
+\end{equation}
+Observations:
+\begin{itemize}
+	\item In spite of the notation, $g_{ee}(u)$ does {\em not} depend on the energy $u$;
+		it depends only on the degree of ionization $n_e/N$ and on the Debye length
+		(which depends on the ratio $T_e/n_e$).
+	\item NOTE that the definition of $g_{ee}(u)$ differs from that of the other
+		$g_x(u)$, in the sense that it is {\em not} the coefficient of the advective
+		part of $G(u)$ (in energy space) --- see section \ref{sec:G_x,g_x}.
+		That coefficient is given by the product $g_{ee}(u)I(u)$.
+	\item In equations \cite[39a--b]{Manual_2_2_0} the suggestion is made once more that
+		$g_{ee}$ is energy-dependent. The fact that it is not allows this factor to
+		be taken outside of the $u$-differentation and is used to derive the results
+		for $A_n$ and $B_n$.
+	\item In the documents (manual and LoKI-B papers), the factor $g_{ee}(u)$ is introduced,
+		but not used consistently. In many places we find the expanded form
+		$\frac{2\nu_{ee}u^{3/2}}{N\gamma}$ (e.g. in \cite[eqn. 39a-g]{Manual_2_2_0}).
+		Using $g_{ee}$ instead simplifies the expressions considerably and makes clear
+		that this product does not depend on the energy $u$.
+\end{itemize}
+The discrete form of the electron-electron operator is defined in the second half of
+equation \cite[eqn. 38]{Manual_2_2_0} and is obtained as follows (see section
+\ref{sec:dGdu-disc} for a related discussion):
+\begin{equation}
+	\left.-\frac{1}{N\gamma}\DERIV{G_{ee}(u)}{u}\right|_n
+	\doteq
+	-\frac{1}{N\gamma \Delta u}\left(G_{ee}(u_{\phalf{n}})-G_{ee}(u_{\mhalf{n}})\right).
+\end{equation}
+Also the fluxes are approximated using a central-difference scheme,
+\begin{align}
+	-\frac{1}{N\gamma}G_{ee}(u_{\phalf{n}})
+		&= g_{ee}I(u_{\phalf{n}})\frac{f_{n+1}+f_{n}}{2}
+		+ g_{ee}J(u_{\phalf{n}})\frac{f_{n+1}-f_{n}}{\Delta u}, \\
+	-\frac{1}{N\gamma}G_{ee}(u_{\mhalf{n}})
+		&= g_{ee}I(u_{\mhalf{n}})\frac{f_{n}+f_{n-1}}{2}
+		+ g_{ee}J(u_{\mhalf{n}})\frac{f_{n}-f_{n-1}}{\Delta u}.
+\end{align}
+In order to write this in a more convenient form we define \cite[eqn. 39a--b]{Manual_2_2_0}
+\begin{align}
+	A_n &= -g_{ee}\frac{I(u_{\phalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\phalf{n}})}{(\Delta u)^2}, \\
+	B_n &= +g_{ee}\frac{I(u_{\mhalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\mhalf{n}})}{(\Delta u)^2}.
+\end{align}
+Then
+\begin{align}
+	-\frac{1}{N\gamma}G_{ee}(u_{\phalf{n}})\frac{1}{\Delta u}
+		&= B_{n+1}f_{n+1} - A_{n  }f_{n  }, \\
+	-\frac{1}{N\gamma}G_{ee}(u_{\mhalf{n}})\frac{1}{\Delta u}
+		&= B_{n  }f_{n  } - A_{n-1}f_{n-1}.
+\end{align}
+And for the electron-electron operator we find that
+\begin{equation}
+	\left.-\frac{1}{N\gamma}\DERIV{G_{ee}(u)}{u}\right|_n
+	\doteq A_{n-1}f_{n-1} - (A_n+B_n)f_n + B_{n+1}f_{n+1}.
+\end{equation}
+Let us now look at the evaluation of the arrays $A_n$ and $B_n$. Firstly, from the definitions
+of $I(u)$ and $J(u)$ we find that
+\begin{align}
+	I(u_{\phalf{n}})
+		&= \int\limits_0^{u_{\phalf{n}}} f(u)\sqrt{u}\dd{u}
+		\nonumber \\
+		&\doteq
+		\sum\limits_{i=0}^{n}f(u_i)\sqrt{u_i}\Delta u, \\
+	J(u_{\phalf{n}})
+		&= \frac{2}{3}\left(
+			\int\limits_0^{u_{\phalf{n}}} f(u)u^{3/2}\dd{u}
+			+
+			u_{\phalf{n}}^{3/2}\int\limits_{u_{\phalf{n}}}^\infty f(u)\dd{u}
+		\right)
+		\nonumber \\
+		&\doteq
+		\frac{2}{3}\left(
+			\sum\limits_{i=0}^{n}f(u_i)u_i^{3/2}\Delta u
+			+
+			u_{\phalf{n}}^{3/2}\sum\limits_{n+1}^\infty f(u_i)\Delta u
+		\right)
+\end{align}
+These expressions can be written as
+\begin{align}
+	\bvec{A} &=\bmat{a}\bvec{f}, \\
+	\bvec{B} &=\bmat{b}\bvec{f} \\
+\end{align}
+where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
+\begin{align}
+	a_{ij} &= g_{ee}\begin{cases}
+			-\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & i \leq j \\
+			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\phalf{i}}^{3/2}}{\Delta u} & i > j.
+		\end{cases}, \\
+	b_{ij} &= g_{ee}\begin{cases}
+			+\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & i \leq j-1 \\
+			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & i > j-1
+		\end{cases}. \\
+\end{align}
+TODO: discuss differences with the presentation in the manual.
+TODO: present the modifications to ensure the correct behaviour (no electrons created, the operator must
+also be zero for a Maxwellian $f$) In particular, find a reference for the modification $a_{ij}=\sqrt{a_{ij}a_{j-1,i+1}}$:
+I cannot find this in Rockwood, which is cited in the manual.
+
+\begin{framed}
+Code observations:
+\begin{itemize}
+	\item In the code (MATLAB and C++) the name \SRC{alpha} is used instead of \SRC{g_ee}
+		(see \SRC{Boltzmann.m} line 1385 in version 2.2.0; the same constant appears
+		a second time on line 2020, but this time the name \SRC{eeConstant} is used
+		instead of \SRC{alpha}.)
+	\item 	The usage of the name \SRC{alpha} probably has its roots in the paper of Rockwood
+		\cite[below eq. B1]{Rockwood1973}, but a direct comparison of this coefficient and
+		the equations in which it appears is complicated because of Rockwood's usage of the
+		Gaussian-CGS unit system (?), because he does {\em not} express energies in $eV$ and
+		because he considers an equation for the distribution function with the factor $\sqrt{u}$
+		included.
+		The result is that factors $e$ and $4\pi\epsilon_0$ are different here and there.
+		Hagelaar's $a$ \cite[eq. 37]{Hagelaar2005}
+		The SI expression is obtained by the Gaussian-CGS to SI substitutions
+		$e\rightarrow e/\sqrt{4\pi\epsilon}$ and by $\sqrt{2/m}\rightarrow \sqrt{2e/m}=\gamma$
+		in Rockwood's $\alpha$:
+		\[
+			\alpha_{\mbox{rockwood}} = \frac{2}{3}\pi e^4\sqrt{2/m}\ln\Lambda_D
+			\rightarrow
+			\frac{2}{3}\pi (e/\sqrt{4\pi\epsilon_0})^4\sqrt{2e/m}\ln\Lambda_D
+			=
+			\frac{1}{24}e^4/(\pi\epsilon_0^2)\gamma\ln\Lambda_D.
+		\]
+		BUG: WE SHOULD HAVE $e^2$ instead of $e^4$. There must be more conversion confusion.
+		Another factor 3 is produced because the functions $I(u)$ and $J(u)$ are used in LoKI-B,
+		rather than the functions $P(u)$ and $Q(u)$ that appear in \cite[below eq. B5]{Rockwood1973}.
+		When also adding the ionization degree $n_e/N$, and dividing by $\gamma$, the result
+		is LoKI-B's $g_{ee}$.
+	\item The SI-version of this $\alpha$ also appears in BOLSIG+ \cite[eq. 32-37]{Hagelaar2005};
+		these equations are based on the non-divergence-flux versions of Rockwood's equations
+		\cite[eq. B1--3]{Rockwood1973}.
+	\item TODO: Replace alpha in the code with \SRC{g_ee} to match the documentation and avoid confusion
+		with Rockwood's $\alpha$ and Hagelaar's $a$.
+	\item In the code, the argument of the Coulomb logarithm is expanded as (NOTE: $T_e$ is in $\si{eV}$
+		in LoKI-B):
+		\begin{equation}
+			\Lambda_c
+			= 12\pi\lambda_D^3n_e = 12\pi\left(\epsilon_0T_e/(n_ee)\right)^{3/2}n_e
+			= 12\pi\left(\epsilon_0 T_e/e\right)^{3/2}n_e^{-1/2}.
+		\end{equation}
+		TODO: improve the readability of these expressions by introducing \SRC{lambdaD}
+		as an intermediate variable and using the first expression for $\Lambda_c$.
+\end{itemize}
+\end{framed}
 
 \section{Discretization}
 \label{sec:discretization}
@@ -280,7 +487,7 @@ Boltzmann equation with a temporal growth term is written as
 \begin{equation}
   \frac{1}{N\gamma}\MEAN{\nu_{\mbox{eff}}}uf(u) + \frac{1}{N\gamma}\DERIV{G(u)}{u} = S(u).
 \end{equation}
-The equation with the spatial graowth model is similar, only the first term takes
+The equation with the spatial growth model is similar, only the first term takes
 a different form. The equation is subject to the normalization condition
 \begin{equation}
   \int\limits_0^\infty \sqrt{u}f(u)du=1.
@@ -334,6 +541,7 @@ prevents all upper diagonals to be allocated, in most cases only containing
 a single non-zero element due to the normalization condition.
 
 \subsection{Discretization of the Energy Transport Terms}
+\label{sec:dGdu-disc}
 
 The LoKI-B paper \cite{Tejero2019} discusses the numerical recipes in
 section 3.4. There it is stated that the finite-difference method of
@@ -646,6 +854,64 @@ must be controllable from the input file instead.
 
 Unit tests, checking results with reference data, comparing the MATLAB and C++
 versions, comparisons with BOLSIG+ output.
+
+\appendix
+
+\section{Transformation of the Electron-Electron Operator}
+
+WARNING: this section is a sketch and may be full of mistakes.
+For a lazy afternoon: check if it is useful to use the fact that
+\begin{equation}
+	\int\limits_0^u f(u')(u')^{k+\frachalf}\dd{u'}
+	=
+	\int\limits_0^\infty f(u')(u')^{k+\frachalf}\dd{u'}
+	-
+	\int\limits_u^\infty f(u')(u')^{k+\frachalf}\dd{u'}
+	=
+	<u^k>
+	-
+	\int\limits_u^\infty f(u')(u')^{k+\frachalf}\dd{u'}
+\end{equation}
+When applied to the first term of $J(u)$ this gives
+\begin{equation}
+	J(u)
+	= \frac{2}{3}\left(
+		<u>
+		-
+		\int\limits_u^\infty f(u')(u')^{3/2}\dd{u'}
+		+
+		u^{3/2}\int\limits_u^\infty f(u')\dd{u'}
+	\right)
+	= \frac{2}{3}\left(
+		<u>
+		-
+		\int\limits_u^\infty f(u')((u')^{3/2}-u^{3/2})\dd{u'}
+	\right),
+\end{equation}
+and note that the mean energy $<u>$ is available at the point of evaluation, where
+it is needed to calculate $T_e$, which is needed to calculate the Debye length.
+
+When applied to $I(u)$, the transformation yields
+\begin{align}
+	I(u) = 1 - \int\limits_u^\infty f(u')\sqrt{u'}\dd{u'}.
+\end{align}
+Substitution of the new expressions for $I(u)$ and $J(u)$ in the expressions for $A_n$
+and $B_n$ yields an integral that does not cover the entire energy grid,
+\begin{align}
+	A_n &= -\frac{g_{ee}}{\Delta u}\left(\frac{I(u_{\phalf{n}})}{2} - \frac{J(u_{\phalf{n}})}{\Delta u}\right)
+		\nonumber \\
+	&= -\frac{g_{ee}}{\Delta u}\left(
+		\frac{1}{2} - \frac{2}{3}\frac{<u>}{\Delta u}
+		+ \frac{1}{\Delta u}\int\limits_{u_{\phalf{n}}}^\infty f(u')\left(-\frac{\sqrt{u'}}{2} + \frac{2}{3\Delta u}((u')^{3/2}-u_{\phalf{n}}^{3/2})\right)\dd{u'}
+		\right),
+		\\
+	B_n &= +\frac{g_{ee}}{\Delta u}\left(\frac{I(u_{\mhalf{n}})}{2} + \frac{J(u_{\mhalf{n}})}{\Delta u}\right)
+		\nonumber \\
+	&= +\frac{g_{ee}}{\Delta u}\left(
+		\frac{1}{2} + \frac{2}{3}\frac{<u>}{\Delta u}
+		+ \frac{1}{\Delta u}\int\limits_{u_{\mhalf{n}}}^\infty f(u')\left(-\frac{\sqrt{u'}}{2} - \frac{2}{3\Delta u}((u')^{3/2}-u_{\mhalf{n}}^{3/2})\right)\dd{u'}
+		\right).
+\end{align}
 
 \bibliography{../../doc/reflist}
 
