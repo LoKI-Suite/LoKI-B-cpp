@@ -246,7 +246,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
 ElectronElectronOperator::ElectronElectronOperator()
 {
-    alphaEE=0.0;
+    g_ee=0.0;
 }
 
 void ElectronElectronOperator::initialize(const Grid& grid)

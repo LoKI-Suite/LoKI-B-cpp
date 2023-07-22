@@ -107,7 +107,7 @@ namespace loki {
         void initialize(const Grid& grid);
 	void updateABMatrices(const Grid& grid);
         void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
-        double alphaEE;
+        double g_ee;
         Matrix BAee;
         Vector A;
         Vector B;

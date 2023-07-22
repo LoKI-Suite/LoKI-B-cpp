@@ -389,8 +389,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (includeEECollisions)
     {
-        eeOperator.A = eeOperator.alphaEE / grid().du() * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = eeOperator.alphaEE / grid().du() * (eeOperator.BAee * eedf);
+        eeOperator.A = eeOperator.g_ee / grid().du() * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = eeOperator.g_ee / grid().du() * (eeOperator.BAee * eedf);
     }
 
     /** \todo The name is incorrect. This is not the integrand since it already includes
@@ -619,8 +619,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (includeEECollisions)
     {
-        eeOperator.A = eeOperator.alphaEE / grid().du() * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = eeOperator.alphaEE / grid().du() * (eeOperator.BAee * eedf);
+        eeOperator.A = eeOperator.g_ee / grid().du() * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = eeOperator.g_ee / grid().du() * (eeOperator.BAee * eedf);
     }
 
     const Vector integrandCI = (SI::gamma * grid().du())
@@ -785,7 +785,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
     double meanEnergy = grid().du() * cellsThreeOverTwo.dot(eedf);
     double Te = 2. / 3. * meanEnergy;
     double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-    double alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+    eeOperator.g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
 
     double ratioNew = 0.;
     Vector eedfNew = eedf;
@@ -801,8 +801,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
-        eeOperator.A = (alpha / grid().du()) * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = (alpha / grid().du()) * (eeOperator.BAee * eedf);
+        eeOperator.A = (eeOperator.g_ee / grid().du()) * (eeOperator.BAee.transpose() * eedf);
+        eeOperator.B = (eeOperator.g_ee / grid().du()) * (eeOperator.BAee * eedf);
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
@@ -864,12 +864,10 @@ void ElectronKineticsBoltzmann::solveEEColl()
         meanEnergy = grid().du() * cellsThreeOverTwo.dot(eedf);
         Te = 2. / 3. * meanEnergy;
         logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-        alpha = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+        eeOperator.g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
 
         iter++;
     }
-
-    eeOperator.alphaEE = alpha;
 
     std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
 }
@@ -911,7 +909,7 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 
     if (includeEECollisions)
     {
-        eeOperator.alphaEE = 0.;
+        eeOperator.g_ee = 0.;
         eeOperator.BAee.setZero(numCells, numCells);
         eeOperator.A.setZero();
         eeOperator.B.setZero();
