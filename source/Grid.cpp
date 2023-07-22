@@ -60,11 +60,16 @@ void Grid::SmartGridParameters::checkConfiguration() const
     }
 }
 
-Grid::Grid(const EnergyGridSetup &gridSetup)
-    : m_nCells(gridSetup.cellNumber),
-      m_du(gridSetup.maxEnergy/m_nCells),
-      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, gridSetup.maxEnergy)),
+Grid::Grid(unsigned nCells, double maxEnergy)
+    : m_nCells(nCells),
+      m_du(maxEnergy/m_nCells),
+      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, maxEnergy)),
       m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
+{
+}
+
+Grid::Grid(const EnergyGridSetup &gridSetup)
+    : Grid(gridSetup.cellNumber,gridSetup.maxEnergy)
 {
     const SmartGridSetup& sg = gridSetup.smartGrid;
     /* Try to set up the smartGrid only if any of the configuration
@@ -79,10 +84,7 @@ Grid::Grid(const EnergyGridSetup &gridSetup)
 }
 
 Grid::Grid(const json_type &cnf)
-    : m_nCells(cnf.at("cellNumber").get<unsigned>()),
-      m_du(cnf.at("maxEnergy").get<double>()/m_nCells),
-      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, cnf.at("maxEnergy"))),
-      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
+    : Grid(cnf.at("cellNumber").get<unsigned>(),cnf.at("maxEnergy").get<double>())
 {
     if (cnf.contains("smartGrid"))
     {

@@ -91,6 +91,7 @@ public:
 
     // constructorion and destruction:
 
+    Grid(unsigned nCells, double maxEnergy);
     explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
