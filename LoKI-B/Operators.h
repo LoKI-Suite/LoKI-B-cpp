@@ -105,6 +105,7 @@ namespace loki {
     public:
         ElectronElectronOperator();
         void initialize(const Grid& grid);
+	void updateABMatrices(const Grid& grid);
         void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
         double alphaEE;
         Matrix BAee;

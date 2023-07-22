@@ -255,6 +255,36 @@ void ElectronElectronOperator::initialize(const Grid& grid)
     B.setZero(grid.nCells());
 }
 
+void ElectronElectronOperator::updateABMatrices(const Grid& grid)
+{
+    BAee.setZero(grid.nCells(), grid.nCells());
+
+    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+    const Vector energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
+
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
+    {
+
+        for (Grid::Index i = 1; i <= j; ++i)
+            BAee(i, j) = energyArray[i];
+
+        const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
+
+        for (Grid::Index i = j + 1; i < grid.nCells(); ++i)
+            BAee(i, j) = value;
+    }
+
+    // detailed balance condition
+
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
+    {
+        for (Grid::Index i = 1; i < grid.nCells(); ++i)
+        {
+            BAee(i, j) = std::sqrt(BAee(i, j) * BAee(j + 1, i - 1));
+        }
+    }
+}
+
 void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
         power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
@@ -398,6 +428,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
             }
 
+            /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
             if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
                 includeNonConservativeIonization = true;
         }
