@@ -389,8 +389,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (includeEECollisions)
     {
-        eeOperator.A = eeOperator.g_ee / grid().du() * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = eeOperator.g_ee / grid().du() * (eeOperator.BAee * eedf);
+	eeOperator.updateAB(grid(),eedf);
     }
 
     /** \todo The name is incorrect. This is not the integrand since it already includes
@@ -619,8 +618,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (includeEECollisions)
     {
-        eeOperator.A = eeOperator.g_ee / grid().du() * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = eeOperator.g_ee / grid().du() * (eeOperator.BAee * eedf);
+	eeOperator.updateAB(grid(),eedf);
     }
 
     const Vector integrandCI = (SI::gamma * grid().du())
@@ -756,11 +754,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     /// \todo Make the remainder of this function a member of the eeOperator, passing the boltzmannMatrix as arument?
 
-    const double e = Constant::electronCharge;
-    const double e0 = Constant::vacuumPermittivity;
     const double ne = workingConditions->electronDensity();
     const double n0 = workingConditions->gasDensity();
-
 
     // Storing the initial diagonals of the matrix in three separate vectors.
     // This allows us to skip the usage of 'matrixAux', saving a good amount of
@@ -780,12 +775,12 @@ void ElectronKineticsBoltzmann::solveEEColl()
     }
 
     eeOperator.updateABMatrices(grid());
-    const Vector cellsThreeOverTwo = grid().getCells().cwiseProduct(grid().getCells().cwiseSqrt());
-
-    double meanEnergy = grid().du() * cellsThreeOverTwo.dot(eedf);
-    double Te = 2. / 3. * meanEnergy;
-    double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-    eeOperator.g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+    /** \todo Should this not be called inside the !hasConverged loop?
+     *  g_ee depends on the mean energy, which depends on the EEDF. Or
+     *  is there a special reason why <u> does not change during these
+     *  iterations (because ee-collisions do not change the power, perhaps)?
+     */
+    eeOperator.update_g_ee(grid(),eedf,ne,n0);
 
     double ratioNew = 0.;
     Vector eedfNew = eedf;
@@ -801,8 +796,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
-        eeOperator.A = (eeOperator.g_ee / grid().du()) * (eeOperator.BAee.transpose() * eedf);
-        eeOperator.B = (eeOperator.g_ee / grid().du()) * (eeOperator.BAee * eedf);
+	eeOperator.updateAB(grid(),eedf);
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
@@ -861,11 +855,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
             }
         }
 
-        meanEnergy = grid().du() * cellsThreeOverTwo.dot(eedf);
-        Te = 2. / 3. * meanEnergy;
-        logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-        eeOperator.g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
-
+        eeOperator.update_g_ee(grid(),eedf,ne,n0);
         iter++;
     }
 

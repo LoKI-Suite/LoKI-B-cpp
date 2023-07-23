@@ -106,6 +106,14 @@ namespace loki {
         ElectronElectronOperator();
         void initialize(const Grid& grid);
 	void updateABMatrices(const Grid& grid);
+	void update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0);
+	/** updateAB requires that updateABMatrices and update_g_ee have been called
+	 *  to set up BAee and g_ee.
+	 *  \todo Should update_g_ee not always be called before updateAB is called,
+	 *  since Te may have changed. At present this is not the case. Check the
+	 *  users of this code.
+	 */
+	void updateAB(const Grid& grid, const Vector& eedf);
         void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
         double g_ee;
         Matrix BAee;
