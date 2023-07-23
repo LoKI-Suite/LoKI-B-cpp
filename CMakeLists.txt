@@ -2,11 +2,101 @@ cmake_minimum_required(VERSION 3.14)
 project(loki_cpp)
 file(STRINGS "VERSION.txt" PROJECT_VERSION)
 
+#Some Utility macros and functions
+include(CMake/LoKIUtilities.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
 
 # --- Compiler flags --- #
+
+# Adopt cmake policy 0092:
+# do not ad /W3 by default for MSVC (and Intel on Windows?)
+# since that gets overridden by /W4, which causes a warning
+# for every file being compiled.
+cmake_policy(SET CMP0092 NEW)
+
+option(ALL_WARNINGS "-DALL_WARNINGS=0|1 : Show all warnings" off)
+if (MSVC)
+    # warning level 4
+    loki_msvc_cxxflags(/W4)
+    if(NOT ALL_WARNINGS)
+        #disable some valid, but perhaps not so interesting warnings
+        #disable warning C4100: "unreferenced formal parameter"
+        loki_msvc_cxxflags(/wd4100)
+        #disable warning C4244: "conversion from 'X' to 'Y', possible loss of data"
+        loki_msvc_cxxflags(/wd4244)
+        #disable warning C4267: "'return': conversion from 'size_t' to 'unsigned int', possible loss of data"
+        loki_msvc_cxxflags(/wd4267)
+        #disable warning C4996: 'XXX': This function or variable may be unsafe.
+        loki_msvc_cxxflags(/wd4996)
+        #disable warning C4389: '==': signed/unsigned mismatch
+        loki_msvc_cxxflags(/wd4389)
+	    #disable warning C4127: conditional expression is constant
+        loki_msvc_cxxflags(/wd4127)
+        #disable warning C4459: declaration of 'attr' hides global declaration
+        loki_msvc_cxxflags(/wd4459)
+        #disable warning C4702: unreachable code
+        #note: this is triggered by the implementation of plGET_SAME_UNITS
+        #in plmathparser/unit.h. Let's see if that can be written in a way
+        #that allows us to enable this warning again.
+        loki_msvc_cxxflags(/wd4702)
+
+        #Some libraries get complaints: fatal error C1128: number of sections
+        #exceeded object file format limit: compile with /bigobj
+        #We have seen this before also on mxe builds. /bigobj removes this warning
+        #TODO: find out which libraries are exactly the problematic ones, and apply
+        #this flag on a target level.
+        loki_msvc_cxxflags(/bigobj)
+    endif()
+else()
+    # lots of warnings
+    loki_ccxxflags(-Wall)
+    if(ALL_WARNINGS)
+        loki_ccxxflags(-Wextra)
+    else()
+        #disable some valid, but perhaps not so interesting warnings
+        loki_ccxxflags(-Wno-unused-parameter)
+        #loki_ccxxflags(-Wno-unused-parameter -Werror=maybe-uninitialized)
+    endif()
+
+    #Turn some warnings into errors, copied from configure.ac
+    loki_cxxflags(-Wall)
+    # disabled because of sloppiness in Eigen-3.4.0 and SuperLU:
+    # loki_cxxflags(-Werror=unused-but-set-parameter)
+    loki_cxxflags(-Werror=return-type)
+    # TODO: See if this can be enabled
+    loki_cxxflags(-Werror=ignored-attributes)
+    loki_cxxflags(-Werror=overloaded-virtual)
+    loki_cxxflags(-Werror=non-virtual-dtor)
+    # Disabled because of Eigen/SuperLU
+    # loki_cxxflags(-Werror=unused-variable)
+    loki_cxxflags(-Werror=unused-result)
+    loki_cxxflags(-Werror=ignored-qualifiers)
+    # Disable as long as wx-3.0 is still used, that has problems with this:
+    # loki_cxxflags(-Werror=zero-as-null-pointer-constant)
+    loki_cxxflags(-Werror=misleading-indentation)
+    loki_cxxflags(-Werror=reorder)
+    # disabled, not supported by gcc 7.5.0:
+    # loki_cxxflags(-Werror=cast-function-type)
+    loki_cxxflags(-Werror=type-limits)
+    loki_cxxflags(-Werror=missing-field-initializers)
+    loki_cxxflags(-Werror=vla)
+    loki_cxxflags(-Werror=invalid-pch)
+    #loki_cxxflags(-Werror=shadow=local)
+    #loki_cxxflags(-Wshadow=local)
+    # We treat APPLE as a subset of non MSVC
+    if(APPLE)
+        # Disabled because boost generates a lot of these warnings
+        # loki_cxxflags(-Werror=undef)
+        add_link_options(LINKER:-undefined,error)
+    else()
+        loki_cxxflags(-Werror=undef)
+        add_link_options(LINKER:-no-undefined)
+    endif()
+endif()
+
 
 if(MSVC)
     message(STATUS "Using MSVC compiler")
