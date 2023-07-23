@@ -160,7 +160,7 @@ inline void reduce(double *A, uint32_t first, const uint32_t second, const uint3
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (int j = start + 1; j < n; ++j)
+    for (uint32_t j = start + 1; j < n; ++j)
     {
         A[j * n + second] -= ratio * A[j * n + first];
     }
