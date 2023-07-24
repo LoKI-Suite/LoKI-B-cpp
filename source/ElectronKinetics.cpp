@@ -545,10 +545,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         /** \todo See the notes just above this loop for a note about the discontinuity.
          */
-        const double discriminant = muE * muE - 4 * CIEffNew * ND;
+        const double discriminant_new = muE * muE - 4 * CIEffNew * ND;
 
         alphaRedEffOld = alphaRedEffNew;
-        alphaRedEffNew = (discriminant < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
+        alphaRedEffNew = (discriminant_new < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant_new)) / (2 * ND);
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
