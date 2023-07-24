@@ -37,18 +37,6 @@ if (MSVC)
         loki_msvc_cxxflags(/wd4127)
         #disable warning C4459: declaration of 'attr' hides global declaration
         loki_msvc_cxxflags(/wd4459)
-        #disable warning C4702: unreachable code
-        #note: this is triggered by the implementation of plGET_SAME_UNITS
-        #in plmathparser/unit.h. Let's see if that can be written in a way
-        #that allows us to enable this warning again.
-        loki_msvc_cxxflags(/wd4702)
-
-        #Some libraries get complaints: fatal error C1128: number of sections
-        #exceeded object file format limit: compile with /bigobj
-        #We have seen this before also on mxe builds. /bigobj removes this warning
-        #TODO: find out which libraries are exactly the problematic ones, and apply
-        #this flag on a target level.
-        loki_msvc_cxxflags(/bigobj)
     endif()
 else()
     # lots of warnings
@@ -66,7 +54,6 @@ else()
     # disabled because of sloppiness in Eigen-3.4.0 and SuperLU:
     # loki_cxxflags(-Werror=unused-but-set-parameter)
     loki_cxxflags(-Werror=return-type)
-    # TODO: See if this can be enabled
     loki_cxxflags(-Werror=ignored-attributes)
     loki_cxxflags(-Werror=overloaded-virtual)
     loki_cxxflags(-Werror=non-virtual-dtor)
@@ -74,8 +61,7 @@ else()
     # loki_cxxflags(-Werror=unused-variable)
     loki_cxxflags(-Werror=unused-result)
     loki_cxxflags(-Werror=ignored-qualifiers)
-    # Disable as long as wx-3.0 is still used, that has problems with this:
-    # loki_cxxflags(-Werror=zero-as-null-pointer-constant)
+    loki_cxxflags(-Werror=zero-as-null-pointer-constant)
     loki_cxxflags(-Werror=misleading-indentation)
     loki_cxxflags(-Werror=reorder)
     # disabled, not supported by gcc 7.5.0:
@@ -84,8 +70,9 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
-    #loki_cxxflags(-Werror=shadow=local)
-    #loki_cxxflags(-Wshadow=local)
+    #TODO change into -Werror=shadow after fixing numerous local/member data
+    #shadowing violations in the code:
+    loki_cxxflags(-Werror=shadow=local)
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
