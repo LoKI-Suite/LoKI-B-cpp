@@ -144,15 +144,15 @@ void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, 
             {
                 // expr is not a number. We treat is a function (maybe with arguments).
                 static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
-                std::smatch m;
-                if (!std::regex_match(expr, m, reFuncArgs))
+                std::smatch fm;
+                if (!std::regex_match(expr, fm, reFuncArgs))
                 {
                     throw std::runtime_error("Could not parse function "
                         "name and argument list from string '"
                         + expr + "'.");
                 }
-                const std::string functionName = m.str(1);
-                const std::string argumentString = m.str(2);
+                const std::string functionName = fm.str(1);
+                const std::string argumentString = fm.str(2);
 
                 // create an argument list for the function (possibly empty)
                 std::vector<double> arguments;
@@ -161,21 +161,21 @@ void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, 
                      it != std::sregex_iterator(); ++it)
                 {
                     const std::string arg{it->str(1)};
-                    double value;
-                    if (Parse::getValue(arg, value))
+                    double pvalue;
+                    if (Parse::getValue(arg, pvalue))
                     {
-                        // value set by getValue
+                        // pvalue set by getValue
                     }
                     else if (workingConditions->findParameter(arg))
                     {
-                        value = workingConditions->getParameter(arg);
+                        pvalue = workingConditions->getParameter(arg);
                     }
                     else
                     {
                         throw std::runtime_error("Argument '" + arg + "' is neither a numerical "
-                                    "value, nor a known parameter name.");
+                                    "pvalue, nor a known parameter name.");
                     }
-                    arguments.emplace_back(value);
+                    arguments.emplace_back(pvalue);
                 }
                 PropertyFunctions::callByName(functionName, states, arguments, propertyType);
             }
