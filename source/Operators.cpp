@@ -246,7 +246,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
 ElectronElectronOperator::ElectronElectronOperator()
 {
-    alphaEE=0.0;
+    g_ee=0.0;
 }
 
 void ElectronElectronOperator::initialize(const Grid& grid)
@@ -255,8 +255,76 @@ void ElectronElectronOperator::initialize(const Grid& grid)
     B.setZero(grid.nCells());
 }
 
+void ElectronElectronOperator::updateABMatrices(const Grid& grid)
+{
+    BAee.setZero(grid.nCells(), grid.nCells());
+
+    /* 1. Calculate a_nm/g_ee (equation 39f from the 2_2_0 manual).
+     * This is the part right of the curly brace, but with the minus sign
+     * that appears at the start of the expression added.
+     */
+
+    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+    const Vector energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
+
+    /** \todo It appears that we are setting up a^T here, instead of a.
+     *  You could also say that we are setting up b here, since b = a^T
+     *  is assumed later on. But just setting up a first seems to bring
+     *  this closer to the documentation.
+     *  \todo change the name. Just call this 'a', instead of 'BAee',
+     *  now that this has become a member of ElectronElectronOperator.
+     */
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
+    {
+
+        for (Grid::Index i = 1; i <= j; ++i)
+            BAee(i, j) = energyArray[i];
+
+        const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
+        
+        for (Grid::Index i = j + 1; i < grid.nCells(); ++i)
+            BAee(i, j) = value;
+    }
+
+    // detailed balance condition
+
+    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
+    {
+        for (Grid::Index i = 1; i < grid.nCells(); ++i)
+        {
+            BAee(i, j) = std::sqrt(BAee(i, j) * BAee(j + 1, i - 1));
+        }
+    }
+}
+
+void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0)
+{
+    const double e = Constant::electronCharge;
+    const double e0 = Constant::vacuumPermittivity;
+    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+
+    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
+    double Te = 2. / 3. * meanEnergy;
+    double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
+    g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+}
+
+void ElectronElectronOperator::updateAB(const Grid& grid, const Vector& eedf)
+{
+        /** \todo Should .transpose() not be applied to the 2nd expression instead of the first?
+         *  Also see the note about a^T vs. a above. That explains the lines below. Is there a
+         *  reason to do things this way?
+         */
+        A = (g_ee / grid.du()) * (BAee.transpose() * eedf);
+        B = (g_ee / grid.du()) * (BAee * eedf);
+}
+
 void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
+        /** \todo One du() comes from the integration, together with eedf).
+         *  It feels odd that the second is not part of the definitions of A and B:
+         *  check why this is not the case.
+         */
         power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
         //std::cout << "EE POWER: " << power << std::endl;
 }
@@ -398,6 +466,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
             }
 
+            /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
             if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
                 includeNonConservativeIonization = true;
         }
