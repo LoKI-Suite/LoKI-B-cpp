@@ -303,12 +303,12 @@ The `Spitzer integrals' $I(u)$ and $J(u)$ are not spelled out; references
 to \cite{Allis1956} and to \cite{Ferreira2000} are provided for these expressions.
 In \cite[eqns. 59--62]{Ferreira2000} we find:
 \begin{align}
-	I(u) &= \int\limits_0^u f(u')\sqrt{u'}\dd{u'}, \\
+	I(u) &= \int\limits_0^u f(u')\sqrt{u'}\dd{u'}, \label{eq:I} \\
 	J(u) &= \frac{2}{3}\left(
 		\int\limits_0^u f(u')(u')^{3/2}\dd{u'}
 		+
 		u^{3/2}\int\limits_u^\infty f(u')\dd{u'}
-		\right).
+		\right). \label{eq:J}
 \end{align}
 Tejero et al. \cite{Tejero2019} provide a reference to \cite{Shkarofsky1966}. Note that in the latter source
 this material can be found around page 284, but that a speed-representation of the Boltzmann equation is used,
@@ -322,6 +322,7 @@ appears as a term \cite[eqn. 38]{Manual_2_2_0}
 	\DERIV{}{u}\left(\frac{2\nu_{ee}u^{3/2}}{N\gamma}\left[I(u)f(u) + J(u)\DERIV{f}{u}\right]\right)
 	:=
 	\DERIV{}{u}\left(g_{ee}\left[I(u)f(u) + J(u)\DERIV{f}{u}\right]\right),
+	\label{eq:-1/NgammadGee/du}
 \end{equation}
 with \cite[eqn. 37a]{Manual_2_2_0}
 \begin{equation}
@@ -393,8 +394,7 @@ of $I(u)$ and $J(u)$ we find that
 \begin{align}
 	I(u_{\phalf{n}})
 		&= \int\limits_0^{u_{\phalf{n}}} f(u)\sqrt{u}\dd{u}
-		\nonumber \\
-		&\doteq
+		\doteq
 		\sum\limits_{i=0}^{n}f(u_i)\sqrt{u_i}\Delta u, \\
 	J(u_{\phalf{n}})
 		&= \frac{2}{3}\left(
@@ -426,55 +426,85 @@ where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & i > j-1
 		\end{cases}. \\
 \end{align}
-TODO: discuss differences with the presentation in the manual.
-TODO: present the modifications to ensure the correct behaviour (no electrons created, the operator must
-also be zero for a Maxwellian $f$) In particular, find a reference for the modification $a_{ij}=\sqrt{a_{ij}a_{j-1,i+1}}$:
-I cannot find this in Rockwood, which is cited in the manual.
+Three more modifications are made (only sketched in the manual). A reference to Rockwood \cite{Rockwood1973}
+is provided for these steps:
+TODO: fill in the details, these are not provided in the manual or LoKI-B paper. The details
+and notation deviate from Rockwood's paper, which has most of them.
+\begin{itemize}
+    \item Energy conservation for a closed system with only electron-electron collisions is
+	only respected numerically if $a_{ij}=b_{ji}$. The equivalents of these matrices in the
+	text of Rokwood appear to be $A$ and $B$ (below eq. B7) and below B8 we see the statement
+	$A=B^T$.
+	\begin{enumerate}
+		\item TODO: Check that $A$ and $B$ in Rockwood correspond to $a_{ij}$ and $b_{ij}$
+		in LoKI-B. The expressions are written quite differently.
+		\item Show that the continuous expression for the flux is consistent with
+			this relation between $a$ and $b$; that the modification to use
+			$a_{ji}$ instead of $b_{ij}$ is allowed within the accuracy of the
+			discretization, that it does not change the physics.
+	\end{enumerate}
+    \item The flux boundary conditions $G(0)=G(u_{\mbox{{max}}})$ are imposed on the system.
+	The manual states that this means that ``$g(x_{1/2})=g_{x_{{\cal N}+1/2}}=0$ and $A_0=A_{\cal N}=B_1=B_{{\cal N}+1}=0$'',
+	where ${\cal N}$ is the number of cells.
+	\begin{enumerate}
+		\item How do these indices translate from MATLAB to C++? What is the meaning of index
+			0 (of $A_0$) in MATLAB, which has 1-based arrays? That is not represented
+			(does not exist). The MATLAB code (\SRC{ElectronKinetics.m} line 1991 has
+			comment {\em ``because of power conservation, terms on the last row (cellNumber,:)
+			and on the first column (:,1) are zero''}.
+			NOTE: In Rockwood this change is given in equation B10.
+	\end{enumerate}
+    \item The requirement that $\dd{G_{ee}}/\dd{u}=0$ if $f$ is a Maxwellian distribution function
+	is ensured by setting $a_{ij}=\sqrt{a_{ij}a_{j-1,i+1}}$.
+	\begin{enumerate}
+		\item I (JvD) did not find this expression in Rockwood's paper. This requirement is
+			discused in appendix B of that paper (eq. 11), which is quite different,
+			is says:
+			\[
+				A_{jk}n_jn_k = A_{k-1,j+1}n_{k-1}n_{j+1} = B_{j+1,k-1}n_{k-1}n_{j+1}
+			\]
+			(Here $n_j=n_e\sqrt{u_j}f_j$ and the distribution is Maxwellian.)
+			Rockwood's explanation is clear (see the discussion leading to eq. B13),
+			but he does not state {\em how} he achieves this condition.
+			\begin{enumerate}
+				\item TODO: Explain the expression and provide a reference.
+					Also here: make clear that the modification is valid
+					within the accuracy of the discretization and show
+					that it does not change the physics.
+					In particular the order of the application of the
+					first and last modifications needs attention. In
+					the expression above, $A_{ij}$ is changed,
+					but since we assume $B=A^T$, we also change $B$
+					this way.  A detailed explanation is needed.
+			\end{enumerate}
+	\end{enumerate}
+\end{itemize}
 
 \begin{framed}
 Code observations:
 \begin{itemize}
-	\item In the code (MATLAB and C++) the name \SRC{alpha} is used instead of \SRC{g_ee}
-		(see \SRC{Boltzmann.m} line 1385 in version 2.2.0; the same constant appears
-		a second time on line 2020, but this time the name \SRC{eeConstant} is used
-		instead of \SRC{alpha}.)
-	\item 	The usage of the name \SRC{alpha} probably has its roots in the paper of Rockwood
-		\cite[below eq. B1]{Rockwood1973}, but a direct comparison of this coefficient and
-		the equations in which it appears is complicated because of Rockwood's usage of the
-		Gaussian-CGS unit system (?), because he does {\em not} express energies in $eV$ and
-		because he considers an equation for the distribution function with the factor $\sqrt{u}$
-		included.
-		The result is that factors $e$ and $4\pi\epsilon_0$ are different here and there.
-		Hagelaar's $a$ \cite[eq. 37]{Hagelaar2005}
-		The SI expression is obtained by the Gaussian-CGS to SI substitutions
-		$e\rightarrow e/\sqrt{4\pi\epsilon}$ and by $\sqrt{2/m}\rightarrow \sqrt{2e/m}=\gamma$
-		in Rockwood's $\alpha$:
-		\[
-			\alpha_{\mbox{rockwood}} = \frac{2}{3}\pi e^4\sqrt{2/m}\ln\Lambda_D
-			\rightarrow
-			\frac{2}{3}\pi (e/\sqrt{4\pi\epsilon_0})^4\sqrt{2e/m}\ln\Lambda_D
-			=
-			\frac{1}{24}e^4/(\pi\epsilon_0^2)\gamma\ln\Lambda_D.
-		\]
-		BUG: WE SHOULD HAVE $e^2$ instead of $e^4$. There must be more conversion confusion.
-		Another factor 3 is produced because the functions $I(u)$ and $J(u)$ are used in LoKI-B,
-		rather than the functions $P(u)$ and $Q(u)$ that appear in \cite[below eq. B5]{Rockwood1973}.
-		When also adding the ionization degree $n_e/N$, and dividing by $\gamma$, the result
-		is LoKI-B's $g_{ee}$.
-	\item The SI-version of this $\alpha$ also appears in BOLSIG+ \cite[eq. 32-37]{Hagelaar2005};
-		these equations are based on the non-divergence-flux versions of Rockwood's equations
-		\cite[eq. B1--3]{Rockwood1973}.
-	\item TODO: Replace alpha in the code with \SRC{g_ee} to match the documentation and avoid confusion
-		with Rockwood's $\alpha$ and Hagelaar's $a$.
-	\item In the code, the argument of the Coulomb logarithm is expanded as (NOTE: $T_e$ is in $\si{eV}$
-		in LoKI-B):
-		\begin{equation}
-			\Lambda_c
-			= 12\pi\lambda_D^3n_e = 12\pi\left(\epsilon_0T_e/(n_ee)\right)^{3/2}n_e
-			= 12\pi\left(\epsilon_0 T_e/e\right)^{3/2}n_e^{-1/2}.
-		\end{equation}
-		TODO: improve the readability of these expressions by introducing \SRC{lambdaD}
-		as an intermediate variable and using the first expression for $\Lambda_c$.
+  \item In the MATLAB code, the name \SRC{alpha} is used for the factor
+    $(n_e/N)e^2/(8\pi\epsilon_0^2)\ln\Lambda_D$, instead of \SRC{g_ee}
+    (see \SRC{Boltzmann.m} line 1385 in version 2.2.0). The same constant appears
+    a second time on line 2078, but this time the name \SRC{eeConstant} is used
+    instead of \SRC{alpha}.)
+    \begin{enumerate}
+      \item In the C++ code, the variable \SRC{alpha} has been renamed to \SRC{g_ee}
+        so the code matches the documentation.
+      \item This also avoids confusion with Rockwood's constant $\alpha$,
+        see appendix \ref{sec:RockwoodEE}, which is closely related to
+        $g_{ee}$, but not identical.
+    \end{enumerate}
+  \item In the MATLAB code, the argument of the Coulomb logarithm is expanded as
+    (NOTE: $T_e$ is in $\si{eV}$ in LoKI-B):
+    \begin{equation}
+      \Lambda_c
+      = 12\pi\lambda_D^3n_e = 12\pi\left(\epsilon_0T_e/(n_ee)\right)^{3/2}n_e
+      = 12\pi\left(\epsilon_0 T_e/e\right)^{3/2}n_e^{-1/2}.
+    \end{equation}
+    In the C++ code, the readability of these expressions has been improved by
+    introducing \SRC{lambdaD} as an intermediate variable and using the first
+    expression for $\Lambda_c$.
 \end{itemize}
 \end{framed}
 
@@ -547,7 +577,7 @@ The LoKI-B paper \cite{Tejero2019} discusses the numerical recipes in
 section 3.4. There it is stated that the finite-difference method of
 Rockwood \cite[appendix A]{Rockwood1973} is used. The relation between Rockwood's
 discretization strategy and the one adopted in LoKI-B is not immediately
-clear, since Rockwoord provides explicit expression for the two terms
+clear, since Rockwood provides explicit expression for the two terms
 he considers (field and elastic terms), not the general recipe.
 
 Rockwood approximates $\dd{G(u)}/\dd{u}$ in the cell points $k$ as
@@ -857,7 +887,107 @@ versions, comparisons with BOLSIG+ output.
 
 \appendix
 
-\section{Transformation of the Electron-Electron Operator}
+\section{More on the Electron-Electron Operator}
+
+\label{sec:RockwoodEE}
+
+\subsection{Rockwood's Presentation}
+
+Rockwood's paper \cite{Rockwood1973} considers a distribution function $n(\epsilon,t)$ which
+is defined such that $n(\epsilon,t)\dd{\epsilon}$ is the number of electrons in the energy
+interval $\dd{\epsilon}$.
+The rate of change of $n$ for
+a system with only electron collisions takes the form (eq. B5)
+\begin{equation}
+	\PDEV{n}{t} = -\PDEV{J_{ee}}{\epsilon},
+	\label{rockwood:dn/dt-ee}
+\end{equation}
+where the flux in energy space is given by
+\begin{equation}
+	J_{ee}
+	= \alpha\left[P\left(\frac{n}{2\epsilon}-\PDEV{n}{\epsilon}\right) + Qn\right].
+	\label{rockwood:J_ee}
+\end{equation}
+The functions $P(\epsilon,t)$ and $Q(\epsilon,t)$ are defined below eq. B5 and read
+\begin{align}
+  P(\epsilon,t) &= 2\epsilon^{-1/2}\int\limits_0^\epsilon xn(x,t)\dd{x} + 2\epsilon\int\limits_\epsilon^\infty x^{-1/2}n(x,t)\dd{x}, \\
+  Q(\epsilon,t) &= 3\epsilon^{-1/2}\int\limits_0^\epsilon  n(x,t)\dd{x}.
+\end{align}
+and $\alpha$ is given below equation B1,
+\begin{equation}
+	\alpha = \frac{2}{3}\pi e_G^4\sqrt{\frac{2}{m_e}}\ln\Lambda_D.
+\end{equation}
+Here we have added the suffix $G$ to $e$ to emphasize that the charge is expressed in
+Gau\ss ian units. A translation to the SI unit system is achieved by the
+substitution\footnote{See for example \url{https://en.wikipedia.org/wiki/Gaussian_units}.}
+$e_G = e/\sqrt{4\pi\epsilon}$, which results in
+\begin{equation}
+	\alpha
+	= \frac{2}{3}\pi \left(\frac{e}{\sqrt{4\pi\epsilon_0}}\right)^4\sqrt{\frac{2}{m_e}}\ln\Lambda_D
+	= \frac{1}{24}\frac{e^4}{\pi\epsilon_0^2}\sqrt{\frac{2}{m_e}}\ln\Lambda_D.
+\end{equation}
+The function $n(\epsilon,t)$ is related to the distribution function $f_\epsilon(\epsilon,t)$ that
+is used in LoKI-B by the relation
+\begin{equation}
+	n(\epsilon,t) = n_e(t)\sqrt{\epsilon}f_\epsilon(\epsilon,t)
+	\label{eqn:n-rockwood}
+\end{equation}
+Substitution of \eqref{eqn:n-rockwood} in the expressions for $P$, $Q$ gives
+\begin{align}
+  P(\epsilon,t)
+	&= \frac{3n_e}{\sqrt{\epsilon}}\frac{2}{3}\left(\int\limits_0^\epsilon x^{3/2}f_\epsilon(x,t)\dd{x} + \epsilon^{3/2}\int\limits_\epsilon^\infty f_\epsilon(x,t)\dd{x}\right)
+	= \frac{3n_e}{\sqrt{\epsilon}}J(\epsilon,t), \\
+  Q(\epsilon,t)
+	&= \frac{3n_e}{\sqrt{\epsilon}}\int\limits_0^\epsilon  \sqrt{x}f_\epsilon(x,t)\dd{x}
+	= \frac{3n_e}{\sqrt{\epsilon}}I(\epsilon,t),
+\end{align}
+where we have used the definitions of the functions $I$ and $J$ from equations \eqref{eq:I} and \eqref{eq:J}.
+Finally, substitution of these results in the equations for $J_{ee}$ and the evolution of $n$, yields
+\begin{align}
+  J_{ee} &= 3\alpha n_e^2\left[-I(\epsilon)f_\epsilon - J(\epsilon)\PDEV{f_\epsilon}{\epsilon}\right], \\
+  \sqrt{\epsilon}\PDEV{n_ef_\epsilon}{t} &= -\PDEV{J_{ee}}{\epsilon}.
+\end{align}
+Note that $n_e$ could be taken outside of the time-derivative: it is constant, since
+we have assumed that only (elastic) electron collisions can happen.
+
+The last step is to cater to LoKI's usage of $\si{eV}$ as unit. To this end we
+use $\epsilon = u(\epsilon)e$ and $f_\epsilon(\epsilon)\sqrt{\epsilon}\dd{\epsilon}$,
+from which it follows that $f_u(u)\sqrt{u}\dd{u} \implies f_\epsilon(\epsilon) = f_u(u)e^{-3/2}$.
+Furthermore, $I(u)=I(\epsilon)$ and $J(u)=J(\epsilon)/e$. Substitution yields the
+equations using LoKI-B quantities (in $\si{eV}$),
+\begin{align}
+  J_{ee}(u) &= 3\alpha n_e^2 e^{-3/2}\left[-I(u)f_\epsilon - J(u)\PDEV{f_u}{u}\right], \\
+  \PDEV{f_u}{t} &= -\frac{1}{n_e\sqrt{u}}\PDEV{J_{ee}}{u},
+\end{align}
+The first expression leads us to the introduction of
+\[
+	\alpha_{eV}
+	:= e^{-3/2}\alpha
+	= \frac{1}{24}\frac{e^2}{\pi\epsilon_0^2}\sqrt{\frac{2e}{m_e}}\ln\Lambda_D
+	= \frac{1}{24}\frac{e^2}{\pi\epsilon_0^2}\gamma\ln\Lambda_D.
+\]
+This constant corresponds to Hagelaar's $a$ \cite[eq. 37]{Hagelaar2005}. In that paper
+on BOLSIG+ \cite[eq. 32-37]{Hagelaar2005}, the original Rosenbluth form
+\cite[eq. B1--3]{Rockwood1973} of the equations is used (these are not in divergence-flux
+form).
+
+In order to identify the relation of the function $J_{ee}$ with the function $G_{ee}$
+that is used in LoKI-B, we expand the time-derivative of $\sqrt{n_ef(u)}$ and
+divide by $N\gamma$,
+\begin{equation}
+	\frac{1}{N\gamma}\sqrt{u}\PDEV{f}{t} + \frac{1}{N\gamma}\sqrt{u}f\frac{1}{n_e}\PDEV{n_e}{t} + \frac{1}{N\gamma}\PDEV{J_{ee}/n_e}{u} = 0.
+\end{equation}
+This is the form that is compatible with e.g. \cite[eq, 3a]{Tejero2021}.
+Comparison yields
+\begin{equation}
+	\frac{1}{N\gamma}\PDEV{G_{ee}}{u}
+	= \PDEV{}{u}\left(3\alpha_{eV}\frac{n_e}{N}\left[-I(u)f_\epsilon - J(u)\PDEV{f_u}{u}\right]\right)
+	= -\PDEV{}{u}\left(g_{ee}\left[I(u)f_\epsilon + J(u)\PDEV{f_u}{u}\right]\right),
+\end{equation}
+which indeed gives our equation \eqref{eq:-1/NgammadGee/du}.
+
+
+\subsection{Transformation of the Electron-Electron Operator}
 
 WARNING: this section is a sketch and may be full of mistakes.
 For a lazy afternoon: check if it is useful to use the fact that
