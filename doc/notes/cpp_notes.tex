@@ -335,8 +335,8 @@ that a conversion from their speed representation to LoKI-B's energy-in-$\si{eV}
 results in LoKI-B's expressions.
 
 Another source for this material, that is also used by the BOLSIG+ Boltzmann solver \cite{Hagelaar2005}
-is Rockwood's 1973 paper \cite{Rockwood1973}. Appendix \ref{sec:Rockwood1973EE} contains a
-derivation of LoKI's expressions, starting from the presentation of Rockwood.
+is Rockwood's 1973 paper \cite{Rockwood1973}. Appendix \ref{sec:Rockwood1973EE} of the present
+text contains a derivation of LoKI's expressions, starting from the presentation of Rockwood.
 \end{framed}
 
 The factor $2\nu_{ee}u^{3/2}$ can be simplified using the relation $v=\gamma\sqrt{u}$,
@@ -1068,7 +1068,7 @@ use $\epsilon = u(\epsilon)e$ and $f_\epsilon(\epsilon)\sqrt{\epsilon}\dd{\epsil
 Furthermore, $I(u)=I(\epsilon)$ and $J(u)=J(\epsilon)/e$. Substitution yields the
 equations using LoKI-B quantities (in $\si{eV}$),
 \begin{equation}
-  J_{ee}(u) = 3\alpha_{eV} n_e^2 \left[-I(u)f_\epsilon - J(u)\PDEV{f_u}{u}\right],
+  J_{ee}(u) = 3\alpha_{eV} n_e^2 \left[-I(u)f_u - J(u)\PDEV{f_u}{u}\right],
 \end{equation}
 with the definition (equation \eqref{eq:alpha_eV})
 \[
@@ -1087,6 +1087,7 @@ Finally, note that substitution of this expression for $J_{ee}(u)$ in expression
 
 \subsection{Transformation of the Electron-Electron Operator}
 
+NOTE: this section is very sketchy and has not yet been checked thoroughly; be aware of mistakes.
 TODO: check if it is useful to use the fact that
 \begin{equation}
 	\int\limits_0^u f(u')(u')^{k+\frachalf}\dd{u'}
@@ -1124,13 +1125,13 @@ and $B_n$ yields an integral that does not cover the entire energy grid,
 	A_n &= -\frac{g_{ee}}{\Delta u}\left(\frac{I(u_{\phalf{n}})}{2} - \frac{J(u_{\phalf{n}})}{\Delta u}\right)
 		\nonumber \\
 	&= -\frac{g_{ee}}{\Delta u}\left(
-		-\frac{2}{3}u^{3/2}\frac{<1/\sqrt{u}>}{\Delta u} + \int\limits_0^{u_{\phalf{n}}} f(u')\left[\sqrt{u'} + \frac{2}{3\Delta u}(u^{3/2}-(u')^{3/2})\right]\dd{u'}
+		-\frac{2}{3}u_{\phalf{n}}^{3/2}\frac{<1/\sqrt{u}>}{\Delta u} + \int\limits_0^{u_{\phalf{n}}} f(u')\left[\sqrt{u'} + \frac{2}{3\Delta u}(u_{\phalf{n}}^{3/2}-(u')^{3/2})\right]\dd{u'}
 		\right),
 		\\
 	B_n &= +\frac{g_{ee}}{\Delta u}\left(\frac{I(u_{\mhalf{n}})}{2} + \frac{J(u_{\mhalf{n}})}{\Delta u}\right)
 		\nonumber \\
 	&= -\frac{g_{ee}}{\Delta u}\left(
-		+\frac{2}{3}u^{3/2}\frac{<1/\sqrt{u}>}{\Delta u} + \int\limits_0^{u_{\mhalf{n}}} f(u')\left[\sqrt{u'} - \frac{2}{3\Delta u}(u^{3/2}-(u')^{3/2})\right]\dd{u'}
+		+\frac{2}{3}u_{\mhalf{n}}^{3/2}\frac{<1/\sqrt{u}>}{\Delta u} + \int\limits_0^{u_{\mhalf{n}}} f(u')\left[\sqrt{u'} - \frac{2}{3\Delta u}(u_{\mhalf{n}}^{3/2}-(u')^{3/2})\right]\dd{u'}
 		\right).
 \end{align}
 
