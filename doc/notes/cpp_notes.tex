@@ -427,9 +427,9 @@ Also the fluxes are approximated using a central-difference scheme,
 \end{align}
 In order to write this in a more convenient form we define \cite[eqn. 39a--b]{Manual_2_2_0}
 \begin{align}
-	A_n &= -g_{ee}\frac{I(u_{\phalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\phalf{n}})}{(\Delta u)^2},
+	A_n &= g_{ee}\left(-\frac{I(u_{\phalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\phalf{n}})}{(\Delta u)^2}\right),
 		\label{eq:ee:A} \\
-	B_n &= +g_{ee}\frac{I(u_{\mhalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\mhalf{n}})}{(\Delta u)^2}.
+	B_n &= g_{ee}\left(+\frac{I(u_{\mhalf{n}})}{2\Delta u} + g_{ee}\frac{J(u_{\mhalf{n}})}{(\Delta u)^2}\right).
 		\label{eq:ee:B}
 \end{align}
 Then
@@ -465,21 +465,21 @@ of $I(u)$ and $J(u)$ we find that
 			u_{\phalf{n}}^{3/2}\sum\limits_{n+1}^\infty f(u_i)\Delta u
 		\right)
 \end{align}
-These expressions can be written as
+Then the vectors $\bvec{A}$ and $\bvec{B}$ can be written as
 \begin{align}
-	\bvec{A} &=\bmat{a}\bvec{f}, \\
-	\bvec{B} &=\bmat{b}\bvec{f} \\
+	\bvec{A} &=g_{ee}\bmat{a}\bvec{f}, \label{eq:ee:A} \\
+	\bvec{B} &=g_{ee}\bmat{b}\bvec{f}, \label{eq:ee:B} 
 \end{align}
 where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 \begin{align}
-	a_{ij} &= g_{ee}\begin{cases}
-			-\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & i \leq j \\
-			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\phalf{i}}^{3/2}}{\Delta u} & i > j.
+	a_{ij} &= \begin{cases}
+			-\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & j \leq i \\
+			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\phalf{i}}^{3/2}}{\Delta u} & j > i.
 		\end{cases}, \label{eq:ee:a} \\
-	b_{ij} &= g_{ee}\begin{cases}
-			+\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & i \leq j-1 \\
-			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & i > j-1
-		\end{cases}. \label{eq:ee:b} \\
+	b_{ij} &= \begin{cases}
+			+\frac{1}{2}\sqrt{u_j}          + \frac{2}{3}\frac{u_j^{3/2}}{\Delta u}	    & j \leq i-1 \\
+			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & j > i-1
+		\end{cases}. \label{eq:ee:b}
 \end{align}
 Three more modifications are made (only sketched in the manual). A reference to
 Rockwood \cite{Rockwood1973} is provided for these steps:
@@ -497,6 +497,11 @@ and notation deviate from Rockwood's paper, which has most of them.
 			this relation between $a$ and $b$; that the modification to use
 			$a_{ji}$ instead of $b_{ij}$ is allowed within the accuracy of the
 			discretization, that it does not change the physics.
+			In principle, it is enough that $a_{ji}=b_{ij}$ for $\Delta u\downarrow 0$
+			for the consistency (TODO: check this, note that the number of cells and,
+			consequently, the matrices, grow when the energy interval gets smaller.)
+			What is the difference for a finite $\Delta u$ between these numbers?
+			How does this difference affect the accuracy of the solution?
 	\end{enumerate}
     \item The flux boundary conditions $G(0)=G(u_{\mbox{{max}}})$ are imposed on the system.
 	The manual states that this means that ``$g(x_{1/2})=g_{x_{{\cal N}+1/2}}=0$ and $A_0=A_{\cal N}=B_1=B_{{\cal N}+1}=0$'',
@@ -513,14 +518,16 @@ and notation deviate from Rockwood's paper, which has most of them.
 	is ensured by setting $a_{ij}=\sqrt{a_{ij}a_{j-1,i+1}}$.
 	\begin{enumerate}
 		\item I (JvD) did not find this expression in Rockwood's paper. This requirement is
-			discused in appendix B of that paper (eq. 11), which is quite different,
-			it says:
+			discused in appendix B of that paper (eq. 11), which says
 			\[
 				A_{jk}n_jn_k = A_{k-1,j+1}n_{k-1}n_{j+1} = B_{j+1,k-1}n_{k-1}n_{j+1}.
 			\]
 			(Here $n_j=n_e\sqrt{u_j}f_j$ and the distribution is Maxwellian.)
 			Rockwood's explanation is clear (see the discussion leading to eq. B13),
 			but he does not state {\em how} he achieves this condition.
+			Of course, Rockwood's results cannot be directly compared because he uses
+			the distribution function $n_e\sqrt{\epsilon}f(\epsilon)$ instead of $f(u)$.
+			TODO: Is there another source for the details of the LoKI-B implementation?
 			\begin{enumerate}
 				\item TODO: Explain the expression and provide a reference.
 					Also here: make clear that the modification is valid
@@ -565,19 +572,18 @@ Code observations:
 	and $\bvec{a}$ and $\bvec{b}$ for the vectors that appear in equations
 	\eqref{eq:ee:a}--\eqref{eq:ee:b} --- exactly opposite to the notation
 	that is used in LoKI-B.
-  \item It is better to define these matrices and vectors without the leading
-	factor $g_{ee}$. Then the matrices $\bmat{a}$ and $\bmat{b}$ depend
-	only on the grid properties, the vectors can be calculated by taking
-	the matric product with the EEDF, and the factor $g_{ee}$ can be
-	applied separately when these are used. This prevents unnecessary
-	recalculations.
-	It appears that this is also how things are implemented in the
-	MATLAB code (version 2.2.0, \SRC{ElectronKinetics.m} line 1359).
-	In the MATLAB code (line 1387) {\em and} in the C++ code
-	(\SRC{source/Operators.cpp}) we apply a factor \SRC{g_ee/grid.du()}
-	to the {\em vectors}.
-	TODO: Make sure to document the state of affairs carefully, and ensure
-	that the docs and the code are in sync.
+  \item In the manual \cite[eq. 39a,b,f,g]{Tejero2019}, the matrices are
+	defined with $g_{ee}$ included (and no multiplication with $g_{ee}$
+	happens when $\bvec{A}$ and $\bvec{B}$ are calculated).
+
+	In the MATLAB code (version 2.2.0, \SRC{ElectronKinetics.m} line 1359)
+	these matrices also contain a factor $\Delta u$, which is
+	removed when the vectors $\bvec{A}$ and $\bvec{B}$ are calculated (line 1388).
+	The reason for this is not clear. In the C++ code, the $\Delta u$
+	is left to be part of $\bmat{a}$ and $\bmat{b}$ (we implement equations
+	\eqref{eq:ee:A}--\eqref{eq:ee:b}).
+
+	TODO: the manual should be updated to reflect the reality of the code.
 \end{itemize}
 \end{framed}
 
