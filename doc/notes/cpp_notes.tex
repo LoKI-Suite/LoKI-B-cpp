@@ -559,9 +559,10 @@ for $\Delta u \downarrow 0$.
 			necessary to make a copy of the original matrix, and read the element
 			values from that copy. This fix has been implemented in the C++ code
 			and is controlled by the macro \SRC{LOKIB_EE_APPLY_DB_FIX}. The value
-			is still 0 until this bug and solution have been confirmed. Local testing
-			shows that (only) after this fix, the flux $G_{ee}(u)$ vanishes up to
-			machine accuracy for a Maxwellian EEDF.
+			is 1 in git, but the old code is still available. Local testing
+			shows that (only) after this fix, the flux $G_{ee}(u)$ and corresponding
+			source vanishe up to machine accuracy for a Maxwellian EEDF (see file
+			\SRC{tests/test_ee.cpp}).
 
 			TODO: also fix this in the MATLAB version.
 
