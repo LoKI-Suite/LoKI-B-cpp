@@ -19,14 +19,14 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  *  \author Daan Boer and Jan van Dijk (C++ version)
  *  \date   29 July 2023
- */     
-        
+ */
+
 #ifndef LOKI_CPP_EEDFUTILITIES_H
 #define LOKI_CPP_EEDFUTILITIES_H
 
