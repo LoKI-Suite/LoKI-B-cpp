@@ -323,7 +323,7 @@ work \cite{Ferreira1984} (Ferreira 1984), where the same material appears in equ
 and a reference to (again) \cite{Allis1956} is provided. In other words, all references
 ultimately resolve to Allis' work, but unfortunately in none of the works citing Allis a
 section or page number is provided. An inspection of Allis' work leads me (JvD) to the integrals
-$I_j^l$ and $J_j^l$ that appear in \cite[eq. 51.8]{Allis1956} and to the coefficients 
+$I_j^l$ and $J_j^l$ that appear in \cite[eq. 51.8]{Allis1956} and to the coefficients
 $\gamma_\xi$ and $\gamma_{\xi\xi}$ and $g_v$ that appear in equations \cite[eq. 53.3-5]{Allis1956}.
 It would be nice to be able to read how those expressions translate to the particular expressions
 in LoKI-B. (Note BTW that Allis uses a velocity/speed representation of the EEDF.)
@@ -467,8 +467,8 @@ of $I(u)$ and $J(u)$ we find that
 \end{align}
 Then the vectors $\bvec{A}$ and $\bvec{B}$ can be written as
 \begin{align}
-	\bvec{A} &=g_{ee}\bmat{a}\bvec{f}, \label{eq:ee:A} \\
-	\bvec{B} &=g_{ee}\bmat{b}\bvec{f}, \label{eq:ee:B} 
+	\bvec{A} &=g_{ee}\bmat{a}\bvec{f}, \label{eq:ee:A=g_eeaf} \\
+	\bvec{B} &=g_{ee}\bmat{b}\bvec{f}, \label{eq:ee:B=g_eebf}
 \end{align}
 where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 \begin{align}
@@ -481,10 +481,21 @@ where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & j > i-1
 		\end{cases}. \label{eq:ee:b}
 \end{align}
-Three more modifications are made (only sketched in the manual). A reference to
-Rockwood \cite{Rockwood1973} is provided for these steps:
-TODO: fill in the details, these are not provided in the manual or LoKI-B paper. The details
-and notation deviate from Rockwood's paper, which has most of them.
+TODO: explain the non-existing elements ($A_{-1}$ and $B_{\cal N}$). Assumed zero? And how is this
+related to the matrix modifications below?
+Three more modifications are made:
+\begin{itemize}
+  \item The last row and first column of $\bmat{A}$ are set to 0;
+  \item The substitution $a_{ij} = \sqrt{a^{old}_{ij}a^{old}_{j-1,i+1}}$ is made;
+  \item The matrix $\bmat{b}$ is calculated as $\bmat{a}^T$.
+\end{itemize}
+
+TODO: mention the reasons, fill in the details: the latter are not provided in the manual or LoKI-B paper.
+The details and notation deviate from Rockwood's paper, which has most of them. Note that we use
+a different EEDF than Rockwood (excluding $\sqrt{u}$ from the definition).
+
+TODO: Most of all: show that the change of the system is not `essential', that the systems are equal
+for $\Delta u \downarrow 0$.
 \begin{itemize}
     \item Energy conservation for a closed system with only electron-electron collisions is
 	only respected numerically if $a_{ij}=b_{ji}$. The equivalents of these matrices in the
@@ -512,10 +523,13 @@ and notation deviate from Rockwood's paper, which has most of them.
 			(does not exist). The MATLAB code (\SRC{ElectronKinetics.m} line 1991 has
 			comment {\em ``because of power conservation, terms on the last row (cellNumber,:)
 			and on the first column (:,1) are zero''}.
+
 			NOTE: In Rockwood this change is given in equation B10.
+
+			NOTE: derive these expressions carefully for 0-based arrays, matrices.
 	\end{enumerate}
     \item The requirement that $\dd{G_{ee}}/\dd{u}=0$ if $f$ is a Maxwellian distribution function
-	is ensured by setting $a_{ij}=\sqrt{a_{ij}a_{j-1,i+1}}$.
+	is ensured by setting $a_{ij}:=\sqrt{a_{ij}a_{j-1,i+1}}$.
 	\begin{enumerate}
 		\item I (JvD) did not find this expression in Rockwood's paper. This requirement is
 			discused in appendix B of that paper (eq. 11), which says
@@ -539,6 +553,21 @@ and notation deviate from Rockwood's paper, which has most of them.
 					but since we assume $B=A^T$, we also change $B$
 					this way.  A detailed explanation is needed.
 			\end{enumerate}
+		\item In the MATLAB code, the implementation of the application of the detailed
+			balance requirement appears to contain a bug. The elements of the
+			matrix $a_{ij}$ are modified, but read from later. It appears to be
+			necessary to make a copy of the original matrix, and read the element
+			values from that copy. This fix has been implemented in the C++ code
+			and is controlled by the macro \SRC{LOKIB_EE_APPLY_DB_FIX}. The value
+			is still 0 until this bug and solution have been confirmed. Local testing
+			shows that (only) after this fix, the flux $G_{ee}(u)$ vanishes up to
+			machine accuracy for a Maxwellian EEDF.
+
+			TODO: also fix this in the MATLAB version.
+
+			TODO: write down Rockwood's proof in terms of zero-based C++ arrays
+			and matrices for clarity. It suffices to show this for $G_{ee}(u_{\phalf{i}})$,
+			I think.
 	\end{enumerate}
 \end{itemize}
 
@@ -581,7 +610,7 @@ Code observations:
 	removed when the vectors $\bvec{A}$ and $\bvec{B}$ are calculated (line 1388).
 	The reason for this is not clear. In the C++ code, the $\Delta u$
 	is left to be part of $\bmat{a}$ and $\bmat{b}$ (we implement equations
-	\eqref{eq:ee:A}--\eqref{eq:ee:b}).
+	\eqref{eq:ee:A=g_eeaf}--\eqref{eq:ee:b}).
 
 	TODO: the manual should be updated to reflect the reality of the code.
 \end{itemize}

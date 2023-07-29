@@ -282,6 +282,18 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
         }
     }
 
+/// \todo define to 1 after confirmation.
+#define LOKIB_EE_APPLY_DB_FIX = 0
+#ifdef LOKIB_EE_APPLY_DB_FIX
+    const Matrix tmp(BAee);
+    for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
+    {
+        for (Grid::Index j = 1; j < grid.nCells(); ++j)
+        {
+            BAee(i,j) = std::sqrt(tmp(i,j) * tmp(j-1,i+1));
+        }
+    }
+#else
     for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
     {
         for (Grid::Index j = 1; j < grid.nCells(); ++j)
@@ -289,6 +301,7 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
             BAee(i,j) = std::sqrt(BAee(i,j) * BAee(j-1,i+1));
         }
     }
+#endif // LOKIB_EE_APPLY_DB_FIX
 }
 
 void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0)
