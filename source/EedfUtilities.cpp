@@ -3,6 +3,13 @@
 
 namespace loki {
 
+double getMeanEnergy(const Vector& edf, const Grid& grid)
+{
+    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
+    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(edf);
+    return meanEnergy;
+}
+
 void normalizeEDF(Vector& edf, const Grid& grid)
 {
     edf /= edf.dot(grid.getCells().cwiseSqrt() * grid.du());
@@ -28,9 +35,9 @@ void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV)
 
 Vector makePrescribedEDF(const Grid& grid, double g, double T_eV)
 {
-    Vector eedf(grid.nCells());
-    makePrescribedEDF(eedf,grid,g,T_eV);
-    return eedf;
+    Vector edf(grid.nCells());
+    makePrescribedEDF(edf,grid,g,T_eV);
+    return edf;
 }
 
 } // namespace loki

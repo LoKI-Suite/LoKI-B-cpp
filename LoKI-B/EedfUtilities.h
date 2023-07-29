@@ -35,6 +35,12 @@
 
 namespace loki {
 
+/** Calculate and return the mean energy in eV of particles that are distributed
+ *  according an \a eedf that is defined on the cells of a \a grid. This is
+ *  equal to the sum u_i^(3/2)f(u_i)du over the cells i.
+ */
+lokib_export double getMeanEnergy(const Vector& edf, const Grid& grid);
+
 /** Scale the elements of the edf such that the sum of sqrt(u_i)edf[i]du
  *  equals unity.
  */
@@ -47,6 +53,10 @@ lokib_export void normalizeEDF(Vector& edf, const Grid& grid);
  *  The vector \a edf is resized to the number of grid cells by this function.
  *
  *  \note For g=1, a Maxwell EDF is obtained, for, g=2 a Druyvesteyn EDF.
+ *  \note The mean energy of the resulting edf will not be exactly equal to
+ *        (3/2)*T_eV because of discretisation errors. The normalization fixes
+ *        the integral chance of finding a particle (==1), not the mean energy
+ *        of the distribution.
  */
 lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV);
 
