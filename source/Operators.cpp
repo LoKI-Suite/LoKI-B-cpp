@@ -283,8 +283,8 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
     }
 
 /// \todo define to 1 after confirmation.
-#define LOKIB_EE_APPLY_DB_FIX = 0
-#ifdef LOKIB_EE_APPLY_DB_FIX
+#define LOKIB_EE_APPLY_DB_FIX 0
+#if LOKIB_EE_APPLY_DB_FIX == 1
     const Matrix tmp(BAee);
     for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
     {
