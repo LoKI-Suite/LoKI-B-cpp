@@ -1,14 +1,15 @@
 add_library(loki-b SHARED)
 target_sources(loki-b PRIVATE
    ../source/CrossSection.cpp
+   ../source/EedfCollisions.cpp
+   ../source/EedfMixture.cpp
+   ../source/EedfUtilities.cpp
+   ../source/ElectronKinetics.cpp
+   ../source/Enumeration.cpp
    ../source/Gas.cpp
    ../source/GasMixture.cpp
    ../source/Gnuplot.cpp
    ../source/Grid.cpp
-   ../source/EedfCollisions.cpp
-   ../source/EedfMixture.cpp
-   ../source/ElectronKinetics.cpp
-   ../source/Enumeration.cpp
    ../source/JobSystem.cpp
    ../source/json.cpp
    ../source/LinearAlgebra.cpp
