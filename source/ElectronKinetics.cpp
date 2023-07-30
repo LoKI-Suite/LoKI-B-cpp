@@ -222,6 +222,7 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                  superElasticThresholds.end());
     */
+    eeOperator.initialize(grid());
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -769,11 +770,6 @@ void ElectronKineticsBoltzmann::solveEEColl()
         if (k < grid().nCells() - 1)
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
-
-    /** \todo This needs to be done only once after the grid has changed.
-     *  (Also check for other occurrences of this call.)
-     */
-    eeOperator.updateABMatrices(grid());
 
     double ratioNew = 0.;
     Vector eedfNew = eedf;

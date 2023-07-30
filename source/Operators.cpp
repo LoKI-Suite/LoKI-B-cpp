@@ -251,7 +251,7 @@ ElectronElectronOperator::ElectronElectronOperator()
 
 void ElectronElectronOperator::initialize(const Grid& grid)
 {
-    BAee.setZero(grid.nCells(),grid.nCells());
+    updateABMatrices(grid);
     A.setZero(grid.nCells());
     B.setZero(grid.nCells());
 }
