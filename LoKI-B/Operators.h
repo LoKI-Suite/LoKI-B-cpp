@@ -103,7 +103,7 @@ namespace loki {
     class ElectronElectronOperator
     {
     public:
-        ElectronElectronOperator();
+        ElectronElectronOperator(const Grid& grid);
         void initialize(const Grid& grid);
         /** Sets the coefficients gee, A and B to zero. A subsequent call to
          *  discretizeTerm will be a no-op. (The matrix BAee is not modified.)

@@ -222,8 +222,7 @@ private:
     // Support for ionization.
     IonizationOperator ionizationOperator;
 
-    bool includeEECollisions;
-    ElectronElectronOperator eeOperator;
+    const std::unique_ptr<ElectronElectronOperator> eeOperator;
 
     double CIEff{0.};
 

@@ -66,7 +66,7 @@ void ElectronKinetics::solve()
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
 : ElectronKinetics(setup,workingConditions),
     ionizationOperator(setup.ionizationOperatorType),
-    includeEECollisions(setup.includeEECollisions),
+    eeOperator(setup.includeEECollisions ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -83,7 +83,7 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(cnf,workingConditions),
     ionizationOperator(getIonizationOperatorType(cnf.at("ionizationOperatorType"))),
-    includeEECollisions(cnf.at("includeEECollisions")),
+    eeOperator(cnf.at("includeEECollisions") ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -108,8 +108,10 @@ void ElectronKineticsBoltzmann::initialize()
     {
         ionizationOperator.ionizationMatrix.setZero(grid().nCells(), grid().nCells());
     }
-
-    eeOperator.initialize(grid());
+    if (eeOperator)
+    {
+        eeOperator->initialize(grid());
+    }
 
     // SPARSE INITIALIZATION
     /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
@@ -207,7 +209,10 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                  superElasticThresholds.end());
     */
-    eeOperator.initialize(grid());
+    if (eeOperator)
+    {
+        eeOperator->initialize(grid());
+    }
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -515,7 +520,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         }
 
         // *add* the discretization of the ee term
-        eeOperator.discretizeTerm(boltzmannMatrix,grid());
+	if (eeOperator)
+	{
+            eeOperator->discretizeTerm(boltzmannMatrix,grid());
+        }
 
         Vector eedfNew = eedf;
 
@@ -544,10 +552,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         {
             hasConverged = true;
 
-            /** There is no maximum number of iterations in case includeEECollisions==true.
-             *  Is there a reason for that? This is not very safe.
+            /** There is no maximum number of iterations if ee collisions are enabled.
+             *  Is there a reason for that? This is not very safe, it seems.
              */
-            if (iter > 150 && !includeEECollisions)
+            if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
         }
         ++iter;
@@ -643,7 +651,10 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         }
 
         // *add* the discretization of the ee term
-        eeOperator.discretizeTerm(boltzmannMatrix,grid());
+	if (eeOperator)
+	{
+            eeOperator->discretizeTerm(boltzmannMatrix,grid());
+	}
 
         eedfNew = eedf;
 
@@ -659,7 +670,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         {
             hasConverged = true;
 
-            if (iter > 150 && !includeEECollisions)
+            if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative temporal growth scheme did not converge.");
         }
 
@@ -673,6 +684,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
 void ElectronKineticsBoltzmann::solveEEColl()
 {
+    assert(eeOperator);
     // Splitting all possible options for the best performance.
 
     /** \todo What if only one of the following is true? Then we use e.g. the ionizationMatrix, while includeNonConservativeIonization==false.
@@ -750,7 +762,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
-        eeOperator.update_g_ee_AB(grid(),eedf,ne,n0);
+        eeOperator->update_g_ee_AB(grid(),eedf,ne,n0);
         // restore boltzmannMatrix to the situation without ee collisions
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
@@ -763,7 +775,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k];
         }
         // *add* the discretization of the ee term
-        eeOperator.discretizeTerm(boltzmannMatrix,grid());
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
 
         invertMatrix(boltzmannMatrix);
 
@@ -847,7 +859,7 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
             growthFunc = &ElectronKineticsBoltzmann::solveTemporalGrowthMatrix;
             break;
         }
-        if (includeEECollisions)
+        if (eeOperator)
         {
             /* This is the situation that is visualized in the flow chart (figure 3)
              * in the manual. The calculation without non-linear terms has already
@@ -861,7 +873,7 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
              * call to solveEEColl(); the updated eeOperator will be used in the
              * next call to the growth function.
              */
-            eeOperator.clear();
+            eeOperator->clear();
             Vector eedfOld;
             uint32_t globalIter = 0;
             const uint32_t maxGlobalIter = 20;
@@ -886,7 +898,7 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
             (this->*growthFunc)();
         }
     }
-    else if (includeEECollisions)
+    else if (eeOperator)
     {
             Log<Message>::Notify("Starting e-e collision routine.");
             solveEEColl();
@@ -1131,9 +1143,9 @@ void ElectronKineticsBoltzmann::evaluatePower()
         fieldOperator.evaluatePower(grid(),eedf,power.field);
     }
 
-    if (includeEECollisions)
+    if (eeOperator)
     {
-        eeOperator.evaluatePower(grid(),eedf,power.electronElectron);
+        eeOperator->evaluatePower(grid(),eedf,power.electronElectron);
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.

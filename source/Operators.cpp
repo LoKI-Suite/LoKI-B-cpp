@@ -244,13 +244,14 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
     }
 }
 
-ElectronElectronOperator::ElectronElectronOperator()
+ElectronElectronOperator::ElectronElectronOperator(const Grid& grid)
 {
-    m_g_ee=0.0;
+    initialize(grid);
 }
 
 void ElectronElectronOperator::initialize(const Grid& grid)
 {
+    m_g_ee=0.0;
     updateABMatrices(grid);
     m_A.setZero(grid.nCells());
     m_B.setZero(grid.nCells());

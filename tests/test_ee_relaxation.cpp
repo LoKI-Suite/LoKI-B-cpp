@@ -87,8 +87,7 @@ int main(int argc, const char* argv[])
     const double shape = 2.0; // 1: Maxwell, 2: Druyvesteyn
 
     const Grid grid(nCells,uMax);
-    ElectronElectronOperator eeOperator;
-    eeOperator.initialize(grid);
+    ElectronElectronOperator eeOperator(grid);
 
     /* Use a dense matrix for the system, just like the boltzmannMatrix in LoKI-B.
      * For the present problem, we know it is going to be tridiagonal and we could

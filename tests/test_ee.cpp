@@ -66,8 +66,7 @@ void test1()
     const double TeV = 1.0; // eV
 
     Grid grid(nCells,uMax);
-    ElectronElectronOperator eeOperator;
-    eeOperator.initialize(grid);
+    ElectronElectronOperator eeOperator(grid);
 
     const Vector eedf = makePrescribedEDF(grid,shape,TeV);
     eeOperator.update_g_ee_AB(grid,eedf,ne,n0);
