@@ -160,12 +160,15 @@ private:
      *  reply to an grid.updatedMaxEnergy event (which is triggered among others
      *  by a smart grid iteration).
      */
-    /** solve the Boltzmann equation. An iterative procedure is used to handle
-     *  the non-linear terms.
+    /** Solve the Boltzmann equation. The function first inverts the linear
+     *  problem. If non-linear terms are available (growth terms or electron
+     *  electron collisions, subsequently use the 'mixing direct solutions'
+     *  algorithm to find the solution.
      */
-    void mixingDirectSolutions();
-    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
-     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
+    void obtainTimeIndependentSolution();
+    /** solve the Boltzmann equation by calling obtainTimeIndependentSolution()
+     *  (a time-dependent alternative, available in MATLAB, should become
+     *  available later.
      */
     void solveSingle();
     void solveSmartGrid();

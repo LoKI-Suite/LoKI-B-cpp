@@ -831,17 +831,20 @@ void ElectronKineticsBoltzmann::solveEEColl()
     std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
 }
 
-void ElectronKineticsBoltzmann::mixingDirectSolutions()
+void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
     invertLinearMatrix();
 
-    // Declare function pointer
-    void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
-
+    /* Maybe we are done. But we need to do more work if non-linear terms are
+     * present:
+     *   1) growth terms (with or without ee collisions)
+     *   2) ee collisions.
+     * these cases are handled below.
+     */
     const bool includeGrowthModel = attachmentOperator.includeNonConservativeAttachment || ionizationOperator.includeNonConservativeIonization;
-
     if (includeGrowthModel)
     {
+        void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
         switch (growthModelType)
         {
         case GrowthModelType::spatial:
@@ -859,16 +862,7 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
             growthFunc = &ElectronKineticsBoltzmann::solveTemporalGrowthMatrix;
             break;
         }
-    }
-
-    if (includeEECollisions)
-    {
-        if (!includeGrowthModel)
-        {
-            Log<Message>::Notify("Starting e-e collision routine.");
-            solveEEColl();
-        }
-        else
+        if (includeEECollisions)
         {
             /* This is the situation that is visualized in the flow chart (figure 3)
              * in the manual. The calculation without non-linear terms has already
@@ -877,8 +871,12 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
              * is run. The main loop finishes when the last ee-run no longer changes
              * the EEDF (beyond tolerance settings).
              */
-            eeOperator.clear();
 
+            /* We start without ee collisions. The eeOperator is updated inside the
+             * call to solveEEColl(); the updated eeOperator will be used in the
+             * next call to the growth function.
+             */
+            eeOperator.clear();
             Vector eedfOld;
             uint32_t globalIter = 0;
             const uint32_t maxGlobalIter = 20;
@@ -898,34 +896,21 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
                     Log<GlobalIterError>::Warning(globalIter);
             }
         }
+        else
+        {
+            (this->*growthFunc)();
+        }
     }
-    else
+    else if (includeEECollisions)
     {
-        /** \todo this is nullptr if no growth model is specified.
-         *  We reach this (only) if no ee collisions are specified.
-         *  It is up to the caller, solveSingle(), to ensure that
-         *  we are not called in that case. Can we not merge
-         *  this function in/with solveSingle to make this more
-         *  clear? That can simply call invertLinearMatrix(),
-         *  and do additional work only if any of the nonlinear
-         *  terms must dealt with.
-         *  The corresponding function in MATLAB is
-         *  obtainTimeIndependentSolution.
-         */
-        (this->*growthFunc)();
+            Log<Message>::Notify("Starting e-e collision routine.");
+            solveEEColl();
     }
 }
 
 void ElectronKineticsBoltzmann::solveSingle()
 {
-    if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment || includeEECollisions)
-    {
-        mixingDirectSolutions();
-    }
-    else
-    {
-        invertLinearMatrix();
-    }
+    obtainTimeIndependentSolution();
 }
 
 void ElectronKineticsBoltzmann::solveSmartGrid()
