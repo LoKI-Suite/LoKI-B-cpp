@@ -47,21 +47,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
 void ElectronKinetics::initialize()
 {
-    // SPARSE INITIALIZATION
-    std::vector<Eigen::Triplet<double>> tridiagPattern;
-    tridiagPattern.reserve(3 * grid().nCells() - 2);
-
-    for (Grid::Index k = 0; k < grid().nCells(); ++k)
-    {
-        if (k > 0)
-            tridiagPattern.emplace_back(k - 1, k, 0.);
-
-        tridiagPattern.emplace_back(k, k, 0.);
-
-        if (k < grid().nCells() - 1)
-            tridiagPattern.emplace_back(k + 1, k, 0.);
-    }
-
     if (!mixture.CARGases().empty())
     {
         carOperator.reset(new CAROperator(mixture.CARGases()));
