@@ -246,21 +246,21 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
 ElectronElectronOperator::ElectronElectronOperator()
 {
-    g_ee=0.0;
+    m_g_ee=0.0;
 }
 
 void ElectronElectronOperator::initialize(const Grid& grid)
 {
     updateABMatrices(grid);
-    A.setZero(grid.nCells());
-    B.setZero(grid.nCells());
+    m_A.setZero(grid.nCells());
+    m_B.setZero(grid.nCells());
 }
 
 void ElectronElectronOperator::clear()
 {
-    g_ee = 0.;
-    A.setZero();
-    B.setZero();
+    m_g_ee = 0.;
+    m_A.setZero();
+    m_B.setZero();
 }
 
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
@@ -268,7 +268,7 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
     /* Note that not all elements get a value below, the others must be set to
      * zero. We achieve that by clearing the entire matrix first.
      */
-    BAee.setZero(grid.nCells(), grid.nCells());
+    m_a.setZero(grid.nCells(), grid.nCells());
 
     /* 1. Calculate a_ij/g_ee (equation 39f from the 2_2_0 manual).
      * This is the part right of the curly brace, but *with* the minus
@@ -284,23 +284,23 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
     {
         for (Grid::Index j = 1; j <= i; ++j)
         {
-            BAee(i,j) = energyArray[j];
+            m_a(i,j) = energyArray[j];
         }
         const double tmp = 2.0/3.0*std::pow(grid.getNodes()(i+1),1.5)/grid.du();
         for (Grid::Index j = i+1; j < grid.nCells(); ++j)
         {
-            BAee(i,j) = tmp;
+            m_a(i,j) = tmp;
         }
     }
 
 #define LOKIB_EE_APPLY_DB_FIX 1
 #if LOKIB_EE_APPLY_DB_FIX == 1
-    const Matrix tmp(BAee);
+    const Matrix tmp(m_a);
     for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
     {
         for (Grid::Index j = 1; j < grid.nCells(); ++j)
         {
-            BAee(i,j) = std::sqrt(tmp(i,j) * tmp(j-1,i+1));
+            m_a(i,j) = std::sqrt(tmp(i,j) * tmp(j-1,i+1));
         }
     }
 #else
@@ -308,7 +308,7 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
     {
         for (Grid::Index j = 1; j < grid.nCells(); ++j)
         {
-            BAee(i,j) = std::sqrt(BAee(i,j) * BAee(j-1,i+1));
+            m_a(i,j) = std::sqrt(m_a(i,j) * m_a(j-1,i+1));
         }
     }
 #endif // LOKIB_EE_APPLY_DB_FIX
@@ -323,9 +323,9 @@ void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& ee
     double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
     double Te = 2. / 3. * meanEnergy;
     double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-    g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
-    A = g_ee * (BAee * eedf);
-    B = g_ee * (BAee.transpose() * eedf);
+    m_g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+    m_A = m_g_ee * (m_a * eedf);
+    m_B = m_g_ee * (m_a.transpose() * eedf);
 }
 
 void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
@@ -334,7 +334,7 @@ void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eed
      *  The other is the energy gain of an electron moving up one cell,
      *  I (JvD) believe. Make sure this is explained well in the docs.
      */
-    power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
+    power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
     //std::cout << "EE POWER: " << power << std::endl;
 }
 
@@ -342,14 +342,14 @@ void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
 {
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
-        M(k,k) += - (A[k] + B[k]);
+        M(k,k) += - (m_A[k] + m_B[k]);
         if (k > 0)
         {
-            M(k,k-1) += A[k - 1];
+            M(k,k-1) += m_A[k - 1];
         }
         if (k < grid.nCells() - 1)
         {
-            M(k,k+1) += B[k + 1];
+            M(k,k+1) += m_B[k + 1];
         }
     }
 }

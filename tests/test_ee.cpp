@@ -48,7 +48,7 @@ FluxTerms calculateFlux(const loki::ElectronElectronOperator& eeOp, const loki::
     else
     {
         const double aux = -loki::SI::gamma*grid.du();
-        return { aux*eeOp.A[n-1]*eedf[n-1], aux*eeOp.B[n]*eedf[n] };
+        return { aux*eeOp.A()[n-1]*eedf[n-1], aux*eeOp.B()[n]*eedf[n] };
     }
 }
 
@@ -68,7 +68,6 @@ void test1()
     Grid grid(nCells,uMax);
     ElectronElectronOperator eeOperator;
     eeOperator.initialize(grid);
-    eeOperator.updateABMatrices(grid);
 
     const Vector eedf = makePrescribedEDF(grid,shape,TeV);
     eeOperator.update_g_ee_AB(grid,eedf,ne,n0);
@@ -110,8 +109,8 @@ void test1()
         const double srcRef = (flux[k+1].ref()+flux[k].ref())/2/grid.du();
         const double srcRelError = std::abs(src[k])/srcRef;
         std::cout << grid.getCells()[k]
-            << '\t' << eeOperator.A(k)/eeOperator.g_ee
-            << '\t' << eeOperator.B(k)/eeOperator.g_ee
+            << '\t' << eeOperator.A()(k)/eeOperator.g_ee()
+            << '\t' << eeOperator.B()(k)/eeOperator.g_ee()
             << '\t' << src[k]
             << '\t' << srcRelError
             << std::endl;
@@ -127,8 +126,8 @@ void test1()
      * Calculate up and downfluxes separately, use those to obtain a reference value and
      * use that.
      */
-    const double Eup = -SI::gamma * grid.du() * grid.du() * eeOperator.A.dot(eedf);
-    const double Edn = -SI::gamma * grid.du() * grid.du() * eeOperator.B.dot(eedf);
+    const double Eup = -SI::gamma * grid.du() * grid.du() * eeOperator.A().dot(eedf);
+    const double Edn = -SI::gamma * grid.du() * grid.du() * eeOperator.B().dot(eedf);
     std::cout << "# up: " << Eup << ", down: " << Edn << ", net: " << (Eup-Edn) << std::endl;
     std::cout << "# pElectronElectron = " << pElectronElectron << std::endl;
 }

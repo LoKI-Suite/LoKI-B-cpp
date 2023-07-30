@@ -89,7 +89,6 @@ int main(int argc, const char* argv[])
     const Grid grid(nCells,uMax);
     ElectronElectronOperator eeOperator;
     eeOperator.initialize(grid);
-    eeOperator.updateABMatrices(grid);
 
     /* Use a dense matrix for the system, just like the boltzmannMatrix in LoKI-B.
      * For the present problem, we know it is going to be tridiagonal and we could
@@ -122,6 +121,7 @@ int main(int argc, const char* argv[])
     double dt=1e-10; // s (initial value)
     unsigned iter=0;
 
+    std::cout << "Results will be written to file eedf.dat." << std::endl;
     std::ofstream ofs("eedf.dat");
     write_eedf(ofs,grid,eedf,iter,t,TeV,norm, 0, dt, 0);
     while (t<t_max)
@@ -195,5 +195,6 @@ int main(int argc, const char* argv[])
                 write_eedf(ofs,grid,eedf,iter,t,TeV,norm,relDiff,dt,solver.info());
         }
     }
+    std::cout << "Simulation finished. Exiting." << std::endl;
     return 0;
 }

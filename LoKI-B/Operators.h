@@ -58,7 +58,7 @@ namespace loki {
         /// updates member g
         void evaluate(const Grid& grid, const Vector& elasticCrossSection);
         /// updates member g, then the elastic matrix \a mat
-	void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat);
+        void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
         Vector g;
     };
@@ -70,7 +70,7 @@ namespace loki {
         /// updates member g
         void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN);
         /// updates member g, then the field matrix \a mat
-	void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat);
         /** \todo This expression returns the power that is absorbed from the field
          *  in the case that no temporal or spatial growth terms are present. We have
          *  to see where/when to handle the various growth scenarios.
@@ -82,7 +82,7 @@ namespace loki {
     class InelasticOperator
     {
     public:
-	InelasticOperator(const Grid& grid);
+        InelasticOperator(const Grid& grid);
 
         /** \todo Clarify: does inelastic mean particle-conserving inelastic only
          *                 (no ionization, attachment)? So only excitation? If so,
@@ -109,22 +109,27 @@ namespace loki {
          *  discretizeTerm will be a no-op. (The matrix BAee is not modified.)
          */
         void clear();
-	void updateABMatrices(const Grid& grid);
-	/** Update members g_ee, A and B. This requires that matrix BAee is in
+        /** Update members g_ee, A and B. This requires that matrix BAee is in
          *  a good state, consistent with the \a grid. That matrix, which
          *  depends only on the grid, must be updated separately (once after
          *  each update of the grid).
-	 */
-	void update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0);
-	/** Adds the coefficients coming from the discretization of the term
+         */
+        void update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0);
+        /** Adds the coefficients coming from the discretization of the term
          *  -(1/N*gamma)*dG_ee/du to matrix \a M.
-	 */
+         */
         void discretizeTerm(Matrix& M, const Grid& grid) const;
         void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
-        double g_ee;
-        Matrix BAee;
-        Vector A;
-        Vector B;
+        double g_ee() const { return m_g_ee; }
+        const Matrix& a() const { return m_a; }
+        const Vector& A() const { return m_A; }
+        const Vector& B() const { return m_B; }
+    private:
+        void updateABMatrices(const Grid& grid);
+        double m_g_ee;
+        Matrix m_a;
+        Vector m_A;
+        Vector m_B;
     };
 
     class IonizationOperator
