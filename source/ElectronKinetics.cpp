@@ -387,11 +387,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    if (includeEECollisions)
-    {
-        eeOperator.updateAB(grid(),eedf);
-    }
-
     /** \todo The name is incorrect. This is not the integrand since it already includes
      *        du and does not yet have the factor f(u).
      */
@@ -620,11 +615,6 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    if (includeEECollisions)
-    {
-        eeOperator.updateAB(grid(),eedf);
-    }
-
     const Vector integrandCI = (SI::gamma * grid().du())
                     * Vector::Ones(grid().nCells()).transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
@@ -784,12 +774,6 @@ void ElectronKineticsBoltzmann::solveEEColl()
      *  (Also check for other occurrences of this call.)
      */
     eeOperator.updateABMatrices(grid());
-    /** \todo Should this not be called inside the !hasConverged loop?
-     *  g_ee depends on the mean energy, which depends on the EEDF. Or
-     *  is there a special reason why <u> does not change during these
-     *  iterations (because ee-collisions do not change the power, perhaps)?
-     */
-    eeOperator.update_g_ee(grid(),eedf,ne,n0);
 
     double ratioNew = 0.;
     Vector eedfNew = eedf;
@@ -799,8 +783,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
+        eeOperator.update_g_ee(grid(),eedf,ne,n0);
         eeOperator.updateAB(grid(),eedf);
-
         // restore boltzmannMatrix to the situation without ee collisions
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
@@ -860,8 +844,6 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 }
             }
         }
-
-        eeOperator.update_g_ee(grid(),eedf,ne,n0);
         iter++;
     }
 
@@ -900,24 +882,6 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 
     if (includeEECollisions)
     {
-        /** \todo solveEEColl sets these values. This initialization
-         *  can be moved to the 'if includeGrowthModel!=nullptr' case.
-         *  But why do we not start there with an initialization based
-         *  on the actual eedf (just call updateABMatrices and update_g_ee
-         *  instead of this zero-initialization), just before the 'while'?
-         *  We have a 'good' eedf at this moment after all, since we have
-         *  already called invertLinearMatrix in the beginning of this function.
-         *
-         *  Also check what EE-related tasks are done in the growth models,
-         *  and why (e.g. eeOperator.updateAB(grid(),eedf) calls, but no
-         *  accompanying update_g_ee() calls).
-         *  (The MATLAB code does the same, FWIW.)
-         */
-        eeOperator.g_ee = 0.;
-        eeOperator.BAee.setZero();
-        eeOperator.A.setZero();
-        eeOperator.B.setZero();
-
         if (!includeGrowthModel)
         {
             Log<Message>::Notify("Starting e-e collision routine.");
@@ -925,11 +889,18 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
         }
         else
         {
-            uint32_t globalIter = 0;
-            const uint32_t maxGlobalIter = 20;
+            /* This is the situation that is visualized in the flow chart (figure 3)
+             * in the manual. The calculation without non-linear terms has already
+             * been done at the start of this function. We now enter a double loop.
+             * Inside the main loop 1) the growth model is run and 2) the ee model
+             * is run. The main loop finishes when the last ee-run no longer changes
+             * the EEDF (beyond tolerance settings).
+             */
+            eeOperator.clear();
 
             Vector eedfOld;
-
+            uint32_t globalIter = 0;
+            const uint32_t maxGlobalIter = 20;
             while (globalIter < maxGlobalIter)
             {
                 (this->*growthFunc)();
