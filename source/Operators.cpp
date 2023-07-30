@@ -314,7 +314,7 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
 #endif // LOKIB_EE_APPLY_DB_FIX
 }
 
-void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0)
+void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0)
 {
     const double e = Constant::electronCharge;
     const double e0 = Constant::vacuumPermittivity;
@@ -324,10 +324,6 @@ void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf,
     double Te = 2. / 3. * meanEnergy;
     double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
     g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
-}
-
-void ElectronElectronOperator::updateAB(const Grid& grid, const Vector& eedf)
-{
     A = g_ee * (BAee * eedf);
     B = g_ee * (BAee.transpose() * eedf);
 }

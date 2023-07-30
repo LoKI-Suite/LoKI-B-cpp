@@ -783,8 +783,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     while (!hasConverged)
     {
-        eeOperator.update_g_ee(grid(),eedf,ne,n0);
-        eeOperator.updateAB(grid(),eedf);
+        eeOperator.update_g_ee_AB(grid(),eedf,ne,n0);
         // restore boltzmannMatrix to the situation without ee collisions
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {

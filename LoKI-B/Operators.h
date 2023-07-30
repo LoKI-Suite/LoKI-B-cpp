@@ -110,14 +110,12 @@ namespace loki {
          */
         void clear();
 	void updateABMatrices(const Grid& grid);
-	void update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0);
-	/** updateAB requires that updateABMatrices and update_g_ee have been called
-	 *  to set up BAee and g_ee.
-	 *  \todo Should update_g_ee not always be called before updateAB is called,
-	 *  since Te may have changed. At present this is not the case. Check the
-	 *  users of this code.
+	/** Update members g_ee, A and B. This requires that matrix BAee is in
+         *  a good state, consistent with the \a grid. That matrix, which
+         *  depends only on the grid, must be updated separately (once after
+         *  each update of the grid).
 	 */
-	void updateAB(const Grid& grid, const Vector& eedf);
+	void update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0);
 	/** Adds the coefficients coming from the discretization of the term
          *  -(1/N*gamma)*dG_ee/du to matrix \a M.
 	 */

@@ -71,8 +71,7 @@ void test1()
     eeOperator.updateABMatrices(grid);
 
     const Vector eedf = makePrescribedEDF(grid,shape,TeV);
-    eeOperator.update_g_ee(grid,eedf,ne,n0);
-    eeOperator.updateAB(grid,eedf);
+    eeOperator.update_g_ee_AB(grid,eedf,ne,n0);
 
     std::vector<FluxTerms> flux(grid.getNodes().size());
     for (Grid::Index n = 0; n != grid.getNodes().size(); ++n)

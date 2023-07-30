@@ -128,8 +128,7 @@ int main(int argc, const char* argv[])
     {
         // part 1. Update the target time and the ee-operator data.
         t += dt;
-        eeOperator.update_g_ee(grid,eedf,ne,n0);
-        eeOperator.updateAB(grid,eedf);
+        eeOperator.update_g_ee_AB(grid,eedf,ne,n0);
         TeV = 2. / 3. * getMeanEnergy(eedf,grid);
 
         /* NOTE: the equation is discretized as in LoKI-B, as:
