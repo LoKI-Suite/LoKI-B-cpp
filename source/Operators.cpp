@@ -251,12 +251,16 @@ ElectronElectronOperator::ElectronElectronOperator()
 
 void ElectronElectronOperator::initialize(const Grid& grid)
 {
+    BAee.setZero(grid.nCells(),grid.nCells());
     A.setZero(grid.nCells());
     B.setZero(grid.nCells());
 }
 
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
 {
+    /* Note that not all elements get a value below, the others must be set to
+     * zero. We achieve that by clearing the entire matrix first.
+     */
     BAee.setZero(grid.nCells(), grid.nCells());
 
     /* 1. Calculate a_ij/g_ee (equation 39f from the 2_2_0 manual).
@@ -282,7 +286,6 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
         }
     }
 
-/// \todo define to 1 after confirmation.
 #define LOKIB_EE_APPLY_DB_FIX 1
 #if LOKIB_EE_APPLY_DB_FIX == 1
     const Matrix tmp(BAee);
@@ -318,18 +321,34 @@ void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf,
 
 void ElectronElectronOperator::updateAB(const Grid& grid, const Vector& eedf)
 {
-        A = g_ee * (BAee * eedf);
-        B = g_ee * (BAee.transpose() * eedf);
+    A = g_ee * (BAee * eedf);
+    B = g_ee * (BAee.transpose() * eedf);
 }
 
 void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
-        /*  One du() comes from the integration, together with eedf).
-         *  The other is the energy gain of an electron moving up one cell,
-	 *  I (JvD) believe. Make sure this is explained well in the docs.
-         */
-        power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
-        //std::cout << "EE POWER: " << power << std::endl;
+    /*  One du() comes from the integration, together with eedf).
+     *  The other is the energy gain of an electron moving up one cell,
+     *  I (JvD) believe. Make sure this is explained well in the docs.
+     */
+    power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
+    //std::cout << "EE POWER: " << power << std::endl;
+}
+
+void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
+{
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        M(k,k) += - (A[k] + B[k]);
+        if (k > 0)
+        {
+            M(k,k-1) += A[k - 1];
+        }
+        if (k < grid.nCells() - 1)
+        {
+            M(k,k+1) += B[k + 1];
+        }
+    }
 }
 
 IonizationOperator::IonizationOperator(IonizationOperatorType type)

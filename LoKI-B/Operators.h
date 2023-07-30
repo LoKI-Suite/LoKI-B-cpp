@@ -114,6 +114,10 @@ namespace loki {
 	 *  users of this code.
 	 */
 	void updateAB(const Grid& grid, const Vector& eedf);
+	/** Adds the coefficients coming from the discretization of the term
+         *  -(1/N*gamma)*dG_ee/du to matrix \a M.
+	 */
+        void discretizeTerm(Matrix& M, const Grid& grid) const;
         void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
         double g_ee;
         Matrix BAee;

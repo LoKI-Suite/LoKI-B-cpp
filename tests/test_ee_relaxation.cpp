@@ -56,19 +56,19 @@
 #include <Eigen/SparseLU>
 #include <Eigen/OrderingMethods>
 
-void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf, unsigned iter, double t, double TeV, double norm, double maxRelDiff, double next_dt, int info)
+void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf, unsigned iter, double t, double TeV, double norm, double relDiff, double next_dt, int info)
 {
     if (iter != 0)
     {
         os << std::endl << std::endl;
     }
-    os << "# " << "iteration  = " << iter << std::endl;
-    os << "# " << "t          = " << t << std::endl;
-    os << "# " << "TeV        = " << TeV << std::endl;
-    os << "# " << "norm       = " << norm << std::endl;
-    os << "# " << "maxRelDiff = " << maxRelDiff << std::endl;
-    os << "# " << "next_dt     = " << next_dt << std::endl;
-    os << "# " << "info       = " << info << std::endl;
+    os << "# " << "iteration = " << iter << std::endl;
+    os << "# " << "t         = " << t << std::endl;
+    os << "# " << "TeV       = " << TeV << std::endl;
+    os << "# " << "norm      = " << norm << std::endl;
+    os << "# " << "relDiff   = " << relDiff << std::endl;
+    os << "# " << "next_dt   = " << next_dt << std::endl;
+    os << "# " << "info      = " << info << std::endl;
     for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         os << grid.getCells()(k) << '\t' << eedf(k) << std::endl;
@@ -91,9 +91,17 @@ int main(int argc, const char* argv[])
     eeOperator.initialize(grid);
     eeOperator.updateABMatrices(grid);
 
-    SparseMatrix M(grid.nCells(),grid.nCells());
+    /* Use a dense matrix for the system, just like the boltzmannMatrix in LoKI-B.
+     * For the present problem, we know it is going to be tridiagonal and we could
+     * have used something more optimal, but we want to stay close to the main code.
+     * Note that a conversion to a sparse matrix is done before solving the system.
+     */
+    Matrix M(grid.nCells(),grid.nCells());
     Vector rhs = Vector::Zero(grid.nCells());
 
+    /* Maximum allowed pointwise relative difference in a time step.
+     */
+    const double tolRelDiff=1e-3;
     const double t_max = 1.0; // s
     const unsigned iter_write = 100;
 
@@ -129,34 +137,31 @@ int main(int argc, const char* argv[])
          *    -(sqrt(u)/(N*gamma)*df/dt - 1/(N*gamma)*dG/du = 0
          *
          * That explains all the minus signs.
+         *
+         * Since we use the ElectronElectronOperator::discretizeTerm, which
+	 * *adds* to the matrix, we clear the matrix first. This needs to
+         * be given some thought, but let us first see if this shows up in
+         * a profile before trying to optimize again.
          */
+        M.setZero();
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             /* part 1: - 1/(N*gamma)*dG/du. This code is the same as that in
              * source/Operators.cpp. This *sets* the elements of matrix M.
              */
-            M.coeffRef(k, k) = - (eeOperator.A[k] + eeOperator.B[k]);
-
-            if (k > 0)
-                M.coeffRef(k, k - 1) = + eeOperator.A[k - 1];
-
-            if (k < grid.nCells() - 1)
-                M.coeffRef(k, k + 1) = + eeOperator.B[k + 1];
-
-            /* part 2: - sqrt(u)/(N*gamma)*df/dt. We use df/dt .= (f-f_old)/dt):
-             * the first terms leads to an *additional* contribution to M, the
-             * second appears as an inhomogemeous term on the RHS.
+            eeOperator.discretizeTerm(M,grid);
+            /* part 2: - sqrt(u)/(N*gamma)*df/dt. We use backward Euler, so
+             * \f$ df/dt \approx (f-f_old)/dt) \f$. The first terms leads to an
+             * additional contribution to M, the second appears as an
+             * inhomogemeous term with the same sign on the RHS.
              */
             const double cf=std::sqrt(grid.getCells()(k))/(n0*SI::gamma);
             M.coeffRef(k,k) -= cf/dt;
             rhs(k) = -cf*eedf(k)/dt;
         }
 
-        ///
-
-        /// \todo Can we avoid this? Only needed to call makeCompressed
-        SparseMatrix tmp(M);
-        /// \todo necessary? It seems that the copy ctor will make the target compressed.
+        // Solve the problem. We create a sparse matrix first and solve that.
+        SparseMatrix tmp(M.sparseView());
         tmp.makeCompressed();
         Eigen::SparseLU<SparseMatrix,Eigen::AMDOrdering<typename SparseMatrix::StorageIndex>> solver;
         solver.compute(tmp);
@@ -170,16 +175,17 @@ int main(int argc, const char* argv[])
         norm = eedf.dot(grid.getCells().cwiseSqrt() * grid.du());
         /* Calculate the highest relative change of the eedf in any of the grid points.
          */
-        double maxRelDiff=0.0;
+        /// \todo Use loki function maxRelDiff. Rename that to somathing less likely to clash.
+        double relDiff=0.0;
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             const double localRelDiff = std::abs( (eedf(k)-eedf_old(k))/eedf_old(k) );
-            maxRelDiff=std::max(maxRelDiff,localRelDiff);
+            relDiff=std::max(relDiff,localRelDiff);
         }
-        /* Use that change to adjust the next timestep.
+        /* Use that change to adjust the next timestep. The criterium is that the maximum
+         * local relative change in one timestep should be approximately tolRelDiff.
          */
-        const double tolRelDiff=1e-3;
-        double dtSuggested = dt*tolRelDiff/maxRelDiff;
+        double dtSuggested = dt*tolRelDiff/relDiff;
         double dtClamped = std::min(2*dt,dtSuggested);
         dt = dtClamped;
         ++iter;
@@ -187,7 +193,7 @@ int main(int argc, const char* argv[])
         // write the EEDF every iter_write time steps
         if (iter%iter_write==0)
         {
-                write_eedf(ofs,grid,eedf,iter,t,TeV,norm,maxRelDiff,dt,solver.info());
+                write_eedf(ofs,grid,eedf,iter,t,TeV,norm,relDiff,dt,solver.info());
         }
     }
     return 0;

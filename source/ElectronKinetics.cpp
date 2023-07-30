@@ -389,7 +389,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     if (includeEECollisions)
     {
-	eeOperator.updateAB(grid(),eedf);
+        eeOperator.updateAB(grid(),eedf);
     }
 
     /** \todo The name is incorrect. This is not the integrand since it already includes
@@ -409,8 +409,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
      */
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-    // diffusion and mobility components of the spatial growth terms
-    // can be removed since this is already done in the directMixing function
+    /** \todo DB: diffusion and mobility components of the spatial growth terms
+     *  can be removed since this is already done in the directMixing function
+     *  Jvd: Daan, can you explain this statement? What can be done/simplified?
+     */
     ionSpatialGrowthD.setZero();
     ionSpatialGrowthU.setZero();
 
@@ -532,16 +534,18 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
-                                                           ionSpatialGrowthD.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
+                                                           ionSpatialGrowthD.coeff(k, k);
 
             if (k > 0)
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k - 1) + eeOperator.A[k - 1];
+                                                                      ionSpatialGrowthU.coeff(k, k - 1);
 
             if (k < grid().nCells() - 1)
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k + 1) + eeOperator.B[k + 1];
+                                                                      ionSpatialGrowthU.coeff(k, k + 1);
         }
+        // *add* the discretization of the ee term
+        eeOperator.discretizeTerm(boltzmannMatrix,grid());
 
         Vector eedfNew = eedf;
 
@@ -618,7 +622,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     if (includeEECollisions)
     {
-	eeOperator.updateAB(grid(),eedf);
+        eeOperator.updateAB(grid(),eedf);
     }
 
     const Vector integrandCI = (SI::gamma * grid().du())
@@ -668,14 +672,16 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
-                                                           ionTemporalGrowth.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
+                                                           ionTemporalGrowth.coeff(k, k);
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1) + eeOperator.A[k - 1];
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1) + eeOperator.B[k + 1];
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
         }
+        // *add* the discretization of the ee term
+        eeOperator.discretizeTerm(boltzmannMatrix,grid());
 
         eedfNew = eedf;
 
@@ -774,6 +780,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
+    /** \todo This needs to be done only once after the grid has changed.
+     *  (Also check for other occurrences of this call.)
+     */
     eeOperator.updateABMatrices(grid());
     /** \todo Should this not be called inside the !hasConverged loop?
      *  g_ee depends on the mean energy, which depends on the EEDF. Or
@@ -788,26 +797,23 @@ void ElectronKineticsBoltzmann::solveEEColl()
     bool hasConverged = false;
     uint32_t iter = 0;
 
-    /** \todo Mee is ignored in solveEEColl. How does that result in differences with
-     *  respect to the MATLAB version.
-     */
-    /// In this implementation we completely skip the Mee matrix, saving both memory and time.
-    // Vector MeeDiag(grid().nCells()), MeeSub(grid().nCells()), MeeSup(grid().nCells());
-
     while (!hasConverged)
     {
-	eeOperator.updateAB(grid(),eedf);
+        eeOperator.updateAB(grid(),eedf);
 
+        // restore boltzmannMatrix to the situation without ee collisions
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] - (eeOperator.A[k] + eeOperator.B[k]);
+            boltzmannMatrix(k, k) = baseDiag[k];
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + eeOperator.A[k - 1];
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k];
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + eeOperator.B[k + 1];
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k];
         }
+        // *add* the discretization of the ee term
+        eeOperator.discretizeTerm(boltzmannMatrix,grid());
 
         invertMatrix(boltzmannMatrix);
 
@@ -866,11 +872,6 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 {
     invertLinearMatrix();
 
-    const Grid::Index numCells = grid().nCells();
-
-    //        solveEEColl();
-    //        return;
-
     // Declare function pointer
     void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
 
@@ -899,8 +900,21 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
 
     if (includeEECollisions)
     {
+        /** \todo solveEEColl sets these values. This initialization
+         *  can be moved to the 'if includeGrowthModel!=nullptr' case.
+         *  But why do we not start there with an initialization based
+         *  on the actual eedf (just call updateABMatrices and update_g_ee
+         *  instead of this zero-initialization), just before the 'while'?
+         *  We have a 'good' eedf at this moment after all, since we have
+         *  already called invertLinearMatrix in the beginning of this function.
+         *
+         *  Also check what EE-related tasks are done in the growth models,
+         *  and why (e.g. eeOperator.updateAB(grid(),eedf) calls, but no
+         *  accompanying update_g_ee() calls).
+         *  (The MATLAB code does the same, FWIW.)
+         */
         eeOperator.g_ee = 0.;
-        eeOperator.BAee.setZero(numCells, numCells);
+        eeOperator.BAee.setZero();
         eeOperator.A.setZero();
         eeOperator.B.setZero();
 
@@ -935,6 +949,17 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
     }
     else
     {
+        /** \todo this is nullptr if no growth model is specified.
+         *  We reach this (only) if no ee collisions are specified.
+         *  It is up to the caller, solveSingle(), to ensure that
+         *  we are not called in that case. Can we not merge
+         *  this function in/with solveSingle to make this more
+         *  clear? That can simply call invertLinearMatrix(),
+         *  and do additional work only if any of the nonlinear
+         *  terms must dealt with.
+         *  The corresponding function in MATLAB is
+         *  obtainTimeIndependentSolution.
+         */
         (this->*growthFunc)();
     }
 }
