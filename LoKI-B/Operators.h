@@ -105,6 +105,10 @@ namespace loki {
     public:
         ElectronElectronOperator();
         void initialize(const Grid& grid);
+        /** Sets the coefficients gee, A and B to zero. A subsequent call to
+         *  discretizeTerm will be a no-op. (The matrix BAee is not modified.)
+         */
+        void clear();
 	void updateABMatrices(const Grid& grid);
 	void update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0);
 	/** updateAB requires that updateABMatrices and update_g_ee have been called

@@ -256,6 +256,13 @@ void ElectronElectronOperator::initialize(const Grid& grid)
     B.setZero(grid.nCells());
 }
 
+void ElectronElectronOperator::clear()
+{
+    g_ee = 0.;
+    A.setZero();
+    B.setZero();
+}
+
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
 {
     /* Note that not all elements get a value below, the others must be set to
