@@ -508,38 +508,27 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid().du();
-
-            if (k > 0)
-                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid().du();
-
-            if (k < grid().nCells() - 1)
-                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid().du();
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
-
-            if (k > 0)
-                ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
-
-            if (k < grid().nCells() - 1)
-                ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k);
 
             if (k > 0)
+            {
+                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid().du();
+                ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
                                                                       ionSpatialGrowthU.coeff(k, k - 1);
+            }
 
             if (k < grid().nCells() - 1)
+            {
+                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid().du();
+                ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
                                                                       ionSpatialGrowthU.coeff(k, k + 1);
+            }
         }
+
         // *add* the discretization of the ee term
         eeOperator.discretizeTerm(boltzmannMatrix,grid());
 
@@ -650,27 +639,24 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
-
-            if (k > 0)
-                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
-
-            if (k < grid().nCells() - 1)
-                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
-
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
                                                            ionTemporalGrowth.coeff(k, k);
 
             if (k > 0)
+            {
+                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
+            }
 
             if (k < grid().nCells() - 1)
+            {
+                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
+            }
+
         }
+
         // *add* the discretization of the ee term
         eeOperator.discretizeTerm(boltzmannMatrix,grid());
 
