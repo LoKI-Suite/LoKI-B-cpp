@@ -177,6 +177,10 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
     const Grid::Index cellNumber = grid.nCells();
 
     inelasticMatrix.setZero();
+    /** \todo the following line seems to be missing. See the notes in the
+     *  class declaration of this member
+     */
+    // hasSuperelastics = false;
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -219,7 +223,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         if (productDensity == 0)
                             continue;
 
-                        /** \todo see the comments about superElasticThresholds in the header file.
+                        /** \todo see the comments about superElasticThresholds in the ElectronKinetics.h.
                         if (numThreshold > 1)
                             superElasticThresholds.emplace_back(numThreshold);
                         */
@@ -497,6 +501,11 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 includeNonConservativeIonization = true;
         }
     }
+}
+
+AttachmentOperator::AttachmentOperator()
+ : includeNonConservativeAttachment(false)
+{
 }
 
 void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)

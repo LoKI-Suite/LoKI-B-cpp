@@ -158,6 +158,7 @@ namespace loki {
     class AttachmentOperator
     {
     public:
+        AttachmentOperator();
         // Support for electron attachment
         void evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture);
 
@@ -178,7 +179,7 @@ namespace loki {
          *      it conditionally true during introspection. (That is needed when uMax
          *      changes.)
          */
-        bool includeNonConservativeAttachment{false};
+        bool includeNonConservativeAttachment;
     };
 
 } // namespace loki
