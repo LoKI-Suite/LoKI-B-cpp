@@ -28,30 +28,9 @@
  */
 
 #include "LoKI-B/Event.h"
+#include "tests/TestUtilities.h"
 #include <iostream>
 #include <sstream>
-
-int ntests=0;
-int nerrors=0;
-
-#define test_expr(E) \
-do { \
-    ++ntests; \
-    std::cout << "Testing expression '" << #E << "': "; \
-    if (E) \
-        std::cout << "OK"; \
-    else \
-    { \
-        std::cout << "***FAILED***"; \
-        ++nerrors; \
-    } \
-    std::cout << std::endl; \
-} while (0)
-
-#define test_report \
-    std::cout << "Executed " << ntests << " tests, " \
-        << nerrors << " failed." << std::endl;
-
 
 void hello(std::ostream& os)
 {

@@ -177,6 +177,10 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
     const Grid::Index cellNumber = grid.nCells();
 
     inelasticMatrix.setZero();
+    /** \todo the following line seems to be missing. See the notes in the
+     *  class declaration of this member
+     */
+    // hasSuperelastics = false;
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -219,7 +223,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         if (productDensity == 0)
                             continue;
 
-                        /** \todo see the comments about superElasticThresholds in the header file.
+                        /** \todo see the comments about superElasticThresholds in the ElectronKinetics.h.
                         if (numThreshold > 1)
                             superElasticThresholds.emplace_back(numThreshold);
                         */
@@ -244,60 +248,78 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
     }
 }
 
-ElectronElectronOperator::ElectronElectronOperator()
+ElectronElectronOperator::ElectronElectronOperator(const Grid& grid)
 {
-    g_ee=0.0;
+    initialize(grid);
 }
 
 void ElectronElectronOperator::initialize(const Grid& grid)
 {
-    A.setZero(grid.nCells());
-    B.setZero(grid.nCells());
+    m_g_ee=0.0;
+    updateABMatrices(grid);
+    m_A.setZero(grid.nCells());
+    m_B.setZero(grid.nCells());
+}
+
+void ElectronElectronOperator::clear()
+{
+    m_g_ee = 0.;
+    m_A.setZero();
+    m_B.setZero();
 }
 
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
 {
-    BAee.setZero(grid.nCells(), grid.nCells());
+    /* Note that not all elements get a value below, the others must be set to
+     * zero. We achieve that by clearing the entire matrix first.
+     */
+    m_a.setZero(grid.nCells(), grid.nCells());
 
-    /* 1. Calculate a_nm/g_ee (equation 39f from the 2_2_0 manual).
-     * This is the part right of the curly brace, but with the minus sign
-     * that appears at the start of the expression added.
+    /* 1. Calculate a_ij/g_ee (equation 39f from the 2_2_0 manual).
+     * This is the part right of the curly brace, but *with* the minus
+     * sign that appears at the start of the expression. NOTE that in
+     * the MATLAB code also a factor du is applied, which is removed
+     * again when A and B are calculated from a_ij. In the C++ code
+     * the matrix is really a_ij/g.
      */
 
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
-    const Vector energyArray = -(grid.du() / 2.) * grid.getCells().cwiseSqrt() + (2. / 3.) * cellsThreeOverTwo;
-
-    /** \todo It appears that we are setting up a^T here, instead of a.
-     *  You could also say that we are setting up b here, since b = a^T
-     *  is assumed later on. But just setting up a first seems to bring
-     *  this closer to the documentation.
-     *  \todo change the name. Just call this 'a', instead of 'BAee',
-     *  now that this has become a member of ElectronElectronOperator.
-     */
-    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
+    const Vector energyArray = -(1./2.) * grid.getCells().cwiseSqrt() + (2./3./grid.du()) * cellsThreeOverTwo;
+    for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
     {
-
-        for (Grid::Index i = 1; i <= j; ++i)
-            BAee(i, j) = energyArray[i];
-
-        const double value = 2. / 3. * std::pow(grid.getNode(j + 1), 1.5);
-        
-        for (Grid::Index i = j + 1; i < grid.nCells(); ++i)
-            BAee(i, j) = value;
-    }
-
-    // detailed balance condition
-
-    for (Grid::Index j = 0; j < grid.nCells() - 1; ++j)
-    {
-        for (Grid::Index i = 1; i < grid.nCells(); ++i)
+        for (Grid::Index j = 1; j <= i; ++j)
         {
-            BAee(i, j) = std::sqrt(BAee(i, j) * BAee(j + 1, i - 1));
+            m_a(i,j) = energyArray[j];
+        }
+        const double tmp = 2.0/3.0*std::pow(grid.getNodes()(i+1),1.5)/grid.du();
+        for (Grid::Index j = i+1; j < grid.nCells(); ++j)
+        {
+            m_a(i,j) = tmp;
         }
     }
+
+#define LOKIB_EE_APPLY_DB_FIX 1
+#if LOKIB_EE_APPLY_DB_FIX == 1
+    const Matrix tmp(m_a);
+    for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
+    {
+        for (Grid::Index j = 1; j < grid.nCells(); ++j)
+        {
+            m_a(i,j) = std::sqrt(tmp(i,j) * tmp(j-1,i+1));
+        }
+    }
+#else
+    for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
+    {
+        for (Grid::Index j = 1; j < grid.nCells(); ++j)
+        {
+            m_a(i,j) = std::sqrt(m_a(i,j) * m_a(j-1,i+1));
+        }
+    }
+#endif // LOKIB_EE_APPLY_DB_FIX
 }
 
-void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf, double ne, double n0)
+void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0)
 {
     const double e = Constant::electronCharge;
     const double e0 = Constant::vacuumPermittivity;
@@ -306,27 +328,35 @@ void ElectronElectronOperator::update_g_ee(const Grid& grid, const Vector& eedf,
     double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
     double Te = 2. / 3. * meanEnergy;
     double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
-    g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
-}
-
-void ElectronElectronOperator::updateAB(const Grid& grid, const Vector& eedf)
-{
-        /** \todo Should .transpose() not be applied to the 2nd expression instead of the first?
-         *  Also see the note about a^T vs. a above. That explains the lines below. Is there a
-         *  reason to do things this way?
-         */
-        A = (g_ee / grid.du()) * (BAee.transpose() * eedf);
-        B = (g_ee / grid.du()) * (BAee * eedf);
+    m_g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
+    m_A = m_g_ee * (m_a * eedf);
+    m_B = m_g_ee * (m_a.transpose() * eedf);
 }
 
 void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
-        /** \todo One du() comes from the integration, together with eedf).
-         *  It feels odd that the second is not part of the definitions of A and B:
-         *  check why this is not the case.
-         */
-        power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
-        //std::cout << "EE POWER: " << power << std::endl;
+    /*  One du() comes from the integration, together with eedf).
+     *  The other is the energy gain of an electron moving up one cell,
+     *  I (JvD) believe. Make sure this is explained well in the docs.
+     */
+    power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
+    //std::cout << "EE POWER: " << power << std::endl;
+}
+
+void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
+{
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        M(k,k) += - (m_A[k] + m_B[k]);
+        if (k > 0)
+        {
+            M(k,k-1) += m_A[k - 1];
+        }
+        if (k < grid.nCells() - 1)
+        {
+            M(k,k+1) += m_B[k + 1];
+        }
+    }
 }
 
 IonizationOperator::IonizationOperator(IonizationOperatorType type)
@@ -471,6 +501,11 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 includeNonConservativeIonization = true;
         }
     }
+}
+
+AttachmentOperator::AttachmentOperator()
+ : includeNonConservativeAttachment(false)
+{
 }
 
 void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)

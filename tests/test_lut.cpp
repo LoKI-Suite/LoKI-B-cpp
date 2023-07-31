@@ -1,31 +1,11 @@
 #include "LoKI-B/LookupTable.h"
+#include "tests/TestUtilities.h"
 #include <iostream>
 #include <exception>
 #include <stdexcept>
 
 using loki::LookupTable;
 using Vector = LookupTable::Vector;
-
-int nerrors=0;
-
-#define test_equal(a,b) { \
-std::cout << "Testing: (" << #a ") == (" #b << ")\t"; \
-try { \
-if ((a)==(b)) \
-    std::cout << " OK"; \
-else { \
-    std::cout << "FAILED"; \
-    ++nerrors; \
-} \
-std::cout << std::endl; \
-} \
-catch(std::exception& exc) \
-{ \
-  std::cout << "AN EXCEPTION WAS THROWN: " << exc.what() << std::endl; \
-} \
-}
-
-#define test_expr(expr) test_equal(expr,true)
 
 void test1()
 {
@@ -73,6 +53,6 @@ int main()
 {
     test1();
 
-    std::cout << "Number of errors: " << nerrors << std::endl;
+    test_report;
     return nerrors;
 }

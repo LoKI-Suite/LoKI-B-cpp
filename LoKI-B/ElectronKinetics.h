@@ -141,7 +141,6 @@ protected:
 private:
     /// shared constructor tasks
     void initialize();
-    void evaluateMatrix();
     /** solve the Boltzmann equation, taking into account only the linear terms.
      */
     void invertLinearMatrix();
@@ -153,19 +152,26 @@ private:
     void invertMatrix(Matrix &matrix);
     void solveSpatialGrowthMatrix();
     void solveTemporalGrowthMatrix();
-    // code related to ee colissions
+    /** Solve the EE collision matrix while other terms are fixed.
+     *  This requires that eeOperator has been set up.
+     */
     void solveEEColl();
-    /** Update all terms that are needed later on to compose the boltzmannMatrix.
+    /** Update the terms that are needed later on to compose the boltzmannMatrix
+     *  that need to be calculated only once after a grid update.
      *  Note that this is called only in the constructor of this class and in
      *  reply to an grid.updatedMaxEnergy event (which is triggered among others
      *  by a smart grid iteration).
      */
-    /** solve the Boltzmann equation. An iterative procedure is used to handle
-     *  the non-linear terms.
+    void evaluateMatrix();
+    /** Solve the Boltzmann equation. The function first inverts the linear
+     *  problem. If non-linear terms are available (growth terms or electron
+     *  electron collisions, subsequently use the 'mixing direct solutions'
+     *  algorithm to find the solution.
      */
-    void mixingDirectSolutions();
-    /** solve the Boltzmann equation. Calls invertLinearMatrix() or
-     *  mixingDirectSolutions(), depending on the presence of nonlinear terms.
+    void obtainTimeIndependentSolution();
+    /** solve the Boltzmann equation by calling obtainTimeIndependentSolution()
+     *  (a time-dependent alternative, available in MATLAB, should become
+     *  available later.
      */
     void solveSingle();
     void solveSmartGrid();
@@ -219,26 +225,27 @@ private:
     // Support for ionization.
     IonizationOperator ionizationOperator;
 
-    bool includeEECollisions;
-    ElectronElectronOperator eeOperator;
+    const std::unique_ptr<ElectronElectronOperator> eeOperator;
 
     double CIEff{0.};
 
     // use by spatial AND temporal growth
     GrowthModelType growthModelType;
+    double mixingParameter;
 
     // code related to spatial growth
+    // term arising from Manual 2.2.0 eq. 8a with the first term of 8b:
+    // (note: fieldMatrix handles the second term of 8b)
+    Vector g_fieldSpatialGrowth;
     SparseMatrix fieldMatrixSpatGrowth;
     SparseMatrix ionSpatialGrowthD;
     SparseMatrix ionSpatialGrowthU;
-    Vector g_fieldSpatialGrowth;
     double alphaRedEff{0.};
 
     // code related to temporal growth
+    Vector g_fieldTemporalGrowth;
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
-    Vector g_fieldTemporalGrowth;
-    double mixingParameter;
     /** Tolerance settings.
      */
     double maxEedfRelError;

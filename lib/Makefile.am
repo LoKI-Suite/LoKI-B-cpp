@@ -11,6 +11,7 @@ libloki_b_la_SOURCES = \
 	EedfCollisions.cpp \
 	ElectronKinetics.cpp \
 	EedfMixture.cpp \
+	EedfUtilities.cpp \
 	Enumeration.cpp \
 	Gas.cpp \
 	GasMixture.cpp \

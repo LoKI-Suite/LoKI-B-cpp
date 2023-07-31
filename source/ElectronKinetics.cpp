@@ -47,21 +47,6 @@ ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *work
 
 void ElectronKinetics::initialize()
 {
-    // SPARSE INITIALIZATION
-    std::vector<Eigen::Triplet<double>> tridiagPattern;
-    tridiagPattern.reserve(3 * grid().nCells() - 2);
-
-    for (Grid::Index k = 0; k < grid().nCells(); ++k)
-    {
-        if (k > 0)
-            tridiagPattern.emplace_back(k - 1, k, 0.);
-
-        tridiagPattern.emplace_back(k, k, 0.);
-
-        if (k < grid().nCells() - 1)
-            tridiagPattern.emplace_back(k + 1, k, 0.);
-    }
-
     if (!mixture.CARGases().empty())
     {
         carOperator.reset(new CAROperator(mixture.CARGases()));
@@ -81,7 +66,7 @@ void ElectronKinetics::solve()
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
 : ElectronKinetics(setup,workingConditions),
     ionizationOperator(setup.ionizationOperatorType),
-    includeEECollisions(setup.includeEECollisions),
+    eeOperator(setup.includeEECollisions ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -98,7 +83,7 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(cnf,workingConditions),
     ionizationOperator(getIonizationOperatorType(cnf.at("ionizationOperatorType"))),
-    includeEECollisions(cnf.at("includeEECollisions")),
+    eeOperator(cnf.at("includeEECollisions") ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
@@ -123,8 +108,10 @@ void ElectronKineticsBoltzmann::initialize()
     {
         ionizationOperator.ionizationMatrix.setZero(grid().nCells(), grid().nCells());
     }
-
-    eeOperator.initialize(grid());
+    if (eeOperator)
+    {
+        eeOperator->initialize(grid());
+    }
 
     // SPARSE INITIALIZATION
     /** \todo Could the matrices that are guaranteed to be diagonal just be Eigen::DiagonalMatrix?
@@ -222,6 +209,10 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
                                  superElasticThresholds.end());
     */
+    if (eeOperator)
+    {
+        eeOperator->initialize(grid());
+    }
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -373,6 +364,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     {
         boltzmannMatrix += CARMatrix;
     }
+    // *add* the discretization of the ee term
+    if (eeOperator)
+    {
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
+    }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
 
@@ -385,11 +381,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         if (k < grid().nCells() - 1)
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
-    }
-
-    if (includeEECollisions)
-    {
-	eeOperator.updateAB(grid(),eedf);
     }
 
     /** \todo The name is incorrect. This is not the integrand since it already includes
@@ -409,8 +400,12 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
      */
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-    // diffusion and mobility components of the spatial growth terms
-    // can be removed since this is already done in the directMixing function
+    /** \todo DB: diffusion and mobility components of the spatial growth terms
+     *  can be removed since this is already done in the directMixing function
+     *  Jvd: Daan, can you explain this statement? What can be done/simplified?
+     *       These matrices are set up, assigned values to and used in the
+     *       spatial growth case.
+     */
     ionSpatialGrowthD.setZero();
     ionSpatialGrowthU.setZero();
 
@@ -510,37 +505,25 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid().du();
-
-            if (k > 0)
-                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid().du();
-
-            if (k < grid().nCells() - 1)
-                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid().du();
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
-
-            if (k > 0)
-                ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
-
-            if (k < grid().nCells() - 1)
-                ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
-                                                           ionSpatialGrowthD.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
+                                                           ionSpatialGrowthD.coeff(k, k);
 
             if (k > 0)
+            {
+                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid().du();
+                ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k - 1) + eeOperator.A[k - 1];
+                                                                      ionSpatialGrowthU.coeff(k, k - 1);
+            }
 
             if (k < grid().nCells() - 1)
+            {
+                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid().du();
+                ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k + 1) + eeOperator.B[k + 1];
+                                                                      ionSpatialGrowthU.coeff(k, k + 1);
+            }
         }
 
         Vector eedfNew = eedf;
@@ -570,10 +553,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         {
             hasConverged = true;
 
-            /** There is no maximum number of iterations in case includeEECollisions==true.
-             *  Is there a reason for that? This is not very safe.
+            /** There is no maximum number of iterations if ee collisions are enabled.
+             *  Is there a reason for that? This is not very safe, it seems.
              */
-            if (iter > 150 && !includeEECollisions)
+            if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
         }
         ++iter;
@@ -597,6 +580,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     {
         boltzmannMatrix += CARMatrix;
     }
+    // *add* the discretization of the ee term
+    if (eeOperator)
+    {
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
+    }
 
     const double e = Constant::electronCharge;
     const double m = Constant::electronMass;
@@ -616,11 +604,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    if (includeEECollisions)
-    {
-	eeOperator.updateAB(grid(),eedf);
-    }
-
+    // CIEff is <nu_eff>/N
     const Vector integrandCI = (SI::gamma * grid().du())
                     * Vector::Ones(grid().nCells()).transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
@@ -637,16 +621,22 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     {
  //       Log<Message>::Notify("Iteration ", iter);
 
+        // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
         const long double growthFactor = CIEffNew / SI::gamma;
 
         g_fieldTemporalGrowth.resize(grid().getNodes().size());
         g_fieldTemporalGrowth[0] = 0.;
         for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
         {
+            // totalCSI = Omega_PT, See \cite Tejero2019 5a or the Manual 2.2.0, below eq. 11b:
             const double totalCSI = mixture.collision_data().totalCrossSection()[i] + growthFactor / std::sqrt(grid().getNode(i));
+            /* The following g corresponds to the G_E in \cite Tejero2019 equation 6a,
+             * with f^1(u) as in equation 3b
+             * In the Manual 2.2.0: G_E as in 12a, f^1(u) as in 7b
+             */
+            const double OmegaPT = totalCSI + (m * WoN * WoN / (2 * e)) / (grid().getNode(i)*totalCSI);
             g_fieldTemporalGrowth[i] =
-                (EoN * EoN / 3) * grid().getNode(i) /
-                (totalCSI + (m * WoN * WoN / (2 * e)) / (grid().getNode(i)*totalCSI));
+                (EoN * EoN / 3) * grid().getNode(i) / OmegaPT;
         }
         g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
 
@@ -655,26 +645,23 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
-
-            if (k > 0)
-                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
-
-            if (k < grid().nCells() - 1)
-                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
-
+            // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
-        }
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
-        {
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
-                                                           ionTemporalGrowth.coeff(k, k) - (eeOperator.A[k] + eeOperator.B[k]);
+                                                           ionTemporalGrowth.coeff(k, k);
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1) + eeOperator.A[k - 1];
+            {
+                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
+            }
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1) + eeOperator.B[k + 1];
+            {
+                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
+            }
+
         }
 
         eedfNew = eedf;
@@ -691,7 +678,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         {
             hasConverged = true;
 
-            if (iter > 150 && !includeEECollisions)
+            if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative temporal growth scheme did not converge.");
         }
 
@@ -705,6 +692,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
 void ElectronKineticsBoltzmann::solveEEColl()
 {
+    assert(eeOperator);
     // Splitting all possible options for the best performance.
 
     /** \todo What if only one of the following is true? Then we use e.g. the ionizationMatrix, while includeNonConservativeIonization==false.
@@ -774,40 +762,28 @@ void ElectronKineticsBoltzmann::solveEEColl()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    eeOperator.updateABMatrices(grid());
-    /** \todo Should this not be called inside the !hasConverged loop?
-     *  g_ee depends on the mean energy, which depends on the EEDF. Or
-     *  is there a special reason why <u> does not change during these
-     *  iterations (because ee-collisions do not change the power, perhaps)?
-     */
-    eeOperator.update_g_ee(grid(),eedf,ne,n0);
-
     double ratioNew = 0.;
     Vector eedfNew = eedf;
 
     bool hasConverged = false;
     uint32_t iter = 0;
 
-    /** \todo Mee is ignored in solveEEColl. How does that result in differences with
-     *  respect to the MATLAB version.
-     */
-    /// In this implementation we completely skip the Mee matrix, saving both memory and time.
-    // Vector MeeDiag(grid().nCells()), MeeSub(grid().nCells()), MeeSup(grid().nCells());
-
     while (!hasConverged)
     {
-	eeOperator.updateAB(grid(),eedf);
-
+        eeOperator->update_g_ee_AB(grid(),eedf,ne,n0);
+        // restore boltzmannMatrix to the situation without ee collisions
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            boltzmannMatrix(k, k) = baseDiag[k] - (eeOperator.A[k] + eeOperator.B[k]);
+            boltzmannMatrix(k, k) = baseDiag[k];
 
             if (k > 0)
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + eeOperator.A[k - 1];
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k];
 
             if (k < grid().nCells() - 1)
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + eeOperator.B[k + 1];
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k];
         }
+        // *add* the discretization of the ee term
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
 
         invertMatrix(boltzmannMatrix);
 
@@ -854,30 +830,26 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 }
             }
         }
-
-        eeOperator.update_g_ee(grid(),eedf,ne,n0);
         iter++;
     }
 
     std::cerr << "e-e routine converged in: " << iter << " iterations.\n";
 }
 
-void ElectronKineticsBoltzmann::mixingDirectSolutions()
+void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
     invertLinearMatrix();
 
-    const Grid::Index numCells = grid().nCells();
-
-    //        solveEEColl();
-    //        return;
-
-    // Declare function pointer
-    void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
-
+    /* Maybe we are done. But we need to do more work if non-linear terms are
+     * present:
+     *   1) growth terms (with or without ee collisions)
+     *   2) ee collisions.
+     * these cases are handled below.
+     */
     const bool includeGrowthModel = attachmentOperator.includeNonConservativeAttachment || ionizationOperator.includeNonConservativeIonization;
-
     if (includeGrowthModel)
     {
+        void (ElectronKineticsBoltzmann::*growthFunc)() = nullptr;
         switch (growthModelType)
         {
         case GrowthModelType::spatial:
@@ -895,27 +867,24 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
             growthFunc = &ElectronKineticsBoltzmann::solveTemporalGrowthMatrix;
             break;
         }
-    }
-
-    if (includeEECollisions)
-    {
-        eeOperator.g_ee = 0.;
-        eeOperator.BAee.setZero(numCells, numCells);
-        eeOperator.A.setZero();
-        eeOperator.B.setZero();
-
-        if (!includeGrowthModel)
+        if (eeOperator)
         {
-            Log<Message>::Notify("Starting e-e collision routine.");
-            solveEEColl();
-        }
-        else
-        {
+            /* This is the situation that is visualized in the flow chart (figure 3)
+             * in the manual. The calculation without non-linear terms has already
+             * been done at the start of this function. We now enter a double loop.
+             * Inside the main loop 1) the growth model is run and 2) the ee model
+             * is run. The main loop finishes when the last ee-run no longer changes
+             * the EEDF (beyond tolerance settings).
+             */
+
+            /* We start without ee collisions. The eeOperator is updated inside the
+             * call to solveEEColl(); the updated eeOperator will be used in the
+             * next call to the growth function.
+             */
+            eeOperator->clear();
+            Vector eedfOld;
             uint32_t globalIter = 0;
             const uint32_t maxGlobalIter = 20;
-
-            Vector eedfOld;
-
             while (globalIter < maxGlobalIter)
             {
                 (this->*growthFunc)();
@@ -932,23 +901,21 @@ void ElectronKineticsBoltzmann::mixingDirectSolutions()
                     Log<GlobalIterError>::Warning(globalIter);
             }
         }
+        else
+        {
+            (this->*growthFunc)();
+        }
     }
-    else
+    else if (eeOperator)
     {
-        (this->*growthFunc)();
+            Log<Message>::Notify("Starting e-e collision routine.");
+            solveEEColl();
     }
 }
 
 void ElectronKineticsBoltzmann::solveSingle()
 {
-    if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment || includeEECollisions)
-    {
-        mixingDirectSolutions();
-    }
-    else
-    {
-        invertLinearMatrix();
-    }
+    obtainTimeIndependentSolution();
 }
 
 void ElectronKineticsBoltzmann::solveSmartGrid()
@@ -1184,9 +1151,9 @@ void ElectronKineticsBoltzmann::evaluatePower()
         fieldOperator.evaluatePower(grid(),eedf,power.field);
     }
 
-    if (includeEECollisions)
+    if (eeOperator)
     {
-        eeOperator.evaluatePower(grid(),eedf,power.electronElectron);
+        eeOperator->evaluatePower(grid(),eedf,power.electronElectron);
     }
 
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
