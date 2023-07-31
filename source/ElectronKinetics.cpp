@@ -364,6 +364,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     {
         boltzmannMatrix += CARMatrix;
     }
+    // *add* the discretization of the ee term
+    if (eeOperator)
+    {
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
+    }
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
 
@@ -520,11 +525,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                                                                       ionSpatialGrowthU.coeff(k, k + 1);
             }
         }
-        // *add* the discretization of the ee term
-	if (eeOperator)
-	{
-            eeOperator->discretizeTerm(boltzmannMatrix,grid());
-        }
 
         Vector eedfNew = eedf;
 
@@ -579,6 +579,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     if (carOperator)
     {
         boltzmannMatrix += CARMatrix;
+    }
+    // *add* the discretization of the ee term
+    if (eeOperator)
+    {
+        eeOperator->discretizeTerm(boltzmannMatrix,grid());
     }
 
     const double e = Constant::electronCharge;
@@ -658,12 +663,6 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             }
 
         }
-
-        // *add* the discretization of the ee term
-	if (eeOperator)
-	{
-            eeOperator->discretizeTerm(boltzmannMatrix,grid());
-	}
 
         eedfNew = eedf;
 
