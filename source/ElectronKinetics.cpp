@@ -398,6 +398,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     /** \todo DB: diffusion and mobility components of the spatial growth terms
      *  can be removed since this is already done in the directMixing function
      *  Jvd: Daan, can you explain this statement? What can be done/simplified?
+     *       These matrices are set up, assigned values to and used in the
+     *       spatial growth case.
      */
     ionSpatialGrowthD.setZero();
     ionSpatialGrowthU.setZero();
@@ -518,7 +520,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                                                                       ionSpatialGrowthU.coeff(k, k + 1);
             }
         }
-
         // *add* the discretization of the ee term
 	if (eeOperator)
 	{
@@ -598,6 +599,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
+    // CIEff is <nu_eff>/N
     const Vector integrandCI = (SI::gamma * grid().du())
                     * Vector::Ones(grid().nCells()).transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
@@ -614,16 +616,22 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     {
  //       Log<Message>::Notify("Iteration ", iter);
 
+        // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
         const long double growthFactor = CIEffNew / SI::gamma;
 
         g_fieldTemporalGrowth.resize(grid().getNodes().size());
         g_fieldTemporalGrowth[0] = 0.;
         for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
         {
+            // totalCSI = Omega_PT, See \cite Tejero2019 5a or the Manual 2.2.0, below eq. 11b:
             const double totalCSI = mixture.collision_data().totalCrossSection()[i] + growthFactor / std::sqrt(grid().getNode(i));
+            /* The following g corresponds to the G_E in \cite Tejero2019 equation 6a,
+             * with f^1(u) as in equation 3b
+             * In the Manual 2.2.0: G_E as in 12a, f^1(u) as in 7b
+             */
+            const double OmegaPT = totalCSI + (m * WoN * WoN / (2 * e)) / (grid().getNode(i)*totalCSI);
             g_fieldTemporalGrowth[i] =
-                (EoN * EoN / 3) * grid().getNode(i) /
-                (totalCSI + (m * WoN * WoN / (2 * e)) / (grid().getNode(i)*totalCSI));
+                (EoN * EoN / 3) * grid().getNode(i) / OmegaPT;
         }
         g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
 
@@ -632,6 +640,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
+            // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
                                                            ionTemporalGrowth.coeff(k, k);
