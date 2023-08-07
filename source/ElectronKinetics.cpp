@@ -494,7 +494,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     uint32_t iter = 0;
     bool hasConverged = false;
 
-    const Vector g_fieldSpatialBase = (EoN / 6) * grid().getNodes().array() / mixture.collision_data().totalCrossSection().array();
+    const Vector g_fieldSpatialBase = (EoN / 3) * grid().getNodes().array() / mixture.collision_data().totalCrossSection().array();
 
     while (!hasConverged)
     {
@@ -504,14 +504,14 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / grid().du();
+            fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k);
 
             if (k > 0)
             {
-                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / grid().du();
+                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
                 ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
                                                                       ionSpatialGrowthU.coeff(k, k - 1);
@@ -519,7 +519,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
             if (k < grid().nCells() - 1)
             {
-                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / grid().du();
+                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
                 ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
                                                                       ionSpatialGrowthU.coeff(k, k + 1);
@@ -586,8 +586,6 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         eeOperator->discretizeTerm(boltzmannMatrix,grid());
     }
 
-    const double e = Constant::electronCharge;
-    const double m = Constant::electronMass;
     const double EoN = workingConditions->reducedFieldSI();
     const double WoN = workingConditions->reducedExcFreqSI();
 
@@ -634,9 +632,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
              * with f^1(u) as in equation 3b
              * In the Manual 2.2.0: G_E as in 12a, f^1(u) as in 7b
              */
-            const double OmegaPT = totalCSI + (m * WoN * WoN / (2 * e)) / (grid().getNode(i)*totalCSI);
-            g_fieldTemporalGrowth[i] =
-                (EoN * EoN / 3) * grid().getNode(i) / OmegaPT;
+            const double OmegaPT = totalCSI + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid().getNode(i)*totalCSI);
+            g_fieldTemporalGrowth[i] = (EoN * EoN / 3) * grid().getNode(i) / OmegaPT;
         }
         g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
 
@@ -1118,7 +1115,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
 
             for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
-                correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]);
+                correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2;
 
                 // Diffusion and Mobility contributions
                 cellCrossSection[k] = .5 * (mixture.collision_data().totalCrossSection()[k] + mixture.collision_data().totalCrossSection()[k + 1]);
