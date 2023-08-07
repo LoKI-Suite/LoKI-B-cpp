@@ -127,13 +127,11 @@ FieldOperator::FieldOperator(const Grid& grid)
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN)
 {
     assert(g.size()==grid.getNodes().size());
-    const double me = Constant::electronMass;
-    const double e = Constant::electronCharge;
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
         g[i] = (EoN * EoN / 3) * grid.getNode(i) /
-          (totalCS[i] + (me * WoN * WoN / (2 * e)) / (grid.getNode(i)*totalCS[i]));
+          (totalCS[i] + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*totalCS[i]));
     }
     g[g.size() - 1] = 0.;
 }
