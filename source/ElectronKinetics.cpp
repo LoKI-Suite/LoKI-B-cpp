@@ -1016,8 +1016,6 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 {
     firstAnisotropy.setZero(grid().nCells());
 
-    const double e = Constant::electronCharge;
-    const double me = Constant::electronMass;
     const double EoN = workingConditions->reducedFieldSI();
     const double WoN = workingConditions->reducedExcFreqSI();
     const Grid::Index n = grid().nCells();
@@ -1050,11 +1048,12 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
                 // HF case. zeta=sqrt(2.) and Omega_PT includes the second term in 5a:
                 // Omega_PT_i = Omega_c_i + (me/(2*e))(omega/N)^2 / (u*Omega_c_i)
                 //   This can also be written as
-                // Omega_PT_i = Omega_c_i + (me/2))(omega/N)^2 / (e*u*Omega_c_i)
+                // Omega_PT_i = Omega_c_i + (omega/N)^2/(gamma^2*u*Omega_c_i)
                 // (Note: that e*u is the energy in SI units.)
+		// NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
                 firstAnisotropy = -EoN * std::sqrt(2.) * firstAnisotropy.array() /
                                   (cellCrossSection.array() +
-                                   WoN * WoN * me / (2. * e * grid().getCells().array() * cellCrossSection.array()));
+                                   WoN * WoN / (SI::gamma*SI::gamma * grid().getCells().array() * cellCrossSection.array()));
             }
         }
         else if (growthModelType == GrowthModelType::spatial)
@@ -1068,9 +1067,10 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
     }
     else
     {
+	// NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
         firstAnisotropy =
             -EoN * std::sqrt(2.) * firstAnisotropy.array() /
-            (cellCrossSection.array() + WoN * WoN * me / (2. * e * grid().getCells().array() * cellCrossSection.array()));
+            (cellCrossSection.array() + WoN * WoN / (SI::gamma*SI::gamma * grid().getCells().array() * cellCrossSection.array()));
     }
 }
 
