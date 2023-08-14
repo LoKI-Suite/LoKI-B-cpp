@@ -27,6 +27,7 @@
 \newcommand{\bvec}[1]{{\ensuremath{\bm {#1}}}}
 % diag - make a diagonal matrix from a vector.
 \DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\sgn}{sgn}
 
 
 \bibliographystyle{unsrt}
@@ -65,21 +66,22 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		and first anisotropic contributions.
 	\item We use $F$ for distribution functions that are normalized to the
 		electron density field, and will use $f$ later on to refer to
-		normalized distribution functions. This is the same is LoKI-B,
+		normalized distribution functions. This is the same as in LoKI-B,
 		BOLSIG+ does it the other way around.
 	\item The angle $\theta$ is defined to be the angle with the positive
 		$z$-axis in this document. Also the electric field is supposed
-		to be aligned with this axis, so $\vec{E}(t)=E(t)\vec{e}_z$.
+		to be aligned with this axis, so $\vec{E}(t)=E_z(t)\vec{e}_z$,
+		and since there is only one component, $E := E_z$ is used.
 		This is the convention that is also used in \cite{Hagelaar2005}:
 		see the discussion between equations 3 and 4 of that paper.
 
-		In LoKI-B, the electric field $E(t)$ is defined with an explicit
+		In LoKI-B, the electric field component is defined with an explicit
 		minus sign (see e.g. \cite[eq. 1]{Manual_2_2_0}), which states
-		$E(t)=-E_p\cos(\omega t)\vec{e}_z$, although I could not
-		find these minus signs back in the code. It appears that in the
-		minus sign has been obsorbed in the statement of the equations,
-		instead, as if the quantity $E(t)$ is defined as
-		$E(t)=-\vec{E}(t)\cdot\vec{e}_z$.
+		$\vec{E}(t)=-E_p\cos(\omega t)\vec{e}_z$, where $E_p$ is the number
+		that is specified in the input file (which may also contain a factor
+		$1/sqrt{2}$ in case of HF fields). Then, $E_z(t)=-E_p\cos(\omega t)$.
+
+		The symbol $E$ that is used in the LoKI code and manual is $E := -E_z$.
 	\item Although the parameter $\epsilon$ (energy) is used in equations \cite[eq. 3--6]{Hagelaar2005},
 		these equations describe the {\em velocity} representation of the
 		distribution function, using spherical coordinates $(v,\theta,\phi)$.
@@ -91,32 +93,36 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		the mobility has the same sign as the drift velocity, and it
 		is negative in the case of electrons. In other words: also here
 		we do not `invent' explicit minus signs ourselves.
+		Both LoKI-B and BOLSIG+ define $\mu_e=-v_d/E$ instead.
 	\item The Townsend coefficient has been defined as
 		$\alpha=(\dd{n_e}/\dd{z})/n_e$: also here we do not invent
-		explicit minus signs. Also $\alpha$ will be negative in case
+		explicit minus signs. This means that $\alpha$ will be negative in case
 		the growth happens in the negative $z$-direction (which normally
-		happens if the electric field points in the positive direction).
+		corresponds to $E_z>0$).
 
 		Also LoKI-B defines $\alpha$ this way, see \cite[eq. 52b]{Manual_2_2_0}.
-		However, because of the explicit minus sign of the electric field,
-		$\alpha$ will be be positive when $E$ is positive (assuming the
-		drift velocity is not countered by an opposing diffusion velocity
-		that is larger in magnitude).
+		But note that $\alpha$ will be {\em positive} for positive $E$
+		in LoKI-B, because of the definition that $E=-E_z$.
 
-		In BOLSIG+, we see $\alpha=-(\dd{n_e}/\dd{z})/n_e$ (equation
+		In BOLSIG+, we see $\alpha=-(\dd{n_e}/\dd{z})/n_e$ instead (equation
 		\cite[16]{Hagelaar2005}). Also the mean velocity $w$ (BOLSIG+ notation)
 		is defined with a minus sign (same equation).
-
 	\item In \cite[52a--b]{Manual_2_2_0} the mean velocity is called
-		the mean {\em drift} velocity. I consider that a bug, since the
-		definition also includes the diffusion velocity --- in the
-		case of the PT model the latter happens to be zero, but it is
-		present in eq. 52b for the spatial growth case. In this document
-		the mean velocity is just called $\MEAN{v_z}$.
+		the mean {\em drift} velocity. That seems wrong, since the
+		definition also includes the diffusion velocity in the case
+		of spatial growth (eq. 52b). In this document the mean velocity
+		is just called $\MEAN{v_z}$.
 	\item	In BOLSIG+ and in LoKI-B, the energy is expressed in $eV$. BOLSIG+
 		uses the symbol $\epsilon$ for energy, LoKI-B uses $u$. In this
 		test we systematically use $\epsilon$ for an energy in $J$, and
 		$u=\epsilon/e$ for an energy in $eV$.
+	\item In LoKI-B, some additional factor $\gamma$ and $1/\gamma$ appear in
+		the definitions of the terms of the Boltzmann equations, compared with
+		BOLSIG+ and the present text. In the final form of the equation,
+		the one that is actually discretized, all terms have an extra $1/\gamma$.
+		As a result, the definition of the source $S(u)$ (LoKI-B) has this
+		additional factor compared to the BOLSIG+ expression $\tilde{C}^0(u)$,
+		and $S(u)=\tilde{C}^0(u)/\gamma$.
 \end{itemize}
 What does this mean in practice? How can you translate the equations in the subsequent
 sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar2005}?
@@ -125,11 +131,16 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 		\begin{itemize}
 			\item $\mu_e\rightarrow -\mu_e$,
 			\item $E\rightarrow -E$,
-			\item $\MEAN{v_z}\rightarrow v_d$.
-			\item $f \rightarrow f^{0}_u$. There is no symbol
-			for $f^0_u+f^1\cos\theta$, $f^0$ is used for $f^0_u$.
-			I consider this very confusing and hope it can be changed in
-			the LoKI-docs. I will make this change in the C++ code.
+			\item $\MEAN{v_z}\rightarrow v_d$,
+			\item $f \rightarrow f^{0}_u$: Unfortunately. there is no symbol
+			in LoKI-B for the complete approximation of the distribution
+			function, $f^0_u+f^1\cos\theta$, $f^0$, since $f$ is used for
+			$f^0_u$, the first term of its expansion.
+			I find this very confusing, since as a result for example
+			$F(u)\neq n_ef(u)$, and hope it can be changed in the LoKI-docs.
+			and code. In the LoKI-B {\em code}, the name \SRC{eedf} is used
+			for $f^0(u)$, which is confusing for the same reason.
+			\item $\tilde{C}^0(u)\rightarrow \gamma S(e)$.
 		\end{itemize}
 	\item BOLSIG+: In all equations, change:
 		\begin{itemize}
@@ -173,7 +184,7 @@ resulting in
 	\label{eq:Fv-norm-vel}
 \end{equation}
 since the $\theta$-integration of the term involving $F^1_v$ vanishes because of
-the factor $\cos\theta$. Using energy $\epsilon$ as parameter, instead of $v$, we
+the factor $\cos\theta$. Using energy $\epsilon$ as parameter instead of $v$, we
 find, using $v=\sqrt{2\epsilon/m_e}$,
 \begin{equation}
 	\int\limits_0^{2\pi}\int\limits_0^\pi\int\limits_0^\infty F_v(v,\theta,z,t)v^2\sin\theta\dd{v}\dd{\theta}\dd{\phi}
@@ -189,13 +200,11 @@ the constant factor, as
 	2\pi \left(\frac{2}{m}\right)^{3/2}F^{0,1}_v(v(\epsilon),z,t).
 	\label{eq:F^{0,1}_eps(eps)}
 \end{equation}
-From the previous two expresssions it follows that the function has the integral properties
-\begin{align}
-	&\int\limits_0^\infty F^0_\epsilon(\epsilon,z,t)\sqrt{\epsilon}\dd{\epsilon}=n_e(z,t),
-	\label{eq:F0eps-norm} \\
-	&\int\limits_0^\infty F^1_\epsilon(\epsilon,z,t)\sqrt{\epsilon}\dd{\epsilon}=0.
-	\label{eq:F1eps-int}
-\end{align}
+From the previous two expresssions it follows that the function has the integral property
+\begin{equation}
+	\int\limits_0^\infty F^0_\epsilon(\epsilon,z,t)\sqrt{\epsilon}\dd{\epsilon}=n_e(z,t).
+	\label{eq:F0eps-norm}
+\end{equation}
 
 Along the same lines, if we insist on using $\si{eV}$ as energy unit instead of $J$, define
 $u=\epsilon/e$, the energy in $eV$, and use $v=\sqrt{2eu/m}$, the energy-in-$\si{eV}$
@@ -213,6 +222,11 @@ defined the constant $\gamma$ as
   \gamma = \sqrt{2e/m_e}.
   \label{eq:gamma}
 \end{equation}
+For completeness sake, the function $F^0_u(u,z,t)$ has the integral property
+\begin{equation}
+	\int\limits_0^\infty F^0_u(u,z,t)\sqrt{u}\dd{u}=n_e(z,t).
+	\label{eq:F0u-norm}
+\end{equation}
 \begin{framed}
  \noindent Note that the only change from \eqref{eq:F^{0,1}_eps(eps)} to
   \eqref{eq:F^{0,1}_u(u)} is the appearance of $\gamma=\sqrt{2e/m_e}$ instead
@@ -224,16 +238,9 @@ defined the constant $\gamma$ as
   or $K$, a hand full of miscellaneous conversions of constants that are
   used in the code (CAR, the electron-electron collision operator) and an
   occasional change $-1 \rightarrow q_e$ (e.g. in the calculation of Ohmic
-  dissipation: $-\Gamma E \rightarrow q_e\Gamma E$ to convert $eV/m^3/s$ into
-  $W/m^3$.
+  dissipation: $-\Gamma E \rightarrow q_e\Gamma E$ to convert $\si{eV/m^3/s}$ into
+  $\si{W/m^3}$.
 \end{framed}
-For completeness sake, the function $F^0_u(u,z,t)$ has the integral property
-\begin{align}
-	&\int\limits_0^\infty F^0_u(u,z,t)\sqrt{u}\dd{u}=n_e(z,t),
-	\label{eq:F0u-norm} \\
-	&\int\limits_0^\infty F^1_u(u,z,t)\sqrt{u}\dd{u}=0.
-	\label{eq:F1u-int}
-\end{align}
 
 The distribution functions $F^{0,1}_u(u,z,t)$ can be written as the product of the electron
 density $n_e$ and normalized distribution functions $f^{0,1}_u(u,z,t)$,
@@ -264,7 +271,7 @@ If $g$ is of the form $g_u(u)g_\theta(\theta)$, this becomes
 	\nonumber \\
 	&=
 	\int\limits_0^\infty g_u(u)\sqrt{u}f^0_u(u,z,t)\dd{u}
-		\frac{1}{2}\int\limits_0^\pi g_\theta(\theta)\sin\theta\dd{\theta} 
+		\frac{1}{2}\int\limits_0^\pi g_\theta(\theta)\sin\theta\dd{\theta}
 	\nonumber \\
 	&+
 	\int\limits_0^\infty g_u(u)\sqrt{u}f^1_u(u,z,t)\dd{u}
@@ -308,10 +315,10 @@ for $p\neq -1 \wedge p+q-1\geq 0$ over energy space --- we will need this. Parti
 	-\int\limits_0^\infty pu^{p+q-1}F^{0,1}\dd{u}.
 	\label{eq:upduqF/du-int}
 \end{align}
-Here we have used that fact that $u^{p+q}F^{0,1}(u)$ vanishes at $u=0$ for $p+q\geq 0$,
-and goes to for $u\rightarrow\infty$. As an example,
+Here we have used that fact that $u^{p+q}F^{0,1}(u)$ vanishes at $u=0$ for $p+q\geq 1$,
+and goes to $0$ for $u\rightarrow\infty$. As an example,
 $ (\gamma/3)\int_0^\infty u\dd{(uF^1)}/\dd{u}
- = 
+ =
  -(\gamma/3)\int\limits_0^\infty uF^1\dd{u}=-\Gamma_e$
 (here $p=1$, $q=1$).
 
@@ -319,8 +326,8 @@ $ (\gamma/3)\int_0^\infty u\dd{(uF^1)}/\dd{u}
 \subsection{Equations for $F^0_u$ and $F^1_u$}
 
 The equations that govern $F^{0,1}_v$ are given by \cite[eq. 3--6]{Hagelaar2005}.
-With the notational changes that have been indicated in the beginning of this
-section, by taking $E$ outside of the $u$-differentation and after multiplication
+With the notational changes that have been indicated in section \ref{sec:compatibility},
+by taking $E$ outside of the $u$-differentation and after multiplication
 with $\sqrt{u}$ these are
 \begin{align}
 	&\sqrt{u}\PDEV{F_v^0}{t}
@@ -376,7 +383,6 @@ This equation can be recognized as the particle balance equation for the
 electrons, with the volumetric (net) particle production rate $S_e$ given by
 \begin{equation}
 	S_e(z,t)
-	= 2\pi\gamma^3\int\limits_0^\infty\sqrt{u}C^0(u)\dd{u}
 	= n_eN\int\limits_0^\infty\tilde{C}^0(u)\dd{u}.
 	\label{eq:S_e}
 \end{equation}
@@ -384,12 +390,12 @@ This expression for $S_e$ will be justified later, in section \ref{sec:sources}.
 Because we have argued that the source term is mostly linear in $n_e$ and $N$,
 it makes
 sense to define the net ionization frequency $\MEAN{\nu_{\mbox{eff}}}$ and the
-effective rate coefficient $K_{\mbox{eff}}$ such that
+effective rate coefficient $\MEAN{K_{\mbox{eff}}}$ such that
 \begin{align}
 	S_e(z,t) &= n_e(z,t)\MEAN{\nu_{\mbox{eff}}}(z,t), \label{eq:S_e(nu^eff)} \\
-	S_e(z,t) &= n_e(z,t)N(z,t)\MEAN{K_{\mbox{eff}}}(z,t). \label{eq:S_e(K^eff)} 
+	S_e(z,t) &= n_e(z,t)N(z,t)\MEAN{K_{\mbox{eff}}}(z,t). \label{eq:S_e(K^eff)}
 \end{align}
-The dependence of $\MEAN{\nu_{\mbox{eff}}}$ and $K_{\mbox{eff}}$ on the space and time
+The dependence of $\MEAN{\nu_{\mbox{eff}}}$ and $\MEAN{K_{\mbox{eff}}}$ on the space and time
 coordinates is through the dependence on the distribution function
 $f^0_u(u,z,t)$ and the molar fractions of the target species that are
 involved in ionization or attachment reactions. As announced, details will
@@ -409,7 +415,8 @@ This equation can be recognized as the energy balance equation for the
 electrons, with the volumetric (net) power gained in by the electrons
 in collisions given by
 \begin{equation}
-	S_u(z,t) = 2\pi\gamma^3\int\limits_0^\infty u\sqrt{u}C^0(u)\dd{u}.
+	S_u(z,t)
+	= n_eN\int\limits_0^\infty u\tilde{C}^0(u)\dd{u}.
 	\label{eq:S_u}
 \end{equation}
 
@@ -425,7 +432,7 @@ equations involving $n_e$ and the {\em normalized} distribution functions,
 	+\sqrt{u}\PDEV{f^0_u}{t}
 	+ \frac{\gamma}{3}u\PDEV{f^1_u}{z}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
+	= N\tilde{C}^0,
 	\label{eq:ebe-2term-f-u0} \\
 	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
@@ -440,14 +447,15 @@ two-term expansion, resulting in equations \eqref{eq:Fv(Fv0,Fv1)},
 \eqref{eq:ebe-2term-hagelaar-F-v0} and \eqref{eq:ebe-2term-hagelaar-F-v1}.
 In particular, these equations still allow the electron density, the
 functions $f^{0,1}_u$, the electric field and other paramers that may influence
-the source term $C^0$ to be functions of space and time coordinates.
+the source term $\tilde{C}^0$ to be functions of space and time coordinates.
 
 \subsection{Solutions for systems of the form $f^{0,1}_u(u)$}
 
-At the basis of a number of interesting solutions is the simplification of
-\eqref{eq:F=n_ef} to
+At the basis of a number of well-known solutions, such as the spatial and temporal
+growth models, to be discussed later, is the simplification of \eqref{eq:F=n_ef} to
 \begin{equation}
 	F^{0,1}_u(u,z,t)=n_e(z,t)f^{0,1}_u(u),
+	\label{eq:F(u,z,t)=n_e(z,t)f(u)}
 \end{equation}
 that is: the {\em normalized} eedf depends only on $u$, not on space or time coordinates
 --- but $n_e$ is still allowed to depend on space or time, or both. Under these conditions,
@@ -456,7 +464,7 @@ equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1} reduce to
 	&\sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \frac{\gamma}{3}uf^1_u\frac{1}{n_e}\PDEV{n_e}{z}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
+	=  N\tilde{C}^0,
 	\label{eq:ebe-2term-f-u0(u)} \\
 	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
@@ -464,55 +472,136 @@ equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1} reduce to
 	= -N\sigma_m(u)\gamma uf^1_u.
 	\label{eq:ebe-2term-f-u1(u)}
 \end{align}
+Integration of the first equation over all energies yields
+\begin{equation}
+	\frac{1}{n_e}\PDEV{n_e}{t}
+	+ \MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z}
+	=  \MEAN{\nu_{eff}},
+\end{equation}
+which shows that the space- and time-derivatives of the electron density are dependent
+quantities. One can consider to proceed by eliminating either of them using this
+relation. In the following sections we will instead discuss the cases that one of these
+terms are assumed to be zero.
+
+TODO: discuss the ramifications of assumption \eqref{eq:F(u,z,t)=n_e(z,t)f(u)} in more
+detail, and motivate why/when this assumption makes any sense.
+
+\begin{framed}
+TODO/IDEA: is it useful to eliminate one the derivatives, and make some general progress,
+instead of assuming already at this point that one of them is zero (next sections)?
+One could consider to tabulate results as a function not only of $E/N$, but also of
+some parameter that describes the relative importance of the two derivatives. For example,
+one could do
+\begin{align}
+	\beta &:= \begin{cases}
+			\displaystyle \frac{1}{\nu_e}\frac{1}{n_e}\PDEV{n_e}{t}	&: \MEAN{\nu_{eff}}=0, \\
+			1							&: \mbox{otherwise},
+		\end{cases}
+\end{align}
+so
+\begin{align}
+	\frac{1}{n_e}\PDEV{n_e}{t} &= \beta\MEAN{\nu_{eff}}, \\
+	\MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z} &= (1-\beta)\MEAN{\nu_{eff}}.
+\end{align}
+(TODO still: show that it does not matter which growth model is assumed when $\MEAN{\nu_{eff}}=0$,
+so we can arbitrarily set $\beta=1$ in that case.)
+What impact would that have on fluid models that
+use results of the two-term expansion? Would there be significant differences?
+
+Underlying question: when `complete` data sets are compiled using a 2-term model,
+is the choice for temporal/spatial usually docuented? Then that should be followed,
+obviously. Is that actually what people do?
+\end{framed}
 
 \subsubsection{Temporal Growth}
-The {\em Temporal Growth} model assumes, in addition, that the system is
-uniform, $\partial/\partial z=0$, yielding
+The {\em Temporal Growth} model assumes, in addition, that the electron density depends
+only on time, yielding
 \begin{align}
 	&\sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{t}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
+	=  N\tilde{C}^0,
 	\nonumber \\
 	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
 	- E\gamma u\PDEV{f^0_u}{u}
 	= -N\sigma_m(u)\gamma uf^1_u.
 	\nonumber
 \end{align}
-For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e(nu^eff)}
-tell us that $\dd{n_e}/\dd{t}=n_e\MEAN{\nu_{\mbox{eff}}}$, resulting in
+For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e(K^eff)}
+tell us that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\mbox{eff}}}$. This allows the second equation
+to be rewritten as
 \begin{align}
-	&\sqrt{u}f^0_u\MEAN{\nu_{\mbox{eff}}}
-	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
-	\label{eq:ebe-2term-f-u0(u)-temp} \\
 	&f^1_u(u)
-	= \frac{E}{N}\frac{1}{\Omega_c(u)}\PDEV{f^0_u}{u},
+	= \frac{E}{N}\frac{1}{\Omega_{pt}(u)}\PDEV{f^0_u}{u},
 	\label{eq:ebe-2term-f-u1(u)-temp} \\
-	&\Omega_c := \sigma_m(u) + \MEAN{\nu_{\mbox{eff}}}/(N\gamma\sqrt{u}).
+	&\Omega_{pt} := \sigma_m(u) + \MEAN{K_{\mbox{eff}}}/(\gamma\sqrt{u}),
 	\label{eq:OmegaPT}
 \end{align}
-Substitution of the second equation in the first yields an equation for $f^0_u(u)$,
+and substitution into the first equation yields, after division by $N$,
 \begin{equation}
-	\sqrt{u}f^0_u\MEAN{\nu_{\mbox{eff}}}
-	- N\gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left(\frac{u}{3\Omega_c(u)}\PDEV{f^0_u}{u}\right) = 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e}.
+	\sqrt{u}f^0_u\MEAN{K_{\mbox{eff}}}
+	- \gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left({\cal D}_{pt}^0(u)\PDEV{f^0_u}{u}\right)
+	= \tilde{C}^0.
+	\label{eq:ebe-2term-f-u0(u)-temp-subst}
 \end{equation}
-After dividing by $N$ and using $K_{\mbox{eff}}$ that has been defined in equation \eqref{eq:S_e(K^eff)},
-this becomes
+Here we have also introduced the symbol ${\cal D}_x^0(u)$, which is encountered in the
+LoKI-B code (but not in the manual), which is defined as
 \begin{equation}
-	\sqrt{u}f^0_uK_{\mbox{eff}}
-	- \gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left(\frac{u}{3\Omega_c(u)}\PDEV{f^0_u}{u}\right) = 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_eN}.
+	{\cal D}_x^0(u) = \frac{u}{3\Omega_x(u)}.
+	\label{eq:D0}
 \end{equation}
-{\bf NOTE: } We reapeat one more time that the corresponding LoKI-B expressions \cite[eq. 7a with 12a substituted, and 7b]{Manual_2_2_0}
-are obtained by replacing $E\rightarrow -E$.
+This symbol will turn out to be useful also in the case of spatial growth, to be discussed next,
+and for the evaluation of the electron mobility and diffusion coefficient.
+
+{\bf NOTE: } We repeat one more time that equations \eqref{eq:ebe-2term-f-u1(u)-temp} and
+\eqref{eq:ebe-2term-f-u0(u)-temp-subst} can be translated to the corresponding LoKI-B expressions
+\cite[eq. 7a with 12a substituted, and 7b]{Manual_2_2_0} by replacing $E\rightarrow -E$ (and
+dividing the result by $\gamma$).
+Equation \eqref{eq:ebe-2term-f-u0(u)-temp-subst} does not change because it depends on
+$(E/N)^2$.
+
+Following Hagelaar et al., the first term on the left-hand side of the equation for $f^0(u)$
+is called defined to be $-\tilde{R}_{pt}$, and $\tilde{R}_{pt}$ called the `growth renormalization term`,
+\begin{equation}
+	\tilde{R}_{pt}(u) = -\sqrt{u}f^0_u\MEAN{K_{\mbox{eff}}},
+\end{equation}
+And bringing this to the right-hand side of the equation, that takes the form that is also
+found in \cite[eq. 25]{Hagelaar2005},
+\begin{equation}
+	- \gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left({\cal D}_{pt}^0(u)\PDEV{f^0_u}{u}\right)
+	= \tilde{C}^0(u) + \tilde{R}_{pt}(u).
+\end{equation}
+
+\subsubsection{Temporal Growth for HF Fields}
+
+TODO: This needs to be formulated better and clarified. We should also
+provide the complex-valued expression for $f^1(u)$.
+
+Also here, the manual is not compatible with the codes (MATLAB,C++).
+In particular, the symbol $\zeta$ is not used.
+It is absorbed in the field amplitude, and the field $E$ is the RMS
+field (according to the manual, \cite[above eq. 61]{Manual_2_2_0}).
+
+In the equation for $f^0(u)$ that is solved by LoKI-B, the $\zeta$ that appears in
+that equation via $G_{E}$ is cancelled by the $1/\zeta$ that is present in $f^1(u)$.
+Then $\zeta$ only appears in \SRC{evaluateFirstAnisotropy}.
+
+Summary of the consequences of the HF mode:
+\begin{itemize}
+  \item $\Omega_{pt}$ (used in the field operator) is modified; it depends
+	on the field frequency.
+  \item $E$ must be understood as the RMS field, so we replace $E$ with $E\rightarrow E_{rms}$.
+  \item In equation \eqref{eq:ebe-2term-f-u1(u)-temp} for $f^1(u)$, the
+	field amplitude is needed, as before. We can use $E=E_{rms}\sqrt{2}$ in
+	order to express everything in terms of $E_{rms}$.
+\end{itemize}
 
 \subsubsection{Spatial Growth}
-The {\em Spatial Growth} model allows spatial variations of $n_e$, but assumes
-that the system is {\em stationary}, $\partial/\partial t=0$, yielding
+The {\em Spatial Growth} model allows only {\em spatial} variations of $n_e$, yielding
 \begin{align}
 	&
 	  \frac{\gamma}{3}uf^1_u\frac{1}{n_e}\PDEV{n_e}{z}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
+	= N\tilde{C}^0,
 	\\
 	&
 	  \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
@@ -527,7 +616,7 @@ on the spatial coordinate by our assumptions. This gives
 \begin{equation}
 	\MEAN{v_z}\PDEV{n}{z}=n_e\MEAN{\nu_{\mbox{eff}}}.
 \end{equation}
-For $v_z\neq 0$ this can be written as
+For $\MEAN{v_z}\neq 0$ this can be written as
 \begin{equation}
 	\alpha_{\mbox{eff}} := \frac{1}{n_e}\PDEV{n}{z}=\frac{\MEAN{\nu_{\mbox{eff}}}}{\MEAN{v_z}}.
 	\label{eq:alpha_eff}
@@ -537,7 +626,7 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ we get
 	&
 	  \frac{\gamma}{3}uf^1_u\alpha_{\mbox{eff}}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= 2\pi\gamma^3\sqrt{u}\frac{C^0(u)}{n_e},
+	= N\tilde{C}^0.
 	\label{eq:ebe-2term-f-u0(u)-spat}
 	\\
 	&
@@ -546,17 +635,19 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ we get
 	- \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right).
 	\label{eq:ebe-2term-f-u1(u)-spat}
 \end{align}
-By multiplying the last equation with $\gamma u/3$ and integrating over all energies
-we obtain
+By multiplying the last equation with $\gamma u/3$, integrating over all energies and
+using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
 \begin{align}
 	&
 	\MEAN{v_z} = \frac{\gamma}{3}\int\limits_0^\infty uf^1_u\dd{u}
 	=
-		  E           \frac{\gamma}{N}\int\limits_0^\infty \frac{u}{3\sigma_m(u)}\PDEV{f^0_u}{u}\dd{u}
-		- \alpha_{\mbox{eff}}\frac{\gamma}{N}\int\limits_0^\infty \frac{u}{3\sigma_m(u)}f^0_u\dd{u}
+		  E           \frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
+		- \alpha_{\mbox{eff}}\frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)f^0_u\dd{u}
 	= \mu_e E - D_e\alpha_{\mbox{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
 \end{align}
+TODO: introduce $\mu_e$ and $D_e$ here. Or already earlier, in the general $F^{0,1}$ equations?
+
 Combination with equation \eqref{eq:alpha_eff} gives an expression for $\alpha_{\mbox{eff}}$,
 \begin{equation}
 	\alpha_{\mbox{eff}}(\mu_eE-D_e\alpha_{\mbox{eff}}) - \MEAN{\nu_{\mbox{eff}}} =0,
@@ -565,35 +656,291 @@ which can be solved to obtain
 \begin{equation}
 	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
 \end{equation}
-which has real-valued roots if $(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}>0$. When simplifying,
-note that normally $\mu$ is negative, $E$ could be positive or negative, and $\alpha$ has the
-same sign as the product $\mu_eE$. It is zero when the discriminant is zero, or may be complex.
-Note that there is a second solution. We choose the one that has the desired property that
-$\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$.
+The roots are real if $(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}>0$. When simplifying,
+note that normally $\mu$ is negative, $E$ could be positive or negative, $\alpha$ has the
+same sign as the product $\mu_eE$, and $\MEAN{\nu_{\mbox{eff}}}$ can be positive or negative
+(negative if there is more attachment than ionization).
+It is zero when the discriminant is zero, or may be complex.
+Note that there are two solution. We choose the one that has the desired property that
+$\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
+\begin{equation}
+	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE +\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+\end{equation}
 
 \begin{framed}
 	{\bf Open Questions:}
 	\begin{itemize}
-	\item What is the physical significance of $\MEAN{v_z}$ is
-		0, in case the previous defintion of $\alpha_{\mbox{eff}}$ fails?
-		(And what are the implications?)
-	\item Why should the imaginary root (if any) be ignored/patched? Physically
-		these would result to oscillatory $n(z)$. Is thet wrong per se?
-	\item For $v_z=0$ we define $\alpha_{\mbox{eff}}=0$. TODO: is that true? We
+	\item Why don't the BOLSIG+ and LoKI-B documents address the existence of a second root.
+	\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
+		velocities are equal (but opposite). Then the above definition fails. How
+		can we fix this?
+		For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
 		also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
 		What if the velocity and frequency are {\em both} zero?
+	\item Why should the complex root (if any) be ignored/patched? Physically
+		these would result in oscillatory $n(z)$. Is that wrong per se?
 	\item Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
 	\end{itemize}
 \end{framed}
+Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
+and dividing by $N$ gives an expression for $f^0(u)$,
+\begin{equation}
+	  \gamma\frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	- \gamma\frac{E}{N}\PDEV{}{u}\left(
+		{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
+		- \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	\right)
+	= \tilde{C}^0.
+	\label{eq:ebe-2term-f-u0(u)-spat-subst}
+\end{equation}
+This is essentially the form of the equations that is described in the LoKI-B manual \cite[eq. 8a--b, 29--30c]{Manual_2_2_0}.
+In that presentation, the field operator is modified to also describe part of the growth effects (the
+term $-\alpha_{\mbox{eff}}f^0(u)$ in the last term on the left-hand side). This is, however, {\em not}
+what you find in the LoKI-B code, where the growth terms are separated from the others. By bringing
+all terms that depend on $\alpha_{\mbox{eff}}f^0(u)$ to the right-hand side of the equation, that
+can be rewritten as
+\begin{equation}
+	- \gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left(
+		{\cal D}_m^0(u)\PDEV{f^0_u}{u}
+	\right)
+	= \tilde{C}^0(u) + \tilde{R}_{sst}(u),
+\end{equation}
+where, just like for the temporal growth case, a growth renormalization term $\tilde{R}_{sst}(u)$
+has been introduced, which is now given by
+\begin{equation}
+	\tilde{R}_{sst}(u) =
+	  -\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	+ \frac{E}{N}\PDEV{}{u}\left({\cal D}_m^0(u)f^0_u\right)
+	\right].
+	\label{eq:Rsst-orig}
+\end{equation}
+We can rewrite equation \eqref{eq:Rsst-orig} by expanding the derivative of the
+product ${\cal D}_m^0(u)f^0_u$ and reordering terms,
+\begin{align}
+	\tilde{R}_{sst}(u)
+	  &=-\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)\left(2\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	+ \frac{E}{N}f^0_u\PDEV{{\cal D}_m^0(u)}{u}
+	\right]
+	\nonumber \\
+	  &= -\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)2\frac{E}{N}\PDEV{f^0_u}{u}
+	+ \left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u}-\frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)f^0_u
+	\right].
+	\label{eq:Rsst-alts}
+\end{align}
+The first form of this equation is what you find in the BOLSIG+ paper \cite[eq. 19]{Hagelaar2005}
+(after changing $\alpha_{\mbox{eff}}\rightarrow -\alpha_{\mbox{eff}}$).
+In the last step, the terms involving $f^0_u$ and its derivative have been separated,
+which is more convenient when the terms are discretized.
+On the other hand, we can use ${\cal D}_m^0(u)\dd{f^0_u}/\dd{u} = \dd{{\cal D}_m^0(u)f^0_u}/\dd{u} - f^0_u\dd{{\cal D}_m^0(u)}/\dd{u}$
+to obtain
+\begin{align}
+	\tilde{R}_{sst}(u)
+	= \gamma\frac{\alpha_{\mbox{eff}}}{N}\left[
+	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)
+	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
+	\right]
+\end{align}
+
+{\em TODO: find out which of these forms is actually discretized in the LoKI-B code
+(after $E\rightarrow -E$ and division by $1/\gamma$). It appears to be \eqref{eq:Rsst-orig},
+but I have not been able to verify the correctness of the discretisation of the points on
+boundary cells.}
 
 \subsection{Collisional Source Terms}
 \label{sec:sources}
 
-Ionization:
+\subsubsection{Compatibility Notes}
+\begin{framed}
+	In the LoKI-B presentation (manual), source terms of the form $\tilde{C}_x(u) = \dd{X(u)}/\dd{u}$
+	appear at the left-hand side of the equation for $f^0_u(u)$, and all terms of the final equation are divided by
+	$\gamma$. As a result, in the manual they appear as
+	$-\tilde{C}_x(u)/\gamma := (1/(N\gamma))\dd{G^{man}_x(u)}/\dd{u}$, with $G^{man}_x=-N X_x$.
+
+	In the {\em code} (matlab and C++), no tricks are done and such terms discretized as
+	$\tilde{C}_x(u)/\gamma = \dd{X^{code}}/\dd{u}$, with $X^{code}=X(u)/\gamma$
+	(all terms are moved to the right-hand side).
+\end{framed}
+
+\subsubsection{The Elastic Source Term}
+
+For the elastic source term $\tilde{C}_{el}$, see \cite[eq. 27]{Hagelaar2005} That gives the
+expression for a single target species. By
+summing we get the total elastic term. This can be written as
+\begin{equation}
+	\tilde{C}^0_{el}(u)=\PDEV{}{u}\left[\gamma u^2\left(\sum\limits_k x_k\frac{2m}{M_k}\sigma_{m,k}(u)\right)\left(f^0(u)+\frac{k_BT}{e}\PDEV{f^0}{u}\right)\right]
+	= \PDEV{}{u}\left[\gamma u^2\sigma_{u}(u)\left(f^0(u)+\frac{k_BT}{e}\PDEV{f^0}{u}\right)\right],
+	\label{eq:Ctilde0-el}
+\end{equation}
+where the total elastic energy transfer cross section is defined as \cite[eq. 42]{Hagelaar2005}
+\begin{equation}
+	\sigma_{u}(u) = \sum\limits_k x_k\frac{2m}{M_k}\sigma_{m,k}(u).
+\end{equation}
+In the LoKI-B {\em code}, we find this term exactly like this, after division by $\gamma$ (see the
+compatibility notes).
+The corresponding LoKI-B flux function $G^{man}_{el}(u)$, that is reported in the manual, is equivalent to
+\begin{equation}
+	G^{man}_{el}(u) = -N\gamma u^2\sigma_{u}(u)\left(f^0(u)+\frac{k_BT}{e}\PDEV{f^0}{u}\right).
+\end{equation}
+For unknown reasons, the manual provide an expression in terms of an elastic (energy transfer) {\em frequency}.
+Since $\gamma u^2=v(u)u^{3/2}$, and a frequency can be defined as $\nu_{u}(u)=N\sigma_{u}(u)v(u)$,
+the result, which can be found in the manual \cite[eq. 12b]{Manual_2_2_0}, is given by
+\begin{equation}
+	G^{man}_{el}(u)
+	:= -u^{3/2}\nu_{u}(u)\left(f^0(u)+\frac{k_BT}{e}\PDEV{f^0}{u}\right).
+	\label{eq:Ctilde0-el-loki}
+\end{equation}
+\begin{framed}
+	In the manual, the symbol $\nu^{el}_{k,c}$ is used for the elastic {\em momentum} transfer collision
+	frequency. That is better called $\nu_{k,c}$, since it is just $N_k\sigma_{k,c}v(u)$. (See the
+	definition of the $\nu_{0,k}$, that does it `correct').
+	That said, I think this frequency should be avoided, the code should be followed.
+
+	In the code, the term \SRC{elasticCrossSection} is used for the elastic {\em energy transfer}
+	cross section. What is the correct terminology? (Above I wrote $\sigma_{u}$ for the
+	energy transfer cross section, following Hagelaar. That avoids this confusion.)
+\end{framed}
+
+\subsubsection{The CAR Source Term}
+For the CAR operator, the manual has \cite[eq. 12c]{Manual_2_2_0}
+\begin{equation}
+	G^{man}_{car}(u) = -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
+\end{equation}
+and in terms of a cross section this can be written as
+\begin{equation}
+	G^{man}_{car}(u)
+		= -N\gamma\sum\limits_k 4B_k x_k\sigma_{0,k}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right]
+		= -N\gamma 4\sigma_{car}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right]
+\end{equation}
+with
+\begin{equation}
+	\sigma_{car}=\sum\limits_k B_k x_k\sigma_{0,k}.
+\end{equation}
+As before, in the {\em code} this is brought to the right-hand side and the term is discretized as
+\begin{equation}
+	\tilde{C}^0(u)/\gamma = \PDEV{G^{code}_{car}}{u},
+\end{equation}
+with
+\begin{equation}
+	G^{code}_{car}(u) = 4\sigma_{car}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
+\end{equation}
+
+
+\subsubsection{Excitation and Deexcitation}
+
+Consider an excitation reaction $r$ of the form $A_p + e \rightarrow A_q + e$ with
+cross section $\sigma_{pq}$ in which the electron {\em loses} an amount of energy
+$u_{pq}:=u_q-u_p$. If the initial energy of the electron is $u_i$, one such reaction
+event will remove one electron with energy $u_i$ from the distribution, and
+place it back at energy $u_f=u_i-u_{pq}$. If $u_{pq}>0$, obviously the initial electron
+must have $u_i\geq u_{pq}$.
+
+The electrons that contribute to the source $\tilde{C}^0_{in}$ at energy value $u$
+are the following:
+\begin{itemize}
+	\item Those with initial energy $u_i=u+u_{pq}$ and final energy $u_f=u$ (source),
+	\item Those with initial energy $u_i=u$ and final energy $u_f=u-u_{pq}$ (sink).
+\end{itemize}
+The source term is then
+\begin{equation}
+	\tilde{C}^0_{in,r-fwd}(u)
+	=  \delta_p \gamma[
+		\sigma_{pq}(u+u_{pq})(u+u_{pq})f^0(u+u_{pq})
+		-
+		\sigma_{pq}(u)uf^0(u)
+	].
+\end{equation}
+
+The cross section of the corresponding backward processes can be obtained with
+the Klein-Rosseland relation \cite{Klein1921}, also see section
+\ref{app:KleinRosseland}, which states that
+\begin{equation}
+	\sigma_{qp}(u)
+	=
+	\sigma_{pq}(u+u_{pq})\frac{g_p}{g_q}\frac{u+u_{pq}}{u}.
+	\label{eq:KleinRosseland}
+\end{equation}
+If this reverse reaction is enabled, two additional terms emerge due to the
+process $A_q + e \rightarrow A_p + e$ with cross section $\sigma_{qp}(u)$
+and energy $u_{qp}=-u_{pq}$:
+\begin{itemize}
+	\item Those with initial energy $u_i=u-u_{pq}$ and final energy $u_f=u$ (source),
+	\item Those with initial energy $u_i=u$ and final energy $u_f=u+u_{pq}$ (sink).
+\end{itemize}
+Using \eqref{eq:KleinRosseland}, the additional terms are then
+\begin{align}
+	\tilde{C}^0_{in,r-rev}(u)
+	&=  \delta_q \gamma[
+		\sigma_{qp}(u-u_{pq})(u-u_{pq})f^0(u-u_{pq})
+		-
+		\sigma_{qp}(u)uf^0(u)
+	]
+	\nonumber \\
+	&=  \delta_q \gamma\frac{g_p}{g_q}\left[
+		\sigma_{pq}(u)\frac{u}{u-u_{pq}}(u-u_{pq})f^0(u-u_{pq})
+		-
+		\sigma_{pq}(u+u_{pq})\frac{u+u_{pq}}{u}uf^0(u)
+	\right]
+	\nonumber \\
+	&=  \delta_q \gamma\frac{g_p}{g_q}\left[
+		\sigma_{pq}(u)uf^0(u-u_{pq})
+		-
+		\sigma_{pq}(u+u_{pq})(u+u_{pq})f^0(u)
+	\right].
+\end{align}
+
+TODO:
+\begin{itemize}
+	\item In the manual \cite[eq. 13a]{Manual_2_2_0} it is sugested that
+		the reverse reaction is always taken into account, but that
+		is not true. Clarify.
+	\item Explain how out-of-grid terms are handled, and explain that
+		it is  ensured that the operator is conserved.
+\end{itemize}
+
+\subsubsection{Ionization}
 \begin{equation}
 	\tilde{C}^0_{ion}=...
 	\label{eq:Ctilde0-ion}
 \end{equation}
+
+TODO:
+\begin{itemize}
+	\item in the \SRC{oneTakesAll} case, electrons are injected
+		in the first cell $(u=\Delta u/2$), instead of at $u=0$,
+		which is stated in the manual.
+		Explain the impact of this difference and make sure
+		that the energy balance is not affected.
+        \item \SRC{OPBParamater} is input, but $\beta=2$ appears to be hardcoded (MATLAB and C++).
+		Only then is the function integrable analytically over $u'$. Also,
+		the property below \cite[eq. 63]{Manual_2_2_0}) is true only
+		if $\beta=2$, so the manual should more clear that is required
+		(and used in the code), even though the function that is
+		recommended by but Opal et al. \cite[fig. 4, text below tab. 1]{Opal1971}
+		has $\beta=2.1$. What is the impact of these
+		deviations? The manual should be more clear about that.
+		Make consistent: usage of $(u,u')$ vs $(u',u)$ in equations 14 and 63.
+	\item the C++ implementation of the last factor of eq. 63 from the manual seems wrong
+		(added a TODO to the code).
+\end{itemize}
+
+
+\subsubsection{Attachment}
+For any background gas (state) $i$:
+\begin{equation}
+	\tilde{C}^0_{att,i}=-\gamma \delta_i u\sigma_{i,att}(u)f^0(u).
+	\label{eq:Ctilde0-att}
+\end{equation}
+The total attachment source is obtained by summing over all states $i$ for
+which an attachment reaction has been specified, $\sigma_{i,att}(u)$ is the
+cross section for that process.
+
+TODO: in the code we see \SRC{attachmentConservativeMatrix}, but the manual
+\cite[below eq. 16]{Manual_2_2_0} claims that attachment is alwas non-conserving,
+so that a growth model must be used.
+
 
 
 \section{Definitions}
@@ -659,7 +1006,7 @@ $x$ denotes a particular process type.
 Of course, the Boltzmann equation does not change if each term is divided by the
 same non-zero constant value. That does, however, change the meaning/interpretation
 of the individual terms and has resulted in conflicting definitions for
-auxiary functions $g_x(u)$.
+auxiliary functions $g_x(u)$.
 \begin{itemize}
   \item In the paper \cite[eqn. 15d]{Tejero2019}, $g_x(u)$ and $c_u$ are defined
         by the relation
@@ -1251,7 +1598,7 @@ In the {\em absence} of non-conservative collisions (no growth), we have
 	&\frac{1}{N\gamma}\PDEV{G_E^c}{u} + \frac{1}{N\gamma}\sum_x\PDEV{G_x}{u}
 	= S,
 	\label{eq:f-2term-stationary-no-growth} \\
-	&f^1(u) = -\frac{\zeta(E/N)}{\Omega_{c}(u)}\DERIV{f}{u}.
+	&f^1(u) = -\frac{\zeta(E/N)}{\Omega_c(u)}\DERIV{f}{u}.
 	\label{eq:f1-2term-stationary-no-growth}
 \end{align}
 Here the sum runs over all operator types except $x=E$, the field operator.
@@ -1264,14 +1611,9 @@ by the presence of growth terms, via the expression for $f^1(u)$.
 Substitution of the particular expression for $f^1(u)$ for conservative systems
 in this equation yields
 \begin{equation}
-	G_E^c(u) = -N\gamma\left(\frac{E}{N}\right)^2{\cal D}_{c}^0(u)\DERIV{f}{u}.
+	G_E^c(u) = -N\gamma\left(\frac{E}{N}\right)^2{\cal D}_c^0(u)\DERIV{f}{u}.
 \end{equation}
-Following the code (but not the manual!), we have here introduced the symbol
-${\cal D}_x^0(u)$,
-\begin{equation}
-	{\cal D}_x^0(u) = \frac{u}{3\Omega_x(u)}.
-	\label{eq:D0}
-\end{equation}
+Here again we have used the symbol ${\cal D}_x^0(u)$ from equation \eqref{eq:D0}.
 Also note that the factors $\zeta$ cancel out in this case.
 
 TODO: MOVE ME. The starting point is the set of equations \cite[3a--4b]{Tejero2019}, which state
@@ -1447,7 +1789,7 @@ $\tilde{R}$ and appear as source terms in the presentation \cite[eq. 17--19]{Hag
 	=
 	&\gamma^{-1}R(u) - \frac{1}{N\gamma}\PDEV{G_E^c}{u}.
 \end{align}
-The $R(u)$ is this expression is that from \cite[eq. 17]{Hagelaar2005}.
+The $R(u)$ in this expression is that from \cite[eq. 19]{Hagelaar2005}.
 For the purpose of discretization, it seems to make more sense to bundle the two
 terms that are proportional to $f(u)$, resulting in
 \begin{equation}
@@ -1474,6 +1816,7 @@ the evaluation of $D_e$ and $\mu_eN$, these can be written as
 	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \label{eq:DeN} \\
 	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_x^0(u)\DERIV{f}{u}\dd{u}. \label{eq:mueN}
 \end{align}
+TODO: LoKI-B has a minus sign in the second equation to make $\mu_e$ positive.
 
 In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated.
 The code defines four arrays on the cell domain ($0\leq k<{\cal N}$)
@@ -2123,6 +2466,45 @@ and $B_n$ yields an integral that does not cover the entire energy grid,
 		+ \frac{1}{\Delta u}\int\limits_{u_{\mhalf{n}}}^\infty f(u')\left(-\frac{\sqrt{u'}}{2} - \frac{2}{3\Delta u}((u')^{3/2}-u_{\mhalf{n}}^{3/2})\right)\dd{u'}
 		\right).
 \end{align}
+
+\section{Derivation of the Klein-Rosseland Relation}
+
+\label{app:KleinRosseland}
+Derivation of the Klein-Rosseland relation \cite{Klein1921}.
+
+In Local Thermodynamic Equilibrium (LTE)
+\begin{itemize}
+	\item The backward and forward process rates are equal,
+	\begin{align*}
+		&n_en_q\sigma_{qp}(u)\sqrt{u}(\sqrt{u}f^0(u))
+		=
+		n_en_p\sigma_{pq}(u+u_{pq})\sqrt{u+u_{pq}}(\sqrt{u+u_{pq}}f^0(u+u_{pq}))
+		\iff \\
+		&\sigma_{qp}(u)
+		=
+		\sigma_{pq}(u+u_{pq})\frac{u+u_{pq}}{u}\frac{n_p}{n_q}\frac{f^0(u+u_{pq})}{f^0(u)}.
+	\end{align*}
+	\item The EEDF is Maxwelian, $f^0(u)\propto e^{-u/kT}$. Then
+	\[
+		\sigma_{qp}(u)
+		=
+		\sigma_{pq}(u+u_{pq})\frac{u+u_{pq}}{u}\frac{n_p}{n_q}e^{-u_{pq}/kT}.
+	\]
+	\item The densities $n_p$ and $n_q$ are related by the Boltzmann distribution,
+	\[
+		\frac{n_q}{g_q}=\frac{n_p}{g_p}e^{-u_{pq}/kT},
+	\]
+	and substitution yields
+	\[
+		\sigma_{qp}(u)
+		=
+		\sigma_{pq}(u+u_{pq})\frac{g_p}{g_q}\frac{u+u_{pq}}{u}.
+	\]
+	Since this result does not depend on the equilibrium state that was
+	assumed for the sake of this derivation, it will also be valid under non-LTE conditions.
+	This (general) relation is the Klein-Rosseland relation \eqref{eq:KleinRosseland}.
+\end{itemize}
+
 
 \bibliography{../../doc/reflist}
 
