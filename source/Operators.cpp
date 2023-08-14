@@ -402,6 +402,8 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             case IonizationOperatorType::oneTakesAll:
                 for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
+                    // Manual_2_2_0 eq. 15. TODO: Note that newborns are
+                    // inserted in the first cell, so at du/2, not at zero.
                     if (k < grid.nCells() - numThreshold)
                         ionizationMatrix(k, k + numThreshold) +=
                             delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
@@ -416,6 +418,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             case IonizationOperatorType::equalSharing:
                 for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
+                    // Manual_2_2_0 eq. 16
                     ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
 
                     if (k < (grid.nCells() - numThreshold) / 2)
@@ -427,6 +430,9 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 }
                 break;
             case IonizationOperatorType::sdcs:
+
+                // This case is in eq. 13b of Manual_2_2_0
+                /// \todo Provide the missing details. Part of the discussion is around eq. 63.
                 double W = cd.OPBParameter();
 
                 if (W < 0)
@@ -459,6 +465,10 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                       (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
+                        /** \todo Is the last term above supposed to implement 1+(u/w)^beta (manual eq. 63)?
+                         *  It expresses w+u^2/w instead. This is different (correct) in the LoKI-B code,
+                         *  line 1591 in v2.2.0. Note that beta=2 is hardcoded: confusing!
+                         */
                         }
                     }
 
@@ -475,6 +485,10 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                         ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                   (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                    (W + std::pow(grid.getCell(k), 2) / W));
+                        /** \todo Is the last term above supposed to implement 1+(u/w)^beta (manual eq. 63)?
+                         *  It expresses w+u^2/w instead. This is different (correct) in the LoKI-B code,
+                         *  line 1591 in v2.2.0. Note that beta=2 is hardcoded: confusing!
+                         */
                     }
                 }
                 break;
@@ -544,6 +558,7 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
             for (Grid::Index i = 0; i < cellNumber; ++i)
                 cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
+            // This is eq. 13c of \cite Manual_2_2_0
             for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
@@ -560,7 +575,11 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              */
             for (Grid::Index k = 0; k < cellNumber; ++k)
             {
-                /** \todo Explain the structore of this term. Explain that this is conserving,
+                /** \todo The manual \cite Manual_2_2_0 states that attachment is always
+                 *  non-conserving (5 lines below eq. 16). What is attachmentConservativeMatrix,
+                 *  then?
+                 */
+                /** \todo Explain the structure of this term. Explain that this is conserving,
                  *  how we can see that (integral source must be zero).
                  */
                 /** \todo Is this really a conserving term? It appears that this loses electrons
