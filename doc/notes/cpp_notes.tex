@@ -893,7 +893,7 @@ Using \eqref{eq:KleinRosseland}, the additional terms are then
 
 TODO:
 \begin{itemize}
-	\item In the manual \cite[eq. 13a]{Manual_2_2_0} it is sugested that
+	\item In the manual \cite[eq. 13a]{Manual_2_2_0} it is suggested that
 		the reverse reaction is always taken into account, but that
 		is not true. Clarify.
 	\item Explain how out-of-grid terms are handled, and explain that
@@ -901,10 +901,36 @@ TODO:
 \end{itemize}
 
 \subsubsection{Ionization}
-\begin{equation}
-	\tilde{C}^0_{ion}=...
-	\label{eq:Ctilde0-ion}
-\end{equation}
+
+For derivations, see \ref{app:ionization}.
+\begin{itemize}
+	\item One-takes-all:
+	\begin{equation}
+		\tilde{C}^0_{ion,i}(u)
+		=\gamma\delta_i\left[
+			(u+V_{ion,i})\sigma_{ion,i}(u+V_{ion,i})f^0(u+V_{ion,i})
+			+
+			\delta(u)\MEAN{K_{ion,i}}
+			-
+			u\sigma_{ion,i}(u)f^0(u)
+		\right],
+		\label{eq:Ctilde0-ion-onetakesall}
+	\end{equation}
+	with
+	\[
+		\MEAN{K_{ion,i}} = \gamma\int\limits_{V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')f^0(u')\dd{u'}.
+	\]
+	\item Equal sharing:
+	\begin{equation}
+		\tilde{C}^0_{ion,i}(u)=\gamma\delta_i\left[
+			4(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i})
+			-
+			u\sigma_{ion,i}(u)f^0(u)
+		\right].
+		\label{eq:Ctilde0-ion-equalsharing}
+	\end{equation}
+\end{itemize}
+
 
 TODO:
 \begin{itemize}
@@ -924,6 +950,18 @@ TODO:
 		Make consistent: usage of $(u,u')$ vs $(u',u)$ in equations 14 and 63.
 	\item the C++ implementation of the last factor of eq. 63 from the manual seems wrong
 		(added a TODO to the code).
+	\item The derivations (see section \ref{app:ionization} rely on the peak
+		of a delta-function being fully enclosed by an integration
+		interval, when it is located on its boundary. This is mathematically
+		not sound. Unfortunately, neither the LoKI Manual, nor the BOLSIG+
+		paper gives a reference to the starting point of the derivations,
+		eq. \eqref{eq:Ctilde0-ion}, so we cannot easily trace back what is
+		happening here.
+	\item The BOLSIG+ paper has a different expression for the equal sharing case:
+		there is a factor 2 in front of the second term of \cite[eq. 29]{Hagelaar2005},
+		whereas equation \eqref{eq:Ctilde0-ion-equalsharing},
+		\cite[eq. 16]{Manual_2_2_0} and \cite[eq. 10]{Tejero2019} have a factor 4.
+		{\bf This a bug in the BOLSIG+ paper, it seems. See \ref{app:ionization} for an analysis.}
 \end{itemize}
 
 
@@ -2505,6 +2543,183 @@ In Local Thermodynamic Equilibrium (LTE)
 	This (general) relation is the Klein-Rosseland relation \eqref{eq:KleinRosseland}.
 \end{itemize}
 
+\section{Derivation of the Ionization Operators}
+
+\label{app:ionization}
+
+This section relies on the following properties of the $\delta$ function
+\begin{align}
+	\int\limits_{u_1}^{u_2} f(u)\delta(u-u_0)\dd{u} &= \begin{cases}
+		f(u_0)	&:\quad u_a<u_0<u_b \\
+			\mbox{undefined}	&:\quad u=u_1 \vee u=u_2 \\
+		0	&:\quad \mbox{otherwise}
+	\end{cases}
+	\\
+	\delta(u-u_0)f(u) &=\delta(u-u_0)f(u_0), \label{eq:del(u-u0)f(u)=del(u-u0)f(u0)}
+	\\
+	\delta(u/a-u_0) &=|a|\delta(u-au_0).
+\end{align}
+\begin{framed}
+	In the text below we use, a number of times, the assumption that
+	\[
+		\int\limits_{u_1}^{u_2} f(u)\delta(u-u_1)\dd{u} = f(u_1),
+	\]
+	in other words: that the peak is fully enclosed while it is at the boundary.
+	This is mathematical nonsense. Some authors assume a factor $1/2$ there,
+	but this cannot be relied on. It is almost as if the lower boundary is
+	defined as $u_1^-$, which is symbolic notation for the voodoo
+	\[
+		\int\limits_{u_1^-}^{u_2} f(u)\delta(u-u_1)\dd{u}
+		:=
+		\lim_{a\downarrow 0}\int\limits_{u_1-a}^{u_2} f(u)\delta(u-u_1)\dd{u}
+		=
+		\lim_{a\downarrow 0}f(u_1)
+		=
+		f(u_1).
+	\]
+	(This type of notation is used now in then in signals and systems engineering
+	when the (unilateral) Laplace transform is used, see for example the notation
+	$0^+$ in \url{https://en.wikipedia.org/wiki/Laplace_transform}.)
+
+	Unfortunately, no source is provided for the starting point
+	\eqref{eq:Ctilde0-ion}, so I have not (yet) been able to verify
+	that equation (or to confirm the details of the integration intervals).
+\end{framed}
+
+The starting point is the expression for the source term in terms of the
+Single Differential Cross Section $\sigma_{ion,i}^{sec}(u,u')$,
+\begin{equation}
+	\tilde{C}^0_{ion,i}(u)
+	=\gamma\delta_i\left[
+		\int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}^{sec}(u',u'-V_{ion,i}-u)f^0(u')\dd{u'}
+		+
+		\int\limits_{2u+V_{ion,i}}^{\infty}u'\sigma_{ion,i}^{sec}(u',u)f^0(u')\dd{u'}
+		-
+		u\sigma_{ion,i}(u)f^0(u)
+	\right].
+	\label{eq:Ctilde0-ion}
+\end{equation}
+
+\subsection{The One-Takes-All Model}
+
+In the one-takes-all model, $\sigma_{ion,i}^{sec}(u_1,u_2)=\sigma_{ion,i}(u_1)\delta(u_2)$.
+Substitution yields
+\[
+	\tilde{C}^0_{ion,i}(u)
+	=\gamma\delta_i\left[
+		 \int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}(u')\delta(u'-V_{ion,i}-u)f^0(u')\dd{u'}
+		+
+		\int\limits_{2u+V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')\delta(u)f^0(u')\dd{u'}
+		-
+		u\sigma_{ion,i}(u)f^0(u)
+	\right].
+\]
+The peak of the $\delta$ in the first term on the right-hand side is at $u'=u+V_{ion,v}$,
+{\em which is exactly on the boundary of the integration domain}. That renders the
+integral undefined, but the result in LoKI-B \cite[eq. 15, 1st term]{Manual_2_2_0}
+and BOLSIG+ \cite[eq. 30, 2nd term]{Hagelaar2005} is obtained by assuming that the peak is
+fully enclosed in the domain of integration,
+\begin{equation}
+	\int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}(u')\delta(u'-V_{ion,i}-u)f^0(u')\dd{u'}
+	=
+	(u+V_{ion,i})\sigma_{ion,i}(u+V_{ion,i})f^0(u+V_{ion,i}).
+\end{equation}
+Let us now look at the second term. Here $\delta(u)$ can be taken outside of the integral over
+$u'$. The result is a multiplication of that $\delta(u)$ with a function (an integral) that
+depends only on $u$ through the lower integral boundary $2u+V_{ion,i}$. Relation
+\eqref{eq:del(u-u0)f^0(u)=del(u-u0)f^0(u0)} allows us to set $u=0$ there, the result is
+\begin{equation}
+	\int\limits_{2u+V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')\delta(u)f^0(u')\dd{u'}
+	= \delta(u)\int\limits_{V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')f^0(u')\dd{u'}
+	= \delta(u)\MEAN{K_{ion,i}},
+\end{equation}
+where we have $\MEAN{K_{ion,i}}$ the ionization rate coefficient for state $i$ as
+\[
+	\MEAN{K_{ion,i}} = \gamma\int\limits_{V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')f^0(u')\dd{u'}.
+\]
+Because $\sigma_{ion,i}(u')=0$ for energies $u'$ below the threshold $V_{ion,i}$,
+the lower integral boundary can be changed to 0 without affecting the result,
+that is the result that you find in \cite[eq. 30, last term]{Hagelaar2005}.
+
+Combining the terms yields equation \eqref{eq:Ctilde0-ion-onetakesall}
+\[
+	\tilde{C}^0_{ion,i}(u)
+	=\gamma\delta_i\left[
+		(u+V_{ion,i})\sigma_{ion,i}(u+V_{ion,i})f^0(u+V_{ion,i})
+		+
+		\delta(u)\MEAN{K_{ion,i}}
+		-
+		u\sigma_{ion,i}(u)f^0(u)
+	\right].
+\]
+
+\subsection{The Equal Sharing Model}
+In the equal sharing model, $\sigma_{ion,i}^{sec}(u',u)=\sigma_{ion,i}(u')\delta(u-(u'-V_{ion,i})/2)$.
+Substitution yields, for the first term
+\begin{align*}
+	&\gamma\delta_i
+		\int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}(u')\delta(u'-V_{ion,i}-u-(u'-V_{ion,i})/2)f^0(u')\dd{u'}
+	\\
+	=&\gamma\delta_i
+		\int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}(u')\delta(u'/2-V_{ion,i}/2-u)f^0(u')\dd{u'}
+	\\
+	=&2\gamma\delta_i
+		\int\limits_{u+V_{ion,i}}^{2u+V_{ion,i}}u'\sigma_{ion,i}(u')\delta(u'-V_{ion,i}-2u)f^0(u')\dd{u'}
+	\\
+	=&2\gamma\delta_i(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i})
+	.
+\end{align*}
+Again the peak as located at the boundary of the integration domain, in the last step
+we have assumed that it is fully enclosed. For the second term we find, along the same lines,
+the identical result, but also here we rely on the peak being {\em enclosed} at the boundary,
+which is mathematically dubious,
+\begin{align*}
+	&\gamma\delta_i
+		\int\limits_{2u+V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')\delta(u-(u'-V_{ion,i})/2)f^0(u')\dd{u'}
+	\\
+	=2&\gamma\delta_i
+		\int\limits_{2u+V_{ion,i}}^{\infty}u'\sigma_{ion,i}(u')\delta(2u-u'+V_{ion,i})f^0(u')\dd{u'}
+	\\
+	=2&\gamma\delta_i
+		(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i}).
+\end{align*}
+Combining these terms and adding the third yields equation
+\eqref{eq:Ctilde0-ion-equalsharing},
+\[
+	\tilde{C}^0_{ion,i}(u)
+	=\gamma\delta_i\left[
+		4(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i})
+		-
+		u\sigma_{ion,i}(u)f^0(u)
+	\right].
+\]
+Integration over all energies yields,
+\begin{align}
+	\int\limits_0^\infty\tilde{C}^0_{ion,i}(u)
+	&=\gamma\delta_i\left[
+		4\int\limits_0^\infty(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i})\dd{u}
+		-
+		\int\limits_0^\infty u\sigma_{ion,i}(u)f^0(u)\dd{u}
+	\right]
+	\nonumber\\
+	&=\gamma\delta_i\left[
+		2\int\limits_{V_{ion,i}}^\infty t\sigma_{ion,i}(t)f^0(t)\dd{(t)}
+		-
+		\int\limits_0^\infty u\sigma_{ion,i}(u)f^0(u)\dd{u}
+	\right]
+	\nonumber\\
+	&=\delta_i\left[2\MEAN{K_{ion,i}} - \MEAN{K_{ion,i}}\right] = \delta_i\MEAN{K_{ion,i}},
+\end{align}
+which is the expected result. In the first integral we made the substitution $t=2u+V_{ion,i}$, and note that
+(in the last step) the lower boundary can be either 0 or $V_{ion,i}$ since $\sigma_{ion,i}(u)=0$
+for $u'<V_{ion,i}$. Also note that $\gamma u\sigma(u)f^0(u)=\sigma(u)v(u)\sqrt{u}f^0(u):=K(u)\sqrt{u}f^0(u)$,
+with $K(u)$ the energy-dependent rate coefficient. Muliplying with $\sqrt{u}f^0(u)$ and integrating
+over $u$ yields its average value.
+
+\begin{framed}
+NOTE that the BOLSIG+ expression \cite[eq. 29]{Hagelaar2005} appears to be wrong: with the factor 2 instead of
+4 this integral will be zero instead.
+\end{framed}
 
 \bibliography{../../doc/reflist}
 
