@@ -6,7 +6,6 @@
 #include "LoKI-B/Constant.h"
 #include <chrono>
 #include <cmath>
-#include <iomanip>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -370,6 +369,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         eeOperator->discretizeTerm(boltzmannMatrix,grid());
     }
 
+    /* Store the diagonals of the Boltzmann matrix that are going to be
+     * affected by the growth terms, so we can restore these later,
+     * before updated growth terms are going to be applied.
+     */
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
 
     for (Grid::Index k = 0; k < grid().nCells(); ++k)
@@ -386,7 +389,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     /** \todo The name is incorrect. This is not the integrand since it already includes
      *        du and does not yet have the factor f(u).
      */
-    Vector integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
+    const Vector integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
                          (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
 
     double CIEffNew = eedf.dot(integrandCI);
@@ -494,21 +497,33 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     uint32_t iter = 0;
     bool hasConverged = false;
 
+    // note: this g_fieldSpatialBase = (E/N)*D^0(u)
     const Vector g_fieldSpatialBase = (EoN / 3) * grid().getNodes().array() / mixture.collision_data().totalCrossSection().array();
 
     while (!hasConverged)
     {
+        // note: this g_fieldSpatialGrowth = (alphaEffNew/N)*(E/N)*D^0(u)
         g_fieldSpatialGrowth = alphaRedEffNew * g_fieldSpatialBase;
         g_fieldSpatialGrowth[0] = 0.;
         g_fieldSpatialGrowth[grid().nCells()] = 0.;
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
+            // note: this is (alphaEffNew/N)*(E/N)*d(D^0/du)
             fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
+            // note: this is (alphaEffNew/N)^2*D0[k]
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k);
 
+            // what remains is -(alphaEffNew/N)(E/N)*D0df/du.
+            // For internal cells (not the first or last, this -(alphaEffNew/N)(E/N)*D0*d(f[k]-f[k-1])/Du
+            // For the first point we can discretize this using the first cell
+            // and a virtual (non-existing cell on the boundary, where u=0 and D0=0 (not symmetric).
+            // BUT THEN Du = (3/2)*du.
+            // I cannot understand why we need these U0inf[k+/-1] here. Apparently the equation is
+            // rewritten in some other way (bringing D0 inside the differentiataion)? But then I
+            // also do not get the correct results.
             if (k > 0)
             {
                 fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());

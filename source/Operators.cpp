@@ -323,9 +323,10 @@ void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& ee
     const double e0 = Constant::vacuumPermittivity;
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
 
-    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
-    double Te = 2. / 3. * meanEnergy;
-    double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
+    const double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
+    const double Te = 2. / 3. * meanEnergy;
+    const double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
+    // g_ee = (3*alpha_eV/gamma)*(ne/N)
     m_g_ee = (ne / n0) * (e * e / (8 * Constant::pi * e0 * e0)) * logC;
     m_A = m_g_ee * (m_a * eedf);
     m_B = m_g_ee * (m_a.transpose() * eedf);
