@@ -801,20 +801,37 @@ boundary cells.}
 \chapter{Collisional Source Terms}
 \label{ch:sources}
 
-\section{Compatibility Notes}
+\section{Notation, Conservative Source Terms}
 
-Some of the source terms are in flux-divergence form,
+Let us now take a look at the source terms $\tilde{C}^0(u)$. We will soon see
+that some of these can be written in flux-divergence form,
 \begin{equation}
-	\tilde{C}_x(u) = -\DERIV{H_x(u)}{u}.
+	\tilde{C}^0_x(u) = -\DERIV{H_x(u)}{u}.
 	\label{eq:Ctilde=-dH/du}
 \end{equation}
+The reason for introducing the minus sign here is that, as we shall soon see,
+the resulting expressions for the fluxes $H_x(u)$ will be of the advection-diffusion
+type,
+\[
+	H_x(u) = h_x(u)\left(c_x(u) f^0(u) - d_x(u) f^0(u)\right),
+\]
+with a {\em positive} diffusion coefficient $h_x(u)d_x(u)$.
+This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
+with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
+\begin{framed}
+TODO: check, it seems that Loki-B docs call the convection coefficient
+$c_x$ and the diffusion coefficient $d_x$ --- which is very unfortunate.
+\end{framed}
+
+\section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
 and all terms of the final equation are divided by $\gamma$. As a result, in the manual they appear as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\mbox{with}\quad G^{man}_x(u)=N H_x(u).
 	\label{eq:CvsGman}
 \end{equation}
-In the {\em code} (matlab and C++), no tricks are done and such terms discretized as
+In the {\em code} (matlab and C++), no tricks are done, the terms are all brought
+to the {\em right-}hand side of the equation the source terms are discretized as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}.
 \end{equation}
@@ -1186,6 +1203,37 @@ Observations:
     shielding should be used (even if just for comparison purposes)?
 \end{itemize}
 
+\section{Final Form}
+
+\begin{equation}
+	\tilde{C}^0(u) = -\sum\limits_{x=el,car,ee}\DERIV{H_x}{u} + \sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+\end{equation}
+and combination with the field term and with a growth term yields
+\begin{equation}
+	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
+	=
+	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+	+
+	\tilde{R}^0_g(u).
+\end{equation}
+for $g=pt,sst$.
+NOTES: here are some good reasons for presenting the equations this way:
+\begin{itemize}
+	\item The convective and diffusive parts of the functions $H_x(u)$
+	can be combined if (e.g.) the exponential scheme is used.
+\end{itemize}
+BUT: the new `transport terms' are still sources, really. Also the
+growth term is a bit confusing the way it is written, since the
+$\dd{}/\dd{t}$ terms are normally expected on th LHS.
+
+TODO:
+\begin{itemize}
+	\item In LoKI-B (MATLAB, original C++), all terms are moved to the
+		right-hand side. The matrix that is assembled appears to
+		be {\em negative}-semidefinite (before applying the normalization
+		constraint to the first row).
+		Can that hurt performance of any solver?
+\end{itemize}
 
 
 \chapter{Definitions}
