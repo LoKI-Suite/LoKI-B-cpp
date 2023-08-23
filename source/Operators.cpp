@@ -466,9 +466,10 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                       (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
-                        /** \todo Is the last term above supposed to implement 1+(u/w)^beta (manual eq. 63)?
-                         *  It expresses w+u^2/w instead. This is different (correct) in the LoKI-B code,
-                         *  line 1591 in v2.2.0. Note that beta=2 is hardcoded: confusing!
+                        /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
+                         * because the w from the denominator of the first multiplicand is combined
+                         * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
+                         * factor 1/(w+u^2/w).
                          */
                         }
                     }
@@ -486,9 +487,8 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                         ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
                                                   (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                    (W + std::pow(grid.getCell(k), 2) / W));
-                        /** \todo Is the last term above supposed to implement 1+(u/w)^beta (manual eq. 63)?
-                         *  It expresses w+u^2/w instead. This is different (correct) in the LoKI-B code,
-                         *  line 1591 in v2.2.0. Note that beta=2 is hardcoded: confusing!
+                        /* See the note above about the optical differences with equation 63
+                         * of the manual (2.2.0).
                          */
                     }
                 }
