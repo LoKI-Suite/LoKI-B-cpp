@@ -509,21 +509,15 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            // note: this is (alphaEffNew/N)*(E/N)*d(D^0/du)
+            // note: fieldMatrixSpatGrowth represents: (alphaEffNew/N)*(E/N)*d(D^0*f0)/du
             fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
             // note: this is (alphaEffNew/N)^2*D0[k]
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k);
 
-            // what remains is -(alphaEffNew/N)(E/N)*D0df/du.
-            // For internal cells (not the first or last, this -(alphaEffNew/N)(E/N)*D0*d(f[k]-f[k-1])/Du
-            // For the first point we can discretize this using the first cell
-            // and a virtual (non-existing cell on the boundary, where u=0 and D0=0 (not symmetric).
-            // BUT THEN Du = (3/2)*du.
-            // I cannot understand why we need these U0inf[k+/-1] here. Apparently the equation is
-            // rewritten in some other way (bringing D0 inside the differentiataion)? But then I
-            // also do not get the correct results.
+            // note: what is still missing is (alpha/N)*(E/N)*D0*df/du.
+            //       but that does not seem to be provided by ionSpatialGrowthU
             if (k > 0)
             {
                 fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
