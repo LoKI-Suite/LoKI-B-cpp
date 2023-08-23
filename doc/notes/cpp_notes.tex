@@ -713,24 +713,6 @@ $\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
 \begin{equation}
 	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE +\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
 \end{equation}
-
-\begin{framed}
-	{\bf Open Questions:}
-	\begin{itemize}
-	\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
-		Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
-	\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
-		velocities are equal (but opposite). Then the above definition fails. How
-		can we fix this?
-		For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
-		also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
-		What if the velocity and frequency are {\em both} zero?
-	\item Why should complex roots (if any) be ignored/patched? Physically
-		these would result in oscillatory $n(z)$. Is that wrong per se?
-		Are these in conflict with any prior assumption? Than that should be
-		explained.
-	\end{itemize}
-\end{framed}
 Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
 and dividing by $N$ gives an expression for $f^0(u)$,
 \begin{equation}
@@ -743,17 +725,12 @@ and dividing by $N$ gives an expression for $f^0(u)$,
 	= \tilde{C}^0.
 	\label{eq:ebe-2term-f-u0(u)-spat-subst}
 \end{equation}
-This is essentially the form of the equations that is described in the
-LoKI-B manual \cite[eq. 8a--b, 29--30c]{Manual_2_2_0}.  In that presentation,
-the field operator is modified to also describe part of the growth effects
-(the term $-\alpha_{\mbox{eff}}f^0(u)$ in the last term on the left-hand
-side). This is, however, {\em not} what you find in the LoKI-B code,
-where the growth terms are separated from the others. By bringing all
-terms that depend on $\alpha_{\mbox{eff}}f^0(u)$ to the right-hand side
+By bringing all terms that depend on $\alpha_{\mbox{eff}}f^0(u)$ to the right-hand side
 of the equation and using definition \eqref{eq:H_E,x} with $x=m$, that can be
 rewritten as
 \begin{equation}
 	\DERIV{H_{E,m}}{u} = \tilde{C}^0(u) + \tilde{R}_{sst}(u),
+	\label{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du}
 \end{equation}
 where, just like for the temporal growth case, a growth renormalization term $\tilde{R}_{sst}(u)$
 has been introduced, which is now given by
@@ -793,28 +770,163 @@ to obtain
 	\right]
 \end{align}
 
-{\em TODO: find out which of these forms is actually discretized in the LoKI-B code
-(after $E\rightarrow -E$ and division by $1/\gamma$). It appears to be \eqref{eq:Rsst-orig},
-but I have not been able to verify the correctness of the discretisation of the points on
-boundary cells.}
+\noindent {\bf Notes and Questions --- Theory:}
+\begin{itemize}
+\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
+	Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
+\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
+	velocities are equal (but opposite). Then the above definition fails. How
+	can we fix this?
+	For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
+	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
+	What if the velocity and frequency are {\em both} zero?
+\item Why should complex roots (if any) be ignored/patched? Physically
+	these would result in oscillatory $n(z)$. Is that wrong per se?
+	Are these in conflict with any prior assumption? Than that should be
+	explained.
+\end{itemize}
+\noindent {\bf Which Form is Discretized in LoKI-B?}
+\begin{itemize}
+\item In the LoKI-B {\em manual} \cite[eq. 8a--b,
+	29--30c,32]{Manual_2_2_0}, essentially equation
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
+	operator is modified to also describe part of the growth effects.
+\item This is {\em not} what is in the LoKI-B code. That is based on
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and one of the
+	forms of the growth renormalization term (after $E\rightarrow -E$
+	and division by $1/\gamma$). But which one?
+	\begin{itemize}
+		\item \SRC{fieldOperator} provides the term that is also present in the absence of growth.
+		\item \SRC{fieldMatrixSpatGrowth} appears to provide
+		\[
+			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{D^0f^0}{u}.
+		\]
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$.
+		\item This suggests that \eqref{eq:Rsst-orig} is used, and the remaining
+			term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}D^0(u)\DERIV{f^0}{u}$.
+			A central-difference scheme
+			for the derivative of $f(u)$ yields
+			\begin{equation}
+				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
+				\doteq
+				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u},
+			\end{equation}
+			which corresponds to the second term of the manual's equation (29).
+			The manual does not explain how to handle the first and last cells,
+			but for those the derivatives can of course be approximated with the
+			asymmetric approximations $(f_1-f_0)/\Delta$ and
+			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
+
+			BUT THIS DOES TERM NOT SEEM TO BE PROVIDED BY THE remaining discretization
+			matrix in the code, \SRC{ionSpatialGrowthU}.
+	\end{itemize}
+\item Confusion is caused in the code by the fact that the
+	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
+	of the \SRC{fieldMatrixSpatGrowth}, has a division by 6,
+	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
+	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
+	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
+	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$) in equation
+	\ref{eq:-dGdu/Ngamma-discrete}.
+
+	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
+	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
+	instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
+	with the $G_x(u)$ exposition. We also had to add the division by 2 in the
+	interpolation code
+	\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
+	the only other location where the array is used (which also makes it easier
+	understand that an interpolation to a cell value is happening in that code).
+	In MATLAB (version 2.2.0) that last code can be found in
+	\SRC{Boltzmann.m} line 1512.
+\end{itemize}
+
+\section{The evaluation of $D_eN$ and $\mu_eN$}
+
+The expressions for $D_eN$ and $\mu_eN$ are given in equations
+\eqref{eq:DeN} and \eqref{eq:mueN}.
+
+In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated,
+rather than the mobility. To that end, the code defines four arrays on the cell
+domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
+\begin{align}
+	{\cal D}^0_k &= \frac{u_k}{3\Omega_k}, \\
+	{\cal U}^-_k &= +\frac{E}{N}\begin{cases}
+				0 & k=0 \\
+				{\cal D}^0_{k-1}/(2\Delta u), & 0<k<{\cal N}\\
+			\end{cases} \\
+	{\cal U}^+_k &= -\frac{E}{N}\begin{cases}
+				{\cal D}^0_{k+1}/(2\Delta u), & 0\leq k<{\cal N}-1\\
+				0 & k={\cal N}-1 \\
+			\end{cases} \\
+	{\cal U} &= {\cal U}^+ + {\cal U}^-.
+\end{align}
+The approximation of $D_N$ is straightforward: $D_eN \doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u$, and this
+is also what you find in the code. The evaluation of $\mu_eE$ is not clear to me at all. In the code we have
+\begin{align}
+	\mu_eE
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
+		&= +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}
+			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u \nonumber \\
+		&\doteq +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}
+			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{D^0}{u}\right]_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u.
+\end{align}
+I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
+\[
+	\mu_eN
+		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
+		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
+		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
+\]
+since $D^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
+We now see that the approximation makes sense ... except for the first and last cell, where we have
+${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
+A correct expression is obtained by replacing the term ${\cal D}^0_{1}/(2\Delta u)$
+with the first order expression $({\cal D}^0_{1}-{\cal D}^0_{0})/\Delta u$ of the derivative,
+and replace ${\cal D}^0_{{\cal N}-2}/(2\Delta u)$ with $({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
+(These fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course.
+That would also fix the usage of the coefficient ${\cal U}^\pm$ in the assembly of the discretization matrix.)
+
 
 \chapter{Collisional Source Terms}
 \label{ch:sources}
 
-\section{Compatibility Notes}
+\section{Notation, Conservative Source Terms}
 
-Some of the source terms are in flux-divergence form,
+Let us now take a look at the source terms $\tilde{C}^0(u)$. We will soon see
+that some of these can be written in flux-divergence form,
 \begin{equation}
-	\tilde{C}_x(u) = -\DERIV{H_x(u)}{u}.
+	\tilde{C}^0_x(u) = -\DERIV{H_x(u)}{u}.
 	\label{eq:Ctilde=-dH/du}
 \end{equation}
+The reason for introducing the minus sign here is that, as we shall soon see,
+the resulting expressions for the fluxes $H_x(u)$ will be of the advection-diffusion
+type,
+\[
+	H_x(u) = h_x(u)\left(c_x(u) f^0(u) - d_x(u) f^0(u)\right),
+\]
+with a {\em positive} diffusion coefficient $h_x(u)d_x(u)$.
+This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
+with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
+\begin{framed}
+TODO: check, it seems that Loki-B docs call the convection coefficient
+$c_x$ and the diffusion coefficient $d_x$ --- which is very unfortunate.
+\end{framed}
+
+\section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
 and all terms of the final equation are divided by $\gamma$. As a result, in the manual they appear as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\mbox{with}\quad G^{man}_x(u)=N H_x(u).
 	\label{eq:CvsGman}
 \end{equation}
-In the {\em code} (matlab and C++), no tricks are done and such terms discretized as
+In the {\em code} (matlab and C++), no tricks are done, the terms are all brought
+to the {\em right-}hand side of the equation the source terms are discretized as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}.
 \end{equation}
@@ -1128,11 +1240,11 @@ expression \eqref{eq:Ctilde0-ee} (as expected).
 In the manual \cite[eq. 37a]{Manual_2_2_0}, a factor $g_{ee}$ is used in the definition of $G_{ee}(u)$,
 which is defined as
 \begin{equation}
-	g_ee(u) := \frac{2\nu_{ee}u^{3/2}}{N\gamma}.
+	g_{ee}(u) := \frac{2\nu_{ee}u^{3/2}}{N\gamma}.
 \end{equation}
 We have just learned that this can be written as
 \begin{equation}
-	g_ee(u) = \frac{3\alpha_{eV}}{\gamma}\frac{n_e}{N}.
+	g_{ee}(u) = \frac{3\alpha_{eV}}{\gamma}\frac{n_e}{N}.
 \end{equation}
 
 \begin{framed}
@@ -1186,6 +1298,37 @@ Observations:
     shielding should be used (even if just for comparison purposes)?
 \end{itemize}
 
+\section{Final Form}
+
+\begin{equation}
+	\tilde{C}^0(u) = -\sum\limits_{x=el,car,ee}\DERIV{H_x}{u} + \sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+\end{equation}
+and combination with the field term and with a growth term yields
+\begin{equation}
+	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
+	=
+	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+	+
+	\tilde{R}^0_g(u).
+\end{equation}
+for $g=pt,sst$.
+NOTES: here are some good reasons for presenting the equations this way:
+\begin{itemize}
+	\item The convective and diffusive parts of the functions $H_x(u)$
+	can be combined if (e.g.) the exponential scheme is used.
+\end{itemize}
+BUT: the new `transport terms' are still sources, really. Also the
+growth term is a bit confusing the way it is written, since the
+$\dd{}/\dd{t}$ terms are normally expected on th LHS.
+
+TODO:
+\begin{itemize}
+	\item In LoKI-B (MATLAB, original C++), all terms are moved to the
+		right-hand side. The matrix that is assembled appears to
+		be {\em negative}-semidefinite (before applying the normalization
+		constraint to the first row).
+		Can that hurt performance of any solver?
+\end{itemize}
 
 
 \chapter{Definitions}
@@ -1684,131 +1827,6 @@ In the presence of growth terms, the following things change in the EBE:
 		be needed. (The EBE may is also non-linear when electron-electron
 		collisions are taken into accout.)
 \end{itemize}
-
-\section{Spatial Growth}
-
-In the manual \cite[eq. 32]{Manual_2_2_0}, the field operator for the SST case (spatial growth) is
-presented in this form, in which both terms are combined in a single \eqref{eq:G_E^sst}. This
-is not consistent with the code, in which these two terms of the field operator are discretized
-separately. The second term, which is also present for a conservative DC case is represented by
-the \SRC{fieldMatrix} discretization matrix. Note that this term does not change during the
-iterative process, so it needs to be set up only once after the grid has been configured or
-updated. The first term of the field operator for a non-zero $\alpha_{\mbox{eff}}$ is evaluated in
-\SRC{solveSpatialGrowthMatrix} (see matrix \SRC{fieldMatrixSpatialGrowth}. This is dealt with as
-a separate $G_x(u)$ term (see eq. \ref{eq:-dGdu/Ngamma-discrete}); this one only has the
-energy-convective term, so $c_x=0$.
-
-Let us now consider the first term on the left-hand side of equation \eqref{eq:f-2term-stationary-spat}.
-Substitution of equation \eqref{eq:f1-2term-stationary-spat} for $f^1(u)$ yields, after negating the
-equation, removing the parentheses and substituting the definition \eqref{eq:D0} of ${\cal D}_{x}^0$,
-\begin{equation}
-	-\frac{1}{3}\frac{\alpha_{\mbox{eff}}}{N}uf^1(u)
-	=
-	\left(\frac{\alpha_{\mbox{eff}}}{N}\right)^2{\cal D}_{sst}^0(u)f(u)
-                +\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}.
-\end{equation}
-The first term on the right-hand side is straightforward. It results in a diagonal term
-$(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$ in the boltzmann matrix that is known in the
-code as \SRC{ionSpatialGrowthD} (this is the first term on the right-hand side of the
-manual eq. 29). Also the second term looks straightforward, and a central-difference scheme
-for the derivative of $f(u)$ yields
-\begin{equation}
-	\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
-	\doteq
-	\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u},
-\end{equation}
-which corresponds to the second term of the manual's equation (29). The manual does not
-explain how to handle the first and last cells, but for those the derivatives can of course
-be approximated with the asymmetric approximations $(f_1-f_0)/\Delta$ and
-$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
-
-Observations and questions:
-\begin{itemize}
-	\item It would help if the manual would follow the code; the benefit of combing the
-		two terms of the field operator for spatial growth (manual 2.2.0 equation 32)
-		is not clear and, as said, not on par with the code, which employs the fact
-		that the original term is a linear one, so the \SRC{fieldMatrix} does not
-		have to be re-evaluated.
-	\item Confusion is also caused in the code by the fact that the
-		helper array \SRC{g_eeSpatialGrowth} has a division by 6,
-		instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
-		2.2.0), because that array also absorbs the factor $1/2$ that comes from the
-		averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
-		$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$) in equation
-		\ref{eq:-dGdu/Ngamma-discrete}.
-
-		In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
-		and the factor 2 is taken into account where it should be, by writing $2\Delta u$
-		instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
-		with the $G_x(u)$ exposition. We also had to add the division by 2 in the
-		interpolation code
-		\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
-		the only other location where the array is used (which also makes it easier
-		understand that an interpolation to a cell value is happening in that code).
-		In MATLAB (version 2.2.0) that last code can be found in
-		\SRC{Boltzmann.m} line 1512.
-	\item In the code we find something completely different for the second growth term
-		(the second term on the right-hand side of the manual eq. 29),
-		that I am not able to derive. It looks as if $\dd{{\cal D}(u)f(u)}/\dd{u}$
-		is discretized, rather than ${\cal D}(u)\dd{f(u)}/\dd{u}$, but then still
-		the handling of the boundary cells is different from what I would expect.
-
-		My misunderstanding is probably the same is what causes my confusion
-		about the evaluation of $\mu_eN$, see the following section. Make sure
-		that is clarified, then the discretization of this term will also be clear.
-	\item The explanation of this discretization could be added to the manual.
-\end{itemize}
-
-\section{The evaluation of $D_eN$ and $\mu_eN$}
-
-The expressions for $D_eN$ and $\mu_eN$ are given in equations
-\eqref{eq:DeN} and \eqref{eq:mueN}.
-
-In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated,
-rather than the mobility. To that end, the code defines four arrays on the cell
-domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
-\begin{align}
-	{\cal D}^0_k &= \frac{u_k}{3\Omega_k}, \\
-	{\cal U}^-_k &= +\frac{E}{N}\begin{cases}
-				0 & k=0 \\
-				{\cal D}^0_{k-1}/(2\Delta u), & 0<k<{\cal N}\\
-			\end{cases} \\
-	{\cal U}^+_k &= -\frac{E}{N}\begin{cases}
-				{\cal D}^0_{k+1}/(2\Delta u), & 0\leq k<{\cal N}-1\\
-				0 & k={\cal N}-1 \\
-			\end{cases} \\
-	{\cal U} &= {\cal U}^+ + {\cal U}^-.
-\end{align}
-The approximation of $D_N$ is straightforward: $D_eN \doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u$, and this
-is also what you find in the code. The evaluation of $\mu_eE$ is not clear to me at all. In the code we have
-\begin{align}
-	\mu_eE
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
-		&= +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}
-			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u \nonumber \\
-		&\doteq +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}
-			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{D^0}{u}\right]_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u.
-\end{align}
-I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
-\[
-	\mu_eN
-		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
-		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
-		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
-\]
-since $D^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
-We now see that the approximation makes sense ... except for the first and last cell, where we have
-${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
-A correct expression is obtained by replacing the term ${\cal D}^0_{1}/(2\Delta u)$
-with the first order expression $({\cal D}^0_{1}-{\cal D}^0_{0})/\Delta u$ of the derivative,
-and replace ${\cal D}^0_{{\cal N}-2}/(2\Delta u)$ with $({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
-(These fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course.
-That would also fix the usage of the coefficient ${\cal U}^\pm$ in the assembly of the discretization matrix.)
 
 \chapter{Discretization}
 \label{sec:discretization}
