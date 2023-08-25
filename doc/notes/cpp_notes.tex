@@ -144,9 +144,9 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		is just called $\MEAN{v_z}$.
 	\item	In BOLSIG+ and in LoKI-B, the energy is expressed in $eV$. BOLSIG+
 		uses the symbol $\epsilon$ for energy, LoKI-B uses $u$. In this
-		test we systematically use $\epsilon$ for an energy in $J$, and
+		text we systematically use $\epsilon$ for an energy in $J$, and
 		$u=\epsilon/e$ for an energy in $eV$.
-	\item In LoKI-B, some additional factor $\gamma$ and $1/\gamma$ appear in
+	\item In LoKI-B, some additional factors $\gamma$ and $1/\gamma$ appear in
 		the definitions of the terms of the Boltzmann equations, compared with
 		BOLSIG+ and the present text. In the final form of the equation,
 		the one that is actually discretized, all terms have an extra $1/\gamma$.
@@ -164,7 +164,7 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 			\item $\MEAN{v_z}\rightarrow v_d$,
 			\item $f \rightarrow f^{0}_u$: Unfortunately. there is no symbol
 			in LoKI-B for the complete approximation of the distribution
-			function, $f^0_u+f^1\cos\theta$, $f^0$, since $f$ is used for
+			function, $f^0_u+f^1\cos\theta$, since $f$ is used for
 			$f^0_u$, the first term of its expansion.
 			I find this very confusing, since as a result for example
 			$F(u)\neq n_ef(u)$, and hope it can be changed in the LoKI-docs
@@ -198,10 +198,10 @@ In order to understand how the various simulation modes that are supported by
 LoKI-B are special cases of the two-term expansion, it is easiest to start with
 the full equations for the distribution function in the two-term approximation.
 These can be found e.g. in the BOLSIG+ paper \cite[eq. 3--6]{Hagelaar2005},
-but we adopt the notation as follows:
+but we adopt the notation as indicated in section \ref{sec:compatibility}.
 With these changes, the distribution function is given by
 \begin{equation}
-	F_v(v,\theta,z,t) = F^0(v,z,t) + F^1(v,z,t)\cos\theta,
+	F_v(v,\theta,z,t) = F^0_v(v,z,t) + F^1_v(v,z,t)\cos\theta,
 	\label{eq:Fv(Fv0,Fv1)}
 \end{equation}
 where $\theta$ is the angle with the electric field. This function is normalized by
@@ -223,7 +223,7 @@ find, using $v=\sqrt{2\epsilon/m_e}$,
 	\label{eq:Fv-norm-eps}
 \end{equation}
 where we have {\em defined} the energy representation of the distribution function, which absorbs
-the constant factor, as
+the constant factor, but {\em not} the factor $\sqrt{\epsilon}$, as
 \begin{equation}
 	F^{0,1}_\epsilon(\epsilon,z,t)
 	:=
@@ -237,7 +237,7 @@ From the previous two expresssions it follows that the function has the integral
 \end{equation}
 
 Along the same lines, if we insist on using $\si{eV}$ as energy unit instead of $J$, define
-$u=\epsilon/e$, the energy in $eV$, and use $v=\sqrt{2eu/m}$, the energy-in-$\si{eV}$
+$u:=\epsilon/e$ as the energy in $eV$, and use $v=\sqrt{2eu/m}$, the energy-in-$\si{eV}$
 representation results:
 \begin{equation}
 	F^{0,1}_u(u,z,t)
@@ -643,11 +643,13 @@ The {\em Spatial Growth} model allows only {\em spatial} variations of $n_e$, yi
 	  \frac{\gamma}{3}uf^1_u\frac{1}{n_e}\PDEV{n_e}{z}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	= N\tilde{C}^0,
+	\label{eq:ebe-2term-f-u0(u)-spat-raw}
 	\\
 	&
 	  \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
 	- E\gamma u\PDEV{f^0_u}{u}
 	= -N\sigma_m(u)\gamma uf^1_u.
+	\label{eq:ebe-2term-f-u1(u)-spat-raw}
 \end{align}
 For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e(nu^eff)}
 tell us that $\dd{\Gamma_e}/\dd{z}=n_e\MEAN{\nu_{\mbox{eff}}}$. Equation \eqref{eq:Gamma_u}
@@ -662,7 +664,8 @@ For $\MEAN{v_z}\neq 0$ this can be written as
 	\alpha_{\mbox{eff}} := \frac{1}{n_e}\PDEV{n}{z}=\frac{\MEAN{\nu_{\mbox{eff}}}}{\MEAN{v_z}}.
 	\label{eq:alpha_eff}
 \end{equation}
-Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ we get
+Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equations
+\eqref{eq:ebe-2term-f-u0(u)-spat-raw} and \eqref{eq:ebe-2term-f-u1(u)-spat-raw} yields
 \begin{align}
 	&
 	  \frac{\gamma}{3}uf^1_u\alpha_{\mbox{eff}}
@@ -687,16 +690,16 @@ using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
 	= \mu_e E - D_e\alpha_{\mbox{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
 \end{align}
-Here we have introduced
+Here we have introduced the reduced electron diffusion coefficient and mobility,
 \begin{align}
 	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \label{eq:DeN} \\
 	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_x^0(u)\DERIV{f}{u}\dd{u}. \label{eq:mueN}
 \end{align}
 The expressions for $D_eN$ and $\mu_eN$ are given in \cite[eq. 48a--b]{Manual_2_2_0}.
-NOTE that LoKI-B has an additional minus sign in the second equation to make $\mu_e$ positive,
-see section \ref{sec:compatibility}
+Note that LoKI-B has an additional minus sign in the second equation to make $\mu_e$ positive,
+see section \ref{sec:compatibility} for details.
 
-Combination with equation \eqref{eq:alpha_eff} gives an expression for $\alpha_{\mbox{eff}}$,
+Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\alpha_{\mbox{eff}}$,
 \begin{equation}
 	\alpha_{\mbox{eff}}(\mu_eE-D_e\alpha_{\mbox{eff}}) - \MEAN{\nu_{\mbox{eff}}} =0,
 \end{equation}
@@ -709,7 +712,7 @@ note that normally $\mu$ is negative, $E$ could be positive or negative, $\alpha
 same sign as the product $\mu_eE$, and $\MEAN{\nu_{\mbox{eff}}}$ can be positive or negative
 (negative if there is more attachment than ionization).
 It is zero when the discriminant is zero, or may be complex.
-Note that there are two solution. We choose the one that has the desired property that
+Note that there are two solutions. We choose the one that has the desired property that
 $\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
 \begin{equation}
 	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE +\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
@@ -783,7 +786,7 @@ to obtain
 	What if the velocity and frequency are {\em both} zero?
 \item Why should complex roots (if any) be ignored/patched? Physically
 	these would result in oscillatory $n(z)$. Is that wrong per se?
-	Are these in conflict with any prior assumption? Than that should be
+	Are these in conflict with any prior assumption? Then that should be
 	explained.
 \end{itemize}
 \noindent {\bf Which Form is Discretized in LoKI-B?}
@@ -827,8 +830,8 @@ to obtain
 	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
 	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
 	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
-	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$) in equation
-	\ref{eq:-dGdu/Ngamma-discrete}.
+	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$ in equation
+	\ref{eq:-dGdu/Ngamma-discrete}).
 
 	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
 	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
@@ -840,6 +843,11 @@ to obtain
 	understand that an interpolation to a cell value is happening in that code).
 	In MATLAB (version 2.2.0) that last code can be found in
 	\SRC{Boltzmann.m} line 1512.
+\item It appears that the MATLAB version of the growth codes has been revised
+	significantly since the C++ version was created from the 1.0.0 MATLAB code.
+	Various issues that were reported in the (C++) source code may have
+	been resolved, maybe not. A full comparison of the C++ code and current MATLAB
+	version is due.
 \end{itemize}
 
 \section{The evaluation of $D_eN$ and $\mu_eN$}
@@ -888,10 +896,14 @@ since $D^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(
 We now see that the approximation makes sense ... except for the first and last cell, where we have
 ${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
 A correct expression is obtained by replacing the term ${\cal D}^0_{1}/(2\Delta u)$
-with the first order expression $({\cal D}^0_{1}-{\cal D}^0_{0})/\Delta u$ of the derivative,
-and replace ${\cal D}^0_{{\cal N}-2}/(2\Delta u)$ with $({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
-(These fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course.
-That would also fix the usage of the coefficient ${\cal U}^\pm$ in the assembly of the discretization matrix.)
+with the first order expression $({\cal D}^0_{1}-{\cal D}^0_{0})/\Delta u$ of the derivative.
+Since ${\cal D}^0(u=0)=0$, an alternative expression would be $({\cal D}^0_{0}-{\cal D}^0(u=0))/(\Delta u/2)
+={\cal D}^0_{0}/(\Delta u/2)=2{\cal D}^0_{0}/\Delta u$, it seems.
+At the upper side, ${\cal D}^0_{{\cal N}-2}/(2\Delta u)$ should be
+$({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
+Such fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course,
+but note that those are also used in the assembly of one of the spatial growth discretisation
+matrices.
 
 
 \chapter{Collisional Source Terms}
@@ -915,10 +927,9 @@ will be of the advection-diffusion type,
 with a {\em positive} diffusion coefficient $h_x(u)d_x(u)$.
 This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
 with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
-\begin{framed}
-TODO: check, it seems that Loki-B docs call the convection coefficient
-$c_x$ and the diffusion coefficient $d_x$ --- which is very unfortunate.
-\end{framed}
+NOTE: LoKI-B docs call the convection coefficient $c_x$ and the diffusion
+coefficient $d_x$ --- which is somewhat unfortunate --- also see
+section \ref{sec:dH/du-disc}.
 
 \section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
@@ -930,7 +941,7 @@ and all terms of the final equation are divided by $\gamma$. As a result, in the
 In the {\em code} (matlab and C++), no tricks are done, the terms are all brought
 to the {\em right-}hand side of the equation the source terms are discretized as
 \begin{equation}
-	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}.
+	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}
 \end{equation}
 NOTE that the functions $H_x(u)$ in this text are defined {\em without}
 the factor $1/\gamma$.
@@ -1127,10 +1138,11 @@ TODO:
 		the property below \cite[eq. 63]{Manual_2_2_0}) is true only
 		if $\beta=2$, so the manual should more clear that is required
 		(and used in the code), even though the function that is
-		recommended by but Opal et al. \cite[fig. 4, text below tab. 1]{Opal1971}
+		recommended by Opal et al. \cite[fig. 4, text below tab. 1]{Opal1971}
 		has $\beta=2.1$. What is the impact of these
 		deviations? The manual should be more clear about that.
-		Make consistent: usage of $(u,u')$ vs $(u',u)$ in equations 14 and 63.
+		Small issue: the usage of $(u,u')$ vs $(u',u)$ as formal parameter
+		lists in equations 14 and 63 of the manual could be made consistent.
 	\item The derivations (see section \ref{app:ionization} rely on the peak
 		of a delta-function being fully enclosed by an integration
 		interval, when it is located on its boundary. This is mathematically
@@ -1190,9 +1202,9 @@ and the `Spitzer integrals' $I(u)$ and $J(u)$ are given by \cite[eqns. 59--62]{F
 \end{align}
 This notation $\alpha_{eV}$ is due to Rockwood \cite[below equation B1]{Rockwood1973} and is further explained
 in section \ref{sec:Rockwood1973EE}, where the reader will also find a complete derivation of the
-expressions that are used in LoKI-B for the electron-electron collision term. Rockwoods expressions
+expressions that are used in LoKI-B for the electron-electron collision term. Rockwood's expressions
 have been modified for the usage in LoKI-B, BOLSIG+ and this text of $\si{eV}$ as energy unit,
-which has been made clear with the suffic $\si{eV}$ on $\alpha$.
+which has been made clear with the suffix $\si{eV}$ on Rockwood's $\alpha$.
 
 This expression is equivalent to equation 38 in the BOLSIG paper \cite{Hagelaar2005},
 but in that paper $a$ is written instead of $\alpha_{eV}/3$ and functions $A_1$ , $A_2$ and
@@ -1225,7 +1237,7 @@ and definition \eqref{eq:alpha_eV} of $\alpha_eV$,
 	2\nu_{ee}u^{3/2}
 	= 8\pi\left(\frac{e^2}{4\pi\epsilon_0 m_e}\right)^2\frac{\gamma\ln\Lambda_c}{\gamma^4}n_e
 	= 8\pi\left(\frac{e^2}{4\pi\epsilon_0 m_e}\right)^2\gamma\left(\ln\Lambda_c\right)\frac{m_e^2}{4e^2}n_e
-	= \frac{e^2}{8\pi\epsilon_0^2}\gamma\frac{n_e}{N}\left(\ln\Lambda_c\right) n_e
+	= \frac{e^2}{8\pi\epsilon_0^2}\gamma\left(\ln\Lambda_c\right) n_e
 	= 3\alpha_{eV} n_e;
 	\label{eq:g_ee-alpha}
 \end{equation}
@@ -1505,7 +1517,7 @@ And for the electron-electron operator we find that
 	That will of course affect the relations such as $\bvec{A}=-h_{ee}\bmat{a}\bvec{f}$
 	(see below). Nice side-project.
 	\item With these sign conventions and definitions, $A_n$ and $B_n$ are positive,
-	the diagonal of the discretization natrix is positive, the equation is
+	the diagonal of the discretization matrix is positive, the equation is
 	similar to \eqref{eq:dH/du-k}.
 \end{itemize}
 \end{framed}
@@ -1560,7 +1572,7 @@ where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 		\end{cases}. \label{eq:ee:b-orig}
 \end{align}
 Note that we have changed $n,m\rightarrow i,j$, $j\leq i-1\rightarrow j<i$ and $j>i-1\rightarrow j\geq i$
-with respect to the manual for reasons of readability.
+compared to the presentation in the manual for reasons of readability.
 
 Three more modifications are made to this scheme, as suggested by Rockwood
 \cite[Appendix B]{Rockwood1973}:
@@ -1572,7 +1584,7 @@ Three more modifications are made to this scheme, as suggested by Rockwood
 	among the electrons happens in such collisions.)
   \item The last row and first column of $\bmat{a}$ are set to 0. This ensures
 	that $A_{{\cal N}-1}=0$ and $B_0=0$ (\cite[eq. B10]{Rockwood1973});
-  \item The substitution $a_{ij} = \sqrt{a^{old}_{ij}a^{old}_{j-1,i+1}}$ is made
+  \item The substitution $a_{ij} = \sqrt{a^{orig}_{ij}a^{orig}_{j-1,i+1}}$ is made
 	(\cite[eq. B11,B13]{Rockwood1973}). This ensures that the energy
 	source vanishes for a Maxwellian EEDF up to the machine accuracy
 	(eliminating discretization errors).
@@ -2152,7 +2164,7 @@ In Local Thermodynamic Equilibrium (LTE)
 This section relies on the following properties of the $\delta$ function
 \begin{align}
 	\int\limits_{u_1}^{u_2} f(u)\delta(u-u_0)\dd{u} &= \begin{cases}
-		f(u_0)	&:\quad u_a<u_0<u_b \\
+		f(u_0)	&:\quad u_1<u_0<u_2 \\
 			\mbox{undefined}	&:\quad u=u_1 \vee u=u_2 \\
 		0	&:\quad \mbox{otherwise}
 	\end{cases} \label{eq:delta-integrals}
