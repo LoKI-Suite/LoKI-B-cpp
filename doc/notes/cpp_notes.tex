@@ -321,12 +321,12 @@ mean velocity along the electric field and the mean energy:
 	\MEAN{v_z} = \MEAN{v\cos\theta} &= \frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\mbox{mean velocity component $\parallel E$} \label{eq:meanvz} \\
 	\MEAN{u} &= \int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron energy} \label{eq:meanu}
 \end{alignat}
-Using $F^{0,1}$ instead of $f^{0,1}$ or, equivalently, multiplying the results
+Using $F^{0,1}$ instead of $f^{0,1}$ or, equivalently, multiplying some of the previous results
 with $n_e$, gives some important density and flux density expressions:
 \begin{alignat}{2}
-	n_u = n_e\MEAN{u} &= \int\limits_0^\infty u\sqrt{u} F^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron energy density} \label{eq:n_u} \\
-	\Gamma_e = n_e\MEAN{v_z} &= \frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron flux density component $\parallel E$} \label{eq:Gamma_e} \\
-	\Gamma_u = n_e\MEAN{uv_z} &= \frac{\gamma}{3}\int\limits_0^\infty u^2f^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron energy flux density component $\parallel E$} \label{eq:Gamma_u}
+	n_u = n_e\MEAN{u} &= n_e\int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron energy density} \label{eq:n_u} \\
+	\Gamma_e = n_e\MEAN{v_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron flux density component $\parallel E$} \label{eq:Gamma_e} \\
+	\Gamma_u = n_e\MEAN{uv_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty u^2f^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron energy flux density component $\parallel E$} \label{eq:Gamma_u}
 \end{alignat}
 
 Finally, let us see how we can integrate terms of the form $u^p\dd{(u^q F^{0,1})}/\dd{u}$
@@ -442,7 +442,7 @@ $\si{eV/m^3/s}$, yuck):
 	\label{eq:energy-balance}
 \end{equation}
 This equation can be recognized as the energy balance equation for the
-electrons, with the volumetric (net) power gained in by the electrons
+electrons, with the volumetric (net) power gained by the electrons
 in collisions given by
 \begin{equation}
 	S_u(z,t)
@@ -452,7 +452,7 @@ in collisions given by
 
 \section{Equations for $f^0_u$ and $f^1_u$}
 
-Substitution of equations \eqref{eq:F=n_ef} and \eqref{eq:f0u-norm} in equations
+Substitution of equation \eqref{eq:F=n_ef} in equations
 \eqref{eq:ebe-2term-F-u0}--\eqref{eq:ebe-2term-F-u1}, using the fact that $n_e$ does not depend on $u$,
 using Leibniz' rule for the differentiation of products and dividing by $n_e$ yields
 equations involving $n_e$ and the {\em normalized} distribution functions,
@@ -479,7 +479,7 @@ In particular, these equations still allow the electron density, the
 functions $f^{0,1}_u$, the electric field and other paramers that may influence
 the source term $\tilde{C}^0$ to be functions of space and time coordinates.
 
-\section{Solutions for systems of the form $f^{0,1}_u(u)$}
+\section{Solutions for systems of the form $n_e(z,t)f^{0,1}_u(u)$}
 
 At the basis of a number of well-known solutions, such as the spatial and temporal
 growth models, to be discussed later, is the simplification of \eqref{eq:F=n_ef} to
@@ -607,10 +607,56 @@ These definitions allow us to write the equation as
 	\DERIV{H_{E,pt}}{u} = \tilde{C}^0(u) + \tilde{R}_{pt}(u).
 \end{equation}
 
+
 When solving this equation, iterations are needed until the value of
 $\MEAN{K_{\mbox{eff}}}$ is consistent with the eedf $f^0(u)$. Note that
 the field term needs to be re-discretized as well in every iteration,
 since that also depends on $\MEAN{K_{\mbox{eff}}}$ via $\Omega_{pt}(u)$.
+
+Let us now take a look at the electron particle and energy flux densities.
+By multiplying equation \eqref{eq:ebe-2term-f-u1(u)-temp} with $\frac{1}{3}\gamma u n_e$,
+integration over $u$ and using equation \eqref{eq:Gamma_e} we obtain an
+expression for the electron (particle) flux density,
+\begin{equation}
+	\Gamma_e = (\mu_eN)(E/N)n_e = \mu_eE n_e.
+	\label{eq:Gamma_e-temp}
+\end{equation}
+Here we have introduced the (reduced) electron mobility,
+\begin{equation}
+	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:mueN}
+\end{equation}
+The expression for $\mu_eN$ is given in \cite[eq. 46b]{Manual_2_2_0}.
+Note that LoKI-B has an additional minus sign in these two equations to make $\mu_e$ positive,
+see section \ref{sec:compatibility} for details.
+
+Repeating these steps, but multiplying with $\frac{1}{3}\gamma u^2 n_e$ this time,
+yields and expression for the electron {\em energy} flux density,
+\begin{equation}
+	\Gamma_u = (\mu_uN\MEAN{u})(E/N)n_e = \mu_uE n_e\MEAN{u} = \mu_uE n_u.
+	\label{eq:Gamma_u-temp}
+\end{equation}
+Here we have introduced the (reduced) electron {\em energy mobility},
+\begin{equation}
+	\mu_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:muuN}
+\end{equation}
+\begin{framed}
+In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
+by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}.
+In this text we use Hagelaar's definitions --- it appears that in the LoKI-B manual the
+coefficients are not used anywhere, wheras in Hagelaar's text also the corresponding
+transport equation for the (mean) energy is stated and discussed.
+
+The LoKI-B definitions are better called differently: these are known as Allis'
+thermoelectricity $\beta$ and heat diffusion $G$. See the discussion below eq. 62
+of \cite{Hagelaar2005}. This discussion claims that these Allis coefficients have
+also been used by one of the LoKI-B authors (Lu\'is Alves) in \cite{Alves1997},
+although I (JvD) have not been able to spot these coefficients in that paper.
+\end{framed}
+The expression for LoKI-B's $\mu_eN$ is given in \cite[eq. 48b]{Manual_2_2_0}.
+Note that again LoKI-B has an additional minus sign in these two equations to make $\mu_u$
+positive, see section \ref{sec:compatibility} for details.
+
+TODO: energy balance for the temporal growth model.
 
 \subsection{Temporal Growth for HF Fields}
 
@@ -690,14 +736,12 @@ using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
 	= \mu_e E - D_e\alpha_{\mbox{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
 \end{align}
-Here we have introduced the reduced electron diffusion coefficient and mobility,
-\begin{align}
-	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \label{eq:DeN} \\
-	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_x^0(u)\DERIV{f}{u}\dd{u}. \label{eq:mueN}
-\end{align}
-The expressions for $D_eN$ and $\mu_eN$ are given in \cite[eq. 48a--b]{Manual_2_2_0}.
-Note that LoKI-B has an additional minus sign in the second equation to make $\mu_e$ positive,
-see section \ref{sec:compatibility} for details.
+Here we have used expression \eqref{eq:mueN} for the reduced electron diffusion coefficient
+$D_eN$, and introduced the (reduced) electron diffusion coefficient,
+\begin{equation}
+	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \label{eq:DeN}
+\end{equation}
+The expression for $D_eN$ is given in \cite[eq. 46a]{Manual_2_2_0}.
 
 Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\alpha_{\mbox{eff}}$,
 \begin{equation}
@@ -773,6 +817,19 @@ to obtain
 	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
 	\right]
 \end{align}
+
+TODO: energy balance for the spatial growth model.
+
+Define:
+\begin{equation}
+	D_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)f(u)\dd{u}. \label{eq:DuN}
+\end{equation}
+\begin{framed}
+In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
+by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}
+that have been used here.  See the note below equation \eqref{eq:muuN}.
+\end{framed}
+The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
 
 \noindent {\bf Notes and Questions --- Theory:}
 \begin{itemize}
@@ -1351,7 +1408,7 @@ TODO:
 \section{Discretization of the Equation}
 
 Without making additional assumptions, equation \eqref{eq:EBE-final} can be integrated
-over cell $k$ and dividing by the energy interval $\Delta u$,
+over cell $k$ and divided by the energy interval $\Delta u$,
 \begin{equation}
 	\sum\limits_{x=el,car,ee,E_g}\MEAN{\DERIV{H_x}{u}}_k
 	=
@@ -2774,47 +2831,61 @@ $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
 \section{Power Terms}
 \label{sec:power-terms}
 
+\begin{equation}
+	\Theta_x
+		= -\int\limits_0^\infty u\DERIV{H_x}{u}\dd{u}
+		= -\left.uH_x(u)\right|_0^\infty + \int\limits_0^\infty H_x(u)\dd{u}
+		=   \int\limits_0^\infty H_x(u)\dd{u}.
+\end{equation}
+Using expression \eqref{eq:H_x-expr} for $H_x(u)$ gives
+\begin{equation}
+	\Theta_x
+	= -\int\limits_0^\infty h_x(u)d_xf^0(u)\dd{u} - \int\limits_0^\infty h_x(u)c_x\DERIV{f^0}{u}\dd{u}
+	:= \Theta_x^{loss} + \Theta_x^{gain}.
+\end{equation}
+
+Older text about 1.0.0 follows (updated to include $d_x$ in $G_x(u)$) ...
+
 In the code some integrals appear in a form that differs from that in the LoKI-B
 paper and manual. As an example, consider the energy gain and loss terms for CAR
 gases (see \cite[eqn 24a--h]{Tejero2019} and \cite[eqn 28a--h]{Manual_1_0_0}),
-\begin{equation}
-	\frac{\Theta^{gain}_{x=el,CAR}}{N} = -\int\limits_0^\infty g_x(u)c\DERIV{f(u)}{u}\dd{u}
-\end{equation}
-\begin{equation}
-	\frac{\Theta^{loss}_{x=el,CAR}}{N} = -\int\limits_0^\infty g_x(u)f(u)\dd{u}
-\end{equation}
+\begin{align}
+	\frac{\Theta^{gain}_{x=el,CAR}}{N} &= -\int\limits_0^\infty g_x(u)c_x\DERIV{f(u)}{u}\dd{u},
+	\\
+	\frac{\Theta^{loss}_{x=el,CAR}}{N} &= -\int\limits_0^\infty g_x(u)d_xf(u)\dd{u}.
+\end{align}
 Partial integration of the expression for the gain yields
 \begin{equation}
 	\frac{\Theta^{gain}_{x=el,CAR}}{N}
 	=
 	-\left.g_x(u)f(u)\right|_0^\infty
-	+\int\limits_0^\infty \DERIV{g_x(u)}{u}cf(u)\dd{u}
+	+\int\limits_0^\infty \DERIV{g_x(u)}{u}c_xf(u)\dd{u}
 	=
-	\int\limits_0^\infty \DERIV{g_x(u)}{u}cf(u)\dd{u},
+	\int\limits_0^\infty \DERIV{g_x(u)}{u}c_xf(u)\dd{u},
 \end{equation}
 where the fact that $g_x(u)$ vanishes for $u=0$ and the product $g_x(u)f(u)$ vanishes
 for $u\rightarrow\infty$. The resulting term can be approximated as
 \begin{equation}
 	\frac{\Theta^{gain}_{x=el,CAR}}{N}
 	\doteq
-	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})-g_x(u_{i-1/2})}{\Delta u}cf(u_i)\Delta{u}
+	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})-g_x(u_{i-1/2})}{\Delta u}c_xf(u_i)\Delta{u}
 	=
-	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})-g_x(u_{i-1/2})\right]cf(u_i).
+	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})-g_x(u_{i-1/2})\right]c_xf(u_i).
 \end{equation}
 The loss term can be approximated as
 \begin{equation}
 	\frac{\Theta^{loss}_{x=el,CAR}}{N}
 	\doteq
-	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})+g_x(u_{i-1/2})}{2}f(u_i)\Delta{u}
+	\sum_{i=0}^{N_c-1} \frac{g_x(u_{i+1/2})+g_x(u_{i-1/2})}{2}d_xf(u_i)\Delta{u}
 	=
-	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})+g_x(u_{i-1/2})\right]\frac{\Delta u}{2}f(u_i).
+	\sum_{i=0}^{N_c-1} \left[g_x(u_{i+1/2})+g_x(u_{i-1/2})\right]d_x\frac{\Delta u}{2}f(u_i).
 \end{equation}
 The net power is obtained by adding the gain and loss terms and results in
 the approximation
 \begin{equation}
 	\frac{\Theta^{gain}_{x=el,CAR}}{N}
 	\doteq
-	\sum_{i=0}^{N_c-1} \left[\left(c+\frac{\Delta u}{2}\right)g_x(u_{i+1/2})-\left(c-\frac{\Delta u}{2}\right)g_x(u_{i-1/2})\right]f(u_i).
+	\sum_{i=0}^{N_c-1} \left[\left(c_x+d_x\frac{\Delta u}{2}\right)g_x(u_{i+1/2})-\left(c_x-d_x\frac{\Delta u}{2}\right)g_x(u_{i-1/2})\right]f(u_i).
 \end{equation}
 These approximate expressions for the gain and net power have been implemented in
 the code, except that in the code also an additional factor $\gamma$ appears (see
