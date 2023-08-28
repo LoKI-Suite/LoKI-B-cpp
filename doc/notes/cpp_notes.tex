@@ -137,9 +137,9 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		In BOLSIG+, we see $\alpha=-(\dd{n_e}/\dd{z})/n_e$ instead (equation
 		\cite[16]{Hagelaar2005}). Also the mean velocity $w$ (BOLSIG+ notation)
 		is defined with a minus sign (same equation).
-	\item In \cite[52a--b]{Manual_2_2_0} the mean velocity is called
-		the mean {\em drift} velocity. That seems wrong, since the
-		definition also includes the diffusion velocity in the case
+	\item In \cite[52a--b]{Manual_2_2_0} and in \cite[20b]{Tejero2019}, the mean
+		velocity is called the mean {\em drift} velocity. That seems wrong, since
+		the definition also includes the diffusion velocity in the case
 		of spatial growth (eq. 52b). In this document the mean velocity
 		is just called $\MEAN{v_z}$.
 	\item	In BOLSIG+ and in LoKI-B, the energy is expressed in $eV$. BOLSIG+
@@ -153,11 +153,16 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		As a result, the definition of the source $S(u)$ (LoKI-B) has this
 		additional factor compared to the BOLSIG+ expression $\tilde{C}^0(u)$,
 		and $S(u)=\tilde{C}^0(u)/\gamma$.
+	\item In the manual \cite[eq. 48a-b]{Manual_2_2_0}, the definitions of $D_u$ and
+		$\mu_u$ in equations 48a-b are different by a factor $\MEAN{u}$, compared
+		to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}. See the note
+		below equation \eqref{eq:muuN}. In the present text Hagelaar's definitions
+		have been used.
 \end{itemize}
 What does this mean in practice? How can you translate the equations in the subsequent
 sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar2005}?
 \begin{itemize}
-	\item LoKI-B: In all equations, change:
+	\item LoKI-B manual/paper: In all equations, change:
 		\begin{itemize}
 			\item $\mu_e\rightarrow -\mu_e$,
 			\item $E\rightarrow -E$,
@@ -171,8 +176,10 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 			and code. In the LoKI-B {\em code}, the name \SRC{eedf} is used
 			for $f^0(u)$, which is confusing for the same reason.
 			\item $\tilde{C}^0(u)\rightarrow \gamma S(e)$.
+			\item Divide expressions for $D_\epsilon$ and $\mu_\epsilon$ by
+				$\MEAN{u}$.
 		\end{itemize}
-	\item BOLSIG+: In all equations, change:
+	\item BOLSIG+ paper: In all equations, change:
 		\begin{itemize}
 			\item $\mu_e\rightarrow -\mu_e$,
 			\item $E\rightarrow -E$,
@@ -390,7 +397,7 @@ Note that these equations are the same as the original ones, except for the term
 right-hand side of the first equation. The new symbol $\tilde{C}^0$ is defined as
 \cite[eq. 14]{Hagelaar2005}
 \begin{equation}
-	\tilde{C}^0=2\pi\gamma^3\sqrt{u}\frac{C_0}{Nn}.
+	\tilde{C}^0=2\pi\gamma^3\sqrt{u}\frac{C_0}{Nn_e}.
 	\label{eq:Ctilde0}
 \end{equation}
 The reason for this new symbol is that it $\tilde{C}^0$ does not depend on $n_e$ or
@@ -517,8 +524,10 @@ TODO: discuss the ramifications of assumption \eqref{eq:F(u,z,t)=n_e(z,t)f(u)} i
 detail, and motivate why/when this assumption makes any sense.
 
 \begin{framed}
-TODO/IDEA: is it useful to eliminate one the derivatives, and make some general progress,
-instead of assuming already at this point that one of them is zero (next sections)?
+TODO/IDEA: is it useful to use this constraint to eliminate one the derivatives,
+and make some general progress, instead of assuming already at this point that one
+of them is zero (next sections)? I cannot imagine that that has not already been
+tried before.
 One could consider to tabulate results as a function not only of $E/N$, but also of
 some parameter that describes the relative importance of the two derivatives. For example,
 one could do
@@ -533,10 +542,11 @@ so
 	\frac{1}{n_e}\PDEV{n_e}{t} &= \beta\MEAN{\nu_{eff}}, \\
 	\MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z} &= (1-\beta)\MEAN{\nu_{eff}}.
 \end{align}
-(TODO still: show that it does not matter which growth model is assumed when $\MEAN{\nu_{eff}}=0$,
-so we can arbitrarily set $\beta=1$ in that case.)
-What impact would that have on fluid models that
-use results of the two-term expansion? Would there be significant differences?
+But using this is must be shown that it does not matter which growth model is assumed when
+$\MEAN{\nu_{eff}}=0$, so we can arbitrarily set $\beta=1$ in that case.
+
+What impact would such more general approach have on fluid models that
+use results of the two-term expansion?
 
 Underlying question: when `complete` data sets are compiled using a 2-term model,
 is the choice for temporal/spatial usually docuented? Then that should be followed,
@@ -602,7 +612,6 @@ $\tilde{R}_{pt}$ called the `growth renormalization term`,
 \end{equation}
 And bringing this to the right-hand side of the equation, that takes the form that is also
 found in \cite[eq. 25]{Hagelaar2005},
-These definitions allow us to write the equation as
 \begin{equation}
 	\DERIV{H_{E,pt}}{u} = \tilde{C}^0(u) + \tilde{R}_{pt}(u).
 \end{equation}
@@ -630,7 +639,7 @@ Note that LoKI-B has an additional minus sign in these two equations to make $\m
 see section \ref{sec:compatibility} for details.
 
 Repeating these steps, but multiplying with $\frac{1}{3}\gamma u^2 n_e$ this time,
-yields and expression for the electron {\em energy} flux density,
+yields an expression for the electron {\em energy} flux density,
 \begin{equation}
 	\Gamma_u = (\mu_uN\MEAN{u})(E/N)n_e = \mu_uE n_e\MEAN{u} = \mu_uE n_u.
 	\label{eq:Gamma_u-temp}
@@ -643,16 +652,19 @@ Here we have introduced the (reduced) electron {\em energy mobility},
 In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
 by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}.
 In this text we use Hagelaar's definitions --- it appears that in the LoKI-B manual the
-coefficients are not used anywhere, wheras in Hagelaar's text also the corresponding
-transport equation for the (mean) energy is stated and discussed.
+coefficients are not used anywhere, and no external references to a discussion or provided,
+wheras in Hagelaar's text also the corresponding transport equation for the (mean) energy
+is stated and discussed.
 
 The LoKI-B definitions are better called differently: these are known as Allis'
 thermoelectricity $\beta$ and heat diffusion $G$. See the discussion below eq. 62
 of \cite{Hagelaar2005}. This discussion claims that these Allis coefficients have
 also been used by one of the LoKI-B authors (Lu\'is Alves) in \cite{Alves1997},
-although I (JvD) have not been able to spot these coefficients in that paper.
+although I (JvD) have not been able to spot these coefficients in that paper yet.
+
+For consistency, the LoKI-coefficients should also have suffix $u$ instead of $\epsilon$.
 \end{framed}
-The expression for LoKI-B's $\mu_eN$ is given in \cite[eq. 48b]{Manual_2_2_0}.
+The expression for LoKI-B's $\mu_uN$ is given in \cite[eq. 48b]{Manual_2_2_0}.
 Note that again LoKI-B has an additional minus sign in these two equations to make $\mu_u$
 positive, see section \ref{sec:compatibility} for details.
 
@@ -703,11 +715,11 @@ gives the expression for the flux, and equation \eqref{eq:meanvz} makes clear th
 $\MEAN{v_z}$ can be taken out of the $\partial/\partial z$, since $f^1(u)$ does not depend
 on the spatial coordinate by our assumptions. This gives
 \begin{equation}
-	\MEAN{v_z}\PDEV{n}{z}=n_e\MEAN{\nu_{\mbox{eff}}}.
+	\MEAN{v_z}\PDEV{n_e}{z}=n_e\MEAN{\nu_{\mbox{eff}}}.
 \end{equation}
 For $\MEAN{v_z}\neq 0$ this can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} := \frac{1}{n_e}\PDEV{n}{z}=\frac{\MEAN{\nu_{\mbox{eff}}}}{\MEAN{v_z}}.
+	\alpha_{\mbox{eff}} := \frac{1}{n_e}\PDEV{n_e}{z}=\frac{\MEAN{\nu_{\mbox{eff}}}}{\MEAN{v_z}}.
 	\label{eq:alpha_eff}
 \end{equation}
 Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equations
@@ -842,7 +854,7 @@ The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
 	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
 	What if the velocity and frequency are {\em both} zero?
 \item Why should complex roots (if any) be ignored/patched? Physically
-	these would result in oscillatory $n(z)$. Is that wrong per se?
+	these would result in oscillatory $n_e(z)$. Is that wrong per se?
 	Are these in conflict with any prior assumption? Then that should be
 	explained.
 \end{itemize}
