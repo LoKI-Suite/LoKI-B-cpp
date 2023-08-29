@@ -644,7 +644,7 @@ yields an expression for the electron {\em energy} flux density,
 	\Gamma_u = (\mu_uN\MEAN{u})(E/N)n_e = \mu_uE n_e\MEAN{u} = \mu_uE n_u.
 	\label{eq:Gamma_u-temp}
 \end{equation}
-Here we have introduced the (reduced) electron {\em energy mobility},
+Here we have introduced the (reduced) electron {\em energy} mobility,
 \begin{equation}
 	\mu_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:muuN}
 \end{equation}
@@ -761,7 +761,7 @@ Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\
 \end{equation}
 which can be solved to obtain
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
 \end{equation}
 The roots are real if $(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}>0$. When simplifying,
 note that normally $\mu$ is negative, $E$ could be positive or negative, $\alpha$ has the
@@ -771,7 +771,13 @@ It is zero when the discriminant is zero, or may be complex.
 Note that there are two solutions. We choose the one that has the desired property that
 $\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE +\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE -\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\label{eq:sst-alpha-solution}
+\end{equation}
+NOTE: if $\mu_eE\neq 0$ this can be written as
+\begin{equation}
+	\alpha_{\mbox{eff}} = \frac{\mu_eE}{2D_e}\left(1 -\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
+	\label{eq:sst-alpha-solution-muE!=0}
 \end{equation}
 Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
 and dividing by $N$ gives an expression for $f^0(u)$,
@@ -827,12 +833,36 @@ to obtain
 	= \gamma\frac{\alpha_{\mbox{eff}}}{N}\left[
 	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)
 	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
-	\right]
+	\right].
 \end{align}
 
-TODO: energy balance for the spatial growth model.
+Related to the Bolsig manual p. 18:
+Substitution of \eqref{eq:sst-alpha-solution} in \eqref{eq:ebe-2term-f-u1(u)-spat-v_z}
+yields an expression for $\MEAN{v_z}$ in terms of $\mu_e$, $D_e$ and $\MEAN{\nu_{\mbox{eff}}}$,
+\begin{equation}
+	\MEAN{v_z}
+	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}
+	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
+\end{equation}
+(The last expression if valid only if $\mu_eE\neq 0$.)
 
-Define:
+Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $u$ and integration over $u$
+yields the energy balance for the spatial growth case. After multiplication with $n_e$
+we get
+\begin{equation}
+	\alpha_{\mbox{eff}}\Gamma_u -(q_e\Gamma_e/e) E = n_eN\int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+\end{equation}
+Here we have used equation \eqref{eq:Gamma_u}, and the dissipation term is obtained in the
+same way as it was in the derivation of equation \eqref{eq:energy-balance}.
+
+The electron energy flux density is given by equations \eqref{eq:Gamma_u}. Substitution
+of equation \eqref{eq:ebe-2term-f-u1(u)-spat} for $f^1(u)$ for the spatial growth case yields
+\begin{equation}
+	\Gamma_u = \frac{E}{N}(\mu_u N)n_e\MEAN{u} - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)n_e\MEAN{u},
+	\label{eq:Gamma_u-sst}
+\end{equation}
+where we have used equation \eqref{eq:muuN} and have defined the (reduced) electron energy diffusion
+coefficient $D_uN$ as
 \begin{equation}
 	D_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)f(u)\dd{u}. \label{eq:DuN}
 \end{equation}
@@ -842,6 +872,15 @@ by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hage
 that have been used here.  See the note below equation \eqref{eq:muuN}.
 \end{framed}
 The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
+
+Substitution of equation \eqref{eq:Gamma_u-sst} and division by $N$ result in
+\begin{equation}
+	\frac{\alpha_{\mbox{eff}}}{N}\left(\frac{E}{N}(\mu_u E)n_e\MEAN{u} - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\MEAN{u}\right)
+	- \Gamma
+\end{equation}
+
+BOLSIG+ manual \cite[p. 18,19]{BolsigManual2016}.
+
 
 \noindent {\bf Notes and Questions --- Theory:}
 \begin{itemize}
