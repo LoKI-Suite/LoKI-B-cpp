@@ -739,15 +739,14 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equ
 \end{align}
 By multiplying the last equation with $\gamma u/3$, integrating over all energies and
 using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
-\begin{align}
-	&
+\begin{equation}
 	\MEAN{v_z} = \frac{\gamma}{3}\int\limits_0^\infty uf^1_u\dd{u}
 	=
 		  E           \frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
 		- \alpha_{\mbox{eff}}\frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)f^0_u\dd{u}
 	= \mu_e E - D_e\alpha_{\mbox{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
-\end{align}
+\end{equation}
 Here we have used expression \eqref{eq:mueN} for the reduced electron diffusion coefficient
 $D_eN$, and introduced the (reduced) electron diffusion coefficient,
 \begin{equation}
@@ -836,15 +835,7 @@ to obtain
 	\right].
 \end{align}
 
-Related to the Bolsig manual p. 18:
-Substitution of \eqref{eq:sst-alpha-solution} in \eqref{eq:ebe-2term-f-u1(u)-spat-v_z}
-yields an expression for $\MEAN{v_z}$ in terms of $\mu_e$, $D_e$ and $\MEAN{\nu_{\mbox{eff}}}$,
-\begin{equation}
-	\MEAN{v_z}
-	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}
-	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
-\end{equation}
-(The last expression if valid only if $\mu_eE\neq 0$.)
+\subsubsection{Energy Balance}
 
 Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $u$ and integration over $u$
 yields the energy balance for the spatial growth case. After multiplication with $n_e$
@@ -873,14 +864,60 @@ that have been used here.  See the note below equation \eqref{eq:muuN}.
 \end{framed}
 The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
 
-Substitution of equation \eqref{eq:Gamma_u-sst} and division by $N$ result in
+The particle flux density is obtained by multiplying equation \eqref{eq:ebe-2term-f-u1(u)-spat-v_z}
+with $n_e$,
 \begin{equation}
-	\frac{\alpha_{\mbox{eff}}}{N}\left(\frac{E}{N}(\mu_u E)n_e\MEAN{u} - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\MEAN{u}\right)
-	- \Gamma
+	\Gamma_z = n_e(\mu_e E - D_e\alpha_{\mbox{eff}}).
 \end{equation}
 
-BOLSIG+ manual \cite[p. 18,19]{BolsigManual2016}.
+The expression for $\Gamma_z$ can be used to evaluate the power that is absorbed
+by the field directly, the result can be written as
+\begin{equation}
+	\frac{P_E}{N} := -\frac{q_e}{e}\frac{\Gamma_zE}{n_eN} = \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}.
+\end{equation}
+Substitution of equation \eqref{eq:sst-alpha-solution} yields
+\begin{equation}
+	\frac{P_E}{N} = \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)\frac{1}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
+\end{equation}
+which is equivalent to the result found in the BOLSIG+ manual \cite[p. 18]{BolsigManual2016}
+(item 19.) for the spatial growth case. Alternatively, the term from the field operator
+that is proportional to $\alpha_{\mbox{eff}}$ can be combined with the first term on the
+left-hand side of the energy balance, thus combining all terms that are related to the
+spatial inhomogeneities. Then the energy balance takes the form
 
+Substitution of this result and equation \eqref{eq:Gamma_u-sst} in the energy balance
+and division by $Nn_e$ result in
+\begin{equation}
+	\frac{\alpha_{\mbox{eff}}}{N}\MEAN{u}\left(\frac{E}{N}(\mu_u E) - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\right)
+	- \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}
+	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+\end{equation}
+or
+\begin{equation}
+	\frac{\alpha_{\mbox{eff}}}{N}\left(\MEAN{u}\left[\frac{E}{N}(\mu_u E) - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\right]
+	+ \frac{q_e}{e} (D_eN)\frac{E}{N}\right)
+	- \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)
+	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+\end{equation}
+TODO: repeat the transformations needed to get the BOLSIG+ expressions, check signs etc.
+The first term now corresponds to the `growth power' (item 22) in \cite[p. 19]{BolsigManual2016}.
+So, the additional term on the left-hand side should either be made part of the field operator
+(that appears to be the most `physical' form, since it corresponds to the absorption $P_E=J_eE$),
+{\em or} be made part of the growth power --- but not both.
+\begin{framed}
+This is confusing in the BOLSIG+ manual, (or maybe an error, it depends on the definitions),
+which suggests that the field power with growth term {\em and} the growth power
+as stated here are part of the power balance (in the NB just before item 24 on page 19).
+\end{framed}
+NOTE: the expression after substitution of the solution of $\alpha_{\mbox{eff}}$ above is
+only valid for $E\neq 0$. This is the last form of
+\begin{equation}
+	\MEAN{v_z}
+	=\frac{\Gamma_z}{n_e}
+	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}
+	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
+\end{equation}
+Also the case $E=0$ should be captured here.
 
 \noindent {\bf Notes and Questions --- Theory:}
 \begin{itemize}
@@ -2339,12 +2376,17 @@ The SDCS has property \cite[eq. 1]{Opal1971}, \cite[eq. 14]{Manual_2_2_0}
 TODO:
 \begin{itemize}
 	\item No reference is provided for expression \eqref{eq:Ctilde0-ion}.
-	\item Discuss properties of the SDCS. I do not understand Opal's expression
-		\eqref{eq:sigma_ion(sigma_ion_sdcs)}:
-		I had expected a factor 2 on the RHS of that equation if the integral
-		domain is halved in view of symmery of $u'$ with respect to $(u-V_{ion,i})/2$.
-		Is that factor is absorbed in the definition of
-		$\sigma_{ion,i}^{sec}(u,u')$? Explain.
+		Equation 32 of \cite{Holstein1946} may be equivalent. But in what
+		paper is the transformation of Holstein's equation to the form that
+		appears in LoKI-B first discussed? One paper `inbetween' that
+		refers to Holstein is \cite{Yoshida1983}. Also, Holstein uses
+		$\lambda_i=1/(\delta_iN\sigma_{ion,i}^{sec}(u',u))$. Who started to use the
+		word SDCS and use that instead?
+		Investigate...
+	\item Discuss properties of the SDCS, for example Opal's expression
+		\eqref{eq:sigma_ion(sigma_ion_sdcs)}: the domain
+		is halved in view of symmery of $u'$ with respect to $(u-V_{ion,i})/2$.
+		UPDATE: this is MUCH better explained in \cite[below eq. 31a]{Holstein1946}.
 	\item Show that the integral \eqref{eq:Ctilde0-ion} is `consistent with'
 		$\int_0^\infty \tilde{C}^0_{ion,i}(u)\dd{u}=\MEAN{K_{ion}}$.
 	\item Sort out the usage of the delta function with peaks on integral boundaries
@@ -2486,7 +2528,7 @@ with $K(u)$ the energy-dependent rate coefficient. Multiplying that rate coeffic
 with $\sqrt{u}f^0(u)$ and integrating over $u$ yields its average value.
 
 \begin{framed}
-Note that the expression for the source in the BOLSIG+ paper \cite[29]{Hagelaar2005}
+Note that the expression for the source in the BOLSIG+ paper \cite[eq. 29]{Hagelaar2005}
 is different --- it has a factor 2 instead of 4. That appears to be wrong. Note that
 the calculation of the ionization rate coefficient would yield zero for that expression,
 instead of the expected result.
