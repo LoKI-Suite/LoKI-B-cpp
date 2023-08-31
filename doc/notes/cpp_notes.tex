@@ -449,7 +449,7 @@ $\si{eV/m^3/s}$, yuck):
 	\label{eq:energy-balance}
 \end{equation}
 This equation can be recognized as the energy balance equation for the
-electrons, with the volumetric (net) power gained by the electrons
+electrons, with the volumetric (net) power gain of the electrons
 in collisions given by
 \begin{equation}
 	S_u(z,t)
@@ -494,8 +494,8 @@ growth models, to be discussed later, is the simplification of \eqref{eq:F=n_ef}
 	F^{0,1}_u(u,z,t)=n_e(z,t)f^{0,1}_u(u),
 	\label{eq:F(u,z,t)=n_e(z,t)f(u)}
 \end{equation}
-that is: the {\em normalized} eedf depends only on $u$, not on space or time coordinates
---- but $n_e$ is still allowed to depend on space or time, or both. Under these conditions,
+that is: the {\em normalized} eedf depends only on $u$, not on space or time coordinates,
+whereas $n_e$ depends on position and time. Under these conditions,
 equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1} reduce to
 \begin{align}
 	&\sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{t}
@@ -514,41 +514,47 @@ Integration of the first equation over all energies yields
 	\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z}
 	=  \MEAN{\nu_{eff}},
+	\label{eq:t-spat-constraint}
 \end{equation}
 which shows that the space- and time-derivatives of the electron density are dependent
 quantities. One can consider to proceed by eliminating either of them using this
-relation. In the following sections we will instead discuss the cases that one of these
-terms are assumed to be zero.
+relation. In the following sections we will instead discuss the cases that either of these
+terms is assumed to be zero.
 
 TODO: discuss the ramifications of assumption \eqref{eq:F(u,z,t)=n_e(z,t)f(u)} in more
 detail, and motivate why/when this assumption makes any sense.
 
 \begin{framed}
-TODO/IDEA: is it useful to use this constraint to eliminate one the derivatives,
-and make some general progress, instead of assuming already at this point that one
-of them is zero (next sections)? I cannot imagine that that has not already been
-tried before.
+TODO/IDEA: is it useful to use constraint \eqref{eq:t-spat-constraint} to eliminate one
+the derivatives, and make some general progress, instead of assuming already at that point
+that one of the time or spatial derivatives is zero (next sections)? I cannot imagine that
+that has not already been tried before.
 One could consider to tabulate results as a function not only of $E/N$, but also of
 some parameter that describes the relative importance of the two derivatives. For example,
-one could do
+one could write the time and space derivatives as $\nu_t$ and $\alpha_{\mbox{eff}}$, so
 \begin{align}
-	\beta &:= \begin{cases}
-			\displaystyle \frac{1}{\nu_e}\frac{1}{n_e}\PDEV{n_e}{t}	&: \MEAN{\nu_{eff}}=0, \\
-			1							&: \mbox{otherwise},
-		\end{cases}
+	\nu_t + \MEAN{v_z}\alpha_{\mbox{eff}} = \MEAN{\nu_{eff}}
+	\iff
+	\nu_t(\alpha_{\mbox{eff}}) = \MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}},
 \end{align}
-so
+and use this expression to eliminate $\nu_t$ from equations
+\eqref{eq:ebe-2term-f-u0(u)}--\eqref{eq:ebe-2term-f-u1(u)}.
 \begin{align}
-	\frac{1}{n_e}\PDEV{n_e}{t} &= \beta\MEAN{\nu_{eff}}, \\
-	\MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z} &= (1-\beta)\MEAN{\nu_{eff}}.
+	&\sqrt{u}f^0_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
+	+ \frac{\gamma}{3}uf^1_u\alpha_{\mbox{eff}}
+	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
+	=  N\tilde{C}^0,
+	\\
+	&\sqrt{u}f^1_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
+	+ \gamma uf^0_u\alpha_{\mbox{eff}}
+	- E\gamma u\PDEV{f^0_u}{u}
+	= -N\sigma_m(u)\gamma uf^1_u.
 \end{align}
-But using this is must be shown that it does not matter which growth model is assumed when
-$\MEAN{\nu_{eff}}=0$, so we can arbitrarily set $\beta=1$ in that case.
-
-What impact would such more general approach have on fluid models that
+One could then calculate/tabulate EEDF results as a function of $E/N$ {\em and} $\alpha_{\mbox{eff}}/N$,
+for example. What impact would such more general approach have on fluid models that
 use results of the two-term expansion?
 
-Underlying question: when `complete` data sets are compiled using a 2-term model,
+Related question: when `complete` data sets are compiled using a 2-term model,
 is the choice for temporal/spatial usually docuented? Then that should be followed,
 obviously. Is that actually what people do?
 \end{framed}
@@ -644,7 +650,7 @@ yields an expression for the electron {\em energy} flux density,
 	\Gamma_u = (\mu_uN\MEAN{u})(E/N)n_e = \mu_uE n_e\MEAN{u} = \mu_uE n_u.
 	\label{eq:Gamma_u-temp}
 \end{equation}
-Here we have introduced the (reduced) electron {\em energy mobility},
+Here we have introduced the (reduced) electron {\em energy} mobility,
 \begin{equation}
 	\mu_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:muuN}
 \end{equation}
@@ -739,15 +745,14 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equ
 \end{align}
 By multiplying the last equation with $\gamma u/3$, integrating over all energies and
 using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
-\begin{align}
-	&
+\begin{equation}
 	\MEAN{v_z} = \frac{\gamma}{3}\int\limits_0^\infty uf^1_u\dd{u}
 	=
 		  E           \frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
 		- \alpha_{\mbox{eff}}\frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)f^0_u\dd{u}
 	= \mu_e E - D_e\alpha_{\mbox{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
-\end{align}
+\end{equation}
 Here we have used expression \eqref{eq:mueN} for the reduced electron diffusion coefficient
 $D_eN$, and introduced the (reduced) electron diffusion coefficient,
 \begin{equation}
@@ -761,7 +766,7 @@ Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\
 \end{equation}
 which can be solved to obtain
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
 \end{equation}
 The roots are real if $(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}>0$. When simplifying,
 note that normally $\mu$ is negative, $E$ could be positive or negative, $\alpha$ has the
@@ -771,7 +776,13 @@ It is zero when the discriminant is zero, or may be complex.
 Note that there are two solutions. We choose the one that has the desired property that
 $\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(-\mu_eE +\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE -\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\label{eq:sst-alpha-solution}
+\end{equation}
+NOTE: if $\mu_eE\neq 0$ this can be written as
+\begin{equation}
+	\alpha_{\mbox{eff}} = \frac{\mu_eE}{2D_e}\left(1 -\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
+	\label{eq:sst-alpha-solution-muE!=0}
 \end{equation}
 Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
 and dividing by $N$ gives an expression for $f^0(u)$,
@@ -827,12 +838,28 @@ to obtain
 	= \gamma\frac{\alpha_{\mbox{eff}}}{N}\left[
 	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)
 	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
-	\right]
+	\right].
 \end{align}
 
-TODO: energy balance for the spatial growth model.
+\subsubsection{Energy Balance}
 
-Define:
+Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $u$ and integration over $u$
+yields the energy balance for the spatial growth case. After multiplication with $n_e$
+we get
+\begin{equation}
+	\alpha_{\mbox{eff}}\Gamma_u -(q_e\Gamma_e/e) E = n_eN\int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+\end{equation}
+Here we have used equation \eqref{eq:Gamma_u}, and the dissipation term is obtained in the
+same way as it was in the derivation of equation \eqref{eq:energy-balance}.
+
+The electron energy flux density is given by equations \eqref{eq:Gamma_u}. Substitution
+of equation \eqref{eq:ebe-2term-f-u1(u)-spat} for $f^1(u)$ for the spatial growth case yields
+\begin{equation}
+	\Gamma_u = \frac{E}{N}(\mu_u N)n_e\MEAN{u} - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)n_e\MEAN{u},
+	\label{eq:Gamma_u-sst}
+\end{equation}
+where we have used equation \eqref{eq:muuN} and have defined the (reduced) electron energy diffusion
+coefficient $D_uN$ as
 \begin{equation}
 	D_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)f(u)\dd{u}. \label{eq:DuN}
 \end{equation}
@@ -840,8 +867,71 @@ Define:
 In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
 by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}
 that have been used here.  See the note below equation \eqref{eq:muuN}.
-\end{framed}
 The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
+\end{framed}
+
+The particle flux density is obtained by multiplying equation \eqref{eq:ebe-2term-f-u1(u)-spat-v_z}
+with $n_e$,
+\begin{equation}
+	\Gamma_z = n_e(\mu_e E - D_e\alpha_{\mbox{eff}}).
+\end{equation}
+The expression for $\Gamma_z$ can be used to evaluate the power that is absorbed per electron
+at unit background gas density by the field directly, the result can be written as
+\begin{equation}
+	\frac{P_E}{N} := \frac{q_e}{e}\frac{\Gamma_zE}{n_eN} = \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}.
+\end{equation}
+Substitution of equation \eqref{eq:sst-alpha-solution} yields
+\begin{equation}
+	\frac{P_E}{N} = \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)\frac{1}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
+\end{equation}
+which is equivalent to the result found in the BOLSIG+ manual \cite[p. 18]{BolsigManual2016}
+(item 19.) for the spatial growth case.
+\begin{framed}
+NOTE/TODO: the expression after substitution of the solution of $\alpha_{\mbox{eff}}$ above is
+only valid for $E\neq 0$. This is based on the last form of
+\begin{equation}
+	\MEAN{v_z}
+	=\frac{\Gamma_z}{n_e}
+	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}
+	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
+\end{equation}
+but also the case $E=0$ should be captured here, suggesting the intermediate form. (That will have
+a positive discriminant if $\MEAN{\nu_{\mbox{eff}}}<0$.)
+\end{framed}
+
+Alternatively, the term from the field operator
+that is proportional to $\alpha_{\mbox{eff}}$ can be combined with the first term on the
+left-hand side of the energy balance, thus combining all terms that are related to the
+spatial inhomogeneities. Substitution of the expression for $\Gamma_z$ and equation
+\eqref{eq:Gamma_u-sst} in the energy balance and division by $Nn_e$ result in
+\begin{equation}
+	\frac{\alpha_{\mbox{eff}}}{N}\MEAN{u}\left(\frac{E}{N}(\mu_u N) - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\right)
+	- \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}
+	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u},
+\end{equation}
+and regrouping terms yields
+\begin{equation}
+	-\frac{\alpha_{\mbox{eff}}}{N}\left(
+		\MEAN{u}\left[\frac{\alpha_{\mbox{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
+		- \frac{q_e}{e} (D_eN)\frac{E}{N}
+	\right)
+	- \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)
+	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+\end{equation}
+The first term (negated) now corresponds to the `growth power' (item 22) in \cite[p. 19]{BolsigManual2016}
+(after negating both $\alpha_{\mbox{eff}}$ and $\mu_u$, see section \ref{sec:compatibility},
+\begin{equation}
+	\frac{P_{growth,sst}}{N} =
+	\frac{\alpha_{\mbox{eff}}}{N}\left(
+		\MEAN{u}\left[\frac{\alpha_{\mbox{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
+		- \frac{q_e}{e} (D_eN)\frac{E}{N}
+	\right).
+\end{equation}
+\begin{framed}
+This is confusing in the BOLSIG+ manual (or maybe an error, it depends on the definitions),
+which suggests that the field power with growth term {\em and} the growth power
+as stated here are part of the power balance (in the NB just before item 24 on page 19).
+\end{framed}
 
 \noindent {\bf Notes and Questions --- Theory:}
 \begin{itemize}
@@ -973,6 +1063,9 @@ $({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
 Such fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course,
 but note that those are also used in the assembly of one of the spatial growth discretisation
 matrices.
+\begin{framed}
+  This problem is tested by \SRC{tests/test_trans_coefs.cpp}.
+\end{framed}
 
 
 \chapter{Collisional Source Terms}
@@ -2300,12 +2393,17 @@ The SDCS has property \cite[eq. 1]{Opal1971}, \cite[eq. 14]{Manual_2_2_0}
 TODO:
 \begin{itemize}
 	\item No reference is provided for expression \eqref{eq:Ctilde0-ion}.
-	\item Discuss properties of the SDCS. I do not understand Opal's expression
-		\eqref{eq:sigma_ion(sigma_ion_sdcs)}:
-		I had expected a factor 2 on the RHS of that equation if the integral
-		domain is halved in view of symmery of $u'$ with respect to $(u-V_{ion,i})/2$.
-		Is that factor is absorbed in the definition of
-		$\sigma_{ion,i}^{sec}(u,u')$? Explain.
+		Equation 32 of \cite{Holstein1946} may be equivalent. But in what
+		paper is the transformation of Holstein's equation to the form that
+		appears in LoKI-B first discussed? One paper `inbetween' that
+		refers to Holstein is \cite{Yoshida1983}. Also, Holstein uses
+		$\lambda_i=1/(\delta_iN\sigma_{ion,i}^{sec}(u',u))$. Who started to use the
+		word SDCS and use that instead?
+		Investigate...
+	\item Discuss properties of the SDCS, for example Opal's expression
+		\eqref{eq:sigma_ion(sigma_ion_sdcs)}: the domain
+		is halved in view of symmery of $u'$ with respect to $(u-V_{ion,i})/2$.
+		UPDATE: this is MUCH better explained in \cite[below eq. 31a]{Holstein1946}.
 	\item Show that the integral \eqref{eq:Ctilde0-ion} is `consistent with'
 		$\int_0^\infty \tilde{C}^0_{ion,i}(u)\dd{u}=\MEAN{K_{ion}}$.
 	\item Sort out the usage of the delta function with peaks on integral boundaries
@@ -2441,13 +2539,13 @@ ionisation rate coefficient:
 \end{align}
 In the first integral we made the substitution $t=2u+V_{ion,i}$, and note that
 after the second equal sign the lower boundary of the first integral can be changed
-from $V_{ion,i}$ to 0, since $\sigma_{ion,i}(u)=0$ for $u'<V_{ion,i}$.
+from $V_{ion,i}$ to 0, since $\sigma_{ion,i}(u)=0$ for $u<V_{ion,i}$.
 Also note that $\gamma u\sigma(u)f^0(u)=\sigma(u)v(u)\sqrt{u}f^0(u):=K(u)\sqrt{u}f^0(u)$,
 with $K(u)$ the energy-dependent rate coefficient. Multiplying that rate coefficient
 with $\sqrt{u}f^0(u)$ and integrating over $u$ yields its average value.
 
 \begin{framed}
-Note that the expression for the source in the BOLSIG+ paper \cite[29]{Hagelaar2005}
+Note that the expression for the source in the BOLSIG+ paper \cite[eq. 29]{Hagelaar2005}
 is different --- it has a factor 2 instead of 4. That appears to be wrong. Note that
 the calculation of the ionization rate coefficient would yield zero for that expression,
 instead of the expected result.
