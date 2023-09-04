@@ -20,8 +20,8 @@
 
 \newcommand{\MEAN}[1]{\ensuremath{\left\langle{{#1}}\right\rangle}}
 
-\input{../../doc/listings}
-\input{../../doc/loki_defs}
+\input{doc/listings}
+\input{doc/loki_defs}
 
 % boldface matrix and vector
 \newcommand{\bmat}[1]{{\ensuremath{\bm {#1}}}}
@@ -29,6 +29,7 @@
 % diag - make a diagonal matrix from a vector.
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\Inf}{Inf}
 
 
 \bibliographystyle{unsrt}
@@ -1893,11 +1894,11 @@ and \SRC{f/(-0.0)=-Inf}, and while \SRC{log10(+Inf)=+Inf}, we have
 \SRC{log10(-Inf)=NaN}. This means that for a positive $f_{\mbox{max}}$ we get
 \begin{equation}
     \log_{10} f_{\mbox{max}} - \log_{10}(\pm 0.0)
-  = \log_{10} f_{\mbox{max}} - (-\SRC{Inf}) = \SRC{+Inf}.
+  = \log_{10} f_{\mbox{max}} - (-\infty) = \infty.
 \end{equation}
 whereas
 \begin{equation}
-  \log_{10} (f_{\mbox{max}}/(\pm 0.0)) = \log_{10}(\pm\SRC{Inf}),
+  \log_{10} (f_{\mbox{max}}/(\pm 0.0)) = \log_{10}(\pm\infty),
 \end{equation}
 which gives \SRC{NaN} instead of \SRC{Inf} for a signed zero.
 
@@ -3004,6 +3005,6 @@ In the code the parenthesized coefficients are called \SRC{auxHigh} and \SRC{aux
 
 
 
-\bibliography{../../doc/reflist}
+\bibliography{doc/reflist}
 
 \end{document}
