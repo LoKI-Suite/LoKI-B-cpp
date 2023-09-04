@@ -1,0 +1,6 @@
+# Ignore all
+/*
+
+# Only allow *.tex
+!.gitignore
+!*.tex
