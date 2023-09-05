@@ -18,15 +18,6 @@ compile_commands.json
 
 profiler/
 
-# autotools
-Makefile.in
-aclocal.m4
-autodir/
-autom4te.cache/
-config.h.in
-config.h.in~
-configure
-
 # direnv
 .envrc
 .direnv/
