@@ -208,7 +208,7 @@ add_subdirectory(input)
 # - ON: the required tools will be located on your system and all
 #   doc targets are set up. The docs are built as part of targets doc_pdf and
 #   doc_html and are cleaned as part of target doc_clean.
-option(with-doc "-Dwith-doc(=OFF|ON): Build the documents (pdf, html, xml, docygen)" ON)
+option(with-doc "-Dwith-doc(=OFF|ON): Build the documents (pdf, html, xml, docygen)" OFF)
 set(LOKIB_USE_DOC ${with-doc})
 if(LOKIB_USE_DOC)
     include(CMake/LoKIDoc.cmake)
