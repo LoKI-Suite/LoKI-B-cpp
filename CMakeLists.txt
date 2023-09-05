@@ -192,8 +192,6 @@ endif()
 # check if Doxygen is installed
 find_package(Doxygen)
 
-enable_testing()
-
 add_subdirectory(lib)
 if(EMSCRIPTEN)
     add_subdirectory(web)

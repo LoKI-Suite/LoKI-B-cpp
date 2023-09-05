@@ -3,8 +3,22 @@
 #https://stackoverflow.com/questions/21394768/cmake-cannot-find-test-if-cmake-runtime-output-directory-is-changed
 function (target_add_test target)
   add_test (NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+
+  if (LOKIB_COVERAGE)
+    set(LOKIB_COVERAGE_TESTS ${LOKIB_COVERAGE_TESTS} ${target} PARENT_SCOPE)
+  endif()
 endfunction (target_add_test)
 
+enable_testing()
+
+# Option -Dcoverage: configure whether coverage information is collected.
+option(coverage "-Dcoverage(=OFF|ON): Collect test coverage statistics." OFF)
+set(LOKIB_COVERAGE ${coverage})
+if(LOKIB_COVERAGE)
+  include(../CMake/CodeCoverage.cmake)
+  append_coverage_compiler_flags_to_target(loki-b)
+  set(LOKIB_COVERAGE_TESTS loki-b)
+endif()
 
 add_executable(bolsig_extract bolsig_extract.cpp)
 target_link_libraries(bolsig_extract PRIVATE loki-b)
@@ -48,3 +62,12 @@ target_add_test(test_parser)
 target_add_test(test_reaction_format)
 target_add_test(test_statebase)
 target_add_test(test_trans_coefs)
+
+if (LOKIB_COVERAGE)
+  setup_target_for_coverage_gcovr_xml(
+    NAME coverage 
+    EXECUTABLE ctest --test-dir tests 
+    BASE_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    DEPENDENCIES ${LOKIB_COVERAGE_TESTS}
+  )
+endif()
