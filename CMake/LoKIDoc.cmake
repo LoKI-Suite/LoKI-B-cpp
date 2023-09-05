@@ -1,12 +1,21 @@
+find_program(LOKI_BUILD_HTML_DOCS tex4ht)
+
 # Initially, these targets do nothing. doc-projects can add a dependency of
 # these targets on the targets that are defined for those projects.
 add_custom_target(doc_clean)
 add_custom_target(doc_pdf)
-add_custom_target(doc_html)
-add_custom_target(
-  doc_all
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target doc_pdf
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target doc_html)
+
+set(DOC_ALL_DEPS doc_pdf)
+
+if(LOKI_BUILD_HTML_DOCS)
+  message(STATUS "Building HTML documentation")
+
+  add_custom_target(doc_html)
+  list(APPEND DOC_ALL_DEPS doc_html)
+endif()
+
+add_custom_target(doc_all COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+                                  --target ${DOC_ALL_DEPS})
 
 include(CMake/UseLATEX.cmake)
 
@@ -65,14 +74,18 @@ endfunction()
 macro(lokib_prepare_latex_doc_dir tgt_name)
 
   set(LATEX_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
+  set(DOC_TGT_ALL_DEPS doc_${tgt_name}_pdf)
+
+  if(LOKI_BUILD_HTML_DOCS)
+    list(APPEND DOC_TGT_ALL_DEPS doc_${tgt_name}_html)
+  endif()
 
   add_custom_target(
     doc_${tgt_name}_all
     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-            doc_${tgt_name}_pdf
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-            doc_${tgt_name}_html
-    COMMENT "Building ${tgt_name} pdf and html files.")
+            ${DOC_TGT_ALL_DEPS}
+    COMMENT "Building ${tgt_name} documentation files.")
+
   # -E rm is introduced in version 3.17, in favor of -E remove_directory
   add_custom_target(
     doc_${tgt_name}_clean
@@ -83,7 +96,10 @@ macro(lokib_prepare_latex_doc_dir tgt_name)
 
   add_dependencies(doc_clean doc_${tgt_name}_clean)
   add_dependencies(doc_pdf doc_${tgt_name}_pdf)
-  add_dependencies(doc_html doc_${tgt_name}_html)
+
+  if(LOKI_BUILD_HTML_DOCS)
+    add_dependencies(doc_html doc_${tgt_name}_html)
+  endif()
 
 endmacro(lokib_prepare_latex_doc_dir)
 
