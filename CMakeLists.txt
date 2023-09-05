@@ -82,9 +82,10 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
-    #TODO change into -Werror=shadow after fixing numerous local/member data
-    #shadowing violations in the code:
-    loki_cxxflags(-Werror=shadow=local)
+    # TODO change into -Werror=shadow after fixing numerous local/member data
+    # shadowing violations in the code. This should also be made compatible
+    # with clang++, which has a slightly different syntax:
+    #loki_cxxflags(-Werror=shadow=local)
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
