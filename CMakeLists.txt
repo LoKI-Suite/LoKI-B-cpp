@@ -71,6 +71,7 @@ else()
     loki_cxxflags(-Werror=non-virtual-dtor)
     # Disabled because of Eigen/SuperLU
     # loki_cxxflags(-Werror=unused-variable)
+    #loki_cxxflags(-Werror=unused-but-set-variable)
     loki_cxxflags(-Werror=unused-result)
     loki_cxxflags(-Werror=ignored-qualifiers)
     loki_cxxflags(-Werror=zero-as-null-pointer-constant)
@@ -82,20 +83,21 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
-    # TODO change into -Werror=shadow after fixing numerous local/member data
-    # shadowing violations in the code. This should also be made compatible
-    # with clang++, which has a slightly different syntax:
-    #loki_cxxflags(-Werror=shadow=local)
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
         # loki_cxxflags(-Werror=undef)
         add_link_options(LINKER:-undefined,error)
+        loki_cxxflags(-Werror=shadow-all)
     else()
         loki_cxxflags(-Werror=undef)
         add_link_options(LINKER:-no-undefined)
     endif()
 endif()
+# TODO change into -Werror=shadow after fixing numerous local/member data
+loki_gcc_cxxflags(-Werror=shadow=local)
+# TODO see what options to enable for CLANG
+#loki_clang_cxxflags(-Werror=shadow-XXX)
 
 
 #CMake provides some default build types:
