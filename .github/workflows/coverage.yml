@@ -10,7 +10,10 @@ jobs:
   Test:
     runs-on: ubuntu-22.04
 
-    permissions: read-all
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: write
 
     steps:
     - uses: actions/checkout@v2
