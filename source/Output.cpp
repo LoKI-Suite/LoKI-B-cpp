@@ -21,7 +21,7 @@ Output::~Output()
 }
 
 Output::Output(const Setup &s, const WorkingConditions *workingConditions)
-    : workingConditions(workingConditions)
+    : m_workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -55,7 +55,7 @@ Output::Output(const Setup &s, const WorkingConditions *workingConditions)
 }
 
 Output::Output(const json_type &cnf, const WorkingConditions *workingConditions)
-    : workingConditions(workingConditions)
+    : m_workingConditions(workingConditions)
 {
     saveEedf = false;
     savePower = false;
@@ -164,7 +164,7 @@ void FileOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     std::ofstream os(m_folder + "/" + m_subFolder + "/swarm_parameters.txt");
-    writeTerm(os,"Reduced electric field", "Td", workingConditions->reducedField());
+    writeTerm(os,"Reduced electric field", "Td", m_workingConditions->reducedField());
     writeTerm(os,"Reduced diffusion coefficient","1/(ms)",swarmParameters.redDiffCoeff);
     writeTerm(os,"Reduced mobility coefficient","1/(msV)",swarmParameters.redMobCoeff);
     writeTerm(os,"Reduced Townsend coefficient","m2",swarmParameters.redTownsendCoeff);
@@ -223,7 +223,7 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
         const GasPower &gasPower = cd.getPower();
 
         os << std::endl;
-        os << std::string(37,'*') << ' ' << cd.gas().name << ' ' << std::string(39 - cd.gas().name.length(),'*') << std::endl;
+        os << std::string(37,'*') << ' ' << cd.gas().name() << ' ' << std::string(39 - cd.gas().name().length(),'*') << std::endl;
         os << std::endl;
 
         writeTerm(os,"Excitation inelastic collisions","eVm3/s", gasPower.excitation.forward);
@@ -285,7 +285,7 @@ void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                       "DriftVelocity(m/s)   RelativePowerBalance" << std::endl;
         m_initTable = false;
     }
-    os << std::setw(20) << std::scientific << std::setprecision(14) << workingConditions->reducedField();
+    os << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
     os << ' ';
     os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
     os << ' ';
@@ -385,7 +385,7 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     json_type& out = (*m_active)["swarm_parameters"];
-    out.push_back( makeQuantity("Reduced electric field", workingConditions->reducedField(), "Td") );
+    out.push_back( makeQuantity("Reduced electric field", m_workingConditions->reducedField(), "Td") );
     out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
     out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
     out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
@@ -442,7 +442,7 @@ void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
     {
         const GasPower &gasPower = cd.getPower();
 	json_type gas_out;
-        gas_out.push_back( { { "name", cd.gas().name } } );
+        gas_out.push_back( { { "name", cd.gas().name() } } );
         gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s") );
         gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s") );
         gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s") );
@@ -510,7 +510,7 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     assert(out);
 
     (*out)["data"].push_back( {
-            workingConditions->reducedField(),
+            m_workingConditions->reducedField(),
             swarmParameters.redDiffCoeff,
             swarmParameters.redMobCoeff,
             swarmParameters.redTownsendCoeff,

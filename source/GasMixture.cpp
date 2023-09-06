@@ -40,7 +40,7 @@ Gas::State *GasMixture::ensureState(const StateEntry &entry)
     {
         return it->second;
     }
-    Gas::State *state = ensureGas(entry.gasName)->ensureState(entry);
+    Gas::State *state = ensureGas(entry.m_gasName)->ensureState(entry);
     m_states[entry.m_id] = state;
     return state;
 }
@@ -54,7 +54,7 @@ void GasMixture::print(std::ostream &os)
 {
     for (const auto &gas : m_gases)
     {
-        os << "Gas: " << gas->name << std::endl;
+        os << "Gas: " << gas->name() << std::endl;
         gas->print(os);
     }
 }
@@ -81,13 +81,13 @@ void GasMixture::checkPopulations()
 Gas *GasMixture::findGas(const std::string &name)
 {
     auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                           [&name](const std::unique_ptr<Gas> &gas) { return gas->name == name; });
+                           [&name](const std::unique_ptr<Gas> &gas) { return gas->name() == name; });
     return it == m_gases.end() ? nullptr : it->get();
 }
 
 Gas::State *GasMixture::findState(const StateEntry &entry)
 {
-    Gas *gas = findGas(entry.gasName);
+    Gas *gas = findGas(entry.m_gasName);
     return gas ? gas->findState(entry) : nullptr;
 }
 
@@ -120,7 +120,7 @@ void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, 
             /** \todo Should this be part of propertyStateFromString?
              *        Is there a reason to accept a 'none'-result?
              */
-            if (entry.level == none)
+            if (entry.m_level == none)
             {
                 throw std::runtime_error("loadStateProperty: illegal "
                                 "state identifier '" + line + "'.");
@@ -269,7 +269,7 @@ void GasMixture::loadGasProperties(const GasPropertiesSetup &setup)
         const auto &name = m.str(1);
 
         auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name == name); });
+                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name() == name); });
 
         if (it == m_gases.end())
             Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
@@ -306,7 +306,7 @@ void GasMixture::loadGasProperties(const json_type &cnf)
             Log<Message>::Error("Could not parse gas fractions.");
         const auto &name = m.str(1);
         auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name == name); });
+                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name() == name); });
         if (it == m_gases.end())
             Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
         std::stringstream ss(m.str(2));

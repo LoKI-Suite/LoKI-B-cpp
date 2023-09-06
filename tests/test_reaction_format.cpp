@@ -12,7 +12,7 @@ bool test_parser(const std::string stateString)
         assert(entries.size()==stoiCoeff.size());
         for (std::size_t ndx=0; ndx!=entries.size(); ++ndx)
         {
-            std::cout << " - " << stoiCoeff[ndx] << '\t' << entries[ndx] << ", type = " << entries[ndx].level << std::endl;
+            std::cout << " - " << stoiCoeff[ndx] << '\t' << entries[ndx] << ", type = " << entries[ndx].m_level << std::endl;
         }
         return true;
     }

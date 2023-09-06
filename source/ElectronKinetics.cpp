@@ -23,7 +23,7 @@ namespace loki
 {
 
 ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions),
+    : m_workingConditions(workingConditions),
     m_grid(setup.numerics.energyGrid),
     mixture(&grid(), setup, workingConditions),
     fieldOperator(grid()),
@@ -34,7 +34,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 }
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
-    : workingConditions(workingConditions),
+    : m_workingConditions(workingConditions),
     m_grid(cnf.at("numerics").at("energyGrid")),
     mixture(&grid(), cnf, workingConditions),
     fieldOperator(grid()),
@@ -168,21 +168,21 @@ void ElectronKineticsBoltzmann::initialize()
     }
 
     grid().updatedMaxEnergy.addListener(&ElectronKineticsBoltzmann::evaluateMatrix, this);
-    workingConditions->updatedReducedField.addListener(&ElectronKineticsBoltzmann::evaluateFieldOperator, this);
+    m_workingConditions->updatedReducedField.addListener(&ElectronKineticsBoltzmann::evaluateFieldOperator, this);
     /// \todo Do this here? Not all parameters may have been set at this point.
     this->evaluateMatrix();
 }
 
 void ElectronKineticsBoltzmann::evaluateFieldOperator()
 {
-    const double EoN = workingConditions->reducedFieldSI();
-    const double WoN = workingConditions->reducedExcFreqSI();
+    const double EoN = m_workingConditions->reducedFieldSI();
+    const double WoN = m_workingConditions->reducedExcFreqSI();
     fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,fieldMatrix);
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
 {
-    const double Tg = workingConditions->gasTemperature();
+    const double Tg = m_workingConditions->gasTemperature();
     mixture.collision_data().evaluateTotalAndElasticCS(grid());
 
     elasticOperator.evaluate(grid(),mixture.collision_data().elasticCrossSection(),Tg,elasticMatrix);
@@ -243,7 +243,7 @@ void ElectronKineticsBoltzmann::doSolve()
     evaluateSwarmParameters();
     evaluateFirstAnisotropy();
 
-    obtainedNewEedf.emit(grid(), eedf, *workingConditions, power, mixture.collision_data(), swarmParameters,
+    obtainedNewEedf.emit(grid(), eedf, *m_workingConditions, power, mixture.collision_data(), swarmParameters,
                          &firstAnisotropy);
 
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -345,7 +345,7 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 
 void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 {
-    const double EoN = workingConditions->reducedFieldSI();
+    const double EoN = m_workingConditions->reducedFieldSI();
 
     Vector cellTotalCrossSection(grid().nCells());
 
@@ -595,8 +595,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         eeOperator->discretizeTerm(boltzmannMatrix,grid());
     }
 
-    const double EoN = workingConditions->reducedFieldSI();
-    const double WoN = workingConditions->reducedExcFreqSI();
+    const double EoN = m_workingConditions->reducedFieldSI();
+    const double WoN = m_workingConditions->reducedExcFreqSI();
 
     Vector baseDiag(grid().nCells()), baseSubDiag(grid().nCells()), baseSupDiag(grid().nCells());
 
@@ -748,8 +748,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
     /// \todo Make the remainder of this function a member of the eeOperator, passing the boltzmannMatrix as arument?
 
-    const double ne = workingConditions->electronDensity();
-    const double n0 = workingConditions->gasDensity();
+    const double ne = m_workingConditions->electronDensity();
+    const double n0 = m_workingConditions->gasDensity();
 
     // Storing the initial diagonals of the matrix in three separate vectors.
     // This allows us to skip the usage of 'matrixAux', saving a good amount of
@@ -1025,8 +1025,8 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 {
     firstAnisotropy.setZero(grid().nCells());
 
-    const double EoN = workingConditions->reducedFieldSI();
-    const double WoN = workingConditions->reducedExcFreqSI();
+    const double EoN = m_workingConditions->reducedFieldSI();
+    const double WoN = m_workingConditions->reducedExcFreqSI();
     const Grid::Index n = grid().nCells();
 
     // 1. First fill firstAnisotropy with df/du.
@@ -1085,7 +1085,7 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 
 void ElectronKineticsBoltzmann::evaluatePower()
 {
-    const double Tg = workingConditions->gasTemperature();
+    const double Tg = m_workingConditions->gasTemperature();
 
     // reset by an assignment of a default-constructed Power object
     power = Power();
@@ -1145,7 +1145,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // adds the factor SI::gamma.
             power.field = field + SI::gamma * grid().du() * correction;
             power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
-                                SI::gamma * alphaRedEff * (workingConditions->reducedFieldSI() / 6.) *
+                                SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
                                     (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
                                      grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
                                          eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
@@ -1181,7 +1181,11 @@ void ElectronKineticsBoltzmann::evaluatePower()
         + power.vibrational.backward
         + power.rotational.backward;
 
-    double totalGain = 0., totalLoss = 0.;
+    double totalGain = 0;
+    /** \todo totalLoss is calculated, but never used.
+     *  This produces a clang++ warning with -Wunused-but-set-variable.
+     */
+    double totalLoss = 0;
 
     /** \todo get rid of this; do 'for (double value : { ... this list ... })'
      *  in the line below.
@@ -1242,11 +1246,11 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     if (growthModelType == GrowthModelType::spatial && nonConservative)
     {
         swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
-                                        swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+                                        swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
     }
     else
     {
-        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+        swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
     }
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
@@ -1274,7 +1278,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
 
     // TODO: is this correct? (simulations after the first will have a different value for Te).
-    workingConditions->updateElectronTemperature(swarmParameters.Te);
+    m_workingConditions->updateElectronTemperature(swarmParameters.Te);
 }
 
 
@@ -1306,15 +1310,15 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, Wor
 void ElectronKineticsPrescribed::initialize()
 {
     grid().updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
-    workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
+    m_workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
     /// \todo Do this here? Not all parameters may have been set at this point.
     evaluateMatrix();
 }
 
 void ElectronKineticsPrescribed::evaluateFieldOperator()
 {
-    const double EoN = workingConditions->reducedFieldSI();
-    const double WoN = workingConditions->reducedExcFreqSI();
+    const double EoN = m_workingConditions->reducedFieldSI();
+    const double WoN = m_workingConditions->reducedExcFreqSI();
     fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN);
 }
 
@@ -1348,7 +1352,7 @@ void ElectronKineticsPrescribed::doSolve()
      *     that is obtained from the WorkingConditions.
      *  3. Calculate relevant derived values (power, rate coefficients, swarm parameters).
      */
-    const double Te=workingConditions->electronTemperature();
+    const double Te=m_workingConditions->electronTemperature();
     if (grid().smartGrid())
     {
         const double g = shapeParameter;
@@ -1367,7 +1371,7 @@ void ElectronKineticsPrescribed::doSolve()
     evaluateSwarmParameters();
 
     // nullptr: firstAnisotropy is not available
-    obtainedNewEedf.emit(grid(), eedf, *workingConditions, power, mixture.collision_data(), swarmParameters,
+    obtainedNewEedf.emit(grid(), eedf, *m_workingConditions, power, mixture.collision_data(), swarmParameters,
                          nullptr);
 }
 
@@ -1393,7 +1397,7 @@ void ElectronKineticsPrescribed::evaluateEEDF(double g, double Te)
 
 void ElectronKineticsPrescribed::evaluatePower()
 {
-    const double Tg = workingConditions->gasTemperature();
+    const double Tg = m_workingConditions->gasTemperature();
 
     // reset by an assignment of a default-constructed Power object
     power = Power();
@@ -1428,7 +1432,8 @@ void ElectronKineticsPrescribed::evaluatePower()
         + power.vibrational.backward
         + power.rotational.backward;
 
-    double totalGain = 0., totalLoss = 0.;
+    double totalGain = 0;
+    double totalLoss = 0;
 
     /** \todo get rid of this; do 'for (double value : { ... this list ... })'
      *  in the line below.
@@ -1479,7 +1484,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
 
-    swarmParameters.driftVelocity = swarmParameters.redMobCoeff * workingConditions->reducedFieldSI();
+    swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
 
@@ -1506,7 +1511,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
 
     // TODO: is this correct? (simulations after the first will have a different value for Te).
-    workingConditions->updateElectronTemperature(swarmParameters.Te);
+    m_workingConditions->updateElectronTemperature(swarmParameters.Te);
 }
 
 } // namespace loki

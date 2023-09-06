@@ -22,7 +22,7 @@ void test_state_string(const std::string str, bool should_pass)
 //        std::cout << "State string: '" << str << "'." << std::endl;
         const StateEntry e = propertyStateFromString(str);
 //        std::cout << "Entry: '" << e << "." << std::endl;
-        loki::Gas gas(e.gasName);
+        loki::Gas gas(e.m_gasName);
 //        std::cout << "Gas name: '" << gas.name << "'." << std::endl;
         const Gas::State root{&gas};
 //        const Gas::State* s{gas.ensureState(e)};

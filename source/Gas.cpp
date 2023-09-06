@@ -10,9 +10,9 @@ namespace loki
 
 Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
     : m_gas(gas), m_parent(&parent), type(static_cast<StateType>(parent.type + 1)),
-      charge(type == StateType::charge ? entry.charge : parent.charge),
-      e(type == StateType::electronic ? entry.e : parent.e), v(type == StateType::vibrational ? entry.v : parent.v),
-      J(type == StateType::rotational ? entry.J : parent.J), energy(-1), statisticalWeight(-1),
+      charge(type == StateType::charge ? entry.m_charge : parent.charge),
+      e(type == StateType::electronic ? entry.m_e : parent.e), v(type == StateType::vibrational ? entry.m_v : parent.v),
+      J(type == StateType::rotational ? entry.m_J : parent.J), energy(-1), statisticalWeight(-1),
       m_population(0),
       m_delta(0)
 {
@@ -66,10 +66,10 @@ Gas::State::~State()
 
 bool Gas::State::operator>=(const StateEntry &entry)
 {
-    if (type > entry.level)
+    if (type > entry.m_level)
         return false;
 
-    if (charge == entry.charge)
+    if (charge == entry.m_charge)
     {
         if (type == StateType::charge)
             return true;
@@ -78,7 +78,7 @@ bool Gas::State::operator>=(const StateEntry &entry)
     {
         return false;
     }
-    if (e == entry.e)
+    if (e == entry.m_e)
     {
         if (type == StateType::electronic)
             return true;
@@ -88,7 +88,7 @@ bool Gas::State::operator>=(const StateEntry &entry)
         return false;
     }
 
-    if (v == entry.v)
+    if (v == entry.m_v)
     {
         if (type == StateType::vibrational)
             return true;
@@ -98,7 +98,7 @@ bool Gas::State::operator>=(const StateEntry &entry)
         return false;
     }
 
-    if (J == entry.J)
+    if (J == entry.m_J)
     {
         if (type == StateType::rotational)
             return true;
@@ -113,7 +113,7 @@ bool Gas::State::operator>=(const StateEntry &entry)
 
 std::ostream &operator<<(std::ostream &os, const Gas::State &state)
 {
-    os << state.gas().name;
+    os << state.gas().name();
 #if 0
     // write N2+(...) instead of N2(+,...) ?
     /// \todo this does not work: when reading legacy input, the charge is smth. like '+', not a number.
@@ -126,7 +126,7 @@ std::ostream &operator<<(std::ostream &os, const Gas::State &state)
 
     // the electron is handled specially. The logic here is the same as
     // for in StateEntry's stream insertion operator.
-    if (state.gas().name == "e")
+    if (state.gas().name() == "e")
     {
         return os;
     }
@@ -217,7 +217,7 @@ Gas::State *Gas::State::find(const StateEntry &entry)
 }
 
 Gas::Gas(std::string name)
-    : m_root(new State(this)), name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
+    : m_root(new State(this)), m_name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
       rotationalConstant{-1}, electricDipoleMoment{-1}, electricQuadrupoleMoment{-1}, polarizability{-1}, fraction{0}
 {
 }
@@ -266,10 +266,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
     if (state == nullptr)
         return nullptr;
 
-    if (entry.level == charge)
+    if (entry.m_level == charge)
         return state;
 
-    if (entry.e == "*" && entry.level == electronic)
+    if (entry.m_e == "*" && entry.m_level == electronic)
     {
         if (state->m_children.empty())
             return nullptr;
@@ -284,10 +284,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
     if (state == nullptr)
         return nullptr;
 
-    if (entry.level == electronic)
+    if (entry.m_level == electronic)
         return state;
 
-    if (entry.v == "*" && entry.level == vibrational)
+    if (entry.m_v == "*" && entry.m_level == vibrational)
     {
         if (state->m_children.empty())
             return nullptr;
@@ -302,10 +302,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
     if (state == nullptr)
         return nullptr;
 
-    if (entry.level == vibrational)
+    if (entry.m_level == vibrational)
         return state;
 
-    if (entry.J == "*" && entry.level == rotational)
+    if (entry.m_J == "*" && entry.m_level == rotational)
     {
         if (state->m_children.empty())
             return nullptr;
@@ -320,7 +320,7 @@ Gas::State *Gas::findState(const StateEntry &entry)
     if (state == nullptr)
         return nullptr;
 
-    if (entry.level == rotational)
+    if (entry.m_level == rotational)
         return state;
 
     return nullptr;
