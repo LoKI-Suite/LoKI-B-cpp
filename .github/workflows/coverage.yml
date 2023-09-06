@@ -42,7 +42,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: dawidd6/action-download-artifact@v2
       with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
+        github_token: ${{ github.token }}
         workflow_conclusion: success
         branch: coverage
         path: coverage-old
@@ -51,7 +51,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: dawidd6/action-download-artifact@v2
       with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
+        github_token: ${{ github.token }}
         workflow_conclusion: success
         branch: coverage
         path: source-old
@@ -68,6 +68,9 @@ jobs:
     #   with:
     #     name: source_code
     #     path: source-old
+    - name: Inspect artifacts
+      if: github.event_name == 'pull_request'
+      run: ls -R
     - name: Create coverage diff
       if: github.event_name == 'pull_request'
       run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage.md
