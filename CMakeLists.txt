@@ -94,10 +94,8 @@ else()
         add_link_options(LINKER:-no-undefined)
     endif()
 endif()
-# TODO change into -Werror=shadow after fixing numerous local/member data
-loki_gcc_cxxflags(-Werror=shadow=local)
-# TODO see what options to enable for CLANG
-#loki_clang_cxxflags(-Werror=shadow-XXX)
+loki_gcc_cxxflags(-Werror=shadow)
+loki_clang_cxxflags(-Werror=shadow-all)
 
 
 #CMake provides some default build types:
