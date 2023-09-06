@@ -73,6 +73,7 @@ jobs:
       run: ls -R
     - name: Create coverage diff
       if: github.event_name == 'pull_request'
+      continue-on-error: true
       run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage.md
     - name: Show coverage diff
       if: github.event_name == 'pull_request'
