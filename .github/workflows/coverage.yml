@@ -23,7 +23,11 @@ jobs:
     - name: CMake build
       run: cmake --build build --target coverage -- -j $(nproc)
     - name: Show cobertura report
-      run: pycobertura show build/coverage.xml --format markdown
+      run: pycobertura show build/coverage.xml --format markdown --output coverage.md
+    - name: Add code coverage to job summary
+      run: |
+        echo "### Code coverage" >> $GITHUB_STEP_SUMMARY
+        cat coverage.md >> $GITHUB_STEP_SUMMARY
     - name: Upload cobertura report
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
@@ -56,25 +60,18 @@ jobs:
         branch: coverage
         path: source-old
         name: source_code
-    # - name: Retrieve cobertura report
-    #   if: github.event_name == 'pull_request'
-    #   uses: actions/download-artifact@v3
-    #   with:
-    #     name: coverage_report
-    #     path: coverage-old
-    # - name: Retrieve old source
-    #   if: github.event_name == 'pull_request'
-    #   uses: actions/download-artifact@v3
-    #   with:
-    #     name: source_code
-    #     path: source-old
     - name: Inspect artifacts
       if: github.event_name == 'pull_request'
       run: ls -R
     - name: Create coverage diff
       if: github.event_name == 'pull_request'
       continue-on-error: true
-      run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage.md
+      run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage_diff.md
+    - name: Add diff to job summary
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "### Coverage diff" >> $GITHUB_STEP_SUMMARY
+        cat coverage_diff.md >> $GITHUB_STEP_SUMMARY
     - name: Show coverage diff
       if: github.event_name == 'pull_request'
       run: cat coverage.md
