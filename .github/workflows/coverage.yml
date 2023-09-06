@@ -30,7 +30,7 @@ jobs:
         name: coverage_report
         path: build/coverage.xml
     - name: Upload source code
-      if: github.event_name == 'push'
+      # if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
         name: source_code
