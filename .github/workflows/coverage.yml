@@ -1,0 +1,64 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Test:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install native dependencies
+      run: sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get install cmake nlohmann-json3-dev libeigen3-dev python3-pip -y
+    - name: Install pip packages
+      run: pip install pycobertura gcovr
+    - name: CMake generate
+      run: cmake -Dcoverage=ON -DCMAKE_BUILD_TYPE=Debug -B build
+    - name: CMake build
+      run: cmake --build build --target coverage -- -j 44
+    - name: Show cobertura report
+      run: pycobertura show build/coverage.xml --format markdown
+    - name: Upload cobertura report
+      # if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage_report
+        path: build/coverage.xml
+    - name: Upload source code
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: source_code
+        path: |
+          source
+          LoKI-B
+    # - name: Retrieve cobertura report
+    #   if: github.event_name == 'pull_request'
+    #   uses: dawidd6/action-download-artifact@v2
+    #   with:
+    #     workflow_conclusion: success
+    #     branch: main
+    #     path: coverage-old
+    - name: Retrieve cobertura report
+      if: github.event_name == 'pull_request'
+      uses: actions/download-artifact@v3
+      with:
+        name: coverage_report
+        path: coverage-old
+    - name: Retrieve old source
+      if: github.event_name == 'pull_request'
+      uses: actions/download-artifact@v3
+      with:
+        name: source_code
+        path: source-old
+    - name: Create coverage diff
+      if: github.event_name == 'pull_request'
+      run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage.md
+    - name: Show coverage diff
+      if: github.event_name == 'pull_request'
+      run: cat coverage.md
