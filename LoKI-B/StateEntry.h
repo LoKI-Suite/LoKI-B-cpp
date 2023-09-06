@@ -35,8 +35,8 @@ class lokib_export StateEntry
      *        also to intermediate states in a reliable way?
      */
     const std::string m_id;
-    StateType level;
-    std::string charge, gasName, e, v, J;
+    const StateType m_level;
+    const std::string m_gasName, m_charge, m_e, m_v, m_J;
 };
 
 lokib_export std::ostream& operator<<(std::ostream &os, const StateEntry &entry);

@@ -177,7 +177,7 @@ class lokib_export Gas
     {
         auto *state = get_root().ensure_state(entry);
         // state is now a 'charge state' (container)
-        for (uint8_t lvl = StateType::charge; lvl < entry.level; ++lvl)
+        for (uint8_t lvl = StateType::charge; lvl < entry.m_level; ++lvl)
         {
             state = state->ensure_state(entry);
         }
@@ -192,11 +192,13 @@ class lokib_export Gas
     {
         return *m_root;
     }
+    const std::string& name() const { return m_name; }
 
-  public:
+  private:
     std::unique_ptr<State> m_root;
 
-    const std::string name;
+    const std::string m_name;
+  public:
     double mass;
     double harmonicFrequency;
     double anharmonicFrequency;

@@ -93,7 +93,7 @@ inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
         Log<Message>::Error("Trying to assign harmonic oscillator energy to non-vibrational state.");
 
     if (states.at(0)->gas().harmonicFrequency < 0)
-        Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas().name +
+        Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas().name() +
                             " to evaluate state energies.");
 
     for (auto *state : states)
@@ -121,7 +121,7 @@ inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std:
         Log<Message>::Error("Trying to assign rigid rotor energy to non-rotational state.");
 
     if (states.at(0)->gas().rotationalConstant < 0)
-        Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas().name +
+        Log<Message>::Error("Cannot find rotationalConstant of the gas " + states.at(0)->gas().name() +
                             " to evaluate state energies.");
 
     for (auto *state : states)

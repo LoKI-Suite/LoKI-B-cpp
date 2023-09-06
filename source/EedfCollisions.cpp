@@ -54,7 +54,7 @@ VectorType remove_electron_entries(const Collision::StateVector &parts, const Ve
     // beware of iterator invalidation
     for (unsigned i = 0; i != parts.size(); ++i)
     {
-        if (parts[i]->gas().name != "e")
+        if (parts[i]->gas().name() != "e")
         {
             result.push_back(vec[i]);
         }
@@ -75,8 +75,8 @@ EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, c
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
     if (lhsStates.size() != 2 || lhsCoeffs[0] != 1 || lhsCoeffs[1] != 1 ||
-        (lhsStates[0]->gas().name == "e" && lhsStates[1]->gas().name == "e") ||
-        (lhsStates[0]->gas().name != "e" && lhsStates[1]->gas().name != "e"))
+        (lhsStates[0]->gas().name() == "e" && lhsStates[1]->gas().name() == "e") ||
+        (lhsStates[0]->gas().name() != "e" && lhsStates[1]->gas().name() != "e"))
     {
         Log<Message>::Error("Expected a binary electron impact process.");
     }
@@ -404,7 +404,7 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
      *  is specified? Is that an input error? The code below only uses the first.
      */
     if (collisions(CollisionType::effective).empty())
-        Log<Message>::Error("Could not find effective cross section for gas " + m_gas.name + ".");
+        Log<Message>::Error("Could not find effective cross section for gas " + m_gas.name() + ".");
 
     EedfCollision *eff = collisions(CollisionType::effective)[0].get();
     const Vector &rawEnergies = eff->crossSection->lookupTable().x();
@@ -452,7 +452,7 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
     }
 
     if (warn)
-        Log<NegativeElastic>::Warning(m_gas.name);
+        Log<NegativeElastic>::Warning(m_gas.name());
 
     return new CrossSection(0., energyGrid, true, rawEnergies, rawEl);
 }
@@ -841,7 +841,7 @@ const EedfCollisionDataGas &EedfCollisionDataMixture::get_data_for(const Gas &ga
             return cd;
         }
     }
-    throw std::runtime_error("Could not find per-gas collision data for '" + gas.name + "'.");
+    throw std::runtime_error("Could not find per-gas collision data for '" + gas.name() + "'.");
 }
 
 EedfCollisionDataGas &EedfCollisionDataMixture::get_data_for(const Gas &gas)

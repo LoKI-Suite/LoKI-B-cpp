@@ -85,7 +85,7 @@ protected:
     {
         return std::log10(std::abs(v1/v2));
     }
-    WorkingConditions *workingConditions;
+    WorkingConditions *m_workingConditions;
 private:
     Grid m_grid;
 protected:
