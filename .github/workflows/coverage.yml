@@ -28,6 +28,13 @@ jobs:
       run: |
         echo "### Code coverage" >> $GITHUB_STEP_SUMMARY
         cat coverage.md >> $GITHUB_STEP_SUMMARY
+    - name: Add code coverage to pull request thread
+      if: github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: coverage
+        recreate: true
+        path: coverage.md
     - name: Upload cobertura report
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
@@ -74,6 +81,10 @@ jobs:
       run: |
         echo "### Coverage diff" >> $GITHUB_STEP_SUMMARY
         cat coverage_diff.md >> $GITHUB_STEP_SUMMARY
-    - name: Show coverage diff
+    - name: Add coverage diff to pull request thread
       if: github.event_name == 'pull_request'
-      run: cat coverage.md
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: coverage
+        recreate: true
+        path: coverage_diff.md
