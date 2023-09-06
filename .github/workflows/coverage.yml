@@ -22,7 +22,7 @@ jobs:
       run: cmake -Dcoverage=ON -DCMAKE_BUILD_TYPE=Debug -B build
     - name: CMake build
       run: cmake --build build --target coverage -- -j $(nproc)
-    - name: Show cobertura report
+    - name: Generate cobertura report
       run: pycobertura show build/coverage.xml --format markdown --output coverage.md
     - name: Add code coverage to job summary
       run: |
@@ -51,6 +51,7 @@ jobs:
         branch: coverage
         path: coverage-old
         name: coverage_report
+        search_artifacts: true
     - name: Retrieve old source
       if: github.event_name == 'pull_request'
       uses: dawidd6/action-download-artifact@v2
@@ -60,6 +61,7 @@ jobs:
         branch: coverage
         path: source-old
         name: source_code
+        search_artifacts: true
     - name: Inspect artifacts
       if: github.event_name == 'pull_request'
       run: ls -R
