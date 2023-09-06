@@ -8,8 +8,10 @@ on:
 
 jobs:
   Test:
-
     runs-on: ubuntu-22.04
+
+    permissions:
+      actions: read
 
     steps:
     - uses: actions/checkout@v2
