@@ -189,9 +189,6 @@ else()
   message(STATUS "Using Eigen internal expressions")
 endif()
 
-# check if Doxygen is installed
-find_package(Doxygen)
-
 add_subdirectory(lib)
 if(EMSCRIPTEN)
     add_subdirectory(web)
@@ -202,8 +199,45 @@ else()
 endif(EMSCRIPTEN)
 add_subdirectory(LoKI-B)
 add_subdirectory(input)
-add_subdirectory(doc)
 
+# Option -Dwith-doc: configure whether documentation can be built.
+# - OFF: the documentation targets will not be set up, tools that are required
+#   for doc generation will not be searched for.
+# - ON: the required tools will be located on your system and all
+#   doc targets are set up. The docs are built as part of targets doc_pdf and
+#   doc_html and are cleaned as part of target doc_clean.
+option(with-doc "-Dwith-doc(=OFF|ON): Build the documents (pdf, html, xml, docygen)" OFF)
+set(LOKIB_USE_DOC ${with-doc})
+if(LOKIB_USE_DOC)
+    include(CMake/LoKIDoc.cmake)
+endif()
+
+# ****************************************
+#      Look for Doxygen
+# ****************************************
+if(LOKIB_USE_DOC)
+   find_package(Doxygen COMPONENTS dot)
+
+   # TODO: cmake does not appear to have a FindGraphviz module.
+   # for now we derive the presence of graphiviz (dot in
+   # particular) from the presence of doxygen. But it is possible
+   # that the system has graphviz, but not doxygen.
+   if(Doxygen_FOUND)
+      # TODO: 'the DOT_EXECUTABLE should be obtained from the import target Doxygen::dot'
+      set(LOKIB_USE_DOT ON)
+      set(DOT_EXECUTABLE Doxygen::dot)
+   else()
+      set(LOKIB_USE_DOT OFF)
+      set(DOT_EXECUTABLE )
+   endif()
+   message("Dot executable: ${DOT_EXECUTABLE}")
+endif()
+
+# do this now, after doxygen has been detected, so CMakeLists.txt in doc/
+# can use the result of Doxygen_FOUND.
+if(LOKIB_USE_DOC)
+    add_subdirectory(doc)
+endif()
 
 # --- Install --- #
 
