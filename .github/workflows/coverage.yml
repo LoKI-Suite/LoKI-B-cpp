@@ -37,25 +37,34 @@ jobs:
         path: |
           source
           LoKI-B
-    # - name: Retrieve cobertura report
-    #   if: github.event_name == 'pull_request'
-    #   uses: dawidd6/action-download-artifact@v2
-    #   with:
-    #     workflow_conclusion: success
-    #     branch: main
-    #     path: coverage-old
     - name: Retrieve cobertura report
       if: github.event_name == 'pull_request'
-      uses: actions/download-artifact@v3
+      uses: dawidd6/action-download-artifact@v2
       with:
-        name: coverage_report
+        workflow_conclusion: success
+        branch: coverage
         path: coverage-old
+        name: coverage_report
     - name: Retrieve old source
       if: github.event_name == 'pull_request'
-      uses: actions/download-artifact@v3
+      uses: dawidd6/action-download-artifact@v2
       with:
-        name: source_code
+        workflow_conclusion: success
+        branch: coverage
         path: source-old
+        name: source_code
+    # - name: Retrieve cobertura report
+    #   if: github.event_name == 'pull_request'
+    #   uses: actions/download-artifact@v3
+    #   with:
+    #     name: coverage_report
+    #     path: coverage-old
+    # - name: Retrieve old source
+    #   if: github.event_name == 'pull_request'
+    #   uses: actions/download-artifact@v3
+    #   with:
+    #     name: source_code
+    #     path: source-old
     - name: Create coverage diff
       if: github.event_name == 'pull_request'
       run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage.md
