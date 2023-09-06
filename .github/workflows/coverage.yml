@@ -88,6 +88,6 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: marocchino/sticky-pull-request-comment@v2
       with:
-        header: coverage
+        header: coverage_diff
         recreate: true
         path: coverage_diff.md
