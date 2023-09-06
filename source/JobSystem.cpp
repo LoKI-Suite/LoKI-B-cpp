@@ -75,7 +75,7 @@ class RangeSingleValue : public Range
 class RangeLinSpace : public Range
 {
   public:
-    RangeLinSpace(double start, double stop, size_type size) : Range(size), start(start), stop(stop)
+    RangeLinSpace(double start, double stop, size_type size) : Range(size), m_start(start), m_stop(stop)
     {
         Log<Message>::Notify("Creating linspace range"
                              ", start = ",
@@ -89,12 +89,12 @@ class RangeLinSpace : public Range
   protected:
     virtual double get_value(size_type ndx) const override
     {
-        return start + ndx * (stop - start) / (size() - 1);
+        return m_start + ndx * (m_stop - m_start) / (size() - 1);
     }
 
   private:
-    const double start;
-    const double stop;
+    const double m_start;
+    const double m_stop;
 };
 
 /** A range that represents a 'logspace', the values are obtained as
@@ -105,7 +105,7 @@ class RangeLogSpace : public Range
 {
   public:
     RangeLogSpace(double log_start, double log_stop, size_type size)
-        : Range(size), log_start(log_start), log_stop(log_stop)
+        : Range(size), m_log_start(log_start), m_log_stop(log_stop)
     {
         Log<Message>::Notify("Creating logspace range"
                              ", log_start = ",
@@ -119,13 +119,13 @@ class RangeLogSpace : public Range
   protected:
     virtual double get_value(size_type ndx) const override
     {
-        const double log_value = log_start + ndx * (log_stop - log_start) / (size() - 1);
+        const double log_value = m_log_start + ndx * (m_log_stop - m_log_start) / (size() - 1);
         return std::pow(10., log_value);
     }
 
   private:
-    const double log_start;
-    const double log_stop;
+    const double m_log_start;
+    const double m_log_stop;
 };
 
 /** A range that represents an array of predefined values.

@@ -15,27 +15,27 @@ StateEntry StateEntry::electronEntry()
     return el;
 }
 
-StateEntry::StateEntry() : m_id{std::string{}}, level(none)
+StateEntry::StateEntry() : m_id{std::string{}}, m_level(none)
 {
 }
 
 StateEntry::StateEntry(const std::string &id, StateType level, const std::string &gasName, const std::string &charge,
                        const std::string &e, const std::string &v, const std::string &J)
-    : m_id(id), level(level), charge(charge), gasName(gasName), e(e), v(v), J(J)
+    : m_id(id), m_level(level), m_gasName(gasName), m_charge(charge), m_e(e), m_v(v), m_J(J)
 {
 }
 
 /// \todo Update: charge may also be a wildcard (?)
 bool StateEntry::hasWildCard() const
 {
-    switch (level)
+    switch (m_level)
     {
     case electronic:
-        return (e == "*");
+        return (m_e == "*");
     case vibrational:
-        return (v == "*");
+        return (m_v == "*");
     case rotational:
-        return (J == "*");
+        return (m_J == "*");
     case none:
         return false;
     default:
@@ -47,19 +47,19 @@ bool StateEntry::hasWildCard() const
 std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
 {
     // special handling of the electron. Just write "e".
-    if (entry.gasName == "e")
+    if (entry.m_gasName == "e")
     {
-        os << entry.gasName;
+        os << entry.m_gasName;
         return os;
     }
-    os << entry.gasName << '(';
-    if (!entry.charge.empty())
-        os << entry.charge << ',';
-    os << entry.e;
-    if (!entry.v.empty())
-        os << ",v=" << entry.v;
-    if (!entry.J.empty())
-        os << ",J=" << entry.J;
+    os << entry.m_gasName << '(';
+    if (!entry.m_charge.empty())
+        os << entry.m_charge << ',';
+    os << entry.m_e;
+    if (!entry.m_v.empty())
+        os << ",v=" << entry.m_v;
+    if (!entry.m_J.empty())
+        os << ",J=" << entry.m_J;
     os << ')';
 
     return os;

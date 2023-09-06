@@ -42,10 +42,10 @@ void readGasPropertyFile(const GasListType& gasList,
               + "', using file '" + fileName + "'.");
         for (auto &gas : gasList)
         {
-            if (gas->name == "e")
+            if (gas->name() == "e")
                 continue;
             double value;
-            const std::regex r(R"((?:^|\n))" + gas->name + R"(\s+(\S*)\s*)");
+            const std::regex r(R"((?:^|\n))" + gas->name() + R"(\s+(\S*)\s*)");
             std::smatch m;
             if (std::regex_search(fileBuffer, m, r) && Parse::getValue(m[1],value))
             {
@@ -54,9 +54,9 @@ void readGasPropertyFile(const GasListType& gasList,
             else
             {
                 if (required)
-                    Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name);
+                    Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name());
                 else
-                    Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name);
+                    Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name());
             }
         }
     }
@@ -91,12 +91,12 @@ void readGasPropertyJson(const GasListType& gasList,
     Log<Message>::Notify("Configuring gas property '" + propertyName + "'.");
     for (auto &gas : gasList)
     {
-        if (gas->name == "e")
+        if (gas->name() == "e")
             continue;
 		bool found = false;
         for (auto& el : cnf)
 	{
-            if (el.at("name") == gas->name)
+            if (el.at("name") == gas->name())
             {
                 found = true;
                 handler(*gas, el.at(propertyName).get<double>());
@@ -105,9 +105,9 @@ void readGasPropertyJson(const GasListType& gasList,
         if (!found)
         {
             if (required)
-                Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name);
+                Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name());
             else
-                Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name);
+                Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name());
         }
     }
 }

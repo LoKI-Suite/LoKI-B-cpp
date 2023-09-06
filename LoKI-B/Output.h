@@ -39,7 +39,7 @@ protected:
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
-    const WorkingConditions *workingConditions;
+    const WorkingConditions *m_workingConditions;
 private:
     bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
