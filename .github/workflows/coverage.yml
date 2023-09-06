@@ -10,8 +10,7 @@ jobs:
   Test:
     runs-on: ubuntu-22.04
 
-    permissions:
-      actions: read
+    permissions: read-all
 
     steps:
     - uses: actions/checkout@v2
