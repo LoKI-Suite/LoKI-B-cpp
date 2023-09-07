@@ -235,8 +235,6 @@ else()
   message(STATUS "Using Eigen internal expressions")
 endif()
 
-enable_testing()
-
 add_subdirectory(lib)
 if(EMSCRIPTEN)
     add_subdirectory(web)
