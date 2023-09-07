@@ -1,4 +1,4 @@
-name: cmake CI
+name: CMake
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  Build:
 
     runs-on: ubuntu-20.04
 

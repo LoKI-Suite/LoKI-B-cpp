@@ -22,78 +22,14 @@ jobs:
     - name: Install native dependencies
       run: sudo apt-get install cmake nlohmann-json3-dev libeigen3-dev python3-pip
     - name: Install pip packages
-      run: pip install pycobertura gcovr
+      run: pip install gcovr
     - name: CMake generate
       run: cmake -Dcoverage=ON -DCMAKE_BUILD_TYPE=Debug -B build
     - name: CMake build
       run: cmake --build build --target coverage -- -j $(nproc)
-    - name: Generate cobertura report
-      run: pycobertura show build/coverage.xml --format markdown --output coverage.md
     - name: Upload coverage report to Codecov
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         file: build/coverage.xml
         fail_ci_if_error: true
-      # run: pycobertura show build/coverage.xml --format json --output coverage.json
-    # - name: Add code coverage to job summary
-    #   run: |
-    #     echo "### Code coverage" >> $GITHUB_STEP_SUMMARY
-    #     cat coverage.md >> $GITHUB_STEP_SUMMARY
-    # - name: Add code coverage to pull request thread
-    #   if: github.event_name == 'pull_request'
-    #   uses: marocchino/sticky-pull-request-comment@v2
-    #   with:
-    #     header: coverage
-    #     recreate: true
-    #     path: coverage.md
-    # - name: Upload cobertura report
-    #   if: github.event_name == 'push'
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: coverage_report
-    #     path: build/coverage.xml
-    # - name: Upload source code
-    #   if: github.event_name == 'push'
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: source_code
-    #     path: |
-    #       source
-    #       LoKI-B
-    # - name: Retrieve cobertura report
-    #   if: github.event_name == 'pull_request'
-    #   uses: dawidd6/action-download-artifact@v2
-    #   with:
-    #     github_token: ${{ github.token }}
-    #     workflow_conclusion: success
-    #     branch: coverage
-    #     path: coverage-old
-    #     name: coverage_report
-    #     search_artifacts: true
-    # - name: Retrieve old source
-    #   if: github.event_name == 'pull_request'
-    #   uses: dawidd6/action-download-artifact@v2
-    #   with:
-    #     github_token: ${{ github.token }}
-    #     workflow_conclusion: success
-    #     branch: coverage
-    #     path: source-old
-    #     name: source_code
-    #     search_artifacts: true
-    # - name: Create coverage diff
-    #   if: github.event_name == 'pull_request'
-    #   continue-on-error: true
-    #   run: pycobertura diff coverage-old/coverage.xml build/coverage.xml --source1 source-old --source2 . --format markdown --output coverage_diff.md
-    # - name: Add diff to job summary
-    #   if: github.event_name == 'pull_request'
-    #   run: |
-    #     echo "### Coverage diff" >> $GITHUB_STEP_SUMMARY
-    #     cat coverage_diff.md >> $GITHUB_STEP_SUMMARY
-    # - name: Add coverage diff to pull request thread
-    #   if: github.event_name == 'pull_request'
-    #   uses: marocchino/sticky-pull-request-comment@v2
-    #   with:
-    #     header: coverage_diff
-    #     recreate: true
-    #     path: coverage_diff.md
