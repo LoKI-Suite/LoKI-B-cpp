@@ -842,6 +842,96 @@ to obtain
 	\right].
 \end{align}
 
+\noindent {\bf Which Form is Discretized in LoKI-B?}
+\begin{itemize}
+\item In the LoKI-B {\em manual} \cite[eq. 8a--b,
+	29--30c,32]{Manual_2_2_0}, essentially equation
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
+	operator is modified to also describe part of the growth effects.
+\item This is {\em not} what is in the LoKI-B code. That is based on
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and one of the
+	forms of the growth renormalization term (after $E\rightarrow -E$
+	and division by $1/\gamma$). But which one?
+	\begin{itemize}
+		\item \SRC{fieldOperator} provides the term that is also present in the absence of growth.
+		\item \SRC{fieldMatrixSpatGrowth} appears to provide
+		\[
+			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{D^0f^0}{u}.
+		\]
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$.
+		\item This suggests that \eqref{eq:Rsst-orig} is used, and the remaining
+			term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}D^0(u)\DERIV{f^0}{u}$.
+			A central-difference scheme
+			for the derivative of $f(u)$ yields
+			\begin{equation}
+				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
+				\doteq
+				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u}
+				:=
+				C_k\frac{f_{k+1}-f_{k-1}}{2\Delta u},
+			\end{equation}
+			which corresponds to the second term of the manual's equation (29).
+			The manual does not explain how to handle the first and last cells,
+			but for those the derivatives can of course be approximated with the
+			asymmetric approximations $(f_1-f_0)/\Delta$ and
+			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
+
+			In the MATLAB code, this term is represented by \SRC{ionSpatialGrowthU}.
+			In the original code, $C_k$ is expressed in terms of \SRC{U0sup} and \SRC{U0inf},
+                        which makes the expression a bit more difficult to understand. What is the reason
+			for that? Consistency with the evaluation of $\mu_eE$? That can also be achieved
+			without using \SRC{U0sup} and \SRC{U0inf}. To understand the expressions in the
+			original code, note that
+			\begin{lstlisting}[language=C++]
+alphaRedEffNew*U0inf[k-1] == alphaRedEffNew*(-EoN /(2.*grid().du())*D0[k]) (= -C_k/(2*du))
+alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C_k/(2*du))
+			\end{lstlisting}
+			AT THE BOUNDARY POINTS the discretization seems wrong. The problem (or
+			my misunderstanding (JvD)) is the same as that in the evaluation of
+			$\mu_eE$, see \ref{sec:muD-eval}.
+	\end{itemize}
+\item Confusion is caused in the code by the fact that the
+	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
+	of the \SRC{fieldMatrixSpatGrowth}, has a division by 6,
+	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
+	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
+	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
+	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$ in equation
+	\ref{eq:-dGdu/Ngamma-discrete}).
+
+	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
+	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
+	instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
+	with the $G_x(u)$ exposition. We also had to add the division by 2 in the
+	interpolation code
+	\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
+	the only other location where the array is used (which also makes it easier
+	understand that an interpolation to a cell value is happening in that code).
+	In MATLAB (version 2.2.0) that last code can be found in
+	\SRC{Boltzmann.m} line 1512.
+\item It appears that the MATLAB version of the growth codes has been revised
+	significantly since the C++ version was created from the 1.0.0 MATLAB code.
+	Various issues that were reported in the (C++) source code may have
+	been resolved, maybe not. A full comparison of the C++ code and current MATLAB
+	version is due.
+\end{itemize}
+
+\noindent {\bf Notes and Questions --- Theory:}
+\begin{itemize}
+\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
+	Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
+\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
+	velocities are equal (but opposite). Then the above definition fails. How
+	can we fix this?
+	For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
+	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
+	What if the velocity and frequency are {\em both} zero?
+\item Why should complex roots (if any) be ignored/patched? Physically
+	these would result in oscillatory $n_e(z)$. Is that wrong per se?
+	Are these in conflict with any prior assumption? Then that should be
+	explained.
+\end{itemize}
+
 \subsubsection{Energy Balance}
 
 Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $u$ and integration over $u$
@@ -934,83 +1024,8 @@ which suggests that the field power with growth term {\em and} the growth power
 as stated here are part of the power balance (in the NB just before item 24 on page 19).
 \end{framed}
 
-\noindent {\bf Notes and Questions --- Theory:}
-\begin{itemize}
-\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
-	Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
-\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
-	velocities are equal (but opposite). Then the above definition fails. How
-	can we fix this?
-	For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
-	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
-	What if the velocity and frequency are {\em both} zero?
-\item Why should complex roots (if any) be ignored/patched? Physically
-	these would result in oscillatory $n_e(z)$. Is that wrong per se?
-	Are these in conflict with any prior assumption? Then that should be
-	explained.
-\end{itemize}
-\noindent {\bf Which Form is Discretized in LoKI-B?}
-\begin{itemize}
-\item In the LoKI-B {\em manual} \cite[eq. 8a--b,
-	29--30c,32]{Manual_2_2_0}, essentially equation
-	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
-	operator is modified to also describe part of the growth effects.
-\item This is {\em not} what is in the LoKI-B code. That is based on
-	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and one of the
-	forms of the growth renormalization term (after $E\rightarrow -E$
-	and division by $1/\gamma$). But which one?
-	\begin{itemize}
-		\item \SRC{fieldOperator} provides the term that is also present in the absence of growth.
-		\item \SRC{fieldMatrixSpatGrowth} appears to provide
-		\[
-			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{D^0f^0}{u}.
-		\]
-		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$.
-		\item This suggests that \eqref{eq:Rsst-orig} is used, and the remaining
-			term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}D^0(u)\DERIV{f^0}{u}$.
-			A central-difference scheme
-			for the derivative of $f(u)$ yields
-			\begin{equation}
-				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
-				\doteq
-				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u},
-			\end{equation}
-			which corresponds to the second term of the manual's equation (29).
-			The manual does not explain how to handle the first and last cells,
-			but for those the derivatives can of course be approximated with the
-			asymmetric approximations $(f_1-f_0)/\Delta$ and
-			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
-
-			BUT THIS DOES TERM NOT SEEM TO BE PROVIDED BY THE remaining discretization
-			matrix in the code, \SRC{ionSpatialGrowthU}.
-	\end{itemize}
-\item Confusion is caused in the code by the fact that the
-	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
-	of the \SRC{fieldMatrixSpatGrowth}, has a division by 6,
-	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
-	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
-	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
-	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$ in equation
-	\ref{eq:-dGdu/Ngamma-discrete}).
-
-	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
-	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
-	instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
-	with the $G_x(u)$ exposition. We also had to add the division by 2 in the
-	interpolation code
-	\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
-	the only other location where the array is used (which also makes it easier
-	understand that an interpolation to a cell value is happening in that code).
-	In MATLAB (version 2.2.0) that last code can be found in
-	\SRC{Boltzmann.m} line 1512.
-\item It appears that the MATLAB version of the growth codes has been revised
-	significantly since the C++ version was created from the 1.0.0 MATLAB code.
-	Various issues that were reported in the (C++) source code may have
-	been resolved, maybe not. A full comparison of the C++ code and current MATLAB
-	version is due.
-\end{itemize}
-
 \section{The evaluation of $D_eN$ and $\mu_eN$}
+\label{sec:muD-eval}
 
 The expressions for $D_eN$ and $\mu_eN$ are given in equations
 \eqref{eq:DeN} and \eqref{eq:mueN}.
@@ -1149,7 +1164,7 @@ And after division by $N$ we obtain $H_{el}(u)$, as expected.
 \begin{framed}
 	In the manual, the symbol $\nu^{el}_{k,c}$ is used for the elastic {\em momentum} transfer collision
 	frequency. That is better called $\nu_{k,c}$, since it is just $N_k\sigma_{k,c}v(u)$. (See the
-	definition of the $\nu_{0,k}$, that does it `correct').
+	definition of the $\nu_{0,k}$, that does it `correctly').
 	That said, I think this frequency should be avoided, the code should be followed.
 
 	In the code, the term \SRC{elasticCrossSection} is used for the elastic {\em energy transfer}
@@ -1296,7 +1311,7 @@ TODO:
 		which is stated in the manual.
 		Explain the impact of this difference and make sure
 		that the energy balance is not affected.
-        \item \SRC{OPBParamater} is input, but $\beta=2$ appears to be hardcoded (MATLAB and C++).
+        \item \SRC{OPBParameter} is input, but $\beta=2$ appears to be hardcoded (MATLAB and C++).
 		Only then is the function integrable analytically over $u'$. Also,
 		the property below \cite[eq. 63]{Manual_2_2_0}) is true only
 		if $\beta=2$, so the manual should more clear that is required
