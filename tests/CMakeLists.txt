@@ -13,6 +13,7 @@ enable_testing()
 
 # Option -Dcoverage: configure whether coverage information is collected.
 option(coverage "-Dcoverage(=OFF|ON): Collect test coverage statistics." OFF)
+loki_constrain_configure_option(coverage ON OFF)
 set(LOKIB_COVERAGE ${coverage})
 if(LOKIB_COVERAGE)
   include(../CMake/CodeCoverage.cmake)
