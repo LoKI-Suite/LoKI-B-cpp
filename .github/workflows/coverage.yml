@@ -33,7 +33,8 @@ jobs:
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        files: build/coverage.xml
+        file: build/coverage.xml
+        fail_ci_if_error: true
       # run: pycobertura show build/coverage.xml --format json --output coverage.json
     # - name: Add code coverage to job summary
     #   run: |
