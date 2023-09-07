@@ -516,12 +516,35 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
                                                            ionSpatialGrowthD.coeff(k, k);
 
-            // note: what is still missing is (alpha/N)*(E/N)*D0*df/du.
-            //       but that does not seem to be provided by ionSpatialGrowthU
+            /* note: what is still missing is (alpha/N)*(E/N)*D0*df/du := C_k*df/du,
+             * which is represented by ionSpatialGrowthU.
+             * In an *internal* point k we have C_(df/du)_k \approx C_k(f_{k+1}-f_{k-1}})/(2*du),
+             * with C_k = (alpha/N)*(E/N)*D0_k. This expression is used when
+             * USE_D0_FOR_ionSpatialGrowthU is defined to 1. See the todo below
+             * for a note on the boundary cells.
+             *
+             * NOTE:
+             * In the MATLAB code, +/-C_k is expressed in terms of U0{sup,inf},
+             * which makes the expression a bit more difficult to understand.
+             * What is the reason for that? Consistency with the evaluation of
+             * mu_eE? That can also be achieved without using U{inf,Usup}.
+             * To understand the original expressions below, note that:
+             *   alphaRedEffNew * U0inf[k-1] == alphaRedEffNew*(-EoN / (2. * grid().du()) * D0[k]) = -C_k/(2*du)
+             *   alphaRedEffNew * U0sup[k+1] == alphaRedEffNew*(+EoN / (2. * grid().du()) * D0[k]) = +C_k/(2*du),
+             */
+            /** \todo At boundary points, we do not seem to be implementing the term correctly.
+             * The problem (or misunderstanding on my side (JvD)) is similar to
+             * that in the evaluation of mu_eE, see elsewhere.
+             */
+#define USE_D0_FOR_ionSpatialGrowthU 1
             if (k > 0)
             {
                 fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
+#if USE_D0_FOR_ionSpatialGrowthU
+                ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+#else
                 ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
+#endif
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
                                                                       ionSpatialGrowthU.coeff(k, k - 1);
             }
@@ -529,7 +552,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             if (k < grid().nCells() - 1)
             {
                 fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
+#if USE_D0_FOR_ionSpatialGrowthU
+                ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+#else
                 ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
+#endif
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
                                                                       ionSpatialGrowthU.coeff(k, k + 1);
             }
@@ -1059,7 +1086,7 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
                 //   This can also be written as
                 // Omega_PT_i = Omega_c_i + (omega/N)^2/(gamma^2*u*Omega_c_i)
                 // (Note: that e*u is the energy in SI units.)
-		// NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
+                // NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
                 firstAnisotropy = -EoN * std::sqrt(2.) * firstAnisotropy.array() /
                                   (cellCrossSection.array() +
                                    WoN * WoN / (SI::gamma*SI::gamma * grid().getCells().array() * cellCrossSection.array()));
@@ -1076,7 +1103,7 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
     }
     else
     {
-	// NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
+        // NOTE: EoN is the RMS field, but here we need the field amplitude. That explains the factor sqrt(2).
         firstAnisotropy =
             -EoN * std::sqrt(2.) * firstAnisotropy.array() /
             (cellCrossSection.array() + WoN * WoN / (SI::gamma*SI::gamma * grid().getCells().array() * cellCrossSection.array()));
