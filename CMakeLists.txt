@@ -7,6 +7,10 @@ include(CMake/LoKIUtilities.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
+#Add protection against in-source builds
+include(CMake/PreventInSourceBuilds.cmake)
+
+#Enable fetching packages from git etc
 include(FetchContent)
 
 # --- Compiler flags --- #
@@ -17,8 +21,16 @@ include(FetchContent)
 # for every file being compiled.
 cmake_policy(SET CMP0092 NEW)
 
-option(ALL_WARNINGS "-DALL_WARNINGS=0|1 : Show all warnings" off)
+option(ALL_WARNINGS "-DALL_WARNINGS=ON|OFF : Show all warnings" OFF)
+loki_constrain_configure_option(ALL_WARNINGS ON OFF)
 if (MSVC)
+    message(STATUS "Using MSVC compiler")
+
+    # #define _USE_MATH_DEFINES for M_PI and M_E
+    # #define _CRT_SECURE_NO_DEPRECATE to surpress fopen warnings (fopen_s is not available on other platforms)
+    # #define _MSVC to alter a regular expression in the Parse class (since MSVC treats the $ command differently)
+    add_compile_definitions(_USE_MATH_DEFINES _CRT_SECURE_NO_DEPRECATE _MSVC)
+
     # warning level 4
     loki_msvc_cxxflags(/W4)
     if(NOT ALL_WARNINGS)
@@ -33,7 +45,7 @@ if (MSVC)
         loki_msvc_cxxflags(/wd4996)
         #disable warning C4389: '==': signed/unsigned mismatch
         loki_msvc_cxxflags(/wd4389)
-	    #disable warning C4127: conditional expression is constant
+        #disable warning C4127: conditional expression is constant
         loki_msvc_cxxflags(/wd4127)
         #disable warning C4459: declaration of 'attr' hides global declaration
         loki_msvc_cxxflags(/wd4459)
@@ -49,7 +61,7 @@ else()
         #loki_ccxxflags(-Wno-unused-parameter -Werror=maybe-uninitialized)
     endif()
 
-    #Turn some warnings into errors, copied from configure.ac
+    #Turn some warnings into errors
     loki_cxxflags(-Wall)
     # disabled because of sloppiness in Eigen-3.4.0 and SuperLU:
     # loki_cxxflags(-Werror=unused-but-set-parameter)
@@ -59,6 +71,7 @@ else()
     loki_cxxflags(-Werror=non-virtual-dtor)
     # Disabled because of Eigen/SuperLU
     # loki_cxxflags(-Werror=unused-variable)
+    #loki_cxxflags(-Werror=unused-but-set-variable)
     loki_cxxflags(-Werror=unused-result)
     loki_cxxflags(-Werror=ignored-qualifiers)
     loki_cxxflags(-Werror=zero-as-null-pointer-constant)
@@ -70,9 +83,6 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
-    #TODO change into -Werror=shadow after fixing numerous local/member data
-    #shadowing violations in the code:
-    loki_cxxflags(-Werror=shadow=local)
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
@@ -83,26 +93,61 @@ else()
         add_link_options(LINKER:-no-undefined)
     endif()
 endif()
+loki_gcc_cxxflags(-Werror=shadow)
+loki_clang_cxxflags(-Werror=shadow-all)
 
 
-if(MSVC)
-    message(STATUS "Using MSVC compiler")
+#CMake provides some default build types:
+#                 |  build optimized?  |   debug info?    |   asserts?   |
+# ========================================================================
+#  Debug:         |        No          |      yes         |      yes     |
+#  Release:       |   yes, for speed   |      no          |      no      |
+#  RelWithDebinfo |   yes, for speed   |      yes         |      no      |
+#  MinSizeRel     |   yes, for size    |      no          |      no      |
 
-    # #define _USE_MATH_DEFINES for M_PI and M_E
-    # #define _CRT_SECURE_NO_DEPRECATE to surpress fopen warnings (fopen_s is not available on other platforms)
-    # #define _MSVC to alter a regular expression in the Parse class (since MSVC treats the $ command differently)
-    add_compile_definitions(_USE_MATH_DEFINES _CRT_SECURE_NO_DEPRECATE _MSVC)
 
-    # warning flag: /W4
-    # there is no alternative for -march=native in MSVC, therefore important relevant compiler flags have to be set manually for now (avx, avx2, fma etc.).
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
+#In single-configuration generators, the build type can be set with
+#   -D CMAKE_BUILD_TYPE = <build type>
+#For multi-configuration generators, CMAKE_BUILD_TYPE is ignored, and you chose the
+#configuration during compile time:
+#    cmake --build build --config Debug
 
-else() # clang or g++
+#The exact flags depend ofcourse on the compiler, but the defaults are somewhat
+#sensible. Sensible enough at least, that these replace the autotools flags
+# --enable-assert, --enable-debug and --enable-optimize
 
-	# warning flags: -Wall -Wextra -Werror
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -march=native -DNDEBUG")
+#For example with gcc:
+# CMAKE_CXX_FLAGS_DEBUG is -g
+# CMAKE_CXX_FLAGS_RELEASE is -O3 -DNDEBUG
+# CMAKE_CXX_FLAGS_RELWITHDEBINFO is -O2 -g -DNDEBUG
+# CMAKE_CXX_FLAGS_MINSIZEREL is -Os -DNDEBUG
 
+#For MSVC:
+#CMAKE_CXX_FLAGS_DEBUG is /Zi /Ob0 /Od /RTC1
+#CMAKE_CXX_FLAGS_RELEASE is /O2 /Ob2 /DNDEBUG
+#CMAKE_CXX_FLAGS_RELWITHDEBINFO is /Zi /O2 /Ob1 /DNDEBUG
+#CMAKE_CXX_FLAGS_MINSIZEREL is /O1 /Ob1 /DNDEBUG
+
+###############################################################################
+###### build configuration ####################################################
+###############################################################################
+
+# Set the default build type to Release if none was specified, only for
+# single-configuration generators
+# https://www.kitware.com/cmake-and-the-default-build-type/
+set(default_build_type "Release")
+if(NOT CMAKE_CONFIGURATION_TYPES)
+ #On single configuration generators CMAKE_CONFIGURATION_TYPES will be empty
+ if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+    message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+    set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+        STRING "Choose the type of build." FORCE)
+  endif()
+  # Set the possible values of build type for cmake-gui
+  loki_constrain_configure_option(CMAKE_BUILD_TYPE Release Debug RelWithDebInfo MinSizeRel)
 endif()
+
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   #Put all dlls and executables in a single folder. This
@@ -128,6 +173,7 @@ endif()
 #openmp support, but for some (e.g. Clang) you need to install additional
 #packages (e.g. libomp9-devel for clang9, or libomp-dev) 
 option(USE_OPENMP "Use OpenMP parallelization" ON)
+loki_constrain_configure_option(USE_OPENMP ON OFF)
 if(USE_OPENMP)
 	find_package(OpenMP)
 	if(NOT OpenMP_CXX_FOUND)
@@ -209,6 +255,7 @@ add_subdirectory(input)
 #   doc targets are set up. The docs are built as part of targets doc_pdf and
 #   doc_html and are cleaned as part of target doc_clean.
 option(with-doc "-Dwith-doc(=OFF|ON): Build the documents (pdf, html, xml, docygen)" OFF)
+loki_constrain_configure_option(with-doc ON OFF)
 set(LOKIB_USE_DOC ${with-doc})
 if(LOKIB_USE_DOC)
     include(CMake/LoKIDoc.cmake)
