@@ -1,7 +1,7 @@
 # LoKI-B C++
 
-[![action](https://github.com/DAANBOER/luxurious-loki/workflows/autotools%20CI/badge.svg)](../../actions?query=workflow%3A%22autotools+CI%22)
-[![action](https://github.com/DAANBOER/luxurious-loki/workflows/cmake%20CI/badge.svg)](../../actions?query=workflow%3A%22cmake+CI%22)
+[![action](https://github.com/DAANBOER/luxurious-loki/workflows/CMake/badge.svg)](../../actions?query=workflow%3A%22CMake%22)
+[![codecov](https://codecov.io/gh/LoKI-Suite/LoKI-B/graph/badge.svg?token=GRKRVNPAAZ)](https://codecov.io/gh/LoKI-Suite/LoKI-B)
 
 Numerical Boltzmann solver for the two-term approximation of the Boltzmann equation for electrons.
 
