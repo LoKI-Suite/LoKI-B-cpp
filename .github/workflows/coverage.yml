@@ -10,6 +10,8 @@ jobs:
   Test:
     runs-on: ubuntu-22.04
 
+    if: ${{ !github.event.pull_request.draft }}
+
     permissions:
       contents: read
       actions: write
@@ -27,6 +29,7 @@ jobs:
       run: cmake --build build --target coverage -- -j $(nproc)
     - name: Generate cobertura report
       run: pycobertura show build/coverage.xml --format markdown --output coverage.md
+      run: pycobertura show build/coverage.xml --format json --output coverage.json
     - name: Add code coverage to job summary
       run: |
         echo "### Code coverage" >> $GITHUB_STEP_SUMMARY
@@ -72,9 +75,6 @@ jobs:
         path: source-old
         name: source_code
         search_artifacts: true
-    - name: Inspect artifacts
-      if: github.event_name == 'pull_request'
-      run: ls -R
     - name: Create coverage diff
       if: github.event_name == 'pull_request'
       continue-on-error: true
