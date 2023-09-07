@@ -88,7 +88,6 @@ else()
         # Disabled because boost generates a lot of these warnings
         # loki_cxxflags(-Werror=undef)
         add_link_options(LINKER:-undefined,error)
-        loki_cxxflags(-Werror=shadow-all)
     else()
         loki_cxxflags(-Werror=undef)
         add_link_options(LINKER:-no-undefined)
