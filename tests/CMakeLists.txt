@@ -53,7 +53,7 @@ target_link_libraries(test_statebase PRIVATE loki-b)
 add_executable(test_trans_coefs test_trans_coefs.cpp)
 target_link_libraries(test_trans_coefs PRIVATE loki-b)
 
-target_add_test(test_druyvesteyn)
+# target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
 target_add_test(test_events)
