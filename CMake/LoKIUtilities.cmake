@@ -153,3 +153,19 @@ function(loki_fflags)
 endfunction(loki_fflags)
 
 
+#Constrain a configure option (like -DCMAKE_BUILD_TYPE) to a list of
+#values. If an invalid value is picked, CMake will crash with a
+#fatal error. ccmake and cmake-gui will be aware of the options.
+#Example usage (1st argument: variable name,
+#all other arguments: legal options)
+#loki_constrain_configure_option(with-matvec eigen tbci)
+function(loki_constrain_configure_option varname)
+   set(allowed_values ${ARGN})
+   set_property(CACHE ${varname} PROPERTY STRINGS ${allowed_values})
+   if(NOT ${${varname}} IN_LIST allowed_values)
+      message(FATAL_ERROR
+          "No valid -D${varname} argument specified (given: ${${varname}}).\n"
+          "Please use one of: ${allowed_values}"
+      )
+   endif()
+endfunction(loki_constrain_configure_option)
