@@ -14,8 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install \
-	nlohmann-json3-dev libeigen3-dev tex4ht texlive-font-utils texlive-fonts-extra texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-science
+      run: sudo apt-get install nlohmann-json3-dev libeigen3-dev tex4ht texlive-font-utils texlive-fonts-extra texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-science
     - name: mkdir build
       run: mkdir build
     - name: CMake generate 
