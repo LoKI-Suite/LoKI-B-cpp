@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install nlohmann-json3-dev libeigen3-dev tex4ht texlive-font-utils texlive-fonts-extra texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-science
+      run: sudo apt-get install nlohmann-json3-dev libeigen3-dev
     - name: mkdir build
       run: mkdir build
     - name: CMake generate 
@@ -23,7 +23,3 @@ jobs:
       run: cmake --build build -- -j $(nproc)
     - name: CTest
       run: ctest --test-dir build/tests
-    - name: CMake doc generation (PDF)
-      run: cmake --build build --target doc_pdf -- -j $(nproc)
-    - name: CMake doc generation (HTML)
-      run: cmake --build build --target doc_html -- -j $(nproc)
