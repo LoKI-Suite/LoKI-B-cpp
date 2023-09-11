@@ -487,7 +487,74 @@ In particular, these equations still allow the electron density, the
 functions $f^{0,1}_u$, the electric field and other paramers that may influence
 the source term $\tilde{C}^0$ to be functions of space and time coordinates.
 
-\section{Solutions for systems of the form $n_e(z,t)f^{0,1}_u(u)$}
+\section{Solutions for Transient Homogeneous Plasma}
+
+Let us consider a homogeneous plasma, so $\partial/\partial z=0$. For such system
+equation \eqref{eq:particle-balance} reduces to
+\begin{equation}
+	\frac{1}{n_e}\DERIV{n_e}{t} = N\MEAN{K_{eff}}
+\end{equation}
+and the equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1},
+after division by $N$, take the form
+\begin{align}
+	&\sqrt{u}f^0_u\MEAN{K_{eff}}
+	+\frac{\sqrt{u}}{N}\PDEV{f^0_u}{t}
+	- \frac{\gamma}{3}\frac{E}{N}\PDEV{u f^1}{u}
+	= \tilde{C}^0,
+	\label{eq:ebe-2term-f-u0-ddt} \\
+	&\sqrt{u}f^1_u\MEAN{K_{eff}}
+	+\frac{\sqrt{u}}{N} \PDEV{f^1_u}{t}
+	- \frac{E}{N}\gamma u\PDEV{f^0_u}{u}
+	= -\sigma_m(u)\gamma uf^1_u.
+	\label{eq:ebe-2term-f-u-ddt1}
+\end{align}
+The second equation can be written as
+\begin{equation}
+	f^1_u(u)
+	+ \frac{1}{N(\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u})}\PDEV{f^1_u}{t}
+	= \frac{E}{N}\frac{\gamma\sqrt{u}}{\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u}}\DERIV{f^0}{u}.
+\end{equation}
+Setting $\partial f^1_u(u)/\partial t$ gives us the quasi-steady-state solution of $f^1_u(u)$,
+\begin{equation}
+	f^1_{u,qss}(u,t)
+	= \frac{E}{N}\frac{\gamma\sqrt{u}}{\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u}}\DERIV{f^0}{u}
+	= \frac{E(t)}{N}\frac{1}{\Omega_{trans}(u,t)}\PDEV{f^0}{u},
+\end{equation}
+where
+\begin{equation}
+	\Omega_{trans}(u,t) = \sigma_c(u) + \frac{1}{\gamma\sqrt{u}}\MEAN{K_{\mbox{eff}}}(t).
+\end{equation}
+Backsubstitution in the full equation for $f^1_u(u)$, that can be written as
+\begin{equation}
+	\PDEV{f^1_u}{t} = -(\MEAN{\nu_m}+\nu_m(u))(f^1_u(u,t)-f^1_{u,qss}(u,t)).
+\end{equation}
+This equation has a clear interpretation: the time-derivative of $f^1_u$ steers that
+function in the direction of its quasi-steady state solution. For energy $u$, that
+solution will be reached on the time scale $(\MEAN{\nu_m}+\nu_m(u))^{-1}$ --- if the
+equilibrium solution $f^1_{u,qss}(u,t)$ itself does not change on that time scale.
+The latter requirement is fulfilled if $E(t)$ and $f^0(u,t)$ do not vary significantly
+on that time scale (note that also $\MEAN{K_{\mbox{eff}}}$ depends on time via $f^0(u,t)$).
+
+If we assume that indeed $f^1_u(u,t)\approx f^1_{u,qss}(u,t)$, this result can be
+backsubstituted in equation \eqref{eq:ebe-2term-f-u0-ddt}, yielding
+\begin{equation}
+	\sqrt{u}f^0_u\MEAN{K_{eff}}
+	+\frac{\sqrt{u}}{N}\PDEV{f^0_u}{t}
+	- \gamma\left(\frac{E(t)}{N}\right)^2\PDEV{}{u}\left({\cal D}_{trans}^0(u)\PDEV{f^0}{u}\right)
+	= \tilde{C}^0,
+	\label{eq:ebe-2term-f-u0-ddt-subst} \\
+\end{equation}
+These equations, together with the equation for the evolution of $n_e(t)$ forms the
+basis for the time-dependent studies presented in \cite{Tejero2021}.
+
+TODO:
+\begin{itemize}
+	\item Re-order the material in this and the following sections, some
+	things that are used here are introduced only later (or repeated later).
+\end{itemize}
+
+
+\section{Solutions for Systems of the Form $n_e(z,t)f^{0,1}_u(u)$}
 
 At the basis of a number of well-known solutions, such as the spatial and temporal
 growth models, to be discussed later, is the simplification of \eqref{eq:F=n_ef} to
@@ -659,7 +726,7 @@ Here we have introduced the (reduced) electron {\em energy} mobility,
 In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
 by a factor $\MEAN{u}$, compared to Hagelaar's definitions \cite[eq. 61,62]{Hagelaar2005}.
 In this text we use Hagelaar's definitions --- it appears that in the LoKI-B manual the
-coefficients are not used anywhere, and no external references to a discussion or provided,
+coefficients are not used anywhere, and no external references to a discussion are provided,
 wheras in Hagelaar's text also the corresponding transport equation for the (mean) energy
 is stated and discussed.
 
@@ -849,20 +916,22 @@ to obtain
 	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
 	operator is modified to also describe part of the growth effects.
 \item This is {\em not} what is in the LoKI-B code. That is based on
-	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and one of the
-	forms of the growth renormalization term (after $E\rightarrow -E$
-	and division by $1/\gamma$). But which one?
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and expression
+	\eqref{eq:Rsst-orig} for the growth renormalization term
+	(after $E\rightarrow -E$):
 	\begin{itemize}
-		\item \SRC{fieldOperator} provides the term that is also present in the absence of growth.
-		\item \SRC{fieldMatrixSpatGrowth} appears to provide
+		\item \SRC{fieldOperator} is reused; it provides the term that is also present in the absence of growth.
+		\item \SRC{fieldMatrixSpatGrowth} provides
 		\[
-			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{D^0f^0}{u}.
+			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
 		\]
-		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$.
-		\item This suggests that \eqref{eq:Rsst-orig} is used, and the remaining
-			term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}D^0(u)\DERIV{f^0}{u}$.
-			A central-difference scheme
-			for the derivative of $f(u)$ yields
+		which corresponds to the additional contribution to the field term. These terms
+		together correspond to equation (30) of the manual.
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$,
+			the first term of equation (29) of the manual.
+		\item The remaining term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
+			and is provided by \SRC{ionSpatialGrowthU}.
+			A central-difference scheme for the derivative of $f(u)$ yields the approximation
 			\begin{equation}
 				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
 				\doteq
@@ -870,25 +939,25 @@ to obtain
 				:=
 				C_k\frac{f_{k+1}-f_{k-1}}{2\Delta u},
 			\end{equation}
-			which corresponds to the second term of the manual's equation (29).
+			This corresponds to the second term of equation (29) in the manual.
+
 			The manual does not explain how to handle the first and last cells,
 			but for those the derivatives can of course be approximated with the
 			asymmetric approximations $(f_1-f_0)/\Delta$ and
 			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
 
-			In the MATLAB code, this term is represented by \SRC{ionSpatialGrowthU}.
 			In the original code, $C_k$ is expressed in terms of \SRC{U0sup} and \SRC{U0inf},
-                        which makes the expression a bit more difficult to understand. What is the reason
-			for that? Consistency with the evaluation of $\mu_eE$? That can also be achieved
-			without using \SRC{U0sup} and \SRC{U0inf}. To understand the expressions in the
-			original code, note that
+                        which makes the expression a bit more difficult to grasp. To understand the
+			expressions in the original code, note that
 			\begin{lstlisting}[language=C++]
 alphaRedEffNew*U0inf[k-1] == alphaRedEffNew*(-EoN /(2.*grid().du())*D0[k]) (= -C_k/(2*du))
 alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C_k/(2*du))
 			\end{lstlisting}
-			AT THE BOUNDARY POINTS the discretization seems wrong. The problem (or
+\begin{framed}
+			At the boundary points, the discretization seems wrong. The problem (or
 			my misunderstanding (JvD)) is the same as that in the evaluation of
 			$\mu_eE$, see \ref{sec:muD-eval}.
+\end{framed}
 	\end{itemize}
 \item Confusion is caused in the code by the fact that the
 	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
@@ -1057,7 +1126,7 @@ is also what you find in the code. The evaluation of $\mu_eE$ is not clear to me
 			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u \nonumber \\
 		&\doteq +\gamma \frac{E}{N}\left(
 			\frac{{\cal D}^0_{1}}{2\Delta u}
-			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{D^0}{u}\right]_k
+			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_k
 			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u.
 \end{align}
 I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
@@ -1067,7 +1136,7 @@ I (JvD) can {\em almost} understand this by doing a partial integration of the e
 		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
 		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
 \]
-since $D^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
+since ${\cal D}^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
 We now see that the approximation makes sense ... except for the first and last cell, where we have
 ${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
 A correct expression is obtained by replacing the term ${\cal D}^0_{1}/(2\Delta u)$
