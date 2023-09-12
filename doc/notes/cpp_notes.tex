@@ -98,7 +98,7 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 	\item We use $F$ for distribution functions that are normalized to the
 		electron density field, and will use $f$ later on to refer to
 		normalized distribution functions. This is the same as in LoKI-B,
-		BOLSIG+ does it the other way around.
+		whereas BOLSIG+ does it the other way around.
 	\item The angle $\theta$ is defined to be the angle with the positive
 		$z$-axis in this document. Also the electric field is supposed
 		to be aligned with this axis, so $\vec{E}(t)=E_z(t)\vec{e}_z$,
@@ -170,7 +170,7 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 			\item $\MEAN{v_z}\rightarrow v_d$,
 			\item $f \rightarrow f^{0}_u$: Unfortunately. there is no symbol
 			in LoKI-B for the complete approximation of the distribution
-			function, $f^0_u+f^1\cos\theta$, since $f$ is used for
+			function, $f^0_u+f^1_u\cos\theta$, since $f$ is used for
 			$f^0_u$, the first term of its expansion.
 			I find this very confusing, since as a result for example
 			$F(u)\neq n_ef(u)$, and hope it can be changed in the LoKI-docs
@@ -183,7 +183,6 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 	\item BOLSIG+ paper: In all equations, change:
 		\begin{itemize}
 			\item $\mu_e\rightarrow -\mu_e$,
-			\item $E\rightarrow -E$,
 			\item $\alpha\rightarrow -\alpha$,
 			\item $\MEAN{v_z}\rightarrow -w$,
 			\item $\epsilon\rightarrow u$,
@@ -666,12 +665,14 @@ LoKI-B code (but not in the manual), which is defined as
 This symbol will turn out to be useful also in the case of spatial growth, to be discussed next,
 and for the evaluation of the electron mobility and diffusion coefficient.
 
+\begin{framed}
 {\bf NOTE: } We repeat one more time that equations \eqref{eq:ebe-2term-f-u1(u)-temp} and
 \eqref{eq:ebe-2term-f-u0(u)-temp-subst} can be translated to the corresponding LoKI-B expressions
 \cite[eq. 7a with 12a substituted, and 7b]{Manual_2_2_0} by replacing $E\rightarrow -E$ (and
 dividing the result by $\gamma$).
 Equation \eqref{eq:ebe-2term-f-u0(u)-temp-subst} does not change because it depends on
 $(E/N)^2$.
+\end{framed}
 
 The field operator is of the form $\dd{H_{E,pt}}/\dd{u}$, with
 \begin{equation}
@@ -680,11 +681,11 @@ The field operator is of the form $\dd{H_{E,pt}}/\dd{u}$, with
 \end{equation}
 Furthermore, following Hagelaar et al., the first term on the left-hand side of
 the equation for $f^0(u)$ is defined to be $-\tilde{R}_{pt}$, where
-$\tilde{R}_{pt}$ called the `growth renormalization term`,
+$\tilde{R}_{pt}$ called the `growth renormalization term'.
 \begin{equation}
 	\tilde{R}_{pt}(u) = -\sqrt{u}f^0_u\MEAN{K_{\mbox{eff}}},
 \end{equation}
-And bringing this to the right-hand side of the equation, that takes the form that is also
+Bringing this to the right-hand side of the equation, that takes the form that is also
 found in \cite[eq. 25]{Hagelaar2005},
 \begin{equation}
 	\DERIV{H_{E,pt}}{u} = \tilde{C}^0(u) + \tilde{R}_{pt}(u).
@@ -927,6 +928,12 @@ to obtain
 		\]
 		which corresponds to the additional contribution to the field term. These terms
 		together correspond to equation (30) of the manual.
+		\begin{framed}
+			On boundary points, only one of the two terms that form the discrete
+			approximation of this derivative is handled. The problem is similar
+			that in the discretization of \SRC{ionSpatialGrowthU} and the diffusion
+			coefficient and mobility of the electrons (see below).
+		\end{framed}
 		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$,
 			the first term of equation (29) of the manual.
 		\item The remaining term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
@@ -1121,13 +1128,13 @@ is also what you find in the code. The evaluation of $\mu_eE$ is not clear to me
 		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
 		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
 		&= +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}
-			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u \nonumber \\
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}f_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u \nonumber \\
 		&\doteq +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}
-			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}\right)f_k\Delta u.
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u.
 \end{align}
 I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
 \[
@@ -1169,14 +1176,14 @@ The reason for introducing the minus sign here is that, as we shall soon see
 will be of the advection-diffusion type,
 \[
 	H_x(u) = -h_x(u)\left(c_x(u) f^0(u) + d_x(u) f^0(u)\right)
-	       = -h_x(u)c_x(u) f^0(u) - h_xd_x(u) f^0(u),
+	       = -h_x(u)d_x(u) f^0(u) - h_xc_x(u) f^0(u),
 \]
-with a {\em positive} diffusion coefficient $h_x(u)d_x(u)$.
+with a {\em positive} diffusion coefficient $h_x(u)c_x(u)$.
 This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
 with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
-NOTE: LoKI-B docs call the convection coefficient $c_x$ and the diffusion
-coefficient $d_x$ --- which is somewhat unfortunate --- also see
-section \ref{sec:dH/du-disc}.
+NOTE: Here we have followed the LoKI-B docs, which call the convection coefficient
+$d_x$ and the diffusion coefficient $c_x$ --- which is somewhat unfortunate ---
+also see section \ref{sec:dH/du-disc}.
 
 \section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
@@ -1510,7 +1517,7 @@ We have just learned that this can be written as
 A small literature interlude ---
 In the manual \cite{Manual_2_2_0}, references to \cite{Allis1956} (Allis, 1956) and to
 \cite{Ferreira2000} (Ferreira, 2000) are provided for the electron-electron operator.
-The `Spizer functions' are not written in the manual, but can indeed be found in
+The `Spitzer functions' are not written in the manual, but can indeed be found in
 \cite[eqns. 59--62]{Ferreira2000}.
 
 In \cite{Ferreira2000}, Ferreira provides references to (again) \cite{Allis1956} and to a previous
@@ -1740,7 +1747,7 @@ In order to write this in a more convenient form we define \cite[eqn. 39a--b]{Ma
 	B_n &= h_{ee}\left(+\frac{I(u_{\mhalf{n}})}{2\Delta u} + \frac{J(u_{\mhalf{n}})}{(\Delta u)^2}\right).
 		\label{eq:ee:B}
 \end{align}
-Then (equation \eqref{eq:ee:Gabove} is obtained by the substitution $n\rightarrow n-1$):
+Then (equation \eqref{eq:ee:Gbelow} is obtained by the substitution $n\rightarrow n-1$):
 \begin{align}
 	H_{ee}(u_{\phalf{n}})\frac{1}{\Delta u}
 		&= A_{n  }f_{n  } - B_{n+1}f_{n+1}, \label{eq:ee:Gabove}
@@ -1818,7 +1825,7 @@ where the matrices $\bmat{a}$ and $\bmat{b}$ have typical elements
 			\phantom{\frac{1}{2}\sqrt{u_j}} + \frac{2}{3}\frac{u_{\mhalf{i}}^{3/2}}{\Delta u} & j \geq i
 		\end{cases}. \label{eq:ee:b-orig}
 \end{align}
-Note that we have changed $n,m\rightarrow i,j$, $j\leq i-1\rightarrow j<i$ and $j>i-1\rightarrow j\geq i$
+Note that we have changed $n,m\rightarrow i,j$ and $j\leq i-1\rightarrow j<i$ and $j>i-1\rightarrow j\geq i$
 compared to the presentation in the manual for reasons of readability.
 
 Three more modifications are made to this scheme, as suggested by Rockwood
@@ -1854,7 +1861,7 @@ Some comments on the MATLAB code and documentation:
   \item The MATLAB code (\SRC{ElectronKinetics.m} line 1991 has
     comment {\em ``because of power conservation, terms on the last row (cellNumber,:)
     and on the first column (:,1) are zero''}. That comment is misleading.
-    this change achieves that the boundary flux is zero instead. Energy (not `power')
+    this change achieves that the {\em boundary flux} is zero. Energy (not `power')
     conservation is ensured by the condition $\bmat{b}=\bmat{a}^T$.
   \item In the manual \cite[text below eq 41c]{Manual_2_2_0}, the skipping
     of the terms is formulated as $A_{-1}=B_{\cal N}=0$ (here adjusted
@@ -2205,7 +2212,7 @@ Theoretical TODO's:
 	$\Delta u\downarrow 0$. Note that the number of cells and,
 	consequently, the matrices, grow when ${\cal N}$ is increased, so how
 	do we test something like $\bmat{b}=\bmat{a}^T$ in such limit? What
-	are the relevent error measures?
+	are the relevant error measures?
     \item The requirement of equilibrium for a Maxwellian distribution function
 	is ensured by setting $a_{ij}:=\sqrt{a_{ij}a_{j-1,i+1}}$.
 	This requirement is discused in appendix B of that paper, starting at
@@ -2607,7 +2614,7 @@ Combining these terms and adding the third yields equation
 Integration of this equation over all energies yields the expected result for the
 ionisation rate coefficient:
 \begin{align}
-	\int\limits_0^\infty\tilde{C}^0_{ion,i}(u)
+	\int\limits_0^\infty\tilde{C}^0_{ion,i}(u)\dd{u}
 	&=\gamma\delta_i\left[
 		4\int\limits_0^\infty(2u+V_{ion,i})\sigma_{ion,i}(2u+V_{ion,i})f^0(2u+V_{ion,i})\dd{u}
 		-
@@ -2650,7 +2657,7 @@ still erroneously claims that Rockwood uses a finite {\em difference} method. Th
 in the CAR implementation has also been fixed in the mean time.  The LoKI-B code and
 manual started to use the $\gamma$ constant.  Let's see what material in this chapter
 is still useful to keep around. Probably parts of the discussion of the power terms
-is still relevent. In version 2.2.0 of the Manual \cite[p. 20]{Manual_2_2_0},
+is still relevant. In version 2.2.0 of the Manual \cite[p. 20]{Manual_2_2_0},
 a derivation of the CAR power term discretization is added (compared to version 1.0.0)
 that is unnecessarily complex compared to the derivation in \ref{sec:power-terms},
 that we discussed before.
