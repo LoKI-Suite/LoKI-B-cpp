@@ -121,9 +121,10 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		$F_v(v,\theta,\phi)v^2\sin\theta\dd{v}\dd{\theta}\dd{\phi}$.
 		We make that clear by adding the subscript $v$.
 	\item The mobility is defined to be the ratio $v_d/E$. This means that
-		the mobility has the same sign as the drift velocity, and it
-		is negative in the case of electrons. In other words: also here
-		we do not `invent' explicit minus signs ourselves.
+		the mobility has the same sign as the drift velocity, and has
+		the same sign as the charge of the species; it is negative for
+		electrons. In other words: also here we do not `invent' explicit
+		minus signs ourselves.
 		Both LoKI-B and BOLSIG+ define $\mu_e=-v_d/E$ instead.
 	\item The Townsend coefficient has been defined as
 		$\alpha=(\dd{n_e}/\dd{z})/n_e$: also here we do not invent
@@ -144,7 +145,7 @@ in the LoKI-B documents, the BOLSIG+ paper and the present document.
 		of spatial growth (eq. 52b). In this document the mean velocity
 		is just called $\MEAN{v_z}$.
 	\item	In BOLSIG+ and in LoKI-B, the energy is expressed in $eV$. BOLSIG+
-		uses the symbol $\epsilon$ for energy, LoKI-B uses $u$. In this
+		uses the symbol $\epsilon$ for energy, LoKI-B uses $u$. In the present
 		text we systematically use $\epsilon$ for an energy in $J$, and
 		$u=\epsilon/e$ for an energy in $eV$.
 	\item In LoKI-B, some additional factors $\gamma$ and $1/\gamma$ appear in
@@ -176,7 +177,7 @@ sections into those found in LoKI-B \cite{Manual_2_2_0} BOLSIG+ \cite{Hagelaar20
 			$F(u)\neq n_ef(u)$, and hope it can be changed in the LoKI-docs
 			and code. In the LoKI-B {\em code}, the name \SRC{eedf} is used
 			for $f^0(u)$, which is confusing for the same reason.
-			\item $\tilde{C}^0(u)\rightarrow \gamma S(e)$.
+			\item $\tilde{C}^0(u)\rightarrow \gamma S(u)$.
 			\item Divide expressions for $D_\epsilon$ and $\mu_\epsilon$ by
 				$\MEAN{u}$.
 		\end{itemize}
@@ -339,10 +340,10 @@ with $n_e$, gives some important density and flux density expressions:
 Finally, let us see how we can integrate terms of the form $u^p\dd{(u^q F^{0,1})}/\dd{u}$
 for $p\neq -1 \wedge p+q-1\geq 0$ over energy space --- we will need this. Partial integration yields
 \begin{align}
-	\int\limits_0^\infty u^p\PDEV{u^q F^{0,1}}{u}\dd{u}
+	\int\limits_0^\infty u^p\DERIV{u^q F^{0,1}}{u}\dd{u}
 	&=
-	 \int\limits_0^\infty \PDEV{u^p(u^qF^{0,1})}{u}\dd{u}
-	-\int\limits_0^\infty u^qF^{0,1}\PDEV{u^p}{u}\dd{u}
+	 \int\limits_0^\infty \DERIV{u^p(u^qF^{0,1})}{u}\dd{u}
+	-\int\limits_0^\infty u^qF^{0,1}\DERIV{u^p}{u}\dd{u}
 	\nonumber \\
 	&=
 	 \left[u^{p+q}F^{0,1}\right]_0^\infty
@@ -1840,7 +1841,7 @@ Three more modifications are made to this scheme, as suggested by Rockwood
 	that $A_{{\cal N}-1}=0$ and $B_0=0$ (\cite[eq. B10]{Rockwood1973});
   \item The substitution $a_{ij} = \sqrt{a^{orig}_{ij}a^{orig}_{j-1,i+1}}$ is made
 	(\cite[eq. B11,B13]{Rockwood1973}). This ensures that the energy
-	source vanishes for a Maxwellian EEDF up to the machine accuracy
+	flux vanishes for a Maxwellian EEDF up to the machine accuracy
 	(eliminating discretization errors).
 \end{itemize}
 These modifications are further discussed in section \ref{sec:Rockwood-mods}.
