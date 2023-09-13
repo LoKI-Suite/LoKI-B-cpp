@@ -82,8 +82,7 @@ namespace loki
  */
 class Grid
 {
-public:
-
+  public:
     /// The type of the vectors that hold the energy values
     using Vector = loki::Vector;
     /// The type of the index of elements of the energy vectors
@@ -92,6 +91,15 @@ public:
     // constructorion and destruction:
 
     Grid(unsigned nCells, double maxEnergy);
+    /** Construct a nonuniform Grid from the parameters "nodeDistribution" 
+     * (Vector) and "maxEnergy" (double). 
+     * "nodeDistribution" contains doubles in the range [0-1] which indicates
+     * the normalized distribution of nodes (cell faces) over the energy 
+     * domain. "maxEnergy" is the maximum energy of the simulation domain.
+     * The physical energy values of the nodes can be calculated by multiplying
+     * the maxEnergy and the nodeDistribution function.
+    */
+    Grid(Vector nodeDistribution, double maxEnergy);
     explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
@@ -106,13 +114,39 @@ public:
 
     // accessors:
 
-    double uMax() const { return m_nodes[nCells()]; }
-    Index nCells() const { return m_nCells; }
-    double du() const { return m_du; }
-    const Vector &getNodes() const { return m_nodes; }
-    const Vector &getCells() const { return m_cells; }
-    double getNode(Index index) const { return m_nodes[index]; }
-    double getCell(Index index) const { return m_cells[index]; }
+    double uMax() const
+    {
+        return m_nodes[nCells()];
+    }
+    Index nCells() const
+    {
+        return m_nCells;
+    }
+    double du() const
+    {
+        return m_du;
+    }
+    const Vector &getNodes() const
+    {
+        return m_nodes;
+    }
+    const Vector &getCells() const
+    {
+        return m_cells;
+    }
+    double getNode(Index index) const
+    {
+        return m_nodes[index];
+    }
+    double getCell(Index index) const
+    {
+        return m_cells[index];
+    }
+
+    bool isUniform() const
+    {
+        return m_isUniform;
+    }
 
     /** Reconfigure the grid, using \a uMax as the new maximum energy.
      *  This function recalculates the energy values in the nodes and cells,
@@ -129,19 +163,23 @@ public:
      */
     class SmartGridParameters
     {
-    public:
-        SmartGridParameters(const SmartGridSetup& smartGrid);
-        SmartGridParameters(const json_type& cnf);
+      public:
+        SmartGridParameters(const SmartGridSetup &smartGrid);
+        SmartGridParameters(const json_type &cnf);
         /// \todo We don't we use a more straighforward type here, like unsigned?
         const uint16_t minEedfDecay;
         const uint16_t maxEedfDecay;
         const double updateFactor;
-    private:
+
+      private:
         void checkConfiguration() const;
     };
-    const SmartGridParameters* smartGrid() const { return m_smartGrid.get(); }
+    const SmartGridParameters *smartGrid() const
+    {
+        return m_smartGrid.get();
+    }
 
-private:
+  private:
     const Index m_nCells;
     // the energy spacing
     double m_du;
@@ -150,6 +188,14 @@ private:
     /// energies at the cell centers
     Vector m_cells;
     std::unique_ptr<const SmartGridParameters> m_smartGrid;
+    /// indicates if the grid is uniform
+    bool m_isUniform;
+    /// Vector of distances between nodes (only used when grid is nonuniform)
+    Vector m_duNodes;
+    /// Vector of distances between cell centers (only used when grid is 
+    /// nonuniform)
+    Vector m_duCells;
+
 };
 
 } // namespace loki

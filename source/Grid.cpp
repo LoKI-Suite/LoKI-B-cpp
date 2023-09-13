@@ -64,7 +64,19 @@ Grid::Grid(unsigned nCells, double maxEnergy)
     : m_nCells(nCells),
       m_du(maxEnergy/m_nCells),
       m_nodes(Vector::LinSpaced(m_nCells + 1, 0, maxEnergy)),
-      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du)
+      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du),  
+      m_isUniform(true)
+{
+}
+
+Grid::Grid(Vector nodeDistribution, double maxEnergy)
+   : m_nCells(nodeDistribution.size()),
+   m_du(0),
+   m_nodes(nodeDistribution*maxEnergy),
+   m_cells(.5*(m_nodes.tail(m_nCells - 1) + m_nodes.head(m_nCells - 1))),
+   m_isUniform(false),
+   m_duNodes(m_nodes.tail(m_nCells - 1) - m_nodes.head(m_nCells - 1)),
+   m_duCells(m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1))
 {
 }
 
