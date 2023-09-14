@@ -2128,7 +2128,20 @@ with
 \section{The Electron-Electron Collision Operator}
 \label{sec:Rockwood1973EE}
 
-For electron-electron collisions, the flux in energy space is given by equation
+Rockwood's discussion of the electron-electron operator is provide in
+\cite[appendix B]{Rockwood1973}. There he acknowledges the works of
+Rosenbluth et al. \cite{Rosenbluth1957} and Dreicer \cite[section V.]{Dreicer1960},
+he then mentions that an alternative flux-divergence statement of the problem has
+been formulated by Megill and Cahn \cite{Megill1964}, in which work the
+operator appears in equations 6--8. Rockwood also mentions that the
+idea to put the operator in this form goes back to a work of L.D. Landau
+\cite{Landau1936}, also see the English translation `The Transport Equation
+in the Case of Coulomb Interactions' of this work in
+\cite[pp. 163--170]{TerHaar1965}\footnote{Landau's paper is a very nice read.
+As an aside, note that it only has a single reference, to a work of D. Gabor, in
+whose work he spotted a mistake.}
+
+In Rockwood's paper, the flux in energy space is given by equation
 \cite[eq. B5]{Rockwood1973} (here referred to as R.B5),
 \begin{equation}
 	J_{ee}
@@ -2187,8 +2200,8 @@ with the definition (equation \eqref{eq:alpha_eV})
 This constant corresponds to Hagelaar's $a$ \cite[eq. 38]{Hagelaar2005} (the LoKI-B form is
 obtained by taking a factor 3 out of the parentheses of that equation). In that paper
 on BOLSIG+ \cite[eq. 32-37]{Hagelaar2005}, also the original Rosenbluth form
-\cite[eq. B1--3]{Rockwood1973} of the equations is presented (these are not in divergence-flux
-form).
+\cite[eq. B1--3]{Rockwood1973}\cite{Rosenbuth1957} of the equations is presented
+(these are not in divergence-flux form).
 
 Finally, note that substitution of this expression for $J_{ee}(u)$ in expression
 \eqref{eq:rockwood:G(J)} gives an expression for $G_{ee}(u)$,
@@ -2202,7 +2215,7 @@ which is the expression that is used in LoKI-B, see equation \eqref{eq:G(u)}.
 
 Theoretical TODO's:
 \begin{itemize}
-    \item Show that $A$ and $B$ in Rockwood (below his B7) correspond to
+    \item Show that $A$ and $B$ in Rockwood (below his B7) indeed correspond to
 	$a_{ij}$ and $b_{ij}$ in LoKI-B. Re-do the derivations, using `our'
 	$f^0(u)$ instead of Rockwood's $n(u)$ (which includes $n_e$ and $\sqrt{\epsilon}$
 	and uses SI units), and 0-based arrays.
@@ -2227,8 +2240,7 @@ Theoretical TODO's:
 	Of course, Rockwood's B13 has the additional factors involving $\epsilon$
 	because the $\sqrt{\epsilon}$ (and $n_e$) are part of the definition of
 	his distribution function $n(\epsilon)$. In LoKI-B we will not have these
-	factors and just have the requirement $a_{j,k}=a_{k-1,j+1}$
-	the distribution function $n_e\sqrt{\epsilon}f(\epsilon)$ instead of $f(u)$.
+	factors and just get the requirement $a_{j,k}=a_{k-1,j+1}$.
 \end{itemize}
 
 Let's see how similar are $a_{ij}$ and $b_{ji}$.
