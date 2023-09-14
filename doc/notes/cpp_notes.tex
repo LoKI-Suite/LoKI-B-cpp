@@ -363,47 +363,52 @@ $ (\gamma/3)\int_0^\infty u\dd{(uF^1)}/\dd{u}
 
 \section{Equations for $F^0_u$ and $F^1_u$}
 
-The equations that govern $F^{0,1}_v$ are given by \cite[eq. 3--6]{Hagelaar2005}.
+The equations that govern $F^{0,1}_v$ are given by \cite[eq. 5--6]{Hagelaar2005}.
 With the notational changes that have been indicated in section \ref{sec:compatibility},
-by taking $E$ outside of the $u$-differentation and after multiplication
-with $\sqrt{u}$ these are
+and by taking $E$ outside of the $u$-differentation these are
 \begin{align}
-	&\sqrt{u}\PDEV{F_v^0}{t}
-	+ \frac{\gamma}{3}u\PDEV{F_v^1}{z}
-	- \frac{\gamma}{3}E\PDEV{u F^1}{u}
-	= \sqrt{u}C^0(u),
+	&\PDEV{F_v^0}{t}
+	+ \frac{\gamma}{3}\sqrt{u}\PDEV{F_v^1}{z}
+	- E\frac{\gamma}{3}\frac{1}{\sqrt{u}}\PDEV{u F_v^1}{u}
+	= C_v^0(u),
 	\label{eq:ebe-2term-hagelaar-F-v0} \\
-	&\sqrt{u}\PDEV{F_v^1}{t}
-	+ \gamma u\PDEV{F_v^0}{z}
-	- E\gamma u\PDEV{F_v^0}{u}
-	= -N\sigma_m(u)\gamma u F_v^1(u).
+	&\PDEV{F_v^1}{t}
+	+ \gamma \sqrt{u}\PDEV{F_v^0}{z}
+	- E\gamma \sqrt{u}\PDEV{F_v^0}{u}
+	= -\nu_m(u) F_v^1(u).
 	\label{eq:ebe-2term-hagelaar-F-v1}
 \end{align}
-Substitution of $F^{0,1}_v(v(u))$ from equation \eqref{eq:F^{0,1}_u(u)} in equations
-\eqref{eq:ebe-2term-hagelaar-F-v0}--\eqref{eq:ebe-2term-hagelaar-F-v1} yields the equations
-for the $u$-representations of the distribution functions,
+where we have defined the momentum transfer frequency $\nu_m(u,z,t)$ as
+\begin{equation}
+	\nu_m(u,z,t) = N\sigma_m(u,z,t)\gamma \sqrt{u},
+	\label{eq:nu_m}
+\end{equation}
+which depends on time and space coordinates via the molar fractions that appear in
+the expression for $\sigma_m(u,z,t)$.
+\begin{framed}
+	State the expression for $\nu_m(u)$ in terms of the composition variables and cross sections here,
+	including references.
+\end{framed}
+
+The equations that describe the {\em energy} representation $F^{0,1}_u(u)$ are not
+given in that paper, but are readily obtained by
+substitution of $F^{0,1}_v(v(u))$ from equation \eqref{eq:F^{0,1}_u(u)} in equations
+\eqref{eq:ebe-2term-hagelaar-F-v0}--\eqref{eq:ebe-2term-hagelaar-F-v1}.
+Multiplication of the result with $2\pi\gamma^3$ yields
 \begin{align}
-	&\sqrt{u}\PDEV{F^0_u}{t}
-	+ \frac{\gamma}{3}u\PDEV{F^1_u}{z}
-	- \frac{\gamma}{3}E\PDEV{u F^1_u}{u}
-	= \tilde{C}^0(u)n_eN,
+	&\PDEV{F^0_u}{t}
+	+ \frac{\gamma}{3}\sqrt{u}\PDEV{F^1_u}{z}
+	- E\frac{\gamma}{3}\frac{1}{\sqrt{u}}\PDEV{u F^1_u}{u}
+	= 2\pi\gamma^3C_v^0(u),
 	\label{eq:ebe-2term-F-u0} \\
-	&\sqrt{u}\PDEV{F^1_u}{t}
-	+ \gamma u\PDEV{F^0_u}{z}
-	- E\gamma u\PDEV{F^0_u}{u}
-	= -N\sigma_m(u)\gamma uF^1_u(u).
+	&\PDEV{F^1_u}{t}
+	+ \gamma \sqrt{u}\PDEV{F^0_u}{z}
+	- E\gamma \sqrt{u}\PDEV{F^0_u}{u}
+	= -\nu_mF^1_u(u).
 	\label{eq:ebe-2term-F-u1}
 \end{align}
-Note that these equations are the same as the original ones, except for the term on the
-right-hand side of the first equation. The new symbol $\tilde{C}^0$ is defined as
-\cite[eq. 14]{Hagelaar2005}
-\begin{equation}
-	\tilde{C}^0=2\pi\gamma^3\sqrt{u}\frac{C_0}{Nn_e}.
-	\label{eq:Ctilde0}
-\end{equation}
-The reason for this new symbol is that it $\tilde{C}^0$ does not depend on $n_e$ or
-$N$, except for the case of electron-electron collisions, that will be discussed in section
-\ref{sec:ee-operator}.
+Note that these equations have the same form as the original ones, except for the
+factor $2\pi\gamma^3$ in front of $C_v^0(u)$.
 
 \begin{framed}
 	{\bf Compatibility note:}
@@ -411,42 +416,60 @@ $N$, except for the case of electron-electron collisions, that will be discussed
 	in the remainder of this chapter, see section \ref{sec:compatibility}.
 \end{framed}
 
-Integrating equation \eqref{eq:ebe-2term-F-u0} over all energies and using equations
-\eqref{eq:F0u-norm} and \eqref{eq:Gamma_e} yields
+\section{The Electron Particle and Energy Balance Equations}
+
+Multiplying equation \eqref{eq:ebe-2term-F-u0} with $\sqrt{u}$, integrating over
+all energies and using equations \eqref{eq:F0u-norm} and \eqref{eq:Gamma_e} yields
 \begin{equation}
-	\PDEV{n_e}{t} + \PDEV{\Gamma_e}{z} = S_e(z,t).
+	\PDEV{n_e}{t} + \PDEV{\Gamma_e}{z} = S_e(z,t),
 	\label{eq:particle-balance}
 \end{equation}
-This equation can be recognized as the particle balance equation for the
-electrons, with the volumetric (net) particle production rate $S_e$ given by
+where
 \begin{equation}
-	S_e(z,t)
-	= n_eN\int\limits_0^\infty\tilde{C}^0(u)\dd{u}.
+	S_e(z,t) = \int\limits_0^\infty 2\pi\gamma^3C_v^0(u)\sqrt{u}\dd{u}.
+\end{equation}
+This equation can be recognized as the particle balance equation for the
+electrons, where $S_e(z,t)$ is the volumetric (net) particle production rate $S_e$.
+
+With the exception of electron-electron collisions, which are relevant only for
+higher degrees of ionization, the source terms that are represented by $C_v^0(u)$
+are due to binary collisions of electrons and the background gas. As a result
+these sources are linear in both $n_e$ and $N$, and it is convenient to
+introduce a new symbol
+$\tilde{C}_u(u)$,
+\begin{equation}
+	\tilde{C}^0(u) = 2\pi\gamma^3\frac{C_u^0(u)\sqrt{u}}{Nn_e},
+	\label{eq:Ctilde0}
+\end{equation}
+This symbol also appears in \cite[eq. 14]{Hagelaar2005}.
+In terms of this new symbol, the electron source can be expressed as
+\begin{equation}
+	S_e(z,t) = n_e\MEAN{\nu_{\mbox{eff}}}
+	\quad\mbox{or}\quad
+	S_e(z,t) = n_eN\MEAN{K_{\mbox{eff}}},
 	\label{eq:S_e}
 \end{equation}
-This expression for $S_e$ will be justified later, in chapter \ref{ch:sources}.
-Because we have argued that the source term is mostly linear in $n_e$ and $N$,
-it makes
-sense to define the net ionization frequency $\MEAN{\nu_{\mbox{eff}}}$ and the
-effective rate coefficient $\MEAN{K_{\mbox{eff}}}$ such that
-\begin{align}
-	S_e(z,t) &= n_e(z,t)\MEAN{\nu_{\mbox{eff}}}(z,t), \label{eq:S_e(nu^eff)} \\
-	S_e(z,t) &= n_e(z,t)N(z,t)\MEAN{K_{\mbox{eff}}}(z,t). \label{eq:S_e(K^eff)}
-\end{align}
+where we have introduced the effective ionization frequency
+$\MEAN{\nu_{\mbox{eff}}}=N\MEAN{K_{\mbox{eff}}}$, and the mean effective rate coefficient
+\begin{equation}
+	\MEAN{K_{\mbox{eff}}}(z,t)
+	= \int\limits_0^\infty\tilde{C}^0(u)\dd{u}.
+	\label{eq:K_eff}
+\end{equation}
 The dependence of $\MEAN{\nu_{\mbox{eff}}}$ and $\MEAN{K_{\mbox{eff}}}$ on the space and time
 coordinates is through the dependence on the distribution function
 $f^0_u(u,z,t)$ and the molar fractions of the target species that are
-involved in ionization or attachment reactions. As announced, details will
-be provided in chapter \ref{ch:sources}.
+involved in ionization or attachment reactions. A detailed discussion of
+the source terms will be provided in chapter \ref{ch:sources}.
 
 Along the same lines, integrating equation \eqref{eq:ebe-2term-F-u0} over all
 energies after multiplication
-with $u$, using equations \eqref{eq:meanu}, \eqref{eq:upduqF/du-int} and
-\eqref{eq:Gamma_u} yields (we have also used $\Gamma_eE = -(q_e\Gamma E/e)$
-to highlight that the parenthesized term is Ohm's law, with the power in
-$\si{eV/m^3/s}$, yuck):
+with $u\sqrt{u}$, using equations \eqref{eq:meanu}, \eqref{eq:upduqF/du-int} and
+\eqref{eq:Gamma_u}, bringing the term involving $E$ to the right-hand side
+and using $\Gamma_eE = -(q_e\Gamma E/e)$ yields
 \begin{equation}
-	\PDEV{n_u}{t} + \PDEV{\Gamma_u}{z} - (q_e\Gamma_eE)/e= S_u(z,t),
+	\PDEV{n_u}{t} + \PDEV{\Gamma_u}{z}
+	= S_u(z,t) + (q_e\Gamma_eE)/e.
 	\label{eq:energy-balance}
 \end{equation}
 This equation can be recognized as the energy balance equation for the
@@ -457,27 +480,34 @@ in collisions given by
 	= n_eN\int\limits_0^\infty u\tilde{C}^0(u)\dd{u}.
 	\label{eq:S_u}
 \end{equation}
+The second term on the right-hand side represents the energy absorption
+from the electric field. Note that $q_e\Gamma_e$ is the current density;
+the division by $e$ is the result of using $\si{eV}$ as energy unit, the
+power is expressed in $\si{eV/m^3/s}$.
+Using $q_e/e=-1$ results in expression \cite[eq. 57]{Hagelaar2005},
+which clobbers this interpretation somewhat.
 
 \section{Equations for $f^0_u$ and $f^1_u$}
 
-Substitution of equation \eqref{eq:F=n_ef} in equations
-\eqref{eq:ebe-2term-F-u0}--\eqref{eq:ebe-2term-F-u1}, using the fact that $n_e$ does not depend on $u$,
-using Leibniz' rule for the differentiation of products and dividing by $n_e$ yields
-equations involving $n_e$ and the {\em normalized} distribution functions,
+Equations for the {\em normalized} distribution functions can be obtained by
+substituting equation \eqref{eq:F=n_ef} in equations \eqref{eq:ebe-2term-F-u0}
+and \eqref{eq:ebe-2term-F-u1}. Using Leibniz' rule for the differentiation of
+products, multiplying the first equation by $\sqrt{u}$, dividing both by $n_e$
+and using definition \eqref{eq:Ctilde0} yields
 \begin{align}
 	&\sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \frac{\gamma}{3}uf^1_u\frac{1}{n_e}\PDEV{n_e}{z}
-	+\sqrt{u}\PDEV{f^0_u}{t}
+	+ \sqrt{u}\PDEV{f^0_u}{t}
 	+ \frac{\gamma}{3}u\PDEV{f^1_u}{z}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	= N\tilde{C}^0,
 	\label{eq:ebe-2term-f-u0} \\
-	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
-	+ \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
-	+\sqrt{u} \PDEV{f^1_u}{t}
-	+ \gamma u \PDEV{f^0_u}{z}
-	- E\gamma u\PDEV{f^0_u}{u}
-	= -N\sigma_m(u)\gamma uf^1_u.
+	&f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
+	+ \gamma \sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{z}
+	+ \PDEV{f^1_u}{t}
+	+ \gamma \sqrt{u}\PDEV{f^0_u}{z}
+	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
+	= -\nu_mf^1_u.
 	\label{eq:ebe-2term-f-u1}
 \end{align}
 So far, no additional assumptions have been made other than those underlying the
@@ -502,22 +532,22 @@ after division by $N$, take the form
 	- \frac{\gamma}{3}\frac{E}{N}\PDEV{u f^1}{u}
 	= \tilde{C}^0,
 	\label{eq:ebe-2term-f-u0-ddt} \\
-	&\sqrt{u}f^1_u\MEAN{K_{eff}}
-	+\frac{\sqrt{u}}{N} \PDEV{f^1_u}{t}
-	- \frac{E}{N}\gamma u\PDEV{f^0_u}{u}
-	= -\sigma_m(u)\gamma uf^1_u.
+	&f^1_u\MEAN{\nu_{eff}}
+	+\PDEV{f^1_u}{t}
+	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
+	= -\nu_m(u)f^1_u.
 	\label{eq:ebe-2term-f-u-ddt1}
 \end{align}
 The second equation can be written as
 \begin{equation}
 	f^1_u(u)
-	+ \frac{1}{N(\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u})}\PDEV{f^1_u}{t}
-	= \frac{E}{N}\frac{\gamma\sqrt{u}}{\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u}}\DERIV{f^0}{u}.
+	+ \frac{1}{\MEAN{\nu_{eff}}+\nu_m(u)}\PDEV{f^1_u}{t}
+	= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{eff}}+\nu_m(u)}\DERIV{f^0}{u}.
 \end{equation}
 Setting $\partial f^1_u(u)/\partial t$ gives us the quasi-steady-state solution of $f^1_u(u)$,
 \begin{equation}
 	f^1_{u,qss}(u,t)
-	= \frac{E}{N}\frac{\gamma\sqrt{u}}{\MEAN{K_{eff}}+\sigma_m(u)\gamma\sqrt{u}}\DERIV{f^0}{u}
+	:= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{eff}}+\nu_m(u)}\DERIV{f^0}{u}
 	= \frac{E(t)}{N}\frac{1}{\Omega_{trans}(u,t)}\PDEV{f^0}{u},
 \end{equation}
 where
@@ -526,7 +556,7 @@ where
 \end{equation}
 Backsubstitution in the full equation for $f^1_u(u)$, that can be written as
 \begin{equation}
-	\PDEV{f^1_u}{t} = -(\MEAN{\nu_m}+\nu_m(u))(f^1_u(u,t)-f^1_{u,qss}(u,t)).
+	\PDEV{f^1_u}{t} = -(\MEAN{\nu_{\mbox{eff}}}+\nu_m(u))(f^1_u(u,t)-f^1_{u,qss}(u,t)).
 \end{equation}
 This equation has a clear interpretation: the time-derivative of $f^1_u$ steers that
 function in the direction of its quasi-steady state solution. For energy $u$, that
@@ -550,7 +580,11 @@ basis for the time-dependent studies presented in \cite{Tejero2021}.
 TODO:
 \begin{itemize}
 	\item Re-order the material in this and the following sections, some
-	things that are used here are introduced only later (or repeated later).
+	things that are used here are introduced only later (or repeated later)
+	after recent changes.
+	\item Review the arguments that are used in this section. Dependencies
+	on $u$, $z$, $t$ are not written consistently (also check the order, do
+	we everywhere use $(u,z,t)$?
 \end{itemize}
 
 
@@ -571,10 +605,10 @@ equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1} reduce to
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	=  N\tilde{C}^0,
 	\label{eq:ebe-2term-f-u0(u)} \\
-	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
-	+ \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
-	- E\gamma u\PDEV{f^0_u}{u}
-	= -N\sigma_m(u)\gamma uf^1_u.
+	&f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
+	+ \gamma \sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{z}
+	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
+	= -\nu_m(u)f^1_u.
 	\label{eq:ebe-2term-f-u1(u)}
 \end{align}
 Integration of the first equation over all energies yields
@@ -613,17 +647,17 @@ and use this expression to eliminate $\nu_t$ from equations
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	=  N\tilde{C}^0,
 	\\
-	&\sqrt{u}f^1_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
-	+ \gamma uf^0_u\alpha_{\mbox{eff}}
-	- E\gamma u\PDEV{f^0_u}{u}
-	= -N\sigma_m(u)\gamma uf^1_u.
+	&f^1_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
+	+ \gamma \sqrt{u}f^0_u\alpha_{\mbox{eff}}
+	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
+	= -\nu_m(u)f^1_u.
 \end{align}
 One could then calculate/tabulate EEDF results as a function of $E/N$ {\em and} $\alpha_{\mbox{eff}}/N$,
 for example. What impact would such more general approach have on fluid models that
 use results of the two-term expansion?
 
 Related question: when `complete` data sets are compiled using a 2-term model,
-is the choice for temporal/spatial usually docuented? Then that should be followed,
+is the choice for temporal/spatial usually docuented? Then that should be respected,
 obviously. Is that actually what people do?
 \end{framed}
 
@@ -635,12 +669,12 @@ only on time, yielding
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	=  N\tilde{C}^0,
 	\nonumber \\
-	&\sqrt{u}f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
-	- E\gamma u\PDEV{f^0_u}{u}
-	= -N\sigma_m(u)\gamma uf^1_u.
+	&f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
+	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
+	= -\nu_m(u)f^1_u.
 	\nonumber
 \end{align}
-For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e(K^eff)}
+For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e}
 tell us that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\mbox{eff}}}$. This allows the second equation
 to be rewritten as
 \begin{align}
@@ -780,12 +814,12 @@ The {\em Spatial Growth} model allows only {\em spatial} variations of $n_e$, yi
 	\label{eq:ebe-2term-f-u0(u)-spat-raw}
 	\\
 	&
-	  \gamma uf^0_u\frac{1}{n_e}\PDEV{n_e}{z}
-	- E\gamma u\PDEV{f^0_u}{u}
-	= -N\sigma_m(u)\gamma uf^1_u.
+	  f^0_u\frac{1}{n_e}\PDEV{n_e}{z}
+	- E\PDEV{f^0_u}{u}
+	= -N\sigma_m(u)f^1_u.
 	\label{eq:ebe-2term-f-u1(u)-spat-raw}
 \end{align}
-For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e(nu^eff)}
+For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e}
 tell us that $\dd{\Gamma_e}/\dd{z}=n_e\MEAN{\nu_{\mbox{eff}}}$. Equation \eqref{eq:Gamma_u}
 gives the expression for the flux, and equation \eqref{eq:meanvz} makes clear that
 $\MEAN{v_z}$ can be taken out of the $\partial/\partial z$, since $f^1(u)$ does not depend
@@ -802,9 +836,9 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equ
 \eqref{eq:ebe-2term-f-u0(u)-spat-raw} and \eqref{eq:ebe-2term-f-u1(u)-spat-raw} yields
 \begin{align}
 	&
-	  \frac{\gamma}{3}uf^1_u\alpha_{\mbox{eff}}
-	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
-	= N\tilde{C}^0.
+	  \frac{\gamma}{3}uf^1_u\frac{\alpha_{\mbox{eff}}}{N}
+	- \frac{\gamma}{3}\frac{E}{N}\PDEV{u f^1}{u}
+	= \tilde{C}^0,
 	\label{eq:ebe-2term-f-u0(u)-spat}
 	\\
 	&
@@ -855,7 +889,7 @@ NOTE: if $\mu_eE\neq 0$ this can be written as
 	\label{eq:sst-alpha-solution-muE!=0}
 \end{equation}
 Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
-and dividing by $N$ gives an expression for $f^0(u)$,
+gives an equation for $f^0(u)$,
 \begin{equation}
 	  \gamma\frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
         - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
@@ -951,7 +985,7 @@ to obtain
 
 			The manual does not explain how to handle the first and last cells,
 			but for those the derivatives can of course be approximated with the
-			asymmetric approximations $(f_1-f_0)/\Delta$ and
+			asymmetric approximations $(f_1-f_0)/\Delta u$ and
 			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
 
 			In the original code, $C_k$ is expressed in terms of \SRC{U0sup} and \SRC{U0inf},
@@ -962,9 +996,8 @@ alphaRedEffNew*U0inf[k-1] == alphaRedEffNew*(-EoN /(2.*grid().du())*D0[k]) (= -C
 alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C_k/(2*du))
 			\end{lstlisting}
 \begin{framed}
-			At the boundary points, the discretization seems wrong. The problem (or
-			my misunderstanding (JvD)) is the same as that in the evaluation of
-			$\mu_eE$, see \ref{sec:muD-eval}.
+			At the boundary points, the discretization seems wrong. The problem
+			is the same as that in the evaluation of $\mu_eE$, see \ref{sec:muD-eval}.
 \end{framed}
 	\end{itemize}
 \item Confusion is caused in the code by the fact that the
@@ -1000,7 +1033,7 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 \item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
 	velocities are equal (but opposite). Then the above definition fails. How
 	can we fix this?
-	For $\MEAN{v_z}=0$ should we adopt $\alpha_{\mbox{eff}}=0$? We
+	In case $\MEAN{v_z}=0$, should we adopt $\alpha_{\mbox{eff}}=0$? We
 	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
 	What if the velocity and frequency are {\em both} zero?
 \item Why should complex roots (if any) be ignored/patched? Physically
@@ -1011,7 +1044,7 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 
 \subsubsection{Energy Balance}
 
-Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $u$ and integration over $u$
+Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $Nu$ and integration over $u$
 yields the energy balance for the spatial growth case. After multiplication with $n_e$
 we get
 \begin{equation}
@@ -1053,7 +1086,7 @@ Substitution of equation \eqref{eq:sst-alpha-solution} yields
 	\frac{P_E}{N} = \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)\frac{1}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
 \end{equation}
 which is equivalent to the result found in the BOLSIG+ manual \cite[p. 18]{BolsigManual2016}
-(item 19.) for the spatial growth case.
+(item 19) for the spatial growth case.
 \begin{framed}
 NOTE/TODO: the expression after substitution of the solution of $\alpha_{\mbox{eff}}$ above is
 only valid for $E\neq 0$. This is based on the last form of
