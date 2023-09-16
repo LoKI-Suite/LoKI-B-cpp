@@ -61,23 +61,36 @@ void Grid::SmartGridParameters::checkConfiguration() const
 }
 
 Grid::Grid(unsigned nCells, double maxEnergy)
-    : m_nCells(nCells),
-      m_du(maxEnergy/m_nCells),
-      m_nodes(Vector::LinSpaced(m_nCells + 1, 0, maxEnergy)),
-      m_cells(Vector::LinSpaced(m_nCells, .5, m_nCells - .5) * m_du),  
-      m_isUniform(true)
+   : Grid(Vector::LinSpaced(nCells + 1, 0.0, 1.0), maxEnergy, true)
 {
 }
 
-Grid::Grid(Vector nodeDistribution, double maxEnergy)
-   : m_nCells(nodeDistribution.size()),
-   m_du(0),
-   m_nodes(nodeDistribution*maxEnergy),
-   m_cells(.5*(m_nodes.tail(m_nCells - 1) + m_nodes.head(m_nCells - 1))),
-   m_isUniform(false),
-   m_duNodes(m_nodes.tail(m_nCells - 1) - m_nodes.head(m_nCells - 1)),
-   m_duCells(m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1))
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy)
+   : Grid(nodeDistribution,maxEnergy,false)
 {
+}
+
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform)
+ : m_nCells(nodeDistribution.size()-1),
+   m_du(isUniform ? maxEnergy/(nodeDistribution.size()-1) : 0.0),
+   m_nodes(nodeDistribution*maxEnergy),
+   m_cells(.5*(m_nodes.tail(m_nodes.size() - 1) + m_nodes.head(m_nodes.size() - 1))),
+   m_isUniform(isUniform),
+   m_duNodes(m_nodes.size()), // note: values are set in the constructor body
+   m_duCells(m_nodes.tail(m_nodes.size() - 1) - m_nodes.head(m_nodes.size() - 1))
+{
+    /* the first node (==face) size is the energy difference between the
+     * grid boundary and the adjacent internal cell.
+     */
+    m_duNodes[0] = m_cells[0] - 0.;
+    m_duNodes[m_nodes.size()-1] = maxEnergy - m_cells[m_cells.size()-1];
+    // for internal nodes, du is the difference between the energies of the adjacent cells.
+    m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
+#if 0
+	std::cout << "nCells = " << m_nCells << std::endl;
+	std::cout << "faces = " << m_nodes << std::endl;
+	std::cout << "cells = " << m_cells << std::endl;
+#endif
 }
 
 Grid::Grid(const EnergyGridSetup &gridSetup)
@@ -107,9 +120,12 @@ Grid::Grid(const json_type &cnf)
 
 void Grid::updateMaxEnergy(double uMax)
 {
-    m_du = uMax / nCells();
-    m_nodes = Vector::LinSpaced(nCells() + 1, 0, uMax);
-    m_cells = Vector::LinSpaced(nCells(), .5, nCells() - .5) * m_du;
+    const double uMaxRatio = uMax / this->uMax();
+    m_du *= uMaxRatio;
+    m_nodes *= uMaxRatio;
+    m_cells *= uMaxRatio;
+    m_duNodes *= uMaxRatio;
+    m_duCells *= uMaxRatio;
 
     updatedMaxEnergy.emit();
 }

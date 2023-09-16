@@ -35,6 +35,7 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/json.h"
 #include <memory>
+#include <stdexcept>
 
 namespace loki
 {
@@ -88,7 +89,7 @@ class Grid
     /// The type of the index of elements of the energy vectors
     using Index = Vector::Index;
 
-    // constructorion and destruction:
+    // construction and destruction:
 
     Grid(unsigned nCells, double maxEnergy);
     /** Construct a nonuniform Grid from the parameters "nodeDistribution" 
@@ -99,7 +100,7 @@ class Grid
      * The physical energy values of the nodes can be calculated by multiplying
      * the maxEnergy and the nodeDistribution function.
     */
-    Grid(Vector nodeDistribution, double maxEnergy);
+    Grid(const Vector& nodeDistribution, double maxEnergy);
     explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
@@ -107,10 +108,11 @@ class Grid
      *  object will be created, see smartGrid().
      */
     explicit Grid(const json_type &cnf);
-    /// The default constructor is used for Grid objects
-    ~Grid() = default;
+    Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform);
     /// Grids canot be copied.
     Grid(const Grid &other) = delete;
+    /// The default destructor is used for Grid objects
+    ~Grid() = default;
 
     // accessors:
 
@@ -124,6 +126,10 @@ class Grid
     }
     double du() const
     {
+        if (!m_isUniform)
+        {
+            throw std::runtime_error("Grid::du() is not available for non-uniform meshes.");
+        }
         return m_du;
     }
     const Vector &getNodes() const
@@ -133,6 +139,20 @@ class Grid
     const Vector &getCells() const
     {
         return m_cells;
+    }
+    /** Vector of 'node widths': the distance between the its adjacent cells.
+     *  For boundary nodes, the distance between the energy at the boundary
+     *  and the adjacent internal cell is used (in the absolute sence, at
+     *  the lower boundary.
+     */
+    const Vector &duNodes() const
+    {
+        return m_duNodes;
+    }
+    /// Vector of cell widths (one for each cell).
+    const Vector &duCells() const
+    {
+        return m_duCells;
     }
     double getNode(Index index) const
     {
@@ -181,7 +201,7 @@ class Grid
 
   private:
     const Index m_nCells;
-    // the energy spacing
+    // the energy spacing (only used when the grid is uniform)
     double m_du;
     /// energies at the nodes (cell boundaries)
     Vector m_nodes;
@@ -190,10 +210,13 @@ class Grid
     std::unique_ptr<const SmartGridParameters> m_smartGrid;
     /// indicates if the grid is uniform
     bool m_isUniform;
-    /// Vector of distances between nodes (only used when grid is nonuniform)
+    /** Vector of 'node widths': the distance between the its adjacent cells.
+     *  For boundary nodes, the distance between the energy at the boundary
+     *  and the adjacent internal cell is used (in the absolute sence, at
+     *  the lower boundary.
+     */
     Vector m_duNodes;
-    /// Vector of distances between cell centers (only used when grid is 
-    /// nonuniform)
+    /// Vector of cell widths (one for each cell).
     Vector m_duCells;
 
 };

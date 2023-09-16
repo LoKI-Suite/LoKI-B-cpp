@@ -39,6 +39,9 @@ target_link_libraries(test_ee_relaxation PRIVATE loki-b)
 add_executable(test_events test_events.cpp)
 target_link_libraries(test_events PRIVATE loki-b)
 
+add_executable(test_grid test_grid.cpp)
+target_link_libraries(test_grid PRIVATE loki-b)
+
 add_executable(test_lut test_lut.cpp)
 target_link_libraries(test_lut PRIVATE loki-b)
 
@@ -58,6 +61,7 @@ target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
 target_add_test(test_events)
+target_add_test(test_grid)
 target_add_test(test_lut)
 target_add_test(test_parser)
 target_add_test(test_reaction_format)
