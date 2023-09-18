@@ -29,6 +29,11 @@ void CAROperator::evaluate(const Grid& grid)
 
 void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("CAROperator does not support nonuniform grids.");
+    }
+
     // update g
     evaluate(grid);
 
@@ -83,6 +88,11 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("ElasticOperator does not support nonuniform grids.");
+    }
+    
     // update g
     evaluate(grid,elasticCrossSection);
 
@@ -138,6 +148,11 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("FieldOperator does not support nonuniform grids.");
+    }
+    
     // update g
     evaluate(grid,totalCS,EoN,WoN);
     const double sqStep = grid.du() * grid.du();
@@ -167,11 +182,21 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
 InelasticOperator::InelasticOperator(const Grid& grid)
 : hasSuperelastics(false)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
+    }
+    
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
+    }
+    
     const Grid::Index cellNumber = grid.nCells();
 
     inelasticMatrix.setZero();
@@ -268,6 +293,11 @@ void ElectronElectronOperator::clear()
 
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("ElectronElectronOperator does not support nonuniform grids.");
+    }
+    
     /* Note that not all elements get a value below, the others must be set to
      * zero. We achieve that by clearing the entire matrix first.
      */
@@ -344,6 +374,11 @@ void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eed
 
 void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("ElectronElectronOperator does not support nonuniform grids.");
+    }
+    
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         M(k,k) += - (m_A[k] + m_B[k]);
@@ -365,6 +400,11 @@ IonizationOperator::IonizationOperator(IonizationOperatorType type)
 
 void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("IonizationOperator does not support nonuniform grids.");
+    }
+    
     bool hasValidCollisions = false;
 
     ionConservativeMatrix.setZero();
@@ -523,6 +563,11 @@ AttachmentOperator::AttachmentOperator()
 
 void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("AttachmentOperator does not support nonuniform grids.");
+    }
+    
     attachmentMatrix.setZero();
     attachmentConservativeMatrix.setZero();
 
