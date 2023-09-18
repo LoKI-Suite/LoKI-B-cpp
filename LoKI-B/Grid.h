@@ -168,6 +168,16 @@ class Grid
         return m_isUniform;
     }
 
+    double duNode(Index index) const
+    {
+        return m_duNodes[index];
+    }
+
+    double duCell(Index index) const
+    {
+        return m_duCells[index];
+    }
+
     /** Reconfigure the grid, using \a uMax as the new maximum energy.
      *  This function recalculates the energy values in the nodes and cells,
      *  then fires the event updatedMaxEnergy.
