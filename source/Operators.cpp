@@ -98,17 +98,46 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 
     const double c_el = Constant::kBeV * Tg;
 
-    const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
-    const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    
+    if (grid.isUniform())
     {
-        mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
+        const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
+        const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
 
-        if (k > 0)
-            mat.coeffRef(k, k - 1) = g[k] * factor2;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
 
-        if (k < grid.nCells() - 1)
-            mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
+            if (k > 0)
+                mat.coeffRef(k, k - 1) = g[k] * factor2;
+
+            if (k < grid.nCells() - 1)
+                mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
+        }
+    } else
+    {   
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = 0;
+
+            if (k > 0)
+            {
+                const double Amin = (-c_el * grid.duCell(k) / grid.duNode(k) / 2 + 1/grid.duNode(k)) / grid.duCell(k);
+                const double Bmin = (c_el * grid.duCell(k-1) / grid.duNode(k) / 2 + 1/grid.duNode(k)) / grid.duCell(k);
+                
+                mat.coeffRef(k, k - 1) = g[k] * Amin;
+                mat.coeffRef(k, k) += -g[k] * Bmin;
+            }
+
+            if (k < grid.nCells() - 1)
+            {
+                const double Aplus = (-c_el * grid.duCell(k+1) / grid.duNode(k+1) / 2 + 1/grid.duNode(k+1)) / grid.duCell(k);
+                const double Bplus = (c_el * grid.duCell(k) / grid.duNode(k+1) / 2 + 1/grid.duNode(k+1)) / grid.duCell(k);
+
+                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus;
+                mat.coeffRef(k, k) += -g[k + 1] * Aplus;
+            }
+        }
     }
 }
 
