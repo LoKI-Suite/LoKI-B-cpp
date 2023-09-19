@@ -73,7 +73,7 @@ public:
      *  values. At least two table points must be specified.
      *
      *  If the vectors have different lengths, the length is smaller than two
-     *  or the values of \a x are not in ascending order, a std:::runtime_error
+     *  or the values of \a x are not in ascending order, a std::runtime_error
      *  is thrown.
      */
     LookupTable(const Vector& x, const Vector& y);

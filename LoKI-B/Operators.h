@@ -8,15 +8,15 @@
 
 namespace loki {
 
-    /** When comparing this with Tejero2019, realize that in that paper,
+    /** When comparing this with \cite Tejero2019, realize that in that paper,
      * equation 6c, the following symbols are used for a gas k:
      *
      * B_k: rotationalConstant
      * Q_{k,au}: quadruple moment in (atomic) units e*a_0^2. Here e is
      *   the elementary charge and a_0 the Bohr radius. (NOTE that the
      *   variable electricQuadrupoleMoment in the code is in SI units Cm^2.)
-     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see \cite Tejero below
-     * equation 6d, \cite Ridenti below equation 8b or Gerjuoy and Stein,
+     * sigma_{0,k} = (8./15)*pi*Q_{k,au}^2*a_0^2, see \cite Tejero2019 below
+     * equation 6d, \cite Ridenti2015 below equation 8b or Gerjuoy and Stein,
      * equation 20.
      *
      * For mixtures, the terms B_k*sigma_k in the expression for g must be
