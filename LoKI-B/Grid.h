@@ -23,8 +23,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   2. May 2019
+ *  \author Daan Boer, Jan van Dijk and Jop Hendrikx (C++ version)
+ *  \date   2. May 2019 (initial version)
  */
 
 #ifndef LOKI_CPP_GRID_H
@@ -35,39 +35,74 @@
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/json.h"
 #include <memory>
+#include <stdexcept>
 
 namespace loki
 {
 
-/** The (energy) Grid spans an energy interval [0,u_max]. This region is
- *  divided into Nc cells of size du, where du = u_max/Nc. The position
- *  (energy) u_i of cell i is the energy at its centre and is given by
- *  (i+0.5)*du, where i is in the interval [0,Nc-1]. The cells are bounded by
- *  Nc+1 nodes at locations u_i^node = i*du, where i is in the interval [0,Nc].
+/** \brief The (energy) Grid spans an energy interval [0,u_max].
  *
- *  The grid can be viewed schematically as
+ *  This region is divided into Nc cells that are bounded by Nf=Nc+1 faces at
+ *  energies uFaces_f. The grid can be viewed schematically as
+ *
  *  \verbatim
-        | x | x | ... | x | \endverbatim
+        0   1     2     Nf-2    Nf-1
+        | x |  x  | ...   |   x   |
+          0    1            Nc-1 \endverbatim
  *
- *  where the | indicate nodes and the x cells.
+ *  Here the | indicate faces and the x cells. The indices above the face
+ *  locations are the indices f of the faces, 0<=f<Nf, the indices below
+ *  below the cell locations represent those of the cells, 0<=c<Nc.
  *
- *  The Grid class stores the energies in the nodes and cells in vectors.
+ *  From the picture it is clear that cell c is bounded by the faces at indices
+ *  c and c+1. The energy uCells[c] of this cell is taken to be that in in the
+ *  middle of the cell, uCell[c] := (uFaces[c] + uFaces[c+1])/2.
+ *
+ *  In general, the grid is not uniform. This means that the width of cell c,
+ *  which is given by duCell[c] = uFaces[c+1]-uFaces[c], depends on c.
+ *
+ *  The 'width' duFaces[f] of an internal interface, 1<=f<Nf-1, is defined as
+ *  the energy distance between the adjacent cells. For boundary faces, it is
+ *  defined as the distance from the boundary to the adjacent cell). We then
+ *  have: \verbatim
+    f=0:       duFaces[f] = uCells[f]
+    1<=f<Nf-1: duFaces[f] = uCells[f] - uCells[f-1]
+    f=Nf-1:    duFaces[f] = u_max - uCells[f] \endverbatim
+ *
+ *  In the special case of a uniform energy grid, duCells[c] = u_Max/Nc := dU,
+ *  and duFaces[f] = dU for internal faces, dU/2 for boundary faces.
+ *
+ *  A grid object can be constructed in various ways. A constructor overload
+ *  that accepts arguments nCells and u_max will set up a uniform grid with the
+ *  given number of cells and energy range [0,u_max]. Another overload
+ *  creates a grid from a collection of sorted normalized node positions,
+ *  which must span the range [0,1], and u_max. This will in general result
+ *  in a non-uniform mesh. Other constructor overloads create a grid object
+ *  from the parameters that are specified in a json_type object, or from
+ *  a traditional LoKI-B EnergyGridSetup object.
+ *
+ *  The Grid class stores the energies of the faces and cells in vectors.
  *  Constant references to these vectors can be retrieved with the members
- *  getNodes() and getCells(), respectively. In addition, members getNode
- *  and getCell allow the retrievel of the energy of a particlar node or
- *  cell for a given index. Members nCells() and uMax() return the number
- *  of cells and the energy of the last node.
+ *  getNodes() and getCells(), respectively. In addition, overloads of members
+ *  getNode and getCell that return energy for a face or cell at a given index
+ *  are available. Similarly, members duNodes and duCells give access to
+ *  the widths of the faces and cells. Members nCells() and uMax() return the
+ *  number of cells and the energy of the last node. Member isUniform()
+ *  returns a boolean that can be inspected to see whether the grid is uniform:
+ *  this may allow some grid-optimizations to be optimized.
  *
- *  Whereas the number of cells is fixed at construction time, the upper
- *  energy boundary can be modified later on by passing a new value in
- *  a call to the member function updateMaxEnergy. This functionality
- *  is used to implement the 'smart grid' functionality, in which the
- *  grid is adjusted to achieve a minimal or maximal dynamic range of the
- *  EEDF. The smart grid functionality is configured at construction time
- *  when a smartGrid section is present in the grid configuration. Access
- *  to the smart grid configuration is provided by the member function
- *  smartGrid(), which returns a pointer to the SmartGridParameters, or
- *  nullptr if no smart grid has been configured.
+ *  Whereas the number of cells and the relative distribution of the face
+ *  energies are fixed at construction time, the upper energy boundary can be
+ *  modified later on by passing the new value as an argument to member function
+ *  updateMaxEnergy.
+ *
+ *  Finally, a grid object manages the parameters that are used by the 'Smart
+ *  Grid' functionality. These can be obtained with the member function
+ *  smartGrid(), which returns a pointer to an object of the nested class type
+ *  SmartGridParameters, or a nullptr when no smart grid support was configured.
+ *  The smart grid functionality is configured at construction time when a
+ *  smartGrid section is present in the grid configuration (of type json_type
+ *  or EnergyGridSetup). See the SmartGridParameters documentation for details.
  *
  *  When the grid is changed during the simulation, various actions may
  *  need to be undertaken. This can be achieved by registering listeners to
@@ -77,21 +112,30 @@ namespace loki
  *  \todo investigate the usage of the word node for a
  *        cell boundary, that sounds odd.
  *
- *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   2. May 2019
+ *  \author Daan Boer, Jan van Dijk and Jop Hendrikx (C++ version)
+ *  \date   2. May 2019 (initial version)
  */
 class Grid
 {
-public:
+  public:
 
     /// The type of the vectors that hold the energy values
     using Vector = loki::Vector;
     /// The type of the index of elements of the energy vectors
     using Index = Vector::Index;
 
-    // constructorion and destruction:
+    // construction and destruction:
 
     Grid(unsigned nCells, double maxEnergy);
+    /** Construct a nonuniform Grid from the parameters "nodeDistribution"
+     * (Vector) and "maxEnergy" (double).
+     * "nodeDistribution" contains doubles in the range [0-1] which indicates
+     * the normalized distribution of cell faces (nodes) over the energy
+     * domain. "maxEnergy" is the maximum energy of the simulation domain.
+     * The physical energy values of the nodes can be calculated by multiplying
+     * the maxEnergy and the nodeDistribution function.
+    */
+    Grid(const Vector& nodeDistribution, double maxEnergy);
     explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
@@ -99,20 +143,74 @@ public:
      *  object will be created, see smartGrid().
      */
     explicit Grid(const json_type &cnf);
-    /// The default constructor is used for Grid objects
-    ~Grid() = default;
+    Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform);
     /// Grids canot be copied.
     Grid(const Grid &other) = delete;
+    /// The default destructor is used for Grid objects
+    ~Grid() = default;
 
     // accessors:
 
-    double uMax() const { return m_nodes[nCells()]; }
-    Index nCells() const { return m_nCells; }
-    double du() const { return m_du; }
-    const Vector &getNodes() const { return m_nodes; }
-    const Vector &getCells() const { return m_cells; }
-    double getNode(Index index) const { return m_nodes[index]; }
-    double getCell(Index index) const { return m_cells[index]; }
+    double uMax() const
+    {
+        return m_nodes[nCells()];
+    }
+    Index nCells() const
+    {
+        return m_nCells;
+    }
+    double du() const
+    {
+        if (!m_isUniform)
+        {
+            throw std::runtime_error("Grid::du() is not available for non-uniform meshes.");
+        }
+        return m_du;
+    }
+    const Vector &getNodes() const
+    {
+        return m_nodes;
+    }
+    const Vector &getCells() const
+    {
+        return m_cells;
+    }
+    /** Vector of 'face widths': the distances between a face' adjacent cells.
+     *  For boundary faces, the distance between the energy at the boundary
+     *  and that of the adjacent internal cell is used.
+     */
+    const Vector &duNodes() const
+    {
+        return m_duNodes;
+    }
+    /// Vector of cell widths (one for each cell).
+    const Vector &duCells() const
+    {
+        return m_duCells;
+    }
+    double getNode(Index index) const
+    {
+        return m_nodes[index];
+    }
+    double getCell(Index index) const
+    {
+        return m_cells[index];
+    }
+
+    bool isUniform() const
+    {
+        return m_isUniform;
+    }
+
+    double duNode(Index index) const
+    {
+        return m_duNodes[index];
+    }
+
+    double duCell(Index index) const
+    {
+        return m_duCells[index];
+    }
 
     /** Reconfigure the grid, using \a uMax as the new maximum energy.
      *  This function recalculates the energy values in the nodes and cells,
@@ -125,31 +223,47 @@ public:
      */
     mutable Event<> updatedMaxEnergy;
 
-    /** Smart grid parameters.
+    /** A SmartGridParameters object is used to implement the 'smart grid'
+     *  functionality. This means that the u_max of the  grid is adjusted to
+     *  achieve aan EEDF with a dynamic range within a user-specified interval.
+     *  The smart grid functionality is configured at construction time
+     *  when a smartGrid section is present in the grid configuration.
      */
     class SmartGridParameters
     {
-    public:
+      public:
         SmartGridParameters(const SmartGridSetup& smartGrid);
         SmartGridParameters(const json_type& cnf);
         /// \todo We don't we use a more straighforward type here, like unsigned?
         const uint16_t minEedfDecay;
         const uint16_t maxEedfDecay;
         const double updateFactor;
-    private:
+      private:
         void checkConfiguration() const;
     };
-    const SmartGridParameters* smartGrid() const { return m_smartGrid.get(); }
+    const SmartGridParameters* smartGrid() const
+    {
+        return m_smartGrid.get();
+    }
 
-private:
+  private:
     const Index m_nCells;
-    // the energy spacing
+    /// the energy spacing (only used for a uniform grid)
     double m_du;
-    /// energies at the nodes (cell boundaries)
+    /// energies at the faces (nodes)
     Vector m_nodes;
     /// energies at the cell centers
     Vector m_cells;
     std::unique_ptr<const SmartGridParameters> m_smartGrid;
+    /// indicates if the grid is uniform
+    bool m_isUniform;
+    /** Vector of 'face widths': the distances between a face' adjacent cells.
+     *  For boundary faces, the distance between the energy at the boundary
+     *  and that of the adjacent internal cell is used.
+     */
+    Vector m_duNodes;
+    /// Vector of cell widths (one for each cell).
+    Vector m_duCells;
 };
 
 } // namespace loki
