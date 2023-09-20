@@ -92,7 +92,6 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
     evaluate(grid,elasticCrossSection);
 
     const double c_el = Constant::kBeV * Tg;
-
     
     if (grid.isUniform())
     {
@@ -121,7 +120,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
                 const double Bmin = (c_el * grid.duCell(k-1) / grid.duNode(k) / 2 + 1/grid.duNode(k)) / grid.duCell(k);
                 
                 mat.coeffRef(k, k - 1) = g[k] * Amin;
-                mat.coeffRef(k, k) += -g[k] * Bmin;
+                mat.coeffRef(k, k) += g[k] * Bmin;
             }
 
             if (k < grid.nCells() - 1)
@@ -130,7 +129,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
                 const double Bplus = (c_el * grid.duCell(k) / grid.duNode(k+1) / 2 + 1/grid.duNode(k+1)) / grid.duCell(k);
 
                 mat.coeffRef(k, k + 1) = g[k + 1] * Bplus;
-                mat.coeffRef(k, k) += -g[k + 1] * Aplus;
+                mat.coeffRef(k, k) += g[k + 1] * Aplus;
             }
         }
     }
