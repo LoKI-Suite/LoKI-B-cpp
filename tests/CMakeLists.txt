@@ -57,6 +57,9 @@ target_link_libraries(test_statebase PRIVATE loki-b)
 add_executable(test_trans_coefs test_trans_coefs.cpp)
 target_link_libraries(test_trans_coefs PRIVATE loki-b)
 
+add_executable(test_nonuniform_elastic test_nonuniform_elastic.cpp)
+target_link_libraries(test_nonuniform_elastic PRIVATE loki-b)
+
 target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
@@ -67,6 +70,7 @@ target_add_test(test_parser)
 target_add_test(test_reaction_format)
 target_add_test(test_statebase)
 target_add_test(test_trans_coefs)
+target_add_test(test_nonuniform_elastic)
 
 if (LOKIB_COVERAGE)
   setup_target_for_coverage_gcovr_xml(
