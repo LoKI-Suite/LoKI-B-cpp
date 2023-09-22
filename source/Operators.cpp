@@ -115,21 +115,21 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
             mat.coeffRef(k, k) = 0;
 
             if (k > 0)
-            {
-                const double Amin = (-c_el * grid.duCell(k) / grid.duNode(k) / 2 + 1/grid.duNode(k)) / grid.duCell(k);
-                const double Bmin = (c_el * grid.duCell(k-1) / grid.duNode(k) / 2 + 1/grid.duNode(k)) / grid.duCell(k);
+            {   
+                const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
+                const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
                 
-                mat.coeffRef(k, k - 1) = g[k] * Amin;
-                mat.coeffRef(k, k) += g[k] * Bmin;
+                mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
-
+            
             if (k < grid.nCells() - 1)
             {
-                const double Aplus = (-c_el * grid.duCell(k+1) / grid.duNode(k+1) / 2 + 1/grid.duNode(k+1)) / grid.duCell(k);
-                const double Bplus = (c_el * grid.duCell(k) / grid.duNode(k+1) / 2 + 1/grid.duNode(k+1)) / grid.duCell(k);
+                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
+                const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
 
-                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus;
-                mat.coeffRef(k, k) += g[k + 1] * Aplus;
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
             }
         }
     }
@@ -175,7 +175,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     {
         throw std::runtime_error("FieldOperator does not support nonuniform grids.");
     }
-    
+
     // update g
     evaluate(grid,totalCS,EoN,WoN);
     const double sqStep = grid.du() * grid.du();
