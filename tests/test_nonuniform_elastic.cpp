@@ -2,12 +2,13 @@
  *
  *  Unit tests for nonuniform elastic operator
  *
- *  \author Jan van Dijk
+ *  \author Jop Hendrikx
  *  \date   September 2023
  */
 
 #include "LoKI-B/Grid.h"
 #include "source/Operators.cpp"
+#include "LoKI-B/Constant.h"
 
 #include "tests/TestUtilities.h"
 
@@ -15,18 +16,22 @@ int main()
 {
     using namespace loki;
 
-    Grid grid1(5,5);
-    grid1.updateMaxEnergy(10);
+    const unsigned nCells = 5;
+    const double uMax = 10; // eV
+    const double T = 300;
+    Vector elasticCrossSection = Vector::Ones(nCells+1);
 
-    Grid::Vector ls(6); ls << 0.0,0.2,0.4,0.6,0.8,1.0;
-    Grid grid2(ls,10,false); 
+    Grid::Vector ls(nCells+1); 
+    ls << Vector::LinSpaced(nCells + 1, 0.0, 1.0);
+    Grid grid1(ls,uMax,false); 
+    Grid grid2(nCells, uMax);
 
-    Vector elasticCrossSection = Vector::Ones(6);
     ElasticOperator elasticOperator;
-    SparseMatrix M1(5,5);
-    SparseMatrix M2(5,5);
-    elasticOperator.evaluate(grid1, elasticCrossSection, 300, M1);
-    elasticOperator.evaluate(grid2, elasticCrossSection, 300, M2);
+    SparseMatrix M1(nCells,nCells);
+    SparseMatrix M2(nCells,nCells);
+    
+    elasticOperator.evaluate(grid1, elasticCrossSection, T, M1);
+    elasticOperator.evaluate(grid2, elasticCrossSection, T, M2);
     test_expr(M1.isApprox(M2));
 
     test_report;
