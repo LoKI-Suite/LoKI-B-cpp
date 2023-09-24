@@ -88,6 +88,11 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat)
 {
+    if (!grid.isUniform())
+    {
+        throw std::runtime_error("ElasticOperator does not support nonuniform grids.");
+    }
+    
     // update g
     evaluate(grid,elasticCrossSection);
 
@@ -175,7 +180,6 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     {
         throw std::runtime_error("FieldOperator does not support nonuniform grids.");
     }
-
     // update g
     evaluate(grid,totalCS,EoN,WoN);
     const double sqStep = grid.du() * grid.du();
