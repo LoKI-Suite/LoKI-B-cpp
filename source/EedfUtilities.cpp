@@ -12,7 +12,13 @@ double getMeanEnergy(const Vector& edf, const Grid& grid)
 
 void normalizeEDF(Vector& edf, const Grid& grid)
 {
-    edf /= edf.dot(grid.getCells().cwiseSqrt() * grid.du());
+    if (grid.isUniform())
+    {
+        edf /= edf.dot(grid.getCells().cwiseSqrt() * grid.du());
+    } else
+    {
+        edf /= edf.dot(grid.getCells().cwiseSqrt().cwiseProduct(grid.duCells())); 
+    }
 }
 
 void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV)
