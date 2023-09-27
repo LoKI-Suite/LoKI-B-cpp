@@ -172,10 +172,6 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("FieldOperator does not support nonuniform grids.");
-    }
     // update g
     evaluate(grid,totalCS,EoN,WoN);
 
