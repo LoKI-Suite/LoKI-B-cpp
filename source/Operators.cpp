@@ -197,20 +197,20 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
             if (k > 0)
             {
-                const double Amin = 1/grid.duNode(k) / grid.duCell(k);
-                const double Bmin = 1/grid.duNode(k) / grid.duCell(k);
+                const double Amin = 1/grid.duNode(k);
+                const double Bmin = 1/grid.duNode(k);
                 
-                mat.coeffRef(k, k - 1) = g[k] * Amin;
-                mat.coeffRef(k, k) += -g[k] * Bmin;
+                mat.coeffRef(k, k - 1) = g[k] * Amin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Bmin / grid.duCell(k);
             }
 
             if (k < grid.nCells() - 1)
             {
-                const double Aplus = 1/grid.duNode(k+1) / grid.duCell(k);
-                const double Bplus = 1/grid.duNode(k+1) / grid.duCell(k);
+                const double Aplus = 1/grid.duNode(k+1);
+                const double Bplus = 1/grid.duNode(k+1);
 
-                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus;
-                mat.coeffRef(k, k) += -g[k + 1] * Aplus;
+                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Aplus / grid.duCell(k);
             }
         }
     }
