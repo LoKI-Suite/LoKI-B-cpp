@@ -1,0 +1,63 @@
+/** \file
+ *
+ *  Unit tests for nonuniform field operator
+ *
+ *  \author Jop Hendrikx
+ *  \date   September 2023
+ */
+
+#include "LoKI-B/Grid.h"
+#include "source/Operators.cpp"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/Gnuplot.h"
+#include "LoKI-B/EedfUtilities.h"
+
+#include "tests/TestUtilities.h"
+
+int main()
+{
+    using namespace loki;
+
+    const unsigned nCells = 100;
+    const double uMax = 2; // eV
+    const double eon = 5;
+    const double won = 1;
+
+    Vector fieldCrossSection = Vector::Ones(nCells+1);
+    Vector elasticCrossSection = Vector::Ones(nCells+1);
+
+    Grid::Vector ls(nCells+1); 
+    ls << Vector::LinSpaced(nCells + 1, 0.0, 1.0);
+    Grid grid1(ls,uMax,false); 
+    Grid grid2(nCells, uMax);
+
+    FieldOperator fieldOperator1(grid1);
+    FieldOperator fieldOperator2(grid2);
+    SparseMatrix M1(nCells,nCells);
+    SparseMatrix M2(nCells,nCells);
+    
+    fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, M1);
+    fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, M2);
+    test_expr(M1.isApprox(M2));
+
+    Vector eedf1 = Vector::Zero(nCells);
+    eedf1[0] = 1.;
+
+    Vector eedf2 = Vector::Zero(nCells);
+    eedf2[0] = 1.; 
+
+    Matrix field1 = M1.toDense();
+    Matrix field2 = M2.toDense();
+
+    field1.row(0) = grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells());
+    field2.row(0) = grid2.getCells().cwiseSqrt()*grid2.du();
+ 
+    LinAlg::hessenberg(field1.data(), eedf1.data(), grid1.nCells());
+    const double analytical = 3/2 * std::pow(uMax, -3/2);
+    test_expr( (abs(eedf1[0]-analytical) / analytical < 0.1) );
+
+    // writeGnuplot(std::cout, "Eedf1", "Energy (eV)", "Eedf (eV^-3/2)", grid1.getCells(), eedf1);
+
+    test_report;
+    return nerrors;
+}
