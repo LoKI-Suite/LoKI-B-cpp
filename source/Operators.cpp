@@ -29,27 +29,50 @@ void CAROperator::evaluate(const Grid& grid)
 
 void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("CAROperator does not support nonuniform grids.");
-    }
-
     // update g
     evaluate(grid);
-
     const double c_CAR = Constant::kBeV * Tg;
-    const double factor1 = (c_CAR / grid.du() + 0.5) / grid.du();
-    const double factor2 = (c_CAR / grid.du() - 0.5) / grid.du();
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+
+    if (grid.isUniform())
     {
-        mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
+        const double factor1 = (c_CAR / grid.du() + 0.5) / grid.du();
+        const double factor2 = (c_CAR / grid.du() - 0.5) / grid.du();
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
 
-        if (k > 0)
-            mat.coeffRef(k, k - 1) = g[k] * factor2;
+            if (k > 0)
+                mat.coeffRef(k, k - 1) = g[k] * factor2;
 
-        if (k < grid.nCells() - 1)
-            mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
-    }
+            if (k < grid.nCells() - 1)
+                mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
+        }
+
+    } else
+    {   
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = 0;
+
+            if (k > 0)
+            {   
+                const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_CAR/grid.duNode(k);
+                const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_CAR/grid.duNode(k);
+                
+                mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
+            }
+            
+            if (k < grid.nCells() - 1)
+            {
+                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_CAR/grid.duNode(k+1);
+                const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_CAR/grid.duNode(k+1);
+
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
+            }
+        }
+      
 }
 
 void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const
