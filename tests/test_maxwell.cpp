@@ -11,6 +11,8 @@
 #include "source/LinearAlgebra.cpp"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Gnuplot.h"
+#include "LoKI-B/EedfUtilities.h"
+
 #include <cmath>
 
 #include "tests/TestUtilities.h"
@@ -54,12 +56,8 @@ int main()
     test_expr(eedf1.isApprox(eedf2));
 
     // Analytical solution
-    Vector eedfMaxwell = Vector::Zero(nCells);
     double kT = Constant::kBeV*T;
-    for (Grid::Index i = 0; i < grid1.nCells(); ++i)
-    {
-        eedfMaxwell[i] = 2*std::sqrt(1/ Constant::pi)*std::pow(1 / Constant::kBeV / T, 1.5)*std::exp(-1*grid1.getCell(i)/ Constant::kBeV / T);
-    }
+    Vector eedfMaxwell = makePrescribedEDF(grid,1,kT);
 
     // Calculate relative error
     Vector relativeError = (eedf1 - eedfMaxwell).cwiseAbs().cwiseQuotient(eedfMaxwell.cwiseAbs());
