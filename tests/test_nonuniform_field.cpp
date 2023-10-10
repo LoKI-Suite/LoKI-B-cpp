@@ -26,9 +26,8 @@ int main()
     Vector fieldCrossSection = Vector::Ones(nCells+1);
     Vector elasticCrossSection = Vector::Ones(nCells+1);
 
-    Grid::Vector ls(nCells+1); 
-    ls << Vector::LinSpaced(nCells + 1, 0.0, 1.0);
-    Grid grid1(ls,uMax,false); 
+    auto nodeDistribution = Grid::Vector::LinSpaced(nCells + 1, 0.0, 1.0);
+    Grid grid1(nodeDistribution,uMax,false); 
     Grid grid2(nCells, uMax);
 
     FieldOperator fieldOperator1(grid1);
@@ -53,10 +52,10 @@ int main()
     field2.row(0) = grid2.getCells().cwiseSqrt()*grid2.du();
  
     LinAlg::hessenberg(field1.data(), eedf1.data(), grid1.nCells());
+    LinAlg::hessenberg(field2.data(), eedf2.data(), grid2.nCells());
+    test_expr( eedf1.isApprox(eedf2));
     const double analytical = 3/2 * std::pow(uMax, -3/2);
-    test_expr( (abs(eedf1[0]-analytical) / analytical < 0.1) );
-
-    // writeGnuplot(std::cout, "Eedf1", "Energy (eV)", "Eedf (eV^-3/2)", grid1.getCells(), eedf1);
+    test_expr( (eedf1[1]-analytical) / analytical < 0.1);
 
     test_report;
     return nerrors;

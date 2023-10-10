@@ -17,28 +17,16 @@
 
 #include "tests/TestUtilities.h"
 
-void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf, int uMax, double T, double EoN, double WoN)
-{
-    os << "# " << "nCells = " << grid.nCells() << std::endl;
-    os << "# " << "uMax = " << uMax << std::endl;
-    os << "# " << "T = " << T << std::endl;
-    os << "# " << "EoN = " << EoN << std::endl;
-    os << "# " << "WoN = " << WoN << std::endl;
-    for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        os << grid.getCells()(k) << '\t' << eedf(k) << std::endl;
-    }
-}
 
 int main()
 {
     using namespace loki;
 
     const unsigned nCells = 1000;
-    const double uMax = 2; // eV
+    const double uMax = 20; // eV
     const double T = 0;
-    const double eon = 1;
-    const double won = 1;
+    const double eon = 10;
+    const double won = 0;
 
     Vector fieldCrossSection = Vector::Ones(nCells+1);
     Vector elasticCrossSection = Vector::Ones(nCells+1);
@@ -74,30 +62,22 @@ int main()
     Matrix elastic1 = Melastic1.toDense();
     Matrix elastic2 = Melastic2.toDense();
 
-
-    field1.row(0) = grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells());
-    field2.row(0) = grid2.getCells().cwiseSqrt()*grid2.du();
-    elastic1.row(0) = grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells());
-    elastic2.row(0) = grid2.getCells().cwiseSqrt()*grid2.du();
-
     Matrix total1 = field1 + elastic1;
+    total1.row(0) = grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells());
 
     LinAlg::hessenberg(total1.data(), eedf1.data(), grid1.nCells());
+    Vector eedf = eedf1/(eedf1.dot(grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells())));
 
+   
+
+    double averageEnergy = eedf.dot(grid1.getCells().cwiseProduct(grid1.getCells().cwiseSqrt()).cwiseProduct(grid1.duCells()));
     Vector eedfDruyvesteyn = Vector::Zero(nCells);
-    double kT = Constant::kBeV*T;
+    double kT = 2./3.*averageEnergy;
+
     eedfDruyvesteyn << makePrescribedEDF(grid1,2,kT);
- 
-    LinAlg::hessenberg(field1.data(), eedf1.data(), grid1.nCells());
-    // writeGnuplot(std::cout, "Eedf1", "Energy (eV)", "Eedf (eV^-3/2)", grid1.getCells(), eedf1);
 
-    // std::cout << "set multiplot" << std::endl;
-    // writeGnuplot(std::cout, "Eedf1", "Energy (eV)", "Eedf (eV^-3/2)", grid1.getCells(), eedf1);
-    // writeGnuplot(std::cout, "Eedf2", "Energy (eV)", "Eedf (eV^-3/2)", grid1.getCells(), eedfDruyvesteyn);
-    // std::cout << "unset multiplot" << std::endl;
-
-    std::ofstream ofs("eedfDruyvesteyn.dat");
-    write_eedf(ofs, grid1, eedf1, uMax, T, eon, won);
+    double relativeError = ((eedf1-eedfDruyvesteyn).cwiseQuotient(eedfDruyvesteyn).cwiseAbs()).mean();
+    test_expr((relativeError <  0.005));
 
     test_report;
     return nerrors;
