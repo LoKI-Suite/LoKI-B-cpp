@@ -31,16 +31,16 @@ int main()
     Vector fieldCrossSection = Vector::Ones(nCells+1);
     Vector elasticCrossSection = Vector::Ones(nCells+1);
 
-    Grid::Vector ls(nCells+1); 
+    Grid::Vector ls(nCells+1);
     ls << Vector::LinSpaced(nCells + 1, 0.0, 1.0);
-    Grid grid1(ls,uMax,false); 
+    Grid grid1(ls,uMax,false);
     Grid grid2(nCells, uMax);
 
     FieldOperator fieldOperator1(grid1);
     FieldOperator fieldOperator2(grid2);
     SparseMatrix M1(nCells,nCells);
     SparseMatrix M2(nCells,nCells);
-    
+
     fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, M1);
     fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, M2);
 
@@ -55,7 +55,7 @@ int main()
     eedf1[0] = 1.;
 
     Vector eedf2 = Vector::Zero(nCells);
-    eedf2[0] = 1.; 
+    eedf2[0] = 1.;
 
     Matrix field1 = M1.toDense();
     Matrix field2 = M2.toDense();
@@ -67,8 +67,6 @@ int main()
 
     LinAlg::hessenberg(total1.data(), eedf1.data(), grid1.nCells());
     Vector eedf = eedf1/(eedf1.dot(grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells())));
-
-   
 
     double averageEnergy = eedf.dot(grid1.getCells().cwiseProduct(grid1.getCells().cwiseSqrt()).cwiseProduct(grid1.duCells()));
     Vector eedfDruyvesteyn = Vector::Zero(nCells);

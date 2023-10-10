@@ -20,14 +20,14 @@ int main()
     using namespace loki;
 
     const unsigned nCells = 1000;
-    const double T = 300; 
+    const double T = 300;
     const double uMax = 10; // eV
 
     Vector elasticCrossSection = Vector::Ones(nCells+1);
 
-    Grid::Vector ls(nCells+1); 
+    Grid::Vector ls(nCells+1);
     ls << Vector::LinSpaced(nCells + 1, 0.0, 1.0);
-    Grid grid1(ls,uMax,false); 
+    Grid grid1(ls,uMax,false);
     Grid grid2(nCells, uMax);
 
     ElasticOperator elasticOperator;
@@ -41,7 +41,7 @@ int main()
     eedf1[0] = 1.;
 
     Vector eedf2 = Vector::Zero(nCells);
-    eedf2[0] = 1.; 
+    eedf2[0] = 1.;
 
     Matrix boltzmann1 = M1.toDense();
     Matrix boltzmann2 = M2.toDense();
@@ -52,7 +52,7 @@ int main()
     LinAlg::hessenberg(boltzmann1.data(), eedf1.data(), grid1.nCells());
     LinAlg::hessenberg(boltzmann2.data(), eedf2.data(), grid2.nCells());
     test_expr(eedf1.isApprox(eedf2));
-    
+
     // Analytical solution
     Vector eedfMaxwell = Vector::Zero(nCells);
     double kT = Constant::kBeV*T;

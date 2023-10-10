@@ -27,14 +27,14 @@ int main()
     Vector elasticCrossSection = Vector::Ones(nCells+1);
 
     auto nodeDistribution = Grid::Vector::LinSpaced(nCells + 1, 0.0, 1.0);
-    Grid grid1(nodeDistribution,uMax,false); 
+    Grid grid1(nodeDistribution,uMax,false);
     Grid grid2(nCells, uMax);
 
     FieldOperator fieldOperator1(grid1);
     FieldOperator fieldOperator2(grid2);
     SparseMatrix M1(nCells,nCells);
     SparseMatrix M2(nCells,nCells);
-    
+
     fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, M1);
     fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, M2);
     test_expr(M1.isApprox(M2));
@@ -43,14 +43,14 @@ int main()
     eedf1[0] = 1.;
 
     Vector eedf2 = Vector::Zero(nCells);
-    eedf2[0] = 1.; 
+    eedf2[0] = 1.;
 
     Matrix field1 = M1.toDense();
     Matrix field2 = M2.toDense();
 
     field1.row(0) = grid1.getCells().cwiseSqrt().cwiseProduct(grid1.duCells());
     field2.row(0) = grid2.getCells().cwiseSqrt()*grid2.du();
- 
+
     LinAlg::hessenberg(field1.data(), eedf1.data(), grid1.nCells());
     LinAlg::hessenberg(field2.data(), eedf2.data(), grid2.nCells());
     test_expr( eedf1.isApprox(eedf2));
