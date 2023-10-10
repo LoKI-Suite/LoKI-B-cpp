@@ -57,7 +57,7 @@ int main()
 
     // Analytical solution
     double kT = Constant::kBeV*T;
-    Vector eedfMaxwell = makePrescribedEDF(grid,1,kT);
+    Vector eedfMaxwell = makePrescribedEDF(grid1,1,kT);
 
     // Calculate relative error
     Vector relativeError = (eedf1 - eedfMaxwell).cwiseAbs().cwiseQuotient(eedfMaxwell.cwiseAbs());
