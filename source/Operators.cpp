@@ -88,27 +88,50 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("ElasticOperator does not support nonuniform grids.");
-    }
-    
     // update g
     evaluate(grid,elasticCrossSection);
 
     const double c_el = Constant::kBeV * Tg;
-
-    const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
-    const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    
+    if (grid.isUniform())
     {
-        mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
+        const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
+        const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
 
-        if (k > 0)
-            mat.coeffRef(k, k - 1) = g[k] * factor2;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);
 
-        if (k < grid.nCells() - 1)
-            mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
+            if (k > 0)
+                mat.coeffRef(k, k - 1) = g[k] * factor2;
+
+            if (k < grid.nCells() - 1)
+                mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
+        }
+    } else
+    {   
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = 0;
+
+            if (k > 0)
+            {   
+                const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
+                const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
+                
+                mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
+            }
+            
+            if (k < grid.nCells() - 1)
+            {
+                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
+                const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
+
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
+            }
+        }
     }
 }
 
@@ -152,7 +175,6 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     {
         throw std::runtime_error("FieldOperator does not support nonuniform grids.");
     }
-    
     // update g
     evaluate(grid,totalCS,EoN,WoN);
     const double sqStep = grid.du() * grid.du();
