@@ -72,7 +72,7 @@ void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
             }
         }
-      
+    }
 }
 
 void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const
