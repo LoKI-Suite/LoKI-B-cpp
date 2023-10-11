@@ -98,7 +98,6 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
         const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
         const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
 
-
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             mat.coeffRef(k, k) = -(g[k] * factor1 + g[k + 1] * factor2);

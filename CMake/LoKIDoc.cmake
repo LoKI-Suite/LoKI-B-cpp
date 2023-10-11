@@ -2,19 +2,19 @@ find_program(LOKI_BUILD_HTML_DOCS tex4ht)
 
 # Initially, these targets do nothing. doc-projects can add a dependency of
 # these targets on the targets that are defined for those projects.
-add_custom_target(doc_clean)
-add_custom_target(doc_pdf)
+add_custom_target(lokib_doc_clean)
+add_custom_target(lokib_doc_pdf)
 
-set(DOC_ALL_DEPS doc_pdf)
+set(DOC_ALL_DEPS lokib_doc_pdf)
 
 if(LOKI_BUILD_HTML_DOCS)
   message(STATUS "Building HTML documentation")
 
-  add_custom_target(doc_html)
-  list(APPEND DOC_ALL_DEPS doc_html)
+  add_custom_target(lokib_doc_html)
+  list(APPEND DOC_ALL_DEPS lokib_doc_html)
 endif()
 
-add_custom_target(doc_all COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+add_custom_target(lokib_doc_all COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
                                   --target ${DOC_ALL_DEPS})
 
 include(CMake/UseLATEX.cmake)
@@ -94,11 +94,11 @@ macro(lokib_prepare_latex_doc_dir tgt_name)
     COMMENT "Cleaning ${tgt_name} files."
     DEPENDS doc_${tgt_name}_auxclean)
 
-  add_dependencies(doc_clean doc_${tgt_name}_clean)
-  add_dependencies(doc_pdf doc_${tgt_name}_pdf)
+  add_dependencies(lokib_doc_clean doc_${tgt_name}_clean)
+  add_dependencies(lokib_doc_pdf doc_${tgt_name}_pdf)
 
   if(LOKI_BUILD_HTML_DOCS)
-    add_dependencies(doc_html doc_${tgt_name}_html)
+    add_dependencies(lokib_doc_html doc_${tgt_name}_html)
   endif()
 
 endmacro(lokib_prepare_latex_doc_dir)
