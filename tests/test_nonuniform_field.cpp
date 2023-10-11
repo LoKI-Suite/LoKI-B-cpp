@@ -14,14 +14,15 @@
 
 #include "tests/TestUtilities.h"
 
+
 int main()
 {
     using namespace loki;
 
-    const unsigned nCells = 100;
+    const unsigned nCells = 1000;
     const double uMax = 2; // eV
     const double eon = 5;
-    const double won = 1;
+    const double won = 0;
 
     Vector fieldCrossSection = Vector::Ones(nCells+1);
     Vector elasticCrossSection = Vector::Ones(nCells+1);
@@ -53,9 +54,10 @@ int main()
  
     LinAlg::hessenberg(field1.data(), eedf1.data(), grid1.nCells());
     LinAlg::hessenberg(field2.data(), eedf2.data(), grid2.nCells());
+
     test_expr( eedf1.isApprox(eedf2));
-    const double analytical = 3/2 * std::pow(uMax, -3/2);
-    test_expr( (eedf1[1]-analytical) / analytical < 0.1);
+    double analytical = 3./2. / uMax / std::sqrt(uMax);
+    test_expr( abs(eedf1[1]-analytical) / analytical < 0.003);
 
     test_report;
     return nerrors;
