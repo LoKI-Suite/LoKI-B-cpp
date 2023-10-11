@@ -63,6 +63,12 @@ target_link_libraries(test_nonuniform_elastic PRIVATE loki-b)
 add_executable(test_maxwell test_maxwell.cpp)
 target_link_libraries(test_maxwell PRIVATE loki-b)
 
+add_executable(test_nonuniform_field test_nonuniform_field.cpp)
+target_link_libraries(test_nonuniform_field PRIVATE loki-b)
+
+add_executable(test_nonuniform_druyvesteyn test_nonuniform_druyvesteyn.cpp)
+target_link_libraries(test_nonuniform_druyvesteyn PRIVATE loki-b)
+
 target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
@@ -75,6 +81,8 @@ target_add_test(test_statebase)
 target_add_test(test_trans_coefs)
 target_add_test(test_nonuniform_elastic)
 target_add_test(test_maxwell)
+target_add_test(test_nonuniform_field)
+target_add_test(test_nonuniform_druyvesteyn)
 
 if (LOKIB_COVERAGE)
   setup_target_for_coverage_gcovr_xml(

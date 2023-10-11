@@ -21,14 +21,14 @@ int main()
     using namespace loki;
 
     const unsigned nCells = 1000;
-    const double T = 300; 
+    const double T = 300;
     const double uMax = 2; // eV
     double kT = Constant::kBeV*T;
 
     Vector elasticCrossSection = Vector::Ones(nCells+1);
 
-    auto faceDistribution = Grid::Vector::LinSpaced(nCells + 1, 0.0, 1.0); 
-    Grid grid(faceDistribution, uMax, false); 
+    auto faceDistribution = Grid::Vector::LinSpaced(nCells + 1, 0.0, 1.0);
+    Grid grid(faceDistribution, uMax, false);
 
     ElasticOperator elasticOperator;
     SparseMatrix M(nCells, nCells);
@@ -41,11 +41,10 @@ int main()
     boltzmann.row(0) = grid.getCells().cwiseSqrt().cwiseProduct(grid.duCells());
 
     LinAlg::hessenberg(boltzmann.data(), eedf.data(), grid.nCells());
-    
+
     // Analytical solution
     Vector eedfMaxwell = Vector::Zero(nCells);
     eedfMaxwell << makePrescribedEDF(grid,1,kT);
-
 
     // Calculate relative error
     Vector relativeError = (eedf - eedfMaxwell).cwiseQuotient(eedfMaxwell).cwiseAbs();

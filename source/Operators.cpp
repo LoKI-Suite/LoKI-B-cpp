@@ -171,23 +171,47 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("FieldOperator does not support nonuniform grids.");
-    }
     // update g
     evaluate(grid,totalCS,EoN,WoN);
-    const double sqStep = grid.du() * grid.du();
 
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    if (grid.isUniform())
     {
-        mat.coeffRef(k, k) = -(g[k] + g[k + 1]) / sqStep;
+        const double sqStep = grid.du() * grid.du();
 
-        if (k > 0)
-            mat.coeffRef(k, k - 1) = g[k] / sqStep;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = -(g[k] + g[k + 1]) / sqStep;
 
-        if (k < grid.nCells() - 1)
-            mat.coeffRef(k, k + 1) = g[k + 1] / sqStep;
+            if (k > 0)
+                mat.coeffRef(k, k - 1) = g[k] / sqStep;
+
+            if (k < grid.nCells() - 1)
+                mat.coeffRef(k, k + 1) = g[k + 1] / sqStep;
+        }
+    } else
+    {
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            mat.coeffRef(k, k) = 0;
+
+            if (k > 0)
+            {
+                const double Amin = 1/grid.duNode(k);
+                const double Bmin = 1/grid.duNode(k);
+                
+                mat.coeffRef(k, k - 1) = g[k] * Amin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Bmin / grid.duCell(k);
+            }
+
+            if (k < grid.nCells() - 1)
+            {
+                const double Aplus = 1/grid.duNode(k+1);
+                const double Bplus = 1/grid.duNode(k+1);
+
+                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Aplus / grid.duCell(k);
+            }
+        }
     }
 }
 
