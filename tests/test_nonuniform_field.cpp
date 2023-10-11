@@ -19,7 +19,7 @@ int main()
 {
     using namespace loki;
 
-    const unsigned nCells = 1000;
+    const unsigned nCells = 1024;
     const double uMax = 2; // eV
     const double eon = 5;
     const double won = 0;
@@ -57,7 +57,13 @@ int main()
 
     test_expr( eedf1.isApprox(eedf2));
     double analytical = 3./2. / uMax / std::sqrt(uMax);
-    test_expr( abs(eedf1[1]-analytical) / analytical < 0.003);
+    /** \todo Even when eedf is constant, as it will be for the present case,
+     *  it will be off by a constant factor because of the discretization error
+     *  in the normalization constant. The computed normalized constant eedf
+     *  will be equal to the commented out expression below.
+     */
+    // double analytical = 1./grid1.getCells().cwiseSqrt().dot(grid1.duCells());
+    test_expr( (eedf1-Vector::Ones(nCells)*analytical).cwiseAbs().maxCoeff() / analytical < 0.003 );
 
     test_report;
     return nerrors;
