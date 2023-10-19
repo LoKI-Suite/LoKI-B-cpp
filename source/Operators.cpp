@@ -251,23 +251,12 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
 InelasticOperator::InelasticOperator(const Grid& grid)
 : hasSuperelastics(false)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
-    }
-    
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
-    }
-    
     const Grid::Index cellNumber = grid.nCells();
-
     inelasticMatrix.setZero();
     /** \todo the following line seems to be missing. See the notes in the
      *  class declaration of this member
@@ -282,20 +271,27 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
             {
                 const double threshold = collision->crossSection->threshold();
 
-                if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
-                    continue;
-
+                //if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
+                //    continue;
                 const double targetDensity = collision->getTarget()->delta();
 
                 if (targetDensity != 0)
                 {
-                    const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
-
                     Vector cellCrossSection(cellNumber);
+                    int numThreshold;
 
                     for (Grid::Index i = 0; i < cellNumber; ++i)
                         cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
-
+                    
+                    if (grid.isUniform())
+                    {
+                        numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+                    } else
+                    {
+                        Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
+                        numThreshold = static_cast<Grid::Index>(findIndex);
+                    }
+                    
                     for (Grid::Index k = 0; k < cellNumber; ++k)
                     {
                         if (k < cellNumber - numThreshold)
