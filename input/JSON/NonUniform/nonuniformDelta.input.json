@@ -1,0 +1,148 @@
+{
+    "workingConditions": {
+        "reducedField": 10.0,
+        "excitationFrequency": 0,
+        "gasPressure": 133.32,
+        "electronTemperature": 0.03,
+        "gasTemperature": 300.0,
+        "electronDensity": 1e19,
+        "chamberLength": 1.0,
+        "chamberRadius": 1.0
+    },
+    "electronKinetics":    {
+        "isOn": true,
+        "eedfType": "boltzmann",
+        "ionizationOperatorType": "conservative",
+        "growthModelType": "spatial",
+        "includeEECollisions": false,
+        "mixture": {
+            "states": {
+                "e": {
+                    "particle": "e",
+                    "charge": -1
+                },
+                "X(0)": {
+                    "particle": "X",
+                    "charge": 0,
+                    "electronic": [
+                        {
+                            "e": "0",
+                            "summary": "0"
+                        }
+                    ]
+                },
+                "X(*)": {
+                    "particle": "X",
+                    "charge": 0,
+                    "electronic": [
+                        {
+                            "e": "*",
+                            "summary": "*"
+                        }
+                    ]
+                },
+                "X(+)": {
+                    "particle": "X",
+                    "charge": 1,
+                    "electronic": [
+                        {
+                            "e": "0",
+                            "summary": "0"
+                        }
+                    ]
+                }
+            },
+            "processes": [
+                {
+                    "reaction": {
+                        "lhs": [
+                            { "state": "e", "count": 1 },
+                            { "state": "X(0)", "count": 1 }
+                    ],
+                    "rhs": [
+                        { "state": "e", "count": 1 },
+                        { "state": "X(0)", "count": 1 }
+                    ],
+                    "reversible": false,
+                    "type_tags": ["Elastic"]
+                    },
+                    "parameters": ["m/M = 0.000025"],
+                    "reference": [
+                        "Analytical test, constant cross section"
+                    ],
+                    "labels": ["Energy", "Cross section"],
+                    "units": ["eV", "m2"],
+                    "threshold": 0.0,
+                    "data": [
+                        [0.000000e+0, 1.000000e-19],
+                        [1.000000e+3, 1.000000e-19]
+                    ]
+                },
+                {
+                "reaction": {
+                    "lhs": [
+                        { "state": "e", "count": 1 },
+                        { "state": "X(0)", "count": 1 }
+                ],
+                "rhs": [
+                    { "state": "e", "count": 1 },
+                    { "state": "X(*)", "count": 1 }
+                ],
+                "reversible": false,
+                "type_tags": ["Excitation"]
+                },
+                "reference": [
+                    ""
+                ],
+                "labels": ["Energy", "Cross section"],
+                "units": ["eV", "m2"],
+                "data": [
+                ]
+                }
+            ]
+        },
+        "gasProperties": {
+            "_mass": "test_masses.txt",
+            "mass": [
+                { "name": "X", "mass": 3.643753424e-26 }
+            ],
+            "fraction": [
+                "X = 1"
+            ]
+        },
+        "stateProperties": {
+            "energy": [
+                "X(0) = 1.0"
+            ],
+            "population": [
+                "X(0) = 1.0"
+            ],
+            "statisticalWeight": [
+                "X(0) = 1"
+            ]
+        },
+        "numerics": {
+            "energyGrid": {
+                "nonuniformGrid": {
+                }
+            },
+            "maxPowerBalanceRelError": 1e-9,
+            "nonLinearRoutines": {
+                "algorithm": "mixingDirectSolutions",
+                "mixingParameter": 0.7,
+                "maxEedfRelError": 1e-9
+            }
+        }
+    },
+    "gui": {
+        "isOn": false,
+        "refreshFrequency": 1
+    },
+    "output": {
+        "isOn": true,
+        "folder": "simulation",
+        "dataFiles": [
+            "eedf"
+        ]
+    }
+}
