@@ -210,7 +210,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid, Cross ,EoN,WoN);
+    evaluate(grid, totalCS ,EoN,WoN);
     if (grid.isUniform())
     {
         const double sqStep = grid.du() * grid.du();
