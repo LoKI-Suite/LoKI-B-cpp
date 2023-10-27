@@ -93,8 +93,20 @@ Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform)
 #endif
 }
 
-Grid::Grid(const EnergyGridSetup &gridSetup)
-    : Grid(gridSetup.cellNumber,gridSetup.maxEnergy)
+Grid Grid::fromConfig(const json_type &cnf)
+{
+    if (cnf.contains("nonuniformGrid"))
+    {   
+        auto nodes = cnf.at("nonuniformGrid").at("nodeDistribution").get<std::vector<double>>();
+        Vector nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
+        return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
+    } else
+    {
+        return Grid(cnf.at("cellNumber").get<unsigned>(),cnf.at("maxEnergy").get<double>());
+    }
+}
+
+Grid::Grid(const EnergyGridSetup &gridSetup) : Grid(gridSetup.cellNumber, gridSetup.maxEnergy)
 {
     const SmartGridSetup& sg = gridSetup.smartGrid;
     /* Try to set up the smartGrid only if any of the configuration

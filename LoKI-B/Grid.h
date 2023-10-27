@@ -146,6 +146,8 @@ class Grid
     Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform);
     /// Grids canot be copied.
     Grid(const Grid &other) = delete;
+
+    static Grid fromConfig(const json_type &cnf);
     /// The default destructor is used for Grid objects
     ~Grid() = default;
 
