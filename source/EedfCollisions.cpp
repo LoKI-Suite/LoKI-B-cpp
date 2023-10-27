@@ -170,9 +170,15 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
     {
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
-
-    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
-
+    int lmin;
+    if (grid->isUniform())
+    {
+        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    } else
+    {
+        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+    }
+    
     double ineSum = 0;
 
     for (uint32_t i = lmin; i < n; ++i)
@@ -180,7 +186,14 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
     }
 
-    collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getNode(lmin) * ineSum;
+    if (grid->isUniform())
+    {
+        collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getNode(lmin) * ineSum;
+    } else
+    {
+        collPower.forward = -SI::gamma * getTarget()->delta() * grid->duNode(lmin) * grid->getNode(lmin) * ineSum;
+    }
+    
 
     if (isReverse())
     {
@@ -193,8 +206,16 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
             supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.backward +=
-            SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->du() * grid->getNode(lmin) * supSum;
+        if (grid->isUniform())
+        {
+            collPower.backward +=
+                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->du() * grid->getNode(lmin) * supSum;
+        } else
+        {
+            collPower.backward +=
+                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->duNode(lmin) * grid->getNode(lmin) * supSum;
+        }
+        
     }
 
     return collPower;
@@ -304,13 +325,29 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const Grid::Index nNodes = grid->nCells() + 1;
     const Grid::Index nCells = grid->nCells();
 
-    const auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    int lmin;
+    if (grid->isUniform())
+    {
+        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    } else
+    {
+        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin());
+    }
+    
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
 
-    m_ineRateCoeff = SI::gamma * grid->du() *
+    if (grid->isUniform())
+    {
+        m_ineRateCoeff = SI::gamma * grid->du() *
                      cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.tail(nCells - lmin));
+
+    } else
+    {
+        m_ineRateCoeff = SI::gamma * (grid->duCells().tail(nCells - lmin)).dot(cellCrossSection) * 
+                     grid->getCells().tail(nCells - lmin).dot(eedf.tail(nCells - lmin));
+    }
 
     if (isReverse())
     {
@@ -570,7 +607,6 @@ PowerTerm EedfCollisionDataGas::evaluateConservativePower(const CollisionVector 
 
         if (collision->crossSection->threshold() > grid->uMax())
             continue;
-
         collPower += collision->evaluateConservativePower(eedf);
     }
     return collPower;
@@ -929,7 +965,6 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
         {
             for (auto &collision : collVec)
             {
-
                 if (collision->crossSection->threshold() > grid.uMax())
                 {
                     continue;

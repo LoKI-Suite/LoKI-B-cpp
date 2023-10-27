@@ -161,15 +161,30 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const
 {
     const double kTg = Constant::kBeV * Tg;
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
-    net = 0.0;
-    gain = 0.0;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    if (grid.isUniform())
     {
-        net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
-        gain += eedf[k] * (g[k + 1] - g[k]);
+        double auxHigh = kTg + grid.du() * .5; // aux1
+        double auxLow  = kTg - grid.du() * .5; // aux2
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
+    } else
+    {
+        Vector auxHigh = kTg * Vector::Ones(grid.duNodes().size()) + grid.duNodes() * .5; // aux1
+        Vector auxLow  = kTg * Vector::Ones(grid.duNodes().size()) - grid.duNodes() * .5; // aux2
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            net += eedf[k] * (g[k + 1] * auxLow[k] - g[k] * auxHigh[k]);
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
     }
+
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
     loss = net-gain;
@@ -195,8 +210,9 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,EoN,WoN);
-
+    int n = grid.nCells();
+    Vector Cross = 1e-19 * Vector::Ones(n);
+    evaluate(grid, Cross ,EoN,WoN);
     if (grid.isUniform())
     {
         const double sqStep = grid.du() * grid.du();
@@ -282,7 +298,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                     for (Grid::Index i = 0; i < cellNumber; ++i)
                         cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
-                    
+
                     if (grid.isUniform())
                     {
                         numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));

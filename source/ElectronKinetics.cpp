@@ -35,7 +35,7 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
 
 ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions),
-    m_grid(cnf.at("numerics").at("energyGrid")),
+    m_grid(Grid::fromConfig(cnf.at("numerics").at("energyGrid"))),
     mixture(&grid(), cnf, workingConditions),
     fieldOperator(grid()),
     inelasticOperator(grid()),
@@ -229,7 +229,6 @@ void ElectronKineticsBoltzmann::doSolve()
     {
         solveSingle();
     }
-
     evaluatePower();
     // we finished the solution procedure. If the power balance is
     // still not good, issue a warning.
@@ -242,10 +241,8 @@ void ElectronKineticsBoltzmann::doSolve()
     mixture.collision_data().evaluateRateCoefficients(grid(),eedf);
     evaluateSwarmParameters();
     evaluateFirstAnisotropy();
-
     obtainedNewEedf.emit(grid(), eedf, *m_workingConditions, power, mixture.collision_data(), swarmParameters,
                          &firstAnisotropy);
-
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
     const std::string xpm_fname{"system_matrix.xpm"};
     std::cout << "Creating '" << xpm_fname << "'." << std::endl;
@@ -284,7 +281,13 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         eedf.setZero();
         eedf[0] = 1.;
 
-        matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
+        if (grid().isUniform())
+        {
+            matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
+        } else
+        {
+            matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
+        }
         /** We can also just make eedf[0]=1 by implementing the above and:
          *  matrix.row(0).setZero(); matrix(0,0)=1.0;
          *  The advantage is that the first row only has the diagonal,
@@ -323,7 +326,13 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         Vector b = Vector::Zero(grid().nCells());
         b[0] = 1;
 
-        matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
+        if (grid().isUniform())
+        {
+            matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
+        } else
+        {
+            matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
+        }
         eedf = matrix.partialPivLu().solve(b);
     }
 
@@ -334,7 +343,13 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
      *        (better sparsity pattern).
      */
     // std::cout << "NORM: " <<  eedf.dot(grid().getCells().cwiseSqrt() * grid().du()) << std::endl;
-    eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+    if (grid().isUniform())
+        {
+            eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+        } else
+        {
+            eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
+        }
 
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto end = std::chrono::high_resolution_clock::now();
@@ -389,8 +404,16 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     /** \todo The name is incorrect. This is not the integrand since it already includes
      *        du and does not yet have the factor f(u).
      */
-    const Vector integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
+    Vector integrandCI;
+    if (grid().isUniform())
+        {
+            integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
                          (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        } else
+        {
+            integrandCI = (SI::gamma*grid().duCells()).transpose() *
+                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+        }
 
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3;
@@ -1057,10 +1080,18 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
     const Grid::Index n = grid().nCells();
 
     // 1. First fill firstAnisotropy with df/du.
-    firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().du();
-    firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().du();
-    firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid().du());
-
+    if (grid().isUniform())
+    {
+        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().du();
+        firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().du();
+        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid().du());
+    } else
+    {
+        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(0);
+        firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
+        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(2 * grid().duNodes().segment(1, n - 2));
+    } 
+   
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
@@ -1113,16 +1144,13 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 void ElectronKineticsBoltzmann::evaluatePower()
 {
     const double Tg = m_workingConditions->gasTemperature();
-
     // reset by an assignment of a default-constructed Power object
     power = Power();
-
     elasticOperator.evaluatePower(grid(),eedf,Tg,power.elasticNet,power.elasticGain,power.elasticLoss);
     if (carOperator.get())
     {
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
-
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
@@ -1148,7 +1176,6 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // now calculate the additional terms
             double correction = 0., powerDiffusion = 0., powerMobility = 0.;
             Vector cellCrossSection(grid().nCells());
-
             for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
                 correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2;
@@ -1174,9 +1201,9 @@ void ElectronKineticsBoltzmann::evaluatePower()
             power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
                                 SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
                                     (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
-                                     grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
-                                         eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
-                                     powerMobility);
+                                    grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
+                                        eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
+                                    powerMobility);
         }
     }
     else
@@ -1188,14 +1215,12 @@ void ElectronKineticsBoltzmann::evaluatePower()
     {
         eeOperator->evaluatePower(grid(),eedf,power.electronElectron);
     }
-
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
     {
         cd.evaluatePower(ionizationOperator.ionizationOperatorType, eedf);
         power += cd.getPower();
     }
-
     /// \todo Change inelastic/superelastic with inelastic, use inelastic.forward, inelastic.backward.
     power.inelastic =
         power.excitation.forward
@@ -1259,10 +1284,15 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     {
         tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
     }
-
-    swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
-                                   grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-
+    if (grid().isUniform())
+    {
+        swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
+                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+    } else
+    {
+        swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
+                                    grid().getCells().cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+    }
     swarmParameters.redMobCoeff = -SI::gamma / 3. *
                                   grid().getNodes()
                                       .segment(1, n - 1)
@@ -1294,12 +1324,16 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
             totalAttRateCoeff += collision->getTarget()->delta() * collision->ineRateCoeff();
         }
     }
-
     swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
     swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
-    swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
-
+    if (grid().isUniform())
+    {
+        swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
+    } else 
+    {
+        swarmParameters.meanEnergy = (grid().duCells().array()*grid().getCells().array().pow(1.5)*eedf.array()).sum();
+    }
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
