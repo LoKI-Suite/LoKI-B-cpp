@@ -4,7 +4,7 @@
         "excitationFrequency": 0,
         "gasPressure": 133.32,
         "electronTemperature": 0.03,
-        "gasTemperature": 300.0,
+        "gasTemperature": 0.0,
         "electronDensity": 1e19,
         "chamberLength": 1.0,
         "chamberRadius": 1.0
@@ -79,22 +79,22 @@
                     ]
                 },
                 {
-                "reaction": {
-                    "lhs": [
+                    "reaction": {
+                        "lhs": [
+                            { "state": "e", "count": 1 },
+                            { "state": "X(0)", "count": 1 }
+                    ],
+                    "rhs": [
                         { "state": "e", "count": 1 },
-                        { "state": "X(0)", "count": 1 }
-                ],
-                "rhs": [
-                    { "state": "e", "count": 1 },
-                    { "state": "X(*)", "count": 1 }
-                ],
-                "reversible": false,
-                "type_tags": ["Excitation"]
-                },
-                "reference": [""],
-                "labels": ["Energy", "Cross section"],
-                "units": ["eV", "m2"],
-                "data": []
+                        { "state": "X(*)", "count": 1 }
+                    ],
+                    "reversible": false,
+                    "type_tags": ["Vibrational"]
+                    },
+                    "reference": [""],
+                    "labels": ["Energy", "Cross section"],
+                    "units": ["eV", "m2"],
+                    "data": []
                 }
             ]
         },

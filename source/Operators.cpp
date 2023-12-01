@@ -210,7 +210,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid, totalCS ,EoN,WoN);
+    evaluate(grid, totalCS, EoN, WoN);
     if (grid.isUniform())
     {
         const double sqStep = grid.du() * grid.du();
@@ -285,8 +285,9 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
             {
                 const double threshold = collision->crossSection->threshold();
 
-                //if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
-                //    continue;
+                if (threshold < grid.getNodes()[0] || threshold > grid.getNodes()[grid.nCells()])
+                    continue;
+
                 const double targetDensity = collision->getTarget()->delta();
 
                 if (targetDensity != 0)
