@@ -210,7 +210,8 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid, totalCS, EoN, WoN);
+    evaluate(grid,totalCS,EoN,WoN);
+
     if (grid.isUniform())
     {
         const double sqStep = grid.du() * grid.du();
@@ -236,17 +237,16 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
                 const double Amin = 1/grid.duNode(k);
                 const double Bmin = 1/grid.duNode(k);
                 
-                mat.coeffRef(k, k - 1) = g[k] * Amin / grid.duCell(k);
-                mat.coeffRef(k, k) += -g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
-
             if (k < grid.nCells() - 1)
             {
                 const double Aplus = 1/grid.duNode(k+1);
                 const double Bplus = 1/grid.duNode(k+1);
 
-                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus / grid.duCell(k);
-                mat.coeffRef(k, k) += -g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
             }
         }
     }
