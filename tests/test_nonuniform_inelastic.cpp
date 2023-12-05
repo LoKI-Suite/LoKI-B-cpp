@@ -201,7 +201,7 @@ void checkSinglePeak(const loki::Grid &grid,
     }
     
     double meanRelativeError = ((solution - eedf).cwiseQuotient(solution)).cwiseAbs().mean();
-    test_expr(meanRelativeError < 0.5);
+    test_expr(meanRelativeError < 0.50);
 }
 
 void checkTwoSinglePeak(const loki::Grid &grid,
@@ -222,7 +222,7 @@ void checkTwoSinglePeak(const loki::Grid &grid,
     }
     
     double meanRelativeError = ((solution - eedf).cwiseQuotient(solution)).cwiseAbs().mean();
-    test_expr(meanRelativeError < 0.5);
+    test_expr(meanRelativeError < 0.50);
 }
 
 nlohmann::json twoSingleDeltaPeaks(int n, int n1)
@@ -241,7 +241,7 @@ nlohmann::json twoSingleDeltaPeaks(int n, int n1)
 
     double sigma0 = 1e-21;
     double sigma1 = 1e-21;
-    std::ifstream ifs("input/JSON/NonUniform/nonuniformTwoSingleDelta.input.json");
+    std::ifstream ifs("../input/JSON/NonUniform/nonuniformTwoSingleDelta.input.json");
     auto j = nlohmann::json::parse(ifs);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
@@ -308,7 +308,7 @@ nlohmann::json doubleDeltaPeaks(int n, int n1)
     double sigma0 = 1e-21;
     double sigma1 = 1e-21;
 
-    std::ifstream ifs("input/JSON/NonUniform/nonuniformDoubleDelta.input.json");
+    std::ifstream ifs("../input/JSON/NonUniform/nonuniformDoubleDelta.input.json");
     auto j = nlohmann::json::parse(ifs);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak1 - 0.1*duPeak1)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak1)/Umax, (U0 + duPeak1)/Umax);
@@ -362,7 +362,7 @@ nlohmann::json singleDeltaPeak(int n, int n1)
     // double deltau = Umax/nCells;
 
     double sigma0 = 1e-21;
-    std::ifstream ifs("input/JSON/NonUniform/nonuniformDelta.input.json");
+    std::ifstream ifs("../input/JSON/NonUniform/nonuniformDelta.input.json");
     auto j = nlohmann::json::parse(ifs);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1 + 1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
