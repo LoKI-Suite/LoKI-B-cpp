@@ -225,7 +225,7 @@ void checkTwoSinglePeak(const loki::Grid &grid,
     test_expr(meanRelativeError < 0.5);
 }
 
-nlohmann::json_abi_v3_11_2::json twoSingleDeltaPeaks(int n, int n1)
+nlohmann::json twoSingleDeltaPeaks(int n, int n1)
 {
     using namespace loki;
     
@@ -286,7 +286,7 @@ nlohmann::json_abi_v3_11_2::json twoSingleDeltaPeaks(int n, int n1)
     return j;
 }
 
-nlohmann::json_abi_v3_11_2::json doubleDeltaPeaks(int n, int n1)
+nlohmann::json doubleDeltaPeaks(int n, int n1)
 {
     using namespace loki;
     
@@ -348,7 +348,7 @@ nlohmann::json_abi_v3_11_2::json doubleDeltaPeaks(int n, int n1)
     return j;
 }
 
-nlohmann::json_abi_v3_11_2::json singleDeltaPeak(int n, int n1)
+nlohmann::json singleDeltaPeak(int n, int n1)
 {
     using namespace loki;
     
