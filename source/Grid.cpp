@@ -60,9 +60,12 @@ void Grid::SmartGridParameters::checkConfiguration() const
     }
 }
 
-Grid::Grid(unsigned nCells, double maxEnergy)
+Grid::Grid(unsigned nCells, double maxEnergy, SmartGridParameters *smartGridParameters)
    : Grid(Vector::LinSpaced(nCells + 1, 0.0, 1.0), maxEnergy, true)
 {
+    if (smartGridParameters != nullptr) {
+        m_smartGrid.reset(smartGridParameters);
+    }
 }
 
 Grid::Grid(const Vector& nodeDistribution, double maxEnergy)
@@ -102,6 +105,13 @@ Grid Grid::fromConfig(const json_type &cnf)
         return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
     } else
     {
+        if (cnf.contains("smartGrid")) {
+            return Grid(
+                cnf.at("cellNumber").get<unsigned>(),
+                cnf.at("maxEnergy").get<double>(), 
+                new SmartGridParameters(cnf.at("smartGrid"))
+            );
+        }
         return Grid(cnf.at("cellNumber").get<unsigned>(),cnf.at("maxEnergy").get<double>());
     }
 }

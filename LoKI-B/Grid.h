@@ -118,15 +118,17 @@ namespace loki
 class Grid
 {
   public:
-
     /// The type of the vectors that hold the energy values
     using Vector = loki::Vector;
     /// The type of the index of elements of the energy vectors
     using Index = Vector::Index;
 
+    // Forward declaration
+    class SmartGridParameters;
+
     // construction and destruction:
 
-    Grid(unsigned nCells, double maxEnergy);
+    Grid(unsigned nCells, double maxEnergy, SmartGridParameters *smartGridParameters = nullptr);
     /** Construct a nonuniform Grid from the parameters "nodeDistribution"
      * (Vector) and "maxEnergy" (double).
      * "nodeDistribution" contains doubles in the range [0-1] which indicates
@@ -134,8 +136,8 @@ class Grid
      * domain. "maxEnergy" is the maximum energy of the simulation domain.
      * The physical energy values of the nodes can be calculated by multiplying
      * the maxEnergy and the nodeDistribution function.
-    */
-    Grid(const Vector& nodeDistribution, double maxEnergy);
+     */
+    Grid(const Vector &nodeDistribution, double maxEnergy);
     explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
@@ -143,7 +145,7 @@ class Grid
      *  object will be created, see smartGrid().
      */
     explicit Grid(const json_type &cnf);
-    Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform);
+    Grid(const Vector &nodeDistribution, double maxEnergy, bool isUniform);
     /// Grids canot be copied.
     Grid(const Grid &other) = delete;
 
@@ -234,16 +236,18 @@ class Grid
     class SmartGridParameters
     {
       public:
-        SmartGridParameters(const SmartGridSetup& smartGrid);
-        SmartGridParameters(const json_type& cnf);
+        SmartGridParameters(const SmartGridSetup &smartGrid);
+        SmartGridParameters(const json_type &cnf);
         /// \todo We don't we use a more straighforward type here, like unsigned?
         const uint16_t minEedfDecay;
         const uint16_t maxEedfDecay;
         const double updateFactor;
+
       private:
         void checkConfiguration() const;
     };
-    const SmartGridParameters* smartGrid() const
+
+    const SmartGridParameters *smartGrid() const
     {
         return m_smartGrid.get();
     }
