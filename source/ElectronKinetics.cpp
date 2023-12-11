@@ -1,11 +1,22 @@
 //
 // Created by daan on 13-5-19.
 //
-
+#include <string>
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include <chrono>
 #include <cmath>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf)
+{
+    for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        os << grid.getCells()(k) << '\t' << std::setprecision(15) << eedf(k)  << std::endl;
+    }
+}
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -472,22 +483,44 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     Vector U0inf(grid().nCells());
     U0sup[0] = 0.;
     U0inf[grid().nCells() - 1] = 0.;
-    for (Grid::Index j = 0; j < grid().nCells(); ++j)
+    if (grid().isUniform())
     {
-        if (j != 0)
-            U0sup[j] = EoN / (2. * grid().du()) * D0[j - 1];
+        for (Grid::Index j = 0; j < grid().nCells(); ++j)
+        {
+            if (j != 0)
+                U0sup[j] = EoN / (2. * grid().du()) * D0[j - 1];
 
-        if (j != grid().nCells() - 1)
-            U0inf[j] = -EoN / (2. * grid().du()) * D0[j + 1];
+            if (j != grid().nCells() - 1)
+                U0inf[j] = -EoN / (2. * grid().du()) * D0[j + 1];
+        }
+    } else 
+    {
+        for (Grid::Index j = 0; j < grid().nCells(); ++j)
+        {
+            if (j != 0)
+                U0sup[j] = EoN / (2. * grid().duCell(j)) * D0[j - 1];
+
+            if (j != grid().nCells() - 1)
+                U0inf[j] = -EoN / (2. * grid().duCell(j)) * D0[j + 1];
+        }
     }
     const Vector U0 = U0sup + U0inf;
 
-    // This is 33a from \cite Manual_1_0_0
-    double ND  =   SI::gamma * grid().du() * D0.dot(eedf);
-    /* This is 33b from \cite Manual_1_0_0, multiplied with E/N.
-     * Note that the factor E/N is part of U0sup, U0inf.
-     */
-    double muE = - SI::gamma * grid().du() * U0.dot(eedf);
+    double ND;
+    double muE;
+    if (grid().isUniform())
+    {
+        // This is 33a from \cite Manual_1_0_0
+        ND  =   SI::gamma * grid().du() * D0.dot(eedf);
+        /* This is 33b from \cite Manual_1_0_0, multiplied with E/N.
+        * Note that the factor E/N is part of U0sup, U0inf.
+        */
+        muE = - SI::gamma * grid().du() * U0.dot(eedf);
+    } else
+    {
+        ND  =   SI::gamma * grid().duCells().cwiseProduct(D0).dot(eedf);
+        muE = - SI::gamma * grid().duCells().cwiseProduct(U0).dot(eedf);
+    }
 
     double alphaRedEffOld = 0.;
 
@@ -532,8 +565,28 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            // note: fieldMatrixSpatGrowth represents: (alphaEffNew/N)*(E/N)*d(D^0*f0)/du
-            fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
+            if (grid().isUniform())
+            {
+                // note: fieldMatrixSpatGrowth represents: (alphaEffNew/N)*(E/N)*d(D^0*f0)/du
+                fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
+            } else
+            {
+                fieldMatrixSpatGrowth.coeffRef(k, k) = 0;
+                if (k >0)
+                {
+                    const double Amin = grid().duCell(k-1) / grid().duNode(k) / 2;
+                    fieldMatrixSpatGrowth.coeffRef(k, k) += - g_fieldSpatialGrowth[k]*Amin/grid().duCell(k);
+                }
+
+                if (k < grid().nCells() - 1)
+                {
+                    const double Bplus = grid().duCell(k+1) / grid().duNode(k+1) / 2;
+                    fieldMatrixSpatGrowth.coeffRef(k, k) += g_fieldSpatialGrowth[k + 1]*Bplus/grid().duCell(k);
+                }
+            }
+            // if (iter == 1)
+            //     std::cout << fieldMatrixSpatGrowth.coeffRef(k,k) << std::endl;
+            
             // note: this is (alphaEffNew/N)^2*D0[k]
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
@@ -560,31 +613,59 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
              * that in the evaluation of mu_eE, see elsewhere.
              */
 #define USE_D0_FOR_ionSpatialGrowthU 1
-            if (k > 0)
+            if (grid().isUniform())
             {
-                fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
+                if (k > 0)
+                {
+                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
 #if USE_D0_FOR_ionSpatialGrowthU
-                ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
 #else
-                ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
 #endif
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k - 1);
-            }
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
+                                                                        ionSpatialGrowthU.coeff(k, k - 1);
+                }
 
-            if (k < grid().nCells() - 1)
-            {
-                fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
+                if (k < grid().nCells() - 1)
+                {
+                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
 #if USE_D0_FOR_ionSpatialGrowthU
-                ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
 #else
-                ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
 #endif
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                      ionSpatialGrowthU.coeff(k, k + 1);
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
+                                                                        ionSpatialGrowthU.coeff(k, k + 1);
+                }
+            } else
+            {
+                if (k > 0)
+                {
+                    const double Bmin = grid().duCell(k) / grid().duNode(k) / 2;
+                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k]*Bmin/ (grid().duCell(k));
+#if USE_D0_FOR_ionSpatialGrowthU
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k]*Bmin/ (grid().duCell(k));
+#else
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
+#endif
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
+                                                                        ionSpatialGrowthU.coeff(k, k - 1);
+                }
+                if (k < grid().nCells() - 1)
+                {
+                    const double Aplus = grid().duCell(k) / grid().duNode(k+1) / 2;
+                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1]*Aplus / (grid().duCell(k));
+#if USE_D0_FOR_ionSpatialGrowthU
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k]*Aplus / (grid().duCell(k));
+#else
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
+#endif
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
+                                                                        ionSpatialGrowthU.coeff(k, k + 1);
+                }
             }
         }
-
         Vector eedfNew = eedf;
 
         invertMatrix(boltzmannMatrix);
@@ -594,8 +675,16 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        ND  =   SI::gamma * grid().du() * D0.dot(eedf);
-        muE = - SI::gamma * grid().du() * U0.dot(eedf);
+        if (grid().isUniform())
+        {
+            ND  =   SI::gamma * grid().du() * D0.dot(eedf);
+            muE = - SI::gamma * grid().du() * U0.dot(eedf);
+        } else
+        {
+            ND  =   SI::gamma * grid().duCells().cwiseProduct(D0).dot(eedf);
+            muE = - SI::gamma * grid().duCells().cwiseProduct(U0).dot(eedf);
+        }
+
 
         /** \todo See the notes just above this loop for a note about the discontinuity.
          */
@@ -662,9 +751,17 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     }
 
     // CIEff is <nu_eff>/N
-    const Vector integrandCI = (SI::gamma * grid().du())
+    Vector integrandCI(grid().nCells());
+    if (grid().isUniform())
+    {
+        integrandCI = (SI::gamma * grid().du())
                     * Vector::Ones(grid().nCells()).transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+    } else
+    {
+        integrandCI = (SI::gamma * grid().duCells().transpose())
+                    * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+    }
     double CIEffNew = eedf.dot(integrandCI);
     double CIEffOld = CIEffNew / 3.;
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
@@ -696,28 +793,57 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         }
         g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
 
-        const double sqrStep = grid().du() * grid().du();
-
-        for (Grid::Index k = 0; k < grid().nCells(); ++k)
+        if (grid().isUniform())
         {
-            fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
-            // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
-            ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
-            boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
-                                                           ionTemporalGrowth.coeff(k, k);
-
-            if (k > 0)
+            const double sqrStep = grid().du() * grid().du();
+            for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
-                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
-            }
+                fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
+                // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
+                ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
+                boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
+                                                            ionTemporalGrowth.coeff(k, k);
 
-            if (k < grid().nCells() - 1)
+                if (k > 0)
+                {
+                    fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
+                }
+
+                if (k < grid().nCells() - 1)
+                {
+                    fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
+                }
+            }
+        } else
+        {
+            for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
-                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
-            }
+                fieldMatrixTempGrowth.coeffRef(k, k) = 0;
+                // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
+                ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
 
+                if (k > 0)
+                {
+                    double Bmin = 1/grid().duNode(k);
+                    double Amin = 1/grid().duNode(k);
+                    fieldMatrixTempGrowth.coeffRef(k, k) -=  g_fieldTemporalGrowth[k] * Amin / grid().duCell(k);
+                    fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] * Bmin / grid().duCell(k);
+                    boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
+                }
+
+                if (k < grid().nCells() - 1)
+                {
+                    double Bplus = 1/grid().duNode(k+1);
+                    double Aplus = 1/grid().duNode(k+1);
+                    fieldMatrixTempGrowth.coeffRef(k, k) -=  g_fieldTemporalGrowth[k + 1] * Bplus / grid().duCell(k);
+                    fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] * Aplus / grid().duCell(k);
+                    boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
+                }
+                boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
+                                                            ionTemporalGrowth.coeff(k, k);
+            }
         }
 
         eedfNew = eedf;
@@ -741,7 +867,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         ++iter;
     }
 
- //   std::cerr << "Temporal growth routine converged in: " << iter << " iterations.\n";
+   std::cerr << "Temporal growth routine converged in: " << iter << " iterations.\n";
 
     CIEff = CIEffOld;
 }
@@ -1091,7 +1217,6 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
         firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
         firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(2 * grid().duNodes().segment(1, n - 2));
     } 
-   
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
@@ -1166,7 +1291,15 @@ void ElectronKineticsBoltzmann::evaluatePower()
                 growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
             }
             power.field = SI::gamma * field;
-            power.eDensGrowth = -CIEff * grid().du() * growthModel;
+            if (grid().isUniform())
+            {
+                power.eDensGrowth = -CIEff * grid().du() * growthModel;
+            } else
+            {
+                power.eDensGrowth = -CIEff * grid().duCell(0) * growthModel;
+            }
+        
+            
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
@@ -1176,34 +1309,41 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // now calculate the additional terms
             double correction = 0., powerDiffusion = 0., powerMobility = 0.;
             Vector cellCrossSection(grid().nCells());
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
+            cellCrossSection = .5 * (mixture.collision_data().totalCrossSection().head(grid().nCells()) + mixture.collision_data().totalCrossSection().tail(grid().nCells()));
+            for (Grid::Index k = 1; k < grid().nCells()-1; ++k )
             {
-                correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2;
-
-                // Diffusion and Mobility contributions
-                cellCrossSection[k] = .5 * (mixture.collision_data().totalCrossSection()[k] + mixture.collision_data().totalCrossSection()[k + 1]);
-                powerDiffusion += grid().getCell(k) * grid().getCell(k) * eedf[k] / cellCrossSection[k];
-
-                if (k > 0 && k < grid().nCells() - 1)
-                {
                     powerMobility +=
                         grid().getCell(k) * grid().getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
-                }
             }
-
             /** \todo field and correction are both of the form 'eedf*g'.
              *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
              *  have different dimensions (factor energy).
              */
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
-            power.field = field + SI::gamma * grid().du() * correction;
-            power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
-                                SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
-                                    (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
-                                    grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
-                                        eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
-                                    powerMobility);
+            if (grid().isUniform())
+            {
+                correction -= eedf.dot((g_fieldSpatialGrowth.tail(grid().nCells()) + g_fieldSpatialGrowth.head(grid().nCells()))/2);
+                powerDiffusion += grid().getCells().dot(grid().getCells().cwiseProduct(eedf).cwiseQuotient(cellCrossSection));
+                power.field = field + SI::gamma * grid().du() * correction;
+                power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
+                                    SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
+                                        (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
+                                        grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
+                                            eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
+                                        powerMobility);
+            } else
+            {
+                correction -= eedf.dot((g_fieldSpatialGrowth.tail(grid().nCells()) + g_fieldSpatialGrowth.head(grid().nCells())).cwiseProduct(grid().duCells())/2);
+                powerDiffusion += grid().getCells().dot(grid().getCells().cwiseProduct(eedf).cwiseProduct(grid().duCells()).cwiseQuotient(cellCrossSection));
+                power.field = field + SI::gamma * correction;
+                power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma / 3. * powerDiffusion +
+                                    SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
+                                        (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
+                                        grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
+                                            eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
+                                        powerMobility);
+            }
         }
     }
     else

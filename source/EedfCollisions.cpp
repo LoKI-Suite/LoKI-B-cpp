@@ -178,7 +178,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
     {
         lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
     }
-    
+
     double ineSum = 0;
 
     for (uint32_t i = lmin; i < n; ++i)
@@ -191,9 +191,8 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getNode(lmin) * ineSum;
     } else
     {
-        collPower.forward = -SI::gamma * getTarget()->delta() * grid->duNode(lmin) * grid->getNode(lmin) * ineSum;
+        collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) * grid->getNode(lmin) * ineSum;
     }
-    
 
     if (isReverse())
     {
@@ -213,7 +212,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         } else
         {
             collPower.backward +=
-                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->duNode(lmin) * grid->getNode(lmin) * supSum;
+                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->duCell(lmin) * grid->getNode(lmin) * supSum;
         }
         
     }
@@ -237,7 +236,14 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
     }
 
-    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    int lmin;
+    if (grid->isUniform())
+    {
+        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    } else
+    {
+        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+    }
 
     if (type() == CollisionType::ionization)
     {
@@ -259,8 +265,15 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 sumThree += grid->getCell(i) * term;
             }
 
-            collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() *
-                                (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+            if (grid->isUniform())
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() *
+                                    (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+            } else 
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) *
+                                    (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+            }
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
         {
@@ -270,8 +283,13 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             {
                 sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
             }
-
-            collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getCell(lmin - 1) * sum;
+             if (grid->isUniform())
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getCell(lmin - 1) * sum;
+            } else
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin-1) * grid->getCell(lmin - 1) * sum;
+            }
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
         {
@@ -294,8 +312,15 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                         (w * atan((grid->getCell(static_cast<uint32_t>(k)) - crossSection->threshold()) / (2 * w)));
             }
 
-            collPower.forward = -SI::gamma * getTarget()->delta() * grid->getCell(lmin) * grid->du() *
-                                eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
+             if (grid->isUniform())
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->getCell(lmin) * grid->du() *
+                                    eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->du() * TICS)).sum();
+            } else
+            {
+                collPower.forward = -SI::gamma * getTarget()->delta() * grid->getCell(lmin) * grid->duCell(lmin) *
+                                    eedf.cwiseProduct(grid->getCells().cwiseProduct(grid->duCells() * TICS)).sum();
+            }
         }
     }
     else if (type() == CollisionType::attachment)
@@ -307,7 +332,13 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
         }
 
-        collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * sum;
+        if (grid->isUniform())
+        {
+            collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * sum;
+        } else 
+        {
+            collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) * sum;
+        }
     }
     /// \todo For other Collision types, collPower is unitialized at this point
 
