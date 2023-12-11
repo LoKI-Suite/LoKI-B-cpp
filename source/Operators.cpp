@@ -653,11 +653,6 @@ IonizationOperator::IonizationOperator(IonizationOperatorType type)
 
 void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("IonizationOperator does not support nonuniform grids.");
-    }
-    
     bool hasValidCollisions = false;
 
     ionConservativeMatrix.setZero();
@@ -681,8 +676,16 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             hasValidCollisions = true;
 
             const double delta = collision->getTarget()->delta();
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
+            int numThreshold;
+            if (grid.isUniform())
+            {
+                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            } else
+            {
+                Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
+                numThreshold = static_cast<Grid::Index>(findIndex);
+            }
             Vector cellCrossSection(grid.nCells());
 
             for (Grid::Index i = 0; i < grid.nCells(); ++i)
@@ -745,7 +748,13 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                         for (Grid::Index i = 0; i < half; ++i)
                             sum += numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
 
-                        ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
+                        if (grid.isUniform())
+                        {
+                            ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
+                        } else
+                        {
+                            ionizationMatrix(k, k) -= delta * grid.duNode(k) * grid.getCell(k) * cellCrossSection[k] * sum;
+                        }
                     }
 
                     /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
@@ -754,16 +763,27 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                      */
                     if (k + numThreshold + 1 < grid.nCells())
                     {
-                        for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                        if (grid.isUniform())
                         {
-                            ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
-                                                      (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
-                                                       (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
-                        /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
-                         * because the w from the denominator of the first multiplicand is combined
-                         * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
-                         * factor 1/(w+u^2/w).
-                         */
+                            for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                            {
+                                ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
+                                                        (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
+                            /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
+                            * because the w from the denominator of the first multiplicand is combined
+                            * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
+                            * factor 1/(w+u^2/w).
+                            */
+                            }
+                        } else 
+                        {
+                            for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                            {
+                                ionizationMatrix(k, i) += delta * grid.duNode(i) * grid.getCell(i) * cellCrossSection[i] /
+                                                        (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
+                            }
                         }
                     }
 
@@ -777,12 +797,20 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
                     for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
                     {
-                        ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
-                                                  (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
-                                                   (W + std::pow(grid.getCell(k), 2) / W));
-                        /* See the note above about the optical differences with equation 63
-                         * of the manual (2.2.0).
-                         */
+                        if (grid.isUniform())
+                        {
+                            ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
+                                                    (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                    (W + std::pow(grid.getCell(k), 2) / W));
+                            /* See the note above about the optical differences with equation 63
+                            * of the manual (2.2.0).
+                            */
+                        } else
+                        {
+                            ionizationMatrix(k, i) += delta * grid.duNode(i) * grid.getCell(i) * cellCrossSection[i] /
+                                                    (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                    (W + std::pow(grid.getCell(k), 2) / W));
+                        }
                     }
                 }
                 break;
@@ -816,11 +844,7 @@ AttachmentOperator::AttachmentOperator()
 
 void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("AttachmentOperator does not support nonuniform grids.");
-    }
-    
+
     attachmentMatrix.setZero();
     attachmentConservativeMatrix.setZero();
 
@@ -861,7 +885,15 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
             for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            int numThreshold;
+            if (grid.isUniform())
+            {
+                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            } else
+            {
+                Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
+                numThreshold = static_cast<Grid::Index>(findIndex);
+            }
             /* This is an optimization: do not add a source and a sink that cancel out.
              * When this happens, the (minor) energy gain is ignored.
              */
