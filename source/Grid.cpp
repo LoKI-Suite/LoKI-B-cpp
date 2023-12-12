@@ -29,6 +29,7 @@
 
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/JobSystem.h"
 
 namespace loki
 {
@@ -100,9 +101,21 @@ Grid Grid::fromConfig(const json_type &cnf)
 {
     if (cnf.contains("nonuniformGrid"))
     {   
-        auto nodes = cnf.at("nonuniformGrid").at("nodeDistribution").get<std::vector<double>>();
-        Vector nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
-        return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
+        if (cnf.at("nonuniformGrid").at("nodeDistribution").is_string())
+        {
+            auto range = Range::create(cnf.at("nonuniformGrid").at("nodeDistribution"));
+            Vector nodeDistribution(range->size());
+            for (Range::size_type i=0; i<range->size(); i++)
+            {
+                nodeDistribution[i] = range->value(i);
+            }
+            return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
+        } else
+        {
+            auto nodes = cnf.at("nonuniformGrid").at("nodeDistribution").get<std::vector<double>>();
+            Vector nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
+            return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
+        }
     } else
     {
         if (cnf.contains("smartGrid")) {
