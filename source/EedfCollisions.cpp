@@ -176,7 +176,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin())) - 1;
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()) - 1;
     }
 
     double ineSum = 0;
@@ -244,7 +244,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
     }
 
     if (type() == CollisionType::ionization)
@@ -366,7 +366,6 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     {
         lmin = static_cast<Grid::Index>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()) - 1;
     }
-    
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
@@ -398,15 +397,13 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         {
             m_supRateCoeff =
                 SI::gamma * statWeightRatio * grid->du() *
-                cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin)); 
+                cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
         } else
         {
             m_supRateCoeff =
                 SI::gamma * statWeightRatio *
-                (grid->duCells().head(nCells - lmin)).dot(cellCrossSection) * 
-                     grid->getCells().tail(nCells - lmin).dot(eedf.head(nCells - lmin)); 
+                cellCrossSection.cwiseProduct(grid->duCells().cwiseProduct(grid->getCells().tail(nCells - lmin))).dot(eedf.head(nCells - lmin));
         }
-        
     }
 
     return {this, m_ineRateCoeff, m_supRateCoeff};

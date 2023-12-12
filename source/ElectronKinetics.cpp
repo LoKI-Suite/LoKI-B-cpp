@@ -558,9 +558,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                     fieldMatrixSpatGrowth.coeffRef(k, k) += g_fieldSpatialGrowth[k + 1]*Bplus/grid().duCell(k);
                 }
             }
-            // if (iter == 1)
-            //     std::cout << fieldMatrixSpatGrowth.coeffRef(k,k) << std::endl;
-            
+
             // note: this is (alphaEffNew/N)^2*D0[k]
             ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +

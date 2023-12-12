@@ -683,8 +683,8 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
             } else
             {
-                Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
-                numThreshold = static_cast<Grid::Index>(findIndex);
+                Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
+                numThreshold = static_cast<Grid::Index>(findIndex) - 1;
             }
             Vector cellCrossSection(grid.nCells());
 
@@ -753,7 +753,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
                         } else
                         {
-                            ionizationMatrix(k, k) -= delta * grid.duNode(k) * grid.getCell(k) * cellCrossSection[k] * sum;
+                            ionizationMatrix(k, k) -= delta * grid.duCell(k) * grid.getCell(k) * cellCrossSection[k] * sum;
                         }
                     }
 
@@ -780,7 +780,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                         {
                             for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
                             {
-                                ionizationMatrix(k, i) += delta * grid.duNode(i) * grid.getCell(i) * cellCrossSection[i] /
+                                ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
                                                         (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                         (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
                             }
@@ -807,7 +807,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             */
                         } else
                         {
-                            ionizationMatrix(k, i) += delta * grid.duNode(i) * grid.getCell(i) * cellCrossSection[i] /
+                            ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
                                                     (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                     (W + std::pow(grid.getCell(k), 2) / W));
                         }
@@ -891,8 +891,8 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
                 numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
             } else
             {
-                Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
-                numThreshold = static_cast<Grid::Index>(findIndex);
+                Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
+                numThreshold = static_cast<Grid::Index>(findIndex) - 1;
             }
             /* This is an optimization: do not add a source and a sink that cancel out.
              * When this happens, the (minor) energy gain is ignored.
