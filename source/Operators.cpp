@@ -428,12 +428,7 @@ void ElectronElectronOperator::clear()
 }
 
 void ElectronElectronOperator::updateABMatrices(const Grid& grid)
-{
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("ElectronElectronOperator does not support nonuniform grids.");
-    }
-    
+{   
     /* Note that not all elements get a value below, the others must be set to
      * zero. We achieve that by clearing the entire matrix first.
      */
@@ -448,17 +443,39 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
      */
 
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
-    const Vector energyArray = -(1./2.) * grid.getCells().cwiseSqrt() + (2./3./grid.du()) * cellsThreeOverTwo;
-    for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
+    const Vector nodesThreeOverTwo = grid.getNodes().cwiseProduct(grid.getNodes().cwiseSqrt());
+
+    if (grid.isUniform())
     {
-        for (Grid::Index j = 1; j <= i; ++j)
+       const Vector energyArray = -(1./2.) * grid.getCells().cwiseSqrt() + (2./3./grid.du()) * cellsThreeOverTwo;
+        for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
         {
-            m_a(i,j) = energyArray[j];
-        }
-        const double tmp = 2.0/3.0*std::pow(grid.getNodes()(i+1),1.5)/grid.du();
-        for (Grid::Index j = i+1; j < grid.nCells(); ++j)
+            for (Grid::Index j = 1; j <= i; ++j)
+            {
+                m_a(i,j) = energyArray[j];
+            }
+            const double tmp = 2.0/3.0*std::pow(grid.getNodes()(i+1),1.5)/grid.du();
+            for (Grid::Index j = i+1; j < grid.nCells(); ++j)
+            {
+                m_a(i,j) = tmp;
+            }
+        }  
+    } else
+    {
+        const Vector In = grid.getCells().cwiseSqrt().cwiseProduct(grid.duCells());
+        const Vector JnCells = 2/3*(cellsThreeOverTwo.cwiseProduct(grid.duCells()));
+
+        for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
         {
-            m_a(i,j) = tmp;
+            for (Grid::Index j = 1; j <= i; ++j)
+            {
+                m_a(i,j) = -1/2 / grid.duCell(i) * grid.duCell(i) / grid.duNode(i) * In[j] 
+                    + 1/ grid.duCell(i) / grid.duNode(i) * JnCells[j];
+            }
+            for (Grid::Index j = i+1; j < grid.nCells(); ++j)
+            {
+                m_a(i,j) = 2.0/3.0 / grid.duCell(i) / grid.duNode(i) * nodesThreeOverTwo[i+1] * grid.duCell(j);
+            }
         }
     }
 
@@ -489,7 +506,14 @@ void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& ee
     const double e0 = Constant::vacuumPermittivity;
     const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
 
-    const double meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
+    double meanEnergy;
+    if (grid.isUniform())
+    {
+        meanEnergy = grid.du() * cellsThreeOverTwo.dot(eedf);
+    } else
+    {
+        meanEnergy = (grid.duCells().array()*grid.getCells().array().pow(1.5)*eedf.array()).sum();
+    }
     const double Te = 2. / 3. * meanEnergy;
     const double logC = std::log(12 * Constant::pi * std::pow(e0 * Te / e, 1.5) / std::sqrt(ne));
     // g_ee = (3*alpha_eV/gamma)*(ne/N)
@@ -504,17 +528,19 @@ void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eed
      *  The other is the energy gain of an electron moving up one cell,
      *  I (JvD) believe. Make sure this is explained well in the docs.
      */
-    power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
+    if (grid.isUniform())
+    {
+        power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
+    } else 
+    {
+        power = -SI::gamma * (m_A - m_B).cwiseProduct(grid.duCells().cwiseAbs2()).dot(eedf);
+    }
+    
     //std::cout << "EE POWER: " << power << std::endl;
 }
 
 void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("ElectronElectronOperator does not support nonuniform grids.");
-    }
-    
     for (Grid::Index k = 0; k < grid.nCells(); ++k)
     {
         M(k,k) += - (m_A[k] + m_B[k]);
