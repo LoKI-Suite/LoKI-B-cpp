@@ -303,8 +303,8 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
                     } else
                     {
-                        Grid::Index findIndex = (std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin());
-                        numThreshold = static_cast<Grid::Index>(findIndex);
+                        Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
+                        numThreshold = static_cast<Grid::Index>(findIndex) - 1;
                     }
                     
                     for (Grid::Index k = 0; k < cellNumber; ++k)
