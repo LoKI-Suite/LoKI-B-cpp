@@ -176,7 +176,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
     }
 
     double ineSum = 0;
@@ -242,7 +242,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
     }
 
     if (type() == CollisionType::ionization)
@@ -362,9 +362,9 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin());
+        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
     }
-    
+    std::cout << "Rate coeffficient index : " << lmin << std::endl;
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
@@ -391,10 +391,18 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
             Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
 
         const double statWeightRatio = tStatWeight / pStatWeight;
-
-        m_supRateCoeff =
-            SI::gamma * statWeightRatio * grid->du() *
-            cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
+        
+        if (grid->isUniform())
+        {
+            m_supRateCoeff =
+                SI::gamma * statWeightRatio * grid->du() *
+                cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
+        } else
+        {
+            m_supRateCoeff =
+                SI::gamma * statWeightRatio *
+                cellCrossSection.cwiseProduct(grid->duCells().cwiseProduct(grid->getCells().tail(nCells - lmin))).dot(eedf.head(nCells - lmin));
+        }
     }
 
     return {this, m_ineRateCoeff, m_supRateCoeff};
