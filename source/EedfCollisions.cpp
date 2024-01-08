@@ -364,7 +364,6 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     {
         lmin = static_cast<Grid::Index>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
     }
-    std::cout << "Rate coeffficient index : " << lmin << std::endl;
 
     const Vector cellCrossSection =
         .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));

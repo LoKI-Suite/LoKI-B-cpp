@@ -56,8 +56,8 @@ void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
 
             if (k > 0)
             {   
-                const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_CAR/grid.duNode(k);
-                const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_CAR/grid.duNode(k);
+                const double Bmin = -grid.duCell(k) / grid.duNode(k) * 0.5 + c_CAR/grid.duNode(k);
+                const double Amin = grid.duCell(k-1) / grid.duNode(k) * 0.5 + c_CAR/grid.duNode(k);
                 
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
@@ -65,8 +65,8 @@ void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
             
             if (k < grid.nCells() - 1)
             {
-                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_CAR/grid.duNode(k+1);
-                const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_CAR/grid.duNode(k+1);
+                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) * 0.5 + c_CAR/grid.duNode(k+1);
+                const double Aplus = grid.duCell(k) / grid.duNode(k+1) * 0.5 + c_CAR/grid.duNode(k+1);
 
                 mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
@@ -105,13 +105,13 @@ void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg,
         {
             if (k>0)
             {
-                auxHigh = grid.duCell(k) * (grid.duCell(k-1) / grid.duNode(k) / 2 + kTg/grid.duNode(k));
-                net += eedf[k] * -1* g[k] * auxHigh;
+                auxHigh = grid.duCell(k) * (grid.duCell(k) / grid.duNode(k) * 0.5 + kTg/grid.duNode(k));
+                net += eedf[k] * -1. * g[k] * auxHigh;
             }
                 
             if (k< grid.nCells()-1)
             {
-                auxLow = grid.duCell(k) * (-grid.duCell(k+1) / grid.duNode(k+1) / 2 + kTg/grid.duNode(k+1));
+                auxLow = grid.duCell(k) * (-grid.duCell(k+1) / grid.duNode(k+1) * 0.5 + kTg/grid.duNode(k+1));
                 net += eedf[k] * (g[k + 1] * auxLow);
             }
             gain += eedf[k] * (g[k + 1] - g[k]);
@@ -156,15 +156,15 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
                 mat.coeffRef(k, k + 1) = g[k + 1] * factor1;
         }
     } else
-    {   
+    {
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
-            mat.coeffRef(k, k) = 0;
+            mat.coeffRef(k, k) = 0.;
 
             if (k > 0)
             {   
-                const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
-                const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
+                const double Bmin = -grid.duCell(k) / grid.duNode(k) * 0.5 + c_el/grid.duNode(k);
+                const double Amin = grid.duCell(k-1) / grid.duNode(k) * 0.5 + c_el/grid.duNode(k);
                 
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
@@ -172,8 +172,8 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
             
             if (k < grid.nCells() - 1)
             {
-                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
-                const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
+                const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) * 0.5 + c_el/grid.duNode(k+1);
+                const double Aplus = grid.duCell(k) / grid.duNode(k+1) * 0.5 + c_el/grid.duNode(k+1);
 
                 mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
@@ -206,13 +206,13 @@ void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double
         {
             if (k>0)
             {
-                auxHigh = grid.duCell(k) * (grid.duCell(k-1) / grid.duNode(k) / 2 + kTg/grid.duNode(k));
-                net += eedf[k] * -1* g[k] * auxHigh;
+                auxHigh = grid.duCell(k) * (grid.duCell(k-1) / grid.duNode(k) * 0.5 + kTg/grid.duNode(k));
+                net += eedf[k] * -1 * g[k] * auxHigh;
             }
                 
             if (k< grid.nCells()-1)
             {
-                auxLow = grid.duCell(k) * (-grid.duCell(k+1) / grid.duNode(k+1) / 2 + kTg/grid.duNode(k+1));
+                auxLow = grid.duCell(k) * (-grid.duCell(k+1) / grid.duNode(k+1) * 0.5 + kTg/grid.duNode(k+1));
                 net += eedf[k] * (g[k + 1] * auxLow);
             }
             gain += eedf[k] * (g[k + 1] - g[k]);
@@ -235,7 +235,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
-        g[i] = (EoN * EoN / 3) * grid.getNode(i) /
+        g[i] = (EoN * EoN / 3.) * grid.getNode(i) /
           (totalCS[i] + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*totalCS[i]));
     }
     g[g.size() - 1] = 0.;
@@ -264,20 +264,20 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     {
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
-            mat.coeffRef(k, k) = 0;
+            mat.coeffRef(k, k) = 0.;
 
             if (k > 0)
             {
-                const double Amin = 1/grid.duNode(k);
-                const double Bmin = 1/grid.duNode(k);
+                const double Amin = 1./grid.duNode(k);
+                const double Bmin = 1./grid.duNode(k);
                 
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
             if (k < grid.nCells() - 1)
             {
-                const double Aplus = 1/grid.duNode(k+1);
-                const double Bplus = 1/grid.duNode(k+1);
+                const double Aplus = 1./grid.duNode(k+1);
+                const double Bplus = 1./grid.duNode(k+1);
 
                 mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
@@ -290,7 +290,7 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
 {
     if (grid.isUniform())
     {
-         power = 0;
+        power = 0.;
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
             power += eedf[k] * (g[k + 1] - g[k]);
@@ -304,13 +304,13 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
         {
             if (k>0)
             {
-                auxHigh = grid.duCell(k) * 1/grid.duNode(k);
-                power += eedf[k] * -1* g[k] * auxHigh;
+                auxHigh = grid.duCell(k) * 1. /grid.duNode(k);
+                power += eedf[k] * -1. * g[k] * auxHigh;
             }
                 
             if (k< grid.nCells()-1)
             {
-                auxLow = grid.duCell(k) * 1/grid.duNode(k+1);
+                auxLow = grid.duCell(k) * 1. /grid.duNode(k+1);
                 power += eedf[k] * (g[k + 1] * auxLow);
             }
         }
@@ -459,22 +459,21 @@ void ElectronElectronOperator::updateABMatrices(const Grid& grid)
             {
                 m_a(i,j) = tmp;
             }
-        }  
+        }
     } else
     {
         const Vector In = grid.getCells().cwiseSqrt().cwiseProduct(grid.duCells());
-        const Vector JnCells = 2/3*(cellsThreeOverTwo.cwiseProduct(grid.duCells()));
+        const Vector JnCells = 2./3. * (cellsThreeOverTwo.cwiseProduct(grid.duCells()));
 
         for (Grid::Index i = 0; i < grid.nCells() - 1; ++i)
         {
             for (Grid::Index j = 1; j <= i; ++j)
             {
-                m_a(i,j) = -1/2 / grid.duCell(i) * grid.duCell(i) / grid.duNode(i) * In[j] 
-                    + 1/ grid.duCell(i) / grid.duNode(i) * JnCells[j];
+                m_a(i,j) = -1./2. / grid.duCell(i) * grid.duCell(i+1) / grid.duNode(i+1) * In[j] + 1. / grid.duCell(i) / grid.duNode(i+1) * JnCells[j];
             }
             for (Grid::Index j = i+1; j < grid.nCells(); ++j)
             {
-                m_a(i,j) = 2.0/3.0 / grid.duCell(i) / grid.duNode(i) * nodesThreeOverTwo[i+1] * grid.duCell(j);
+                m_a(i,j) = 2./3. / grid.duCell(i) / grid.duNode(i+1) * nodesThreeOverTwo[i+1] * grid.duCell(j);
             }
         }
     }

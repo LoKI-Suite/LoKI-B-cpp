@@ -1,22 +1,11 @@
 //
 // Created by daan on 13-5-19.
 //
-#include <string>
+
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include <chrono>
 #include <cmath>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf)
-{
-    for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        os << grid.getCells()(k) << '\t' << std::setprecision(15) << eedf(k)  << std::endl;
-    }
-}
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -571,16 +560,16 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
             } else
             {
-                fieldMatrixSpatGrowth.coeffRef(k, k) = 0;
+                fieldMatrixSpatGrowth.coeffRef(k, k) = 0.;
                 if (k >0)
                 {
-                    const double Amin = grid().duCell(k-1) / grid().duNode(k) / 2;
+                    const double Amin = grid().duCell(k-1) / grid().duNode(k) * 0.5;
                     fieldMatrixSpatGrowth.coeffRef(k, k) += - g_fieldSpatialGrowth[k]*Amin/grid().duCell(k);
                 }
 
                 if (k < grid().nCells() - 1)
                 {
-                    const double Bplus = grid().duCell(k+1) / grid().duNode(k+1) / 2;
+                    const double Bplus = grid().duCell(k+1) / grid().duNode(k+1) * 0.5;
                     fieldMatrixSpatGrowth.coeffRef(k, k) += g_fieldSpatialGrowth[k + 1]*Bplus/grid().duCell(k);
                 }
             }
@@ -615,7 +604,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             {
                 if (k > 0)
                 {
-                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
+                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2.*grid().du());
 #if USE_D0_FOR_ionSpatialGrowthU
                     ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
 #else
@@ -627,7 +616,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
                 if (k < grid().nCells() - 1)
                 {
-                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
+                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2.*grid().du());
 #if USE_D0_FOR_ionSpatialGrowthU
                     ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
 #else
@@ -640,10 +629,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             {
                 if (k > 0)
                 {
-                    const double Bmin = grid().duCell(k) / grid().duNode(k) / 2;
-                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k]*Bmin/ (grid().duCell(k));
+                    const double Bmin = grid().duCell(k) / grid().duNode(k) * 0.5;
+                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] * Bmin / grid().duCell(k);
 #if USE_D0_FOR_ionSpatialGrowthU
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k]*Bmin/ (grid().duCell(k));
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] * Bmin / grid().duCell(k);
 #else
                     ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
 #endif
@@ -652,10 +641,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 }
                 if (k < grid().nCells() - 1)
                 {
-                    const double Aplus = grid().duCell(k) / grid().duNode(k+1) / 2;
-                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1]*Aplus / (grid().duCell(k));
+                    const double Aplus = grid().duCell(k) / grid().duNode(k+1) * 0.5;
+                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] * Aplus / grid().duCell(k);
 #if USE_D0_FOR_ionSpatialGrowthU
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k]*Aplus / (grid().duCell(k));
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] * Aplus / grid().duCell(k);
 #else
                     ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
 #endif
@@ -818,14 +807,14 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         {
             for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
-                fieldMatrixTempGrowth.coeffRef(k, k) = 0;
+                fieldMatrixTempGrowth.coeffRef(k, k) = 0.;
                 // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
                 ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
 
                 if (k > 0)
                 {
-                    double Bmin = 1/grid().duNode(k);
-                    double Amin = 1/grid().duNode(k);
+                    double Bmin = 1./grid().duNode(k);
+                    double Amin = 1./grid().duNode(k);
                     fieldMatrixTempGrowth.coeffRef(k, k) -=  g_fieldTemporalGrowth[k] * Amin / grid().duCell(k);
                     fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] * Bmin / grid().duCell(k);
                     boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
@@ -833,8 +822,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
                 if (k < grid().nCells() - 1)
                 {
-                    double Bplus = 1/grid().duNode(k+1);
-                    double Aplus = 1/grid().duNode(k+1);
+                    double Bplus = 1./grid().duNode(k+1);
+                    double Aplus = 1./grid().duNode(k+1);
                     fieldMatrixTempGrowth.coeffRef(k, k) -=  g_fieldTemporalGrowth[k + 1] * Bplus / grid().duCell(k);
                     fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] * Aplus / grid().duCell(k);
                     boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
