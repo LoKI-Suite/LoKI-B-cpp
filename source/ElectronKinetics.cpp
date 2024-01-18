@@ -1087,9 +1087,9 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
         firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid().du());
     } else
     {
-        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(0);
+        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(1);
         firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
-        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(2 * grid().duNodes().segment(1, n - 2));
+        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(grid().duNodes().segment(1, n - 2) + grid().duNodes().segment(2, n - 2));
     } 
    
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
