@@ -532,7 +532,7 @@ void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eed
         power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
     } else 
     {
-        power = -SI::gamma * (m_A - m_B).cwiseProduct(grid.duCells().cwiseAbs2()).dot(eedf);
+        power = -SI::gamma * grid.duCells().cwiseAbs2().dot((m_A - m_B).cwiseProduct(eedf));
     }
     
     //std::cout << "EE POWER: " << power << std::endl;
