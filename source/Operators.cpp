@@ -174,15 +174,13 @@ void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double
         }
     } else
     {
-        Vector auxHigh = kTg * Vector::Ones(grid.duNodes().size()) + grid.duNodes() * .5; // aux1
-        Vector auxLow  = kTg * Vector::Ones(grid.duNodes().size()) - grid.duNodes() * .5; // aux2
-        net = 0.0;
-        gain = 0.0;
-        for (Grid::Index k = 0; k < grid.nCells(); ++k)
-        {
-            net += eedf[k] * (g[k + 1] * auxLow[k] - g[k] * auxHigh[k]);
-            gain += eedf[k] * (g[k + 1] - g[k]);
-        }
+        const auto n = grid.nCells();
+
+        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
+        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+
+        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
+        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
     }
 
     net *= SI::gamma;
@@ -254,12 +252,8 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
 void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
-    power = 0;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        power += eedf[k] * (g[k + 1] - g[k]);
-    }
-    power *= SI::gamma;
+    const auto n = grid.nCells();
+    power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum();
 }
 
 InelasticOperator::InelasticOperator(const Grid& grid)
