@@ -279,7 +279,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
             {
                 const double threshold = collision->crossSection->threshold();
 
-                if (threshold < grid.getNodes()[0] || threshold > grid.getNodes()[grid.nCells()])
+                if (threshold < grid.getNode(0) || threshold > grid.getNode(cellNumber))
                     continue;
 
                 const double targetDensity = collision->getTarget()->delta();
@@ -287,7 +287,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                 if (targetDensity != 0)
                 {
                     Vector cellCrossSection(cellNumber);
-                    int numThreshold;
+                    Grid::Index numThreshold;
 
                     for (Grid::Index i = 0; i < cellNumber; ++i)
                         cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
@@ -298,17 +298,17 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     } else
                     {
                         Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
-                        numThreshold = static_cast<Grid::Index>(findIndex) - 1;
+                        numThreshold = findIndex - 1;
                     }
                     
                     for (Grid::Index k = 0; k < cellNumber; ++k)
                     {
                         if (k < cellNumber - numThreshold)
                             inelasticMatrix(k, k + numThreshold) +=
-                                targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
                         /** \todo Clarify. See the comments on the (conserving) attachment operator.
                          */
-                        inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                        inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                     }
 
                     if (collision->isReverse())
@@ -332,10 +332,10 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             if (k >= numThreshold)
                                 inelasticMatrix(k, k - numThreshold) +=
-                                    swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    swRatio * productDensity * grid.getCell(k) * cellCrossSection[k];
 
                             if (k < cellNumber - numThreshold)
-                                inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCells()[k + numThreshold] *
+                                inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(k + numThreshold) *
                                                          cellCrossSection[k + numThreshold];
                         }
                     }
