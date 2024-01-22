@@ -99,18 +99,19 @@ try
     {
         throw std::runtime_error("Usage: loki <inputfile>");
     }
-    const loki::json_type cnf = loki::read_json_from_file(argv[1]);
+    const std::filesystem::path fileName(argv[1]);
+    const loki::json_type cnf = loki::read_json_from_file(fileName);
 
     loki::WorkingConditions workingConditions(cnf.at("workingConditions"));
     std::unique_ptr<loki::ElectronKinetics> electron_kinetics;
     const std::string eedfType = cnf.at("electronKinetics").at("eedfType");
     if (eedfType=="boltzmann")
     {
-	electron_kinetics.reset(new loki::ElectronKineticsBoltzmann(cnf.at("electronKinetics"), &workingConditions));
+	electron_kinetics.reset(new loki::ElectronKineticsBoltzmann(fileName, cnf.at("electronKinetics"), &workingConditions));
     }
     else if (eedfType=="prescribed")
     {
-	electron_kinetics.reset(new loki::ElectronKineticsPrescribed(cnf.at("electronKinetics"), &workingConditions));
+	electron_kinetics.reset(new loki::ElectronKineticsPrescribed(fileName, cnf.at("electronKinetics"), &workingConditions));
     }
     else
     {
