@@ -113,7 +113,7 @@ try
     if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
     {
         const loki::json_type cnf = loki::read_json_from_file(fileName);
-        simulation.reset(new loki::Simulation(cnf));
+        simulation.reset(new loki::Simulation(fileName, cnf));
         if (cnf.at("output").at("isOn"))
         {
 #ifdef WRITE_OUTPUT_TO_JSON_OBJECT
@@ -130,7 +130,7 @@ try
     else
     {
         const loki::Setup setup(argv[1]);
-        simulation.reset(new loki::Simulation(setup));
+        simulation.reset(new loki::Simulation(argv[1], setup));
         if (setup.output.isOn)
         {
             output.reset(

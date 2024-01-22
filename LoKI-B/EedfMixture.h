@@ -22,8 +22,8 @@ class EedfMixture
      *  requires a pointer to the energy grid in order to properly initialize the
      *  cross sections of the collisions.
      */
-    EedfMixture(const Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
-    EedfMixture(const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
+    EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
+    EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
 
     const GasMixture& composition() const { return m_composition; }
     GasMixture& composition() { return m_composition; }
@@ -40,18 +40,18 @@ class EedfMixture
      *  otherwise, the legacy LXCat file format is assumed and member loadCollisionsClassic
      *  is called on the file.
      */
-    void loadCollisions(const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
+    void loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
 
     /** One extra property needs to be set from a file: OPBParameter.
      *  This override sets this parameter and then calls Gas::loadGasProperties to set the
      *  rest of its properties.
      */
-    void loadGasProperties(const GasPropertiesSetup &setup);
+    void loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup);
     /** One extra property needs to be set from a file: OPBParameter.
      *  This override sets this parameter and then calls Gas::loadGasProperties to set the
      *  rest of its properties.
      */
-    void loadGasProperties(const json_type &cnf);
+    void loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf);
 
     /// \todo comment addCARGas
     void addCARGas(const std::string& gasName);
