@@ -407,11 +407,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     Vector integrandCI;
     if (grid().isUniform())
         {
-            integrandCI = (SI::gamma*grid().du()) * Vector::Ones(grid().nCells()).transpose() *
+            integrandCI = SI::gamma*grid().du() * Vector::Ones(grid().nCells()).transpose() *
                          (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
         } else
         {
-            integrandCI = (SI::gamma*grid().duCells()).transpose() *
+            integrandCI = SI::gamma*grid().duCells().transpose() *
                          (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
         }
 
