@@ -176,22 +176,25 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin()));
+        lmin = static_cast<uint32_t>((std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin())) - 1;
     }
     
     double ineSum = 0;
 
-    for (uint32_t i = lmin; i < n; ++i)
-    {
-        ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
-    }
-
     if (grid->isUniform())
     {
+        for (uint32_t i = lmin; i < n; ++i)
+        {
+            ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i];
+        }
         collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getNode(lmin) * ineSum;
     } else
     {
-        collPower.forward = -SI::gamma * getTarget()->delta() * grid->duNode(lmin) * grid->getNode(lmin) * ineSum;
+        for (uint32_t i = lmin; i < n; ++i)
+        {
+            ineSum += eedf[i] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i);
+        }
+        collPower.forward = -SI::gamma * getTarget()->delta() *  grid->getNode(lmin) * ineSum;
     }
     
 
@@ -201,19 +204,22 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 
         double supSum = 0;
 
-        for (uint32_t i = lmin; i < n; ++i)
-        {
-            supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
-        }
-
         if (grid->isUniform())
         {
+            for (uint32_t i = lmin; i < n; ++i)
+            {
+                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i];
+            }
             collPower.backward +=
                 SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->du() * grid->getNode(lmin) * supSum;
         } else
         {
+            for (uint32_t i = lmin; i < n; ++i)
+            {
+                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i);
+            }
             collPower.backward +=
-                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->duNode(lmin) * grid->getNode(lmin) * supSum;
+                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->getNode(lmin) * supSum;
         }
         
     }
@@ -331,7 +337,7 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
     } else
     {
-        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin());
+        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()) - 1;
     }
     
 
@@ -360,10 +366,20 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
             Log<NoStatWeight>::Error(*m_rhsHeavyStates[0]);
 
         const double statWeightRatio = tStatWeight / pStatWeight;
-
-        m_supRateCoeff =
-            SI::gamma * statWeightRatio * grid->du() *
-            cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
+        
+        if (grid->isUniform())
+        {
+            m_supRateCoeff =
+                SI::gamma * statWeightRatio * grid->du() *
+                cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin)); 
+        } else
+        {
+            m_supRateCoeff =
+                SI::gamma * statWeightRatio *
+                (grid->duCells().head(nCells - lmin)).dot(cellCrossSection) * 
+                     grid->getCells().tail(nCells - lmin).dot(eedf.head(nCells - lmin)); 
+        }
+        
     }
 
     return {this, m_ineRateCoeff, m_supRateCoeff};
