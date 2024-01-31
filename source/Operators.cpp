@@ -297,15 +297,49 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
                     } else
                     {
-                        Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
-                        numThreshold = findIndex - 1;
+                       numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
                     }
                     
                     for (Grid::Index k = 0; k < cellNumber; ++k)
                     {
                         if (k < cellNumber - numThreshold)
-                            inelasticMatrix(k, k + numThreshold) +=
-                                targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+                        {
+                            if (grid.isUniform())
+                            {
+                                inelasticMatrix(k, k + numThreshold) +=
+                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold]; 
+                            } else
+                            {
+                                double energyCell = grid.getCell(k + numThreshold);
+                                double rightBound = grid.getNode(k + numThreshold + 1);
+                                double leftBound = grid.getNode(k + numThreshold);
+                                double sizeCell = grid.duCell(k + numThreshold);
+
+                                Grid::Index i0 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), energyCell - leftBound) - grid.getNodes().begin() - 1;
+                                Grid::Index i1 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), rightBound - energyCell) - grid.getNodes().begin() - 1;
+
+                                if (i0 == i1)
+                                {
+                                    inelasticMatrix(i0, k + numThreshold) +=
+                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                } else
+                                {
+                                    for (Grid::Index i = i0 + 1; i < i1; i++)
+                                    {
+                                        inelasticMatrix(i, k + numThreshold) += (grid.duCell(i) ) / sizeCell *
+                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    }
+
+                                    inelasticMatrix(i0, k + numThreshold) += (grid.duNode(i0+1) - energyCell - leftBound) / sizeCell *
+                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    
+                                    inelasticMatrix(i1, k + numThreshold) += (rightBound - energyCell - grid.duNode(i1)) / sizeCell *
+                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    
+                                }
+                            }
+                            
+                        }
                         /** \todo Clarify. See the comments on the (conserving) attachment operator.
                          */
                         inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
