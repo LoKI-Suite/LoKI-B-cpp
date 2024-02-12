@@ -99,7 +99,6 @@
             ]
         },
         "gasProperties": {
-            "_mass": "test_masses.txt",
             "mass": [
                 { "name": "X", "mass": 3.643753424e-26 }
             ],

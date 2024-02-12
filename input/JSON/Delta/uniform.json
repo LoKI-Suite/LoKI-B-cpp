@@ -91,15 +91,23 @@
                 "reversible": false,
                 "type_tags": ["Excitation"]
                 },
-                "reference": [""],
+                "reference": [
+                    ""
+                ],
                 "labels": ["Energy", "Cross section"],
                 "units": ["eV", "m2"],
-                "data": []
+                "threshold": 9.999,
+                "data": [
+                    [0.0, 0],
+                    [9.9990000e+0, 0],
+                    [10.0, 2.0e-18],
+                    [10.00010000e+0, 0],
+                    [1e2, 0]
+                ]
                 }
             ]
         },
         "gasProperties": {
-            "_mass": "test_masses.txt",
             "mass": [
                 { "name": "X", "mass": 3.643753424e-26 }
             ],
@@ -120,6 +128,8 @@
         },
         "numerics": {
             "energyGrid": {
+                "maxEnergy": 30,
+                "cellNumber": 6000
             },
             "maxPowerBalanceRelError": 1e-9,
             "nonLinearRoutines": {
@@ -137,7 +147,11 @@
         "isOn": true,
         "folder": "simulation",
         "dataFiles": [
-            "eedf"
+            "eedf",
+            "swarmParameters",
+            "rateCoefficients",
+            "powerBalance",
+            "lookUpTable"
         ]
     }
 }
