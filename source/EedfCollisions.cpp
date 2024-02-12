@@ -216,7 +216,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         {
             for (uint32_t i = lmin; i < n; ++i)
             {
-                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i);
+                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i - lmin);
             }
             collPower.backward +=
                 SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->getNode(lmin) * supSum;
