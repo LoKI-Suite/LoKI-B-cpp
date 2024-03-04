@@ -299,50 +299,74 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                        numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
                     }
-                    
-                    for (Grid::Index k = 0; k < cellNumber; ++k)
-                    {
-                        if (k < cellNumber - numThreshold)
-                        {
-                            if (grid.isUniform())
-                            {
-                                inelasticMatrix(k, k + numThreshold) +=
-                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold]; 
-                            } else
-                            {
-                                double energyCell = grid.getCell(k + numThreshold);
-                                double rightBound = grid.getNode(k + numThreshold + 1);
-                                double leftBound = grid.getNode(k + numThreshold);
-                                double sizeCell = grid.duCell(k + numThreshold);
 
-                                Grid::Index i0 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), energyCell - leftBound) - grid.getNodes().begin() - 1;
-                                Grid::Index i1 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), rightBound - energyCell) - grid.getNodes().begin() - 1;
+                    if (grid.isUniform())
+                    {
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        {
+                            if (k < cellNumber - numThreshold)
+                                inelasticMatrix(k, k + numThreshold) +=
+                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+
+                            /** \todo Clarify. See the comments on the (conserving) attachment operator.
+                             */
+                            inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                        }
+                    } else
+                    {
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        {
+                            if (k > numThreshold)
+                            {
+                                double numericalThreshold = grid.getCell(numThreshold);
+                                double energyCell = grid.getCell(k);
+                                double rightBound = grid.getNode(k+ 1);
+                                double leftBound = grid.getNode(k);
+                                double sizeOriginCell = grid.duCell(k);
+
+                                Grid::Index i0 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), leftBound - numericalThreshold) - grid.getNodes().begin() - 1;
+                                Grid::Index i1 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), rightBound - numericalThreshold) - grid.getNodes().begin() - 1;
 
                                 if (i0 == i1)
                                 {
-                                    inelasticMatrix(i0, k + numThreshold) +=
-                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    inelasticMatrix(i0, k) +=
+                                    targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                } else if (i1 - i0 == 1)
+                                {
+                                    double alphaMin = (grid.getCell(i1) - (energyCell - numericalThreshold)) / (grid.getCell(i1) - grid.getCell(i1));
+                                    double alphaPlus = 1 - alphaMin;
+
+                                    inelasticMatrix(i0, k) += alphaMin *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    inelasticMatrix(i0, k) += alphaPlus *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                 } else
                                 {
+                                    double alphaMiddle = (grid.getNode(i0 + 1) - grid.getNode(i1)) / sizeOriginCell;
+                                    double targetMiddleLeft = (grid.getNode(i0 + 1) + leftBound - numericalThreshold) / 2.;
+                                    double targetMiddleRight = (grid.getNode(i1) + rightBound - numericalThreshold) / 2.;
+                                    double fractionLeft = (grid.getNode(i0 + 1) - (leftBound - numericalThreshold)) / sizeOriginCell;
+                                    double fractionRight = (rightBound - numericalThreshold - grid.getNode(i1)) / sizeOriginCell;
+                                    double targetMiddleCenter = (grid.getNode(i0 + 1) + grid.getNode(i1)) / 2.;
+
+                                    double alphaMin = fractionLeft / (targetMiddleCenter - grid.getCell(i0)) * (targetMiddleCenter - targetMiddleLeft);
+                                    alphaMiddle += fractionLeft - alphaMin;
+                                    double alphaPlus = fractionRight / (targetMiddleCenter - grid.getCell(i1)) * (targetMiddleCenter - targetMiddleRight);
+                                    alphaMiddle += fractionRight - alphaPlus;
+                                    std::cout << alphaMin + alphaMiddle + alphaPlus << std::endl;
                                     for (Grid::Index i = i0 + 1; i < i1; i++)
                                     {
-                                        inelasticMatrix(i, k + numThreshold) += (grid.duCell(i) ) / sizeCell *
-                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                        inelasticMatrix(i, k) += grid.duCell(i)/(grid.getNode(i0 + 1) - grid.getNode(i1)) * alphaMiddle *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                     }
-
-                                    inelasticMatrix(i0, k + numThreshold) += (grid.duNode(i0+1) - energyCell - leftBound) / sizeCell *
-                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
-                                    
-                                    inelasticMatrix(i1, k + numThreshold) += (rightBound - energyCell - grid.duNode(i1)) / sizeCell *
-                                        targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
-                                    
+                                    inelasticMatrix(i0, k) += alphaMin *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    inelasticMatrix(i0, k) += alphaPlus *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                 }
                             }
-                            
+                            inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                         }
-                        /** \todo Clarify. See the comments on the (conserving) attachment operator.
-                         */
-                        inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                     }
 
                     if (collision->isReverse())
