@@ -84,14 +84,26 @@ void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg,
      *  net = gain - sum_k eedf[k] (g[k + 1] + g[k]) * du/2 := gain + loss
      */
     const double kTg = Constant::kBeV * Tg;
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
-    net = 0.0;
-    gain = 0.0;
-    for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
+    if (grid.isUniform())
     {
-        net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
-        gain += eedf[k] * (g[k + 1] - g[k]);
+        double auxHigh = kTg + grid.du() * .5; // aux1
+        double auxLow  = kTg - grid.du() * .5; // aux2
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
+    } else
+    {
+        const auto n = grid.nCells();
+
+        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
+        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+
+        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
+        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
     }
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
