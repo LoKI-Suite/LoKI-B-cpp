@@ -21,6 +21,6 @@ jobs:
     - name: CMake generate
       run: $nix cmake -DCMAKE_BUILD_TYPE=Release -B build
     - name: CMake build
-      run: $nix cmake --build build -- -j $(nproc)
+      run: $nix cmake --build build -j $(nproc)
     - name: CTest
       run: $nix ctest --test-dir build/tests
