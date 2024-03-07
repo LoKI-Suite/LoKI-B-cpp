@@ -12,13 +12,10 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Update package repositories
-      run: sudo apt update
-    - name: install dependencies
-      run: sudo apt install -y cmake nlohmann-json3-dev libeigen3-dev
-    - name: mkdir build
-      run: mkdir build
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v25
+    - name: Load CI build environment
+      run: nix develop .#ci
     - name: CMake generate 
       run: cmake -DCMAKE_BUILD_TYPE=Release -B build
     - name: CMake build
