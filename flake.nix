@@ -66,10 +66,9 @@
 
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [ cmake nlohmann_json eigen ];
-          buildInputs = with pkgs; [ openblas ];
+          nativeBuildInputs = with pkgs; [ cmake ninja nlohmann_json eigen ];
 
-          cmakeFlags = [ "-DUSE_OPENBLAS=ON" "-DENABLE_INSTALL=ON" ];
+          cmakeFlags = [ "-DENABLE_INSTALL=ON" ];
         };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
@@ -77,12 +76,16 @@
 
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [ cmake nlohmann_json eigen ];
-          buildInputs = with pkgs; [ openblas gcovr ];
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            nlohmann_json
+            eigen
+            gcovr
+          ];
 
-          cmakeFlags =
-            [ "-DUSE_OPENBLAS=ON" "-Dcoverage=ON" "-DCMAKE_BUILD_TYPE=Debug" ];
-          buildFlags = [ "coverage" ];
+          cmakeFlags = [ "-Dcoverage=ON" "-DCMAKE_BUILD_TYPE=Debug" ];
+          ninjaFlags = [ "coverage" ];
 
           installPhase = ''
             mkdir $out
