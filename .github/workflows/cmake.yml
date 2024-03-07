@@ -8,7 +8,6 @@ on:
 
 jobs:
   Build:
-
     runs-on: ubuntu-22.04
 
     env:
@@ -17,7 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
-    - name: CMake generate 
+    - name: Prepare CI environment
+      run: nix develop .#ci
+    - name: CMake generate
       run: $nix cmake -DCMAKE_BUILD_TYPE=Release -B build
     - name: CMake build
       run: $nix cmake --build build -- -j $(nproc)
