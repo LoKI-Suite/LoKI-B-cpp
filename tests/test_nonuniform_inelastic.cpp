@@ -15,6 +15,10 @@
 #include <iostream>
 #include <fstream>
 
+
+int nTot = 3000;
+double fraction = 0.15;
+
 loki::Vector analyticalSolutionTwoSinglePeak(loki::Grid const &grid)
 {
     using namespace loki;
@@ -28,9 +32,10 @@ loki::Vector analyticalSolutionTwoSinglePeak(loki::Grid const &grid)
 
     double u0 = 10.*e;
     double u1 = 15.*e;
-    double dupeak0 = 2*1e-1/100*e;
-    double sigma0 = 1e-21;
-    double sigma1 = 1e-21;
+    double dupeak0 = 2*1e-1*e/(grid.nCells()*fraction);
+    // double dupeak0 = uMax/nCells;
+    double sigma0 = 1e-22;
+    double sigma1 = 1e-19;
     double Q = 1e-19;
     double mM = 2.5e-5;
     double W = e/ std::sqrt(6*mM) * eon/Q;
@@ -46,7 +51,7 @@ loki::Vector analyticalSolutionTwoSinglePeak(loki::Grid const &grid)
     Grid::Index findIndex2 = (std::upper_bound(grid1.getCells().begin(),grid1.getCells().end(), u0) - grid1.getCells().begin());
     Grid::Index findIndex3 = (std::upper_bound(grid1.getCells().begin(),grid1.getCells().end(), u1) - grid1.getCells().begin());
 
-    for (Grid::Index k = (grid.nCells()-1); (k >-1) ; --k)
+    for (Grid::Index k = (grid.nCells()); (k >-1) ; --k)
         {
             // Analytical solution
             fhg[k] = std::exp(-1*std::pow(1/W,2)/2 * (std::pow(grid1.getCell(k),2) - std::pow(u1,2)));
@@ -133,9 +138,9 @@ loki::Vector analyticalSolutionDoublePeak(loki::Grid const &grid)
 
     double u0 = 10.*e;
     double u1 = 15.*e;
-    double dupeak0 = 2*1e-1/100*e;
-    double sigma0 = 1e-21;
-    double sigma1 = 1e-21;
+    double dupeak0 = 2*1e-1*e/(grid.nCells()*fraction);
+    double sigma0 = 1e-22;
+    double sigma1 = 1e-19;
     double Q = 1e-19;
     double mM = 2.5e-5;
     double W = e/ std::sqrt(6*mM) * eon/Q;
@@ -152,10 +157,10 @@ loki::Vector analyticalSolutionDoublePeak(loki::Grid const &grid)
     Grid::Index findIndex3 = (std::upper_bound(grid1.getCells().begin(),grid1.getCells().end(), u0) - grid1.getCells().begin());
     Grid::Index findIndex4 = (std::upper_bound(grid1.getCells().begin(),grid1.getCells().end(), u1) - grid1.getCells().begin());
 
-    for (Grid::Index k = (grid.nCells()-1); (k >-1) ; --k)
+    for (Grid::Index k = (grid.nCells()); (k >-1) ; --k)
         {
             // Analytical solution
-            fhg[k] = std::exp(-1*std::pow(1/W,2)/2 * (std::pow(grid1.getCell(k),2) - std::pow(u1,2)));
+            fhg[k] = std::exp(-1.0*std::pow(1.0/W,2)/2.0 * (std::pow(grid1.getCell(k),2) - std::pow(u1,2)));
             
             
             if (k < findIndex1)
@@ -163,13 +168,13 @@ loki::Vector analyticalSolutionDoublePeak(loki::Grid const &grid)
                 g[k] = g[findIndex1];
             } else if (k < findIndex2 && k >= findIndex1)
             {
-                g[k] = 1/(4*mM)*(sigma0/Q)*std::pow(u0/W,2)*f[findIndex3]/f[findIndex4]*(std::expint(std::pow((u1-u0)/W,2)/2) - std::expint(std::pow(grid1.getCell(k)/W,2)/2)) + g[findIndex2];
+                g[k] = 1./(4.*mM)*(sigma0/Q)*std::pow(u0/W,2)*(fhg[findIndex3]*(1+g[findIndex3]))/(fhg[findIndex4]*(1+g[findIndex4]))* std::exp(-1*std::pow(u1/W,2)/2) * (std::expint(std::pow((u1-u0)/W,2)/2.) - std::expint(std::pow(grid1.getCell(k)/W,2)/2.)) + g[findIndex2];
             } else if (k < findIndex3 && k>= findIndex2) 
             {
-                g[k] = 1/(4*mM)*(std::pow(u0/W,2)*(sigma0/Q)*f[findIndex3]/f[findIndex4] + std::pow(u1/W,2)*(sigma1/Q))*(std::expint(std::pow(u0/W,2)/2) - std::expint(std::pow(grid1.getCell(k)/W,2)/2)) + g[findIndex3];
+                g[k] = 1./(4.*mM)*(std::pow(u0/W,2)*(sigma0/Q)*(fhg[findIndex3]*(1+g[findIndex3]))/(fhg[findIndex4]*(1+g[findIndex4])) + std::pow(u1/W,2)*(sigma1/Q))*std::exp(-1*std::pow(u1/W,2)/2.)*(std::expint(std::pow(u0/W,2)/2.) - std::expint(std::pow(grid1.getCell(k)/W,2)/2.)) + g[findIndex3];
             } else if (k < findIndex4 && k >= findIndex3)
             {
-                g[k] = 1/(4*mM)*(sigma1/Q)*std::pow(u1/W,2)*(std::expint(std::pow(u1/W,2)/2) - std::expint(std::pow(grid1.getCell(k)/W,2)/2));
+                g[k] = 1./(4.*mM)*(sigma1/Q)*std::pow(u1/W,2)* std::exp(-1*std::pow(u1/W,2)/2) *(std::expint(std::pow(u1/W,2)/2) - std::expint(std::pow(grid1.getCell(k)/W,2)/2));
             } else 
             {
                 g[k] = 0;
@@ -225,13 +230,35 @@ void checkTwoSinglePeak(const loki::Grid &grid,
     test_expr(meanRelativeError < 0.50);
 }
 
-nlohmann::json twoSingleDeltaPeaks(int n, int n1)
+void checkDoublePeak(const loki::Grid &grid,
+    const loki::Vector &eedf,
+    const loki::WorkingConditions &wc,
+    const loki::Power &power,
+    const loki::EedfCollisionDataMixture& gases,
+    const loki::SwarmParameters &swarmParameters,
+    const loki::Vector *firstAnisotropy
+)
+{
+    using namespace loki;
+    loki::Vector solution = analyticalSolutionDoublePeak(grid);
+    
+    if (grid.getCells().size() != eedf.size())
+    {
+        throw std::runtime_error("error");
+    }
+    
+    double meanRelativeError = ((solution - eedf).cwiseQuotient(solution)).cwiseAbs().mean();
+    test_expr(meanRelativeError < 0.50);
+}
+
+nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
 {
     using namespace loki;
     
-    int nCells =  n + 2*n1;
+    int n1 = nCells * frac;
+    int n =  nCells - 2*n1;
     double U0 = 10.;
-    double U1 = 15;
+    double U1 = 15.;
     double duPeak = 1e-1;
     double Umax = 30.;
     double deltau = 2*duPeak/n1;
@@ -239,18 +266,19 @@ nlohmann::json twoSingleDeltaPeaks(int n, int n1)
     // If grid is uniform : 
     // double deltau = Umax/nCells;
 
-    double sigma0 = 1e-21;
-    double sigma1 = 1e-21;
-    std::ifstream ifs("../../input/JSON/NonUniform/nonuniformTwoSingleDelta.input.json");
+    double sigma0 = 1e-22;
+    double sigma1 = 1e-19;
+    std::ifstream ifs("../../input/JSON/Delta/nonuniform-two-single.json");
     auto j = nlohmann::json::parse(ifs);
+    Vector zero = deltau*0.5*Vector::Ones(1);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
-    Vector part3 = Vector::LinSpaced(n*(U1 - U0)/Umax + 1, (U0 + duPeak + 0.1*duPeak)/Umax, (U1 - duPeak - 0.1*duPeak)/Umax);
+    Vector part3 = Vector::LinSpaced(n*(U1 - U0)/Umax, (U0 + duPeak + 0.1*duPeak)/Umax, (U1 - duPeak - 0.1*duPeak)/Umax);
     Vector part4 = Vector::LinSpaced(n1, (U1 - duPeak)/Umax, (U1 + duPeak)/Umax);
     Vector part5 = Vector::LinSpaced(n*(Umax - U1)/Umax, (U1 + duPeak + 0.1*duPeak)/Umax, Umax/Umax);
 
     Vector nodeDistribution(nCells +1);
-    nodeDistribution << part1, part2, part3, part4, part5;
+    nodeDistribution << zero, part1, part2, part3, part4, part5;
     std::sort(nodeDistribution.begin(), nodeDistribution.end());
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["nodeDistribution"] = nodeDistribution; 
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["maxEnergy"] = Umax;
@@ -286,11 +314,12 @@ nlohmann::json twoSingleDeltaPeaks(int n, int n1)
     return j;
 }
 
-nlohmann::json doubleDeltaPeaks(int n, int n1)
+nlohmann::json doubleDeltaPeaks(int nCells, double frac)
 {
     using namespace loki;
-    
-    int nCells =  n + 2*n1;
+
+    int n1 = nCells * frac;
+    int n =  nCells - 2*n1;
     double U0 = 10.;
     double alpha = 1.5;
     double U1 = U0*alpha;
@@ -305,10 +334,10 @@ nlohmann::json doubleDeltaPeaks(int n, int n1)
     // double deltau1 = Umax/nCells;
     // double deltau2 = Umax/nCells;
     
-    double sigma0 = 1e-21;
-    double sigma1 = 1e-21;
+    double sigma0 = 1e-22;
+    double sigma1 = 1e-19;
 
-    std::ifstream ifs("../../input/JSON/NonUniform/nonuniformDoubleDelta.input.json");
+    std::ifstream ifs("../../input/JSON/Delta/nonuniform-double.json");
     auto j = nlohmann::json::parse(ifs);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak1 - 0.1*duPeak1)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak1)/Umax, (U0 + duPeak1)/Umax);
@@ -336,6 +365,7 @@ nlohmann::json doubleDeltaPeaks(int n, int n1)
     j["electronKinetics"]["mixture"]["processes"][1]["data"][5][0]  = U1;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][6][0]  = U1 + deltau2;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][7][0]  = 1e3;
+
     j["electronKinetics"]["mixture"]["processes"][1]["data"][0][1]  = 0;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][1][1]  = 0;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][2][1]  = sigma0*U0/(deltau1);
@@ -348,28 +378,30 @@ nlohmann::json doubleDeltaPeaks(int n, int n1)
     return j;
 }
 
-nlohmann::json singleDeltaPeak(int n, int n1)
+nlohmann::json singleDeltaPeak(int nCells, double frac)
 {
     using namespace loki;
-    
-    int nCells =  n + n1;
-    double U0 = 10.;
     double duPeak = 1e-1;
+    int n1 = nCells * frac;
+    int n =  nCells - n1;
+    
+    double U0 = 10.;
     double Umax = 30.;
-    double deltau = 2*duPeak/n1;
+    double deltau = 2*duPeak/(n1);
 
     // If grid is uniform
     // double deltau = Umax/nCells;
 
     double sigma0 = 1e-21;
-    std::ifstream ifs("../../input/JSON/NonUniform/nonuniformDelta.input.json");
+    std::ifstream ifs("../../input/JSON/Delta/nonuniform.json");
     auto j = nlohmann::json::parse(ifs);
+    Vector zero = deltau*0.5*Vector::Ones(1);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
-    Vector part2 = Vector::LinSpaced(n1 + 1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
+    Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
     Vector part3 = Vector::LinSpaced(n*(Umax - U0)/Umax, (U0 + duPeak + 0.1*duPeak)/Umax, Umax/Umax);
 
     Vector nodeDistribution(nCells +1);
-    nodeDistribution << part1, part2, part3;
+    nodeDistribution << zero, part1, part2, part3;
     std::sort(nodeDistribution.begin(), nodeDistribution.end());
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["nodeDistribution"] = nodeDistribution; 
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["maxEnergy"] = Umax;
@@ -378,8 +410,7 @@ nlohmann::json singleDeltaPeak(int n, int n1)
     // j["electronKinetics"]["numerics"]["energyGrid"]["maxEnergy"] = Umax;
     // j["electronKinetics"]["numerics"]["energyGrid"]["cellNumber"] = nCells;
 
-
-    j["electronKinetics"]["mixture"]["processes"][1]["threshold"] = U0 - deltau;
+    j["electronKinetics"]["mixture"]["processes"][1]["threshold"] = U0- deltau;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][0][0]  = 0;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][1][0]  = U0 - deltau;
     j["electronKinetics"]["mixture"]["processes"][1]["data"][2][0]  = U0;
@@ -397,19 +428,23 @@ nlohmann::json singleDeltaPeak(int n, int n1)
 int main()
 {
     using namespace loki;
-    int n = 3000;
-    int n1 = 100;
     try
     {
-        auto i = singleDeltaPeak(n, n1);
+        std::cout << nTot * fraction << std::endl;
+        auto i = singleDeltaPeak(nTot, fraction);
         std::unique_ptr<loki::Simulation> simulationSingle(new loki::Simulation(i));
         simulationSingle->m_obtainedResults.addListener(checkSinglePeak);
         simulationSingle->run();
 
-        auto j = twoSingleDeltaPeaks(n, n1);
+        auto j = twoSingleDeltaPeaks(nTot, fraction);
         std::unique_ptr<loki::Simulation> simulationTwoSingle(new loki::Simulation(j));
         simulationTwoSingle->m_obtainedResults.addListener(checkTwoSinglePeak);
         simulationTwoSingle->run();
+
+        auto m = doubleDeltaPeaks(nTot, fraction);
+        std::unique_ptr<loki::Simulation> simulationDouble(new loki::Simulation(m));
+        simulationDouble->m_obtainedResults.addListener(checkDoublePeak);
+        simulationDouble->run();
     }
     catch (const std::exception &exc)
     {
