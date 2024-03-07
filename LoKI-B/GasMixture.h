@@ -29,17 +29,24 @@ namespace loki
  *  \todo Error reporting should be fixed. The file name is not displayed, the field instead.
  */
 template <typename GasListType, typename HandlerType>
-void readGasPropertyFile(const GasListType& gasList,
+void readGasPropertyFile(const std::filesystem::path &basePath, 
+                    const GasListType& gasList,
                     const std::string& fileName,
                     const std::string& propertyName,
                     bool required,
                     HandlerType handler)
 {
+    std::filesystem::path path(fileName);
+
+    if (path.is_relative()) {
+        path = basePath.parent_path() / path;
+    }
+
     std::string fileBuffer;
-    if (!fileName.empty() && Parse::stringBufferFromFile(fileName, fileBuffer))
+    if (!path.empty() && Parse::stringBufferFromFile(path, fileBuffer))
     {
-        Log<Message>::Notify("Configuring gas property '" + propertyName
-              + "', using file '" + fileName + "'.");
+        Log<Message>::Notify("Configuring gas property '", propertyName,
+              "', using file '", path,  "'.");
         for (auto &gas : gasList)
         {
             if (gas->name() == "e")
@@ -114,11 +121,12 @@ void readGasPropertyJson(const GasListType& gasList,
 
 /// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
 template <typename GasListType, typename HandlerType>
-void readGasProperty(const GasListType& gasList,
-                    const json_type& cnf,
-                    const std::string& propertyName,
-                    bool required,
-                    HandlerType handler)
+void readGasProperty(const std::filesystem::path &basePath,
+                     const GasListType& gasList,
+                     const json_type& cnf,
+                     const std::string& propertyName,
+                     bool required,
+                     HandlerType handler)
 {
     if (cnf.contains(propertyName) && cnf.at(propertyName).is_array())
     {
@@ -126,9 +134,9 @@ void readGasProperty(const GasListType& gasList,
     }
     else
     {
-        const std::string fileName = cnf.contains(propertyName)
+        const auto fileName = cnf.contains(propertyName)
             ? cnf.at(propertyName).get<std::string>() : std::string{};
-        readGasPropertyFile(gasList,fileName,propertyName,required,handler);
+        readGasPropertyFile(basePath,gasList,fileName,propertyName,required,handler);
     }
 }
 
@@ -176,16 +184,18 @@ class GasMixture
      *  to the WorkingConditions structure to access the argument map (which maps its
      *  member variables to names by which they are addressed in the input files).
      */
-    void loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
-                           const WorkingConditions *workingConditions);
+    void loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
+                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Evaluates the densities of all states in the state tree. \todo Explain. All states of all gases?
      */
     void evaluateReducedDensities();
     /** Loads the state properties as specified in the input file. It also calls
      *  checkPopulations.
      */
-    void loadStateProperties(const StatePropertiesSetup &setup, const WorkingConditions *workingConditions);
-    void loadStateProperties(const json_type &cnf, const WorkingConditions *workingConditions);
+    void loadStateProperties(const std::filesystem::path &basePath, const StatePropertiesSetup &setup, 
+                             const WorkingConditions *workingConditions);
+    void loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, 
+                             const WorkingConditions *workingConditions);
     /** Loads the gas properties from the database files specified in the main input
      *  file.
      *
@@ -200,8 +210,8 @@ class GasMixture
      *        Gas class, where not all properties are always relevant.
      *        This also applies to the other loadGasProperties overload.
      */
-    void loadGasProperties(const GasPropertiesSetup &setup);
-    void loadGasProperties(const json_type &cnf);
+    void loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup);
+    void loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf);
 
     using StateMap = std::map<std::string, Gas::State *>;
     /** This overload accepts only a reference to a StateEntry object. This is the main

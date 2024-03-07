@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 {
     try
     {
-        std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(json));
+        std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(".", json));
         simulation->m_obtainedResults.addListener(checkRMSE);
         simulation->run();
     }

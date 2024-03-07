@@ -76,8 +76,8 @@ namespace loki
 class lokib_export Simulation
 {
 public:
-    explicit Simulation(const Setup &setup);
-    explicit Simulation(const json_type &cnf);
+    explicit Simulation(const std::filesystem::path &basePath, const Setup &setup);
+    explicit Simulation(const std::filesystem::path &basePath, const json_type &cnf);
     // Copying this object is not allowed.
     Simulation(const Simulation &other) = delete;
     ~Simulation();

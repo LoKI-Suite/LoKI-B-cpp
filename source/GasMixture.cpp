@@ -2,9 +2,8 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
-/// \todo Remove me once INPUT is no longer used.
-#include "LoKI-B/StandardPaths.h"
 
+#include <filesystem>
 #include <regex>
 
 namespace loki
@@ -98,8 +97,8 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
     return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
 }
 
-void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, StatePropertyType propertyType,
-                                       const WorkingConditions *workingConditions)
+void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
+                                   StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
 
     for (const auto &line : entryVector)
@@ -183,7 +182,12 @@ void GasMixture::loadStateProperty(const std::vector<std::string> &entryVector, 
         else
         {
             std::vector<std::pair<StateEntry, double>> entries;
-            const std::string fileName = INPUT "/" + line;
+            // const std::string fileName = line;
+            std::filesystem::path fileName(line);
+
+            if (fileName.is_relative()) {
+                fileName = basePath.parent_path() / fileName;
+            }
 
             try
             {
@@ -224,37 +228,37 @@ void GasMixture::evaluateReducedDensities()
     }
 }
 
-void GasMixture::loadStateProperties(const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
+void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
 {
 
-    loadStateProperty(setup.energy, StatePropertyType::energy, workingConditions);
-    loadStateProperty(setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
-    loadStateProperty(setup.population, StatePropertyType::population, workingConditions);
+    loadStateProperty(basePath, setup.energy, StatePropertyType::energy, workingConditions);
+    loadStateProperty(basePath, setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
+    loadStateProperty(basePath, setup.population, StatePropertyType::population, workingConditions);
 
     checkPopulations();
 }
 
-void GasMixture::loadStateProperties(const json_type &cnf, const WorkingConditions *workingConditions)
+void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, const WorkingConditions *workingConditions)
 {
 
-    loadStateProperty(cnf.at("energy"), StatePropertyType::energy, workingConditions);
-    loadStateProperty(cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
-    loadStateProperty(cnf.at("population"), StatePropertyType::population, workingConditions);
+    loadStateProperty(basePath, cnf.at("energy"), StatePropertyType::energy, workingConditions);
+    loadStateProperty(basePath, cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+    loadStateProperty(basePath, cnf.at("population"), StatePropertyType::population, workingConditions);
 
     checkPopulations();
 }
 
-void GasMixture::loadGasProperties(const GasPropertiesSetup &setup)
+void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup)
 {
-    readGasPropertyFile(m_gases, setup.mass, "mass", true,
+    readGasPropertyFile(basePath, m_gases, setup.mass, "mass", true,
         [](Gas& gas, double value) { gas.mass=value; } );
-    readGasPropertyFile(m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
+    readGasPropertyFile(basePath, m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
         [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
-    readGasPropertyFile(m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
+    readGasPropertyFile(basePath, m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
         [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
-    readGasPropertyFile(m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
+    readGasPropertyFile(basePath, m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
         [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
-    readGasPropertyFile(m_gases, setup.rotationalConstant, "rotationalConstant", false,
+    readGasPropertyFile(basePath, m_gases, setup.rotationalConstant, "rotationalConstant", false,
         [](Gas& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
@@ -283,17 +287,17 @@ void GasMixture::loadGasProperties(const GasPropertiesSetup &setup)
     checkGasFractions();
 }
 
-void GasMixture::loadGasProperties(const json_type &cnf)
+void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)
 {
-    readGasProperty(m_gases, cnf, "mass", true,
+    readGasProperty(basePath, m_gases, cnf, "mass", true,
         [](Gas& gas, double value) { gas.mass=value; } );
-    readGasProperty(m_gases, cnf, "harmonicFrequency", false,
+    readGasProperty(basePath, m_gases, cnf, "harmonicFrequency", false,
         [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
-    readGasProperty(m_gases, cnf, "anharmonicFrequency", false,
+    readGasProperty(basePath, m_gases, cnf, "anharmonicFrequency", false,
         [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
-    readGasProperty(m_gases, cnf, "electricQuadrupoleMoment", false,
+    readGasProperty(basePath, m_gases, cnf, "electricQuadrupoleMoment", false,
         [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
-    readGasProperty(m_gases, cnf, "rotationalConstant", false,
+    readGasProperty(basePath, m_gases, cnf, "rotationalConstant", false,
         [](Gas& gas, double value) { gas.rotationalConstant=value; } );
 
     // Parse fractions
