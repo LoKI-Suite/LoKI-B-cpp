@@ -75,7 +75,6 @@ void handleExistingOutputPath(std::string &folder)
 {
     std::cerr << "Please enter a new destination for the output files (keep empty for unaltered).\nOutput/";
     std::getline(std::cin, folder);
-    //    std::cin >> folder;
 }
 
 
@@ -109,8 +108,8 @@ try
 
     std::unique_ptr<loki::Simulation> simulation;
     std::unique_ptr<loki::Output> output;
-    std::string fileName(argv[1]);
-    if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".json")
+    std::filesystem::path fileName(argv[1]);
+    if (fileName.has_extension() && fileName.extension() == ".json")
     {
         const loki::json_type cnf = loki::read_json_from_file(fileName);
         simulation.reset(new loki::Simulation(fileName, cnf));
