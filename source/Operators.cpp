@@ -220,7 +220,8 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,EoN,WoN);
+    Vector totalCSs = 1e-19*Vector::Ones(grid.nCells());
+    evaluate(grid,totalCSs,EoN,WoN);
 
     if (grid.isUniform())
     {
@@ -332,29 +333,47 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                             {
                                 double numericalThreshold = grid.getCell(numThreshold);
                                 double energyCell = grid.getCell(k);
-                                double rightBound = grid.getNode(k+ 1);
+                                double rightBound = grid.getNode(k + 1);
                                 double leftBound = grid.getNode(k);
                                 double sizeOriginCell = grid.duCell(k);
 
                                 Grid::Index i0 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), leftBound - numericalThreshold) - grid.getNodes().begin() - 1;
-                                Grid::Index i1 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), rightBound - numericalThreshold) - grid.getNodes().begin() - 1;
+                                Grid::Index i1 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), rightBound - numericalThreshold) - grid.getNodes().begin();
 
                                 if (i0 == i1)
                                 {
-                                    inelasticMatrix(i0, k) +=
-                                    targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    if (energyCell - numericalThreshold > grid.getCell(i0))
+                                    {
+                                        double alphaPlus = (grid.getCell(i0 - 1) - (energyCell - numericalThreshold)) / (grid.getCell(i0 - 1) - grid.getCell(i0));
+                                        double alphaMin = 1 - alphaPlus;
+                                        inelasticMatrix(i0, k) += alphaPlus *
+                                                targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                        inelasticMatrix(i0 - 1, k) += alphaMin *
+                                                targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    } else if (energyCell - numericalThreshold < grid.getCell(i0))
+                                    {
+                                        double alphaMin = (grid.getCell(i0 + 1) - (energyCell - numericalThreshold)) / (grid.getCell(i0 + 1) - grid.getCell(i0));
+                                        double alphaPlus = 1 - alphaMin;
+                                        inelasticMatrix(i0, k) += alphaMin *
+                                                targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                        inelasticMatrix(i0 + 1, k) += alphaPlus *
+                                                targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    } else
+                                    {
+                                        inelasticMatrix(i0, k) +=
+                                            targetDensity * grid.getCells()[k] * cellCrossSection[k]; 
+                                    }
                                 } else if (i1 - i0 == 1)
                                 {
-                                    double alphaMin = (grid.getCell(i1) - (energyCell - numericalThreshold)) / (grid.getCell(i1) - grid.getCell(i1));
-                                    double alphaPlus = 1 - alphaMin;
-
+                                    double alphaMin = (grid.getCell(i1) - (energyCell - numericalThreshold)) / (grid.getCell(i1) - grid.getCell(i0));
+                                    double alphaPlus = 1. - alphaMin;
                                     inelasticMatrix(i0, k) += alphaMin *
                                         targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                     inelasticMatrix(i0, k) += alphaPlus *
                                         targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                 } else
                                 {
-                                    double alphaMiddle = (grid.getNode(i0 + 1) - grid.getNode(i1)) / sizeOriginCell;
+                                    double alphaMiddle = (grid.getNode(i1) - grid.getNode(i0 + 1)) / sizeOriginCell;
                                     double targetMiddleLeft = (grid.getNode(i0 + 1) + leftBound - numericalThreshold) / 2.;
                                     double targetMiddleRight = (grid.getNode(i1) + rightBound - numericalThreshold) / 2.;
                                     double fractionLeft = (grid.getNode(i0 + 1) - (leftBound - numericalThreshold)) / sizeOriginCell;
@@ -365,10 +384,10 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                     alphaMiddle += fractionLeft - alphaMin;
                                     double alphaPlus = fractionRight / (targetMiddleCenter - grid.getCell(i1)) * (targetMiddleCenter - targetMiddleRight);
                                     alphaMiddle += fractionRight - alphaPlus;
-                                    std::cout << alphaMin + alphaMiddle + alphaPlus << std::endl;
+
                                     for (Grid::Index i = i0 + 1; i < i1; i++)
                                     {
-                                        inelasticMatrix(i, k) += grid.duCell(i)/(grid.getNode(i0 + 1) - grid.getNode(i1)) * alphaMiddle *
+                                        inelasticMatrix(i, k) += grid.duCell(i)/(grid.getNode(i1) - grid.getNode(i0 + 1)) * alphaMiddle *
                                         targetDensity * grid.getCells()[k] * cellCrossSection[k];
                                     }
                                     inelasticMatrix(i0, k) += alphaMin *
