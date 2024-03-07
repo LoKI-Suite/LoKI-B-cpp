@@ -11,14 +11,15 @@ jobs:
 
     runs-on: ubuntu-22.04
 
+    env:
+      nix: nix develop .#ci --command
+
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
-    - name: Load CI build environment
-      run: nix develop .#ci
     - name: CMake generate 
-      run: cmake -DCMAKE_BUILD_TYPE=Release -B build
+      run: $nix cmake -DCMAKE_BUILD_TYPE=Release -B build
     - name: CMake build
-      run: cmake --build build -- -j $(nproc)
+      run: $nix cmake --build build -- -j $(nproc)
     - name: CTest
-      run: ctest --test-dir build/tests
+      run: $nix ctest --test-dir build/tests
