@@ -19,7 +19,7 @@ jobs:
     - name: Prepare CI environment
       run: nix develop .#ci
     - name: CMake generate
-      run: $nix cmake -DCMAKE_BUILD_TYPE=Release -B build
+      run: $nix cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build
     - name: CMake build
       run: $nix cmake --build build -j $(nproc)
     - name: CTest
