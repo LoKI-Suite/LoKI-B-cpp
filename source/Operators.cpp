@@ -220,8 +220,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
 {
     // update g
-    Vector totalCSs = 1e-19*Vector::Ones(grid.nCells());
-    evaluate(grid,totalCSs,EoN,WoN);
+    evaluate(grid,totalCS,EoN,WoN);
 
     if (grid.isUniform())
     {
