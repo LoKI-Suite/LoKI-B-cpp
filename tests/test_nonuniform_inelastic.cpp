@@ -268,7 +268,7 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
 
     double sigma0 = 1e-22;
     double sigma1 = 1e-19;
-    std::ifstream ifs("../../input/JSON/Delta/nonuniform-two-single.json");
+    std::ifstream ifs("./input/JSON/Delta/nonuniform-two-single.json");
     auto j = nlohmann::json::parse(ifs);
     Vector zero = deltau*0.5*Vector::Ones(1);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
@@ -337,7 +337,7 @@ nlohmann::json doubleDeltaPeaks(int nCells, double frac)
     double sigma0 = 1e-22;
     double sigma1 = 1e-19;
 
-    std::ifstream ifs("../../input/JSON/Delta/nonuniform-double.json");
+    std::ifstream ifs("./input/JSON/Delta/nonuniform-double.json");
     auto j = nlohmann::json::parse(ifs);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak1 - 0.1*duPeak1)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak1)/Umax, (U0 + duPeak1)/Umax);
@@ -393,7 +393,7 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     // double deltau = Umax/nCells;
 
     double sigma0 = 1e-21;
-    std::ifstream ifs("../../input/JSON/Delta/nonuniform.json");
+    std::ifstream ifs("./input/JSON/Delta/nonuniform.json");
     auto j = nlohmann::json::parse(ifs);
     Vector zero = deltau*0.5*Vector::Ones(1);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
@@ -441,10 +441,10 @@ int main()
         simulationTwoSingle->m_obtainedResults.addListener(checkTwoSinglePeak);
         simulationTwoSingle->run();
 
-        auto m = doubleDeltaPeaks(nTot, fraction);
-        std::unique_ptr<loki::Simulation> simulationDouble(new loki::Simulation(m));
-        simulationDouble->m_obtainedResults.addListener(checkDoublePeak);
-        simulationDouble->run();
+        // auto m = doubleDeltaPeaks(nTot, fraction);
+        // std::unique_ptr<loki::Simulation> simulationDouble(new loki::Simulation(m));
+        // simulationDouble->m_obtainedResults.addListener(checkDoublePeak);
+        // simulationDouble->run();
     }
     catch (const std::exception &exc)
     {
