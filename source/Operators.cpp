@@ -268,109 +268,105 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
     power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum();
 }
 
-std::vector<double> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.)
+std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.)
 {
-    double alphaMin = frac*(uPlus - targetCell) / (uPlus - uMin);
-    double alphaPlus = frac - alphaMin;
-    if (alphaMin < 0 || alphaPlus < 0)
-    {
-        std::cout << alphaMin << std::endl;
-        std::cout << alphaPlus << std::endl;
-    }
+    std::array<double, 2> alpha;
+    alpha[0] = frac*(uPlus - targetCell) / (uPlus - uMin);
+    alpha[1] = frac - alpha[0];
 
-    return {alphaMin, alphaPlus};
+    return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int i0)
+std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int targetBegin)
 {
     std::vector<std::tuple<int, double>> alpha;
-    std::vector<double> alphaMinPlus;
-    if (targetCell > grid.getCell(i0))
+    std::array<double, 2> alphaMinPlus;
+    if (targetCell > grid.getCell(targetBegin))
     {
-        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(i0), grid.getCell(i0 + 1));
-        alpha.push_back(std::make_tuple(i0, alphaMinPlus[0]));
-        alpha.push_back(std::make_tuple(i0 + 1, alphaMinPlus[1]));
-    } else if (targetCell < grid.getCell(i0))
+        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
+        alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
+        alpha.push_back(std::make_tuple(targetBegin + 1, alphaMinPlus[1]));
+    } else if (targetCell < grid.getCell(targetBegin))
     {
-        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(i0 - 1), grid.getCell(i0));
-        alpha.push_back(std::make_tuple(i0 - 1, alphaMinPlus[0]));
-        alpha.push_back(std::make_tuple(i0, alphaMinPlus[1]));
+        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin - 1), grid.getCell(targetBegin));
+        alpha.push_back(std::make_tuple(targetBegin - 1, alphaMinPlus[0]));
+        alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[1]));
     } else
     {
-        alpha.push_back(std::make_tuple(i0, 1.));
+        alpha.push_back(std::make_tuple(targetBegin, 1.));
     }
 
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int i0, int i1)
+std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd)
 {
     std::vector<std::tuple<int, double>> alpha;
-    std::vector<double> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(i0), grid.getCell(i1));
-    alpha.push_back(std::make_tuple(i0, alphaMinPlus[0]));
-    alpha.push_back(std::make_tuple(i1, alphaMinPlus[1]));
+    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetEnd));
+    alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
+    alpha.push_back(std::make_tuple(targetEnd, alphaMinPlus[1]));
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int i0, int i1, 
+std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
     Grid::Index origin, double threshold)
 {
-    double targetMiddleLeft = (grid.getNode(i0 + 1) + grid.getNode(origin) - threshold) / 2.;
-    double targetMiddleRight = (grid.getNode(i1) + grid.getNode(origin + 1) - threshold) / 2.;
-    double fractionLeft = (grid.getNode(i0 + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
-    double fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(i1)) / grid.duCell(origin);
+    double targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
+    double targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
+    double fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
+    double fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
 
-    double alphaMiddle = (grid.getNode(i1) - grid.getNode(i0 + 1)) / grid.duCell(origin);
-    double targetMiddleCenter = (grid.getNode(i0 + 1) + grid.getNode(i1)) / 2.;
+    double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd)) / 2.;
 
-    auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(i0), targetMiddleCenter, fractionLeft);
+    auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(targetBegin), targetMiddleCenter, fractionLeft);
     alphaMiddle += alphaMin[1];
-    auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(i1), fractionRight);
+    auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd), fractionRight);
     alphaMiddle += alphaPlus[0];
 
     std::vector<std::tuple<int, double>> alpha;
-    alpha.push_back(std::make_tuple(i0, alphaMin[0]));
-    for (Grid::Index i = i0 + 1; i < i1; i++)
+    alpha.push_back(std::make_tuple(targetBegin, alphaMin[0]));
+    for (Grid::Index i = targetBegin + 1; i < targetEnd; i++)
     {
-        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(i1) - grid.getNode(i0 + 1)) * alphaMiddle));
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) * alphaMiddle));
     }
-    alpha.push_back(std::make_tuple(i1, alphaPlus[1]));
+    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
 
     return alpha;
 }
 
 
-std::vector<std::tuple<int, double>> searchDistribution(const Grid& grid, double threshold, double source, int sourceidx, bool reverse = 0)
+std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, int sourceidx, bool reverse = 0)
 {
     double targetCell;
-    int i0;
-    int i1;
+    int targetBegin;
+    int targetEnd;
     if (reverse)
     {
         targetCell = source + threshold;
-        i0 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) + threshold) - 
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) + threshold) - 
             grid.getNodes().begin() - 1;
-        i1 = std::upper_bound(grid.getNodes().begin() + i0, grid.getNodes().end(), grid.getNode(sourceidx + 1) + threshold) -
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) + threshold) -
             grid.getNodes().begin() - 1;
     } else
     {
         targetCell = source - threshold;
-        i0 = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) - threshold) - 
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) - threshold) - 
             grid.getNodes().begin() - 1;
-        i1 = std::upper_bound(grid.getNodes().begin() + i0, grid.getNodes().end(), grid.getNode(sourceidx + 1) - threshold) -
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) - threshold) -
             grid.getNodes().begin() - 1;
     }
-    
+
     std::vector<std::tuple<int, double>> alpha;
-    if (i0 == i1)
+    if (targetBegin == targetEnd)
     {
-        alpha = distributeOneCell(grid, targetCell, i0);
-    } else if (i1 - i0 == 1)
+        alpha = distributeOneCell(grid, targetCell, targetBegin);
+    } else if (targetEnd - targetBegin == 1)
     {
-        alpha = distributeTwoCells(grid,targetCell, i0, i1);
+        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
     } else
     {
-        alpha = distributeNCells(grid, targetCell, i0, i1, sourceidx, threshold);
+        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold);
     }
 
     return alpha;
@@ -438,7 +434,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             if (k > numThreshold)
                             {
-                                std::vector<std::tuple<int, double>> alpha = searchDistribution(grid, grid.getCell(numThreshold),
+                                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
                                      grid.getCell(k), k);
 
                                 for (int i = 0; i < int(alpha.size()); i++)
@@ -486,7 +482,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                             {
                                 if (k >= numThreshold)
                                 {
-                                    std::vector<std::tuple<int, double>> alpha = searchDistribution(grid, grid.getCell(numThreshold),
+                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
                                          grid.getCell(k), k, true);
                                     
                                     for (int i = 0; i < int(alpha.size()); i++)
