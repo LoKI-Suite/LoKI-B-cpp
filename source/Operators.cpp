@@ -309,12 +309,25 @@ std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double
 }
 
 std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
-    Grid::Index origin, double threshold)
+    Grid::Index origin, double threshold, bool reverse = false)
 {
-    double targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
-    double targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
-    double fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
-    double fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+    double targetMiddleLeft;
+    double targetMiddleRight;
+    double fractionLeft;
+    double fractionRight;
+    if (reverse)
+    {
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) + threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) + threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) + threshold)) / grid.duCell(origin);
+        fractionRight = (grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+    } else
+    {
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
+        fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+    }
 
     double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
     double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd)) / 2.;
@@ -366,7 +379,7 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
         alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
     } else
     {
-        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold);
+        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
     }
 
     return alpha;
