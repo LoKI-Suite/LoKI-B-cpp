@@ -75,9 +75,6 @@ target_link_libraries(test_nonuniform_CAR PRIVATE loki-b)
 add_executable(test_nonuniform_inelastic test_nonuniform_inelastic.cpp)
 target_link_libraries(test_nonuniform_inelastic PRIVATE loki-b)
 
-add_executable(test_nonuniform_grid_maker test_nonuniform_grid_maker.cpp)
-target_link_libraries(test_nonuniform_grid_maker PRIVATE loki-b)
-
 add_executable(test_nonuniform_operator_distribution test_nonuniform_operator_distribution.cpp)
 target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki-b)
 
@@ -97,7 +94,6 @@ target_add_test(test_nonuniform_field)
 target_add_test(test_nonuniform_druyvesteyn)
 target_add_test(test_nonuniform_CAR)
 target_add_test(test_nonuniform_inelastic)
-target_add_test(test_nonuniform_grid_maker)
 target_add_test(test_nonuniform_operator_distribution)
 
 if (LOKIB_COVERAGE)
