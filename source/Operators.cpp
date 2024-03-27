@@ -84,14 +84,26 @@ void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg,
      *  net = gain - sum_k eedf[k] (g[k + 1] + g[k]) * du/2 := gain + loss
      */
     const double kTg = Constant::kBeV * Tg;
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
-    net = 0.0;
-    gain = 0.0;
-    for (Grid::Index k = 0; k < grid.nCells() - 1; ++k)
+    if (grid.isUniform())
     {
-        net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
-        gain += eedf[k] * (g[k + 1] - g[k]);
+        double auxHigh = kTg + grid.du() * .5; // aux1
+        double auxLow  = kTg - grid.du() * .5; // aux2
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
+    } else
+    {
+        const auto n = grid.nCells();
+
+        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
+        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+
+        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
+        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
     }
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
@@ -161,15 +173,28 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const
 {
     const double kTg = Constant::kBeV * Tg;
-    const double auxHigh = kTg + grid.du() * .5; // aux1
-    const double auxLow  = kTg - grid.du() * .5; // aux2
-    net = 0.0;
-    gain = 0.0;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    if (grid.isUniform())
     {
-        net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
-        gain += eedf[k] * (g[k + 1] - g[k]);
+        double auxHigh = kTg + grid.du() * .5; // aux1
+        double auxLow  = kTg - grid.du() * .5; // aux2
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < grid.nCells(); ++k)
+        {
+            net += eedf[k] * (g[k + 1] * auxLow - g[k] * auxHigh);
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
+    } else
+    {
+        const auto n = grid.nCells();
+
+        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
+        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+
+        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
+        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
     }
+
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
     loss = net-gain;
@@ -222,17 +247,16 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
                 const double Amin = 1/grid.duNode(k);
                 const double Bmin = 1/grid.duNode(k);
                 
-                mat.coeffRef(k, k - 1) = g[k] * Amin / grid.duCell(k);
-                mat.coeffRef(k, k) += -g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
-
             if (k < grid.nCells() - 1)
             {
                 const double Aplus = 1/grid.duNode(k+1);
                 const double Bplus = 1/grid.duNode(k+1);
 
-                mat.coeffRef(k, k + 1) = g[k + 1] * Bplus / grid.duCell(k);
-                mat.coeffRef(k, k) += -g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
             }
         }
     }
@@ -240,34 +264,136 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
 void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
 {
-    power = 0;
-    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    const auto n = grid.nCells();
+    power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum();
+}
+
+std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.)
+{
+    std::array<double, 2> alpha;
+    alpha[0] = frac*(uPlus - targetCell) / (uPlus - uMin);
+    alpha[1] = frac - alpha[0];
+
+    return alpha;
+}
+
+std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int targetBegin)
+{
+    std::vector<std::tuple<int, double>> alpha;
+    std::array<double, 2> alphaMinPlus;
+    if (targetCell > grid.getCell(targetBegin))
     {
-        power += eedf[k] * (g[k + 1] - g[k]);
+        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
+        alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
+        alpha.push_back(std::make_tuple(targetBegin + 1, alphaMinPlus[1]));
+    } else if (targetCell < grid.getCell(targetBegin))
+    {
+        alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin - 1), grid.getCell(targetBegin));
+        alpha.push_back(std::make_tuple(targetBegin - 1, alphaMinPlus[0]));
+        alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[1]));
+    } else
+    {
+        alpha.push_back(std::make_tuple(targetBegin, 1.));
     }
-    power *= SI::gamma;
+
+    return alpha;
+}
+
+std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd)
+{
+    std::vector<std::tuple<int, double>> alpha;
+    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetEnd));
+    alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
+    alpha.push_back(std::make_tuple(targetEnd, alphaMinPlus[1]));
+    return alpha;
+}
+
+std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
+    Grid::Index origin, double threshold, bool reverse = false)
+{
+    double targetMiddleLeft;
+    double targetMiddleRight;
+    double fractionLeft;
+    double fractionRight;
+    if (reverse)
+    {
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) + threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) + threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) + threshold)) / grid.duCell(origin);
+        fractionRight = (grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+    } else
+    {
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
+        fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+    }
+
+    double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd)) / 2.;
+
+    auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(targetBegin), targetMiddleCenter, fractionLeft);
+    alphaMiddle += alphaMin[1];
+    auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd), fractionRight);
+    alphaMiddle += alphaPlus[0];
+
+    std::vector<std::tuple<int, double>> alpha;
+    alpha.push_back(std::make_tuple(targetBegin, alphaMin[0]));
+    for (Grid::Index i = targetBegin + 1; i < targetEnd; i++)
+    {
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) * alphaMiddle));
+    }
+    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
+
+    return alpha;
+}
+
+
+std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, int sourceidx, bool reverse = 0)
+{
+    double targetCell;
+    int targetBegin;
+    int targetEnd;
+    if (reverse)
+    {
+        targetCell = source + threshold;
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) + threshold) - 
+            grid.getNodes().begin() - 1;
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) + threshold) -
+            grid.getNodes().begin() - 1;
+    } else
+    {
+        targetCell = source - threshold;
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) - threshold) - 
+            grid.getNodes().begin() - 1;
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) - threshold) -
+            grid.getNodes().begin() - 1;
+    }
+
+    std::vector<std::tuple<int, double>> alpha;
+    if (targetBegin == targetEnd)
+    {
+        alpha = distributeOneCell(grid, targetCell, targetBegin);
+    } else if (targetEnd - targetBegin == 1)
+    {
+        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
+    } else
+    {
+        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
+    }
+
+    return alpha;
 }
 
 InelasticOperator::InelasticOperator(const Grid& grid)
 : hasSuperelastics(false)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
-    }
-    
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("InelasticOperator does not support nonuniform grids.");
-    }
-    
     const Grid::Index cellNumber = grid.nCells();
-
     inelasticMatrix.setZero();
     /** \todo the following line seems to be missing. See the notes in the
      *  class declaration of this member
@@ -282,28 +408,56 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
             {
                 const double threshold = collision->crossSection->threshold();
 
-                if (threshold < grid.du() || threshold > grid.getNodes()[grid.nCells()])
+                if (threshold < grid.getNode(0) || threshold > grid.getNode(cellNumber))
                     continue;
 
                 const double targetDensity = collision->getTarget()->delta();
 
                 if (targetDensity != 0)
                 {
-                    const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
-
                     Vector cellCrossSection(cellNumber);
+                    Grid::Index numThreshold;
 
                     for (Grid::Index i = 0; i < cellNumber; ++i)
                         cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
-                    for (Grid::Index k = 0; k < cellNumber; ++k)
+                    if (grid.isUniform())
                     {
-                        if (k < cellNumber - numThreshold)
-                            inelasticMatrix(k, k + numThreshold) +=
-                                targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
-                        /** \todo Clarify. See the comments on the (conserving) attachment operator.
-                         */
-                        inelasticMatrix(k, k) -= targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                        numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+                    } else
+                    {
+                       numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
+                    }
+
+                    if (grid.isUniform())
+                    {
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        {
+                            if (k < cellNumber - numThreshold)
+                                inelasticMatrix(k, k + numThreshold) +=
+                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+
+                            /** \todo Clarify. See the comments on the (conserving) attachment operator.
+                             */
+                            inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                        }
+                    } else
+                    {
+                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        {
+                            if (k > numThreshold)
+                            {
+                                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
+                                     grid.getCell(k), k);
+
+                                for (int i = 0; i < int(alpha.size()); i++)
+                                {
+                                    inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
+                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                }
+                            }
+                            inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                        }
                     }
 
                     if (collision->isReverse())
@@ -323,15 +477,42 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         if (numThreshold != 1)
                             hasSuperelastics = true;
 
-                        for (Grid::Index k = 0; k < cellNumber; ++k)
+                        if (grid.isUniform())
                         {
-                            if (k >= numThreshold)
-                                inelasticMatrix(k, k - numThreshold) +=
-                                    swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
+                            for (Grid::Index k = 0; k < cellNumber; ++k)
+                            {
+                                if (k >= numThreshold)
+                                    inelasticMatrix(k, k - numThreshold) +=
+                                        swRatio * productDensity * grid.getCell(k) * cellCrossSection[k];
 
-                            if (k < cellNumber - numThreshold)
-                                inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCells()[k + numThreshold] *
-                                                         cellCrossSection[k + numThreshold];
+                                if (k < cellNumber - numThreshold)
+                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(k + numThreshold) *
+                                                            cellCrossSection[k + numThreshold];
+                            }
+                        } else
+                        {
+                            for (Grid::Index k = 0; k < cellNumber; ++k)
+                            {
+                                if (k >= numThreshold)
+                                {
+                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
+                                         grid.getCell(k), k, true);
+                                    
+                                    for (int i = 0; i < int(alpha.size()); i++)
+                                    {
+                                        inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
+                                            swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
+                                    }
+                                }
+
+                                if (k < cellNumber - numThreshold)
+                                {
+                                    int j = std::upper_bound(grid.getCells().begin(), grid.getCells().end(), grid.getCell(k) + 
+                                         grid.getCell(numThreshold)) - grid.getCells().begin() - 1;
+                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(j) *
+                                                            cellCrossSection[j];
+                                }
+                            }
                         }
                     }
                 }

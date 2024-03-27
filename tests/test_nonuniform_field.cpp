@@ -19,6 +19,7 @@ int main()
 {
     using namespace loki;
 
+
     const unsigned nCells = 1024;
     const double uMax = 2; // eV
     const double eon = 5;
