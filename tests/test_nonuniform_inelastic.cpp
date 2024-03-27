@@ -430,12 +430,12 @@ int main()
     try
     {
         auto i = singleDeltaPeak(nTot, fraction);
-        std::unique_ptr<loki::Simulation> simulationSingle(new loki::Simulation(i));
+        std::unique_ptr<loki::Simulation> simulationSingle(new loki::Simulation("", i));
         simulationSingle->m_obtainedResults.addListener(checkSinglePeak);
         simulationSingle->run();
 
         auto j = twoSingleDeltaPeaks(nTot, fraction);
-        std::unique_ptr<loki::Simulation> simulationTwoSingle(new loki::Simulation(j));
+        std::unique_ptr<loki::Simulation> simulationTwoSingle(new loki::Simulation("", j));
         simulationTwoSingle->m_obtainedResults.addListener(checkTwoSinglePeak);
         simulationTwoSingle->run();
 
