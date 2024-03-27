@@ -38,7 +38,7 @@ CrossSection::CrossSection(const Grid *energyGrid, bool isElasticOrEffective, co
     : m_threshold(cnf.contains("threshold") ? cnf.at("threshold").get<double>() : 0.0),
     m_energyGrid(energyGrid),
     m_isElasticOrEffective(isElasticOrEffective),
-    m_lut(LookupTable::create(cnf))
+    m_lut(LookupTable::create(cnf["data"]))
 {
     this->interpolate();
     energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
