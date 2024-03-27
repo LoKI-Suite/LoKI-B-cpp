@@ -269,7 +269,7 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
     double sigma1 = 1e-19;
     std::ifstream ifs("../../input/JSON/Delta/nonuniform-two-single.json");
     auto j = nlohmann::json::parse(ifs);
-    Vector zero = 0.03*deltau*Vector::Ones(1);
+    double zero = 0.03 * deltau;
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
     Vector part3 = Vector::LinSpaced(n*(U1 - U0)/Umax, (U0 + duPeak + 0.1*duPeak)/Umax, (U1 - duPeak - 0.1*duPeak)/Umax);
@@ -277,7 +277,7 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
     Vector part5 = Vector::LinSpaced(n*(Umax - U1)/Umax, (U1 + duPeak + 0.1*duPeak)/Umax, Umax/Umax);
 
     Vector nodeDistribution(nCells +1);
-    nodeDistribution << zero[0], part1, part2, part3, part4, part5;
+    nodeDistribution << zero, part1, part2, part3, part4, part5;
     std::sort(nodeDistribution.begin(), nodeDistribution.end());
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["nodeDistribution"] = nodeDistribution; 
     j["electronKinetics"]["numerics"]["energyGrid"]["nonuniformGrid"]["maxEnergy"] = Umax;
@@ -394,7 +394,7 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     double sigma0 = 1e-21;
     std::ifstream ifs("../../input/JSON/Delta/nonuniform.json");
     auto j = nlohmann::json::parse(ifs);
-    Vector zero = deltau*0.03*Vector::Ones(1);
+    double zero = deltau * 0.03;
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
     Vector part3 = Vector::LinSpaced(n*(Umax - U0)/Umax, (U0 + duPeak + 0.1*duPeak)/Umax, Umax/Umax);
