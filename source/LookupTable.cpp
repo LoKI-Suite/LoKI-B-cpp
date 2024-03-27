@@ -55,7 +55,7 @@ LookupTable::LookupTable(const Vector& x, const Vector& y)
 LookupTable LookupTable::create(const json_type& data)
 {
     using PairVector = std::vector<std::pair<double, double>>;
-    const PairVector pairs(data.at("data").get<PairVector>());
+    const PairVector pairs(data.at("values").get<PairVector>());
     Vector x,y;
     x.resize(pairs.size());
     y.resize(pairs.size());
