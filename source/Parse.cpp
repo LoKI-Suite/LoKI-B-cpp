@@ -33,9 +33,6 @@
 #include <fstream>
 #include <stdexcept>
 
-/// \todo Remove me once INPUT is no longer used.
-#include "LoKI-B/StandardPaths.h"
-
 namespace loki {
 namespace Parse {
 
@@ -110,7 +107,7 @@ bool removeComments(std::istream& is, std::string &dest)
 
 bool stringBufferFromFile(const std::string &fileName, std::string &dest)
 {
-    std::ifstream is(INPUT "/" + fileName);
+    std::ifstream is(fileName);
     return is && removeComments(is,dest);
 }
 

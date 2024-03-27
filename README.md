@@ -47,11 +47,11 @@ As of yet, LoKI-B C++ is run from the command line. To plot the computed eedf yo
 ### Linux
 1. Open a terminal and navigate to the `luxurious-loki/build directory.
 1. Run the following command: `./loki <INPUT_FILE> | gnuplot --persist`.
-    - Where `<INPUT_FILE>` is the full input file name to use, including the `.in` extension, e.g. `default_lokib_setup.in`. The input files need to be present in the `loki/input` folder.
+    - Where `<INPUT_FILE>` is the path to the input file relative to the current working directory.
     - The output from LoKI-B is then piped into gnuplot, where the `--persist` flag avoids gnuplot from immediately closing after plotting.
 
 ### Windows
 1. Open a terminal and navigate to the `luxurious-loki\build` directory.
 1. Run the following command: `loki.exe <INPUT_FILE> | gnuplot --persist`.
-    - Where `<INPUT_FILE>` is the full input file name to use, including the `.in` extension, e.g. `default_lokib_setup.in`. The input files need to be present in the `loki\input` folder.
+    - Where `<INPUT_FILE>` is the path to the input file relative to the current working directory.
     - The output from LoKI-B is then piped into gnuplot, where the `--persist` flag avoids gnuplot from immediately closing after plotting.

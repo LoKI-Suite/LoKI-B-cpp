@@ -274,14 +274,9 @@ Setup::Setup(const std::string &fname)
 
 bool Setup::parseFile(const std::string &fileName)
 {
-#ifdef EMSCRIPTEN
-    const std::string inputPath{""};
-#else
-    const std::string inputPath("../input/");
-#endif
-    if (!Parse::stringBufferFromFile(inputPath + fileName, fileContent))
+    if (!Parse::stringBufferFromFile(fileName, fileContent))
     {
-        Log<FileError>::Error(inputPath + fileName);
+        Log<FileError>::Error(fileName);
         return false;
     }
     return this->parse(fileContent);

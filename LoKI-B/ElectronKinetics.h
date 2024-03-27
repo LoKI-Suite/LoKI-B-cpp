@@ -28,8 +28,8 @@ using ResultEvent =
 class ElectronKinetics
 {
 protected:
-    ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
-    ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions);
+    ElectronKinetics(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKinetics(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions);
     // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
 public:
@@ -131,8 +131,8 @@ private:
 class ElectronKineticsBoltzmann : public ElectronKinetics
 {
 public:
-    ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
-    ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions);
+    ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions);
 protected:
     /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
      *  depending on wether the smart grid option is enabled.
@@ -256,8 +256,8 @@ private:
 class ElectronKineticsPrescribed : public ElectronKinetics
 {
 public:
-    ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
-    ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions);
+    ElectronKineticsPrescribed(const std::filesystem::path &basePath,const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
+    ElectronKineticsPrescribed(const std::filesystem::path &basePath,const json_type &cnf, WorkingConditions *workingConditions);
 protected:
     virtual void doSolve();
 private:

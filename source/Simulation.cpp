@@ -32,7 +32,7 @@
 namespace loki
 {
 
-Simulation::Simulation(const loki::Setup &setup)
+Simulation::Simulation(const std::filesystem::path &basePath,const loki::Setup &setup)
     : m_workingConditions(setup.workingConditions),
     m_jobManager()
 {
@@ -42,11 +42,11 @@ Simulation::Simulation(const loki::Setup &setup)
 	{
             case EedfType::boltzmann:
                 initializeJobs(setup.workingConditions,true);
-                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(setup.electronKinetics, &m_workingConditions);
+                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(basePath, setup.electronKinetics, &m_workingConditions);
             break;
             case EedfType::prescribed:
                 initializeJobs(setup.workingConditions,false);
-                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(setup.electronKinetics, &m_workingConditions);
+                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(basePath, setup.electronKinetics, &m_workingConditions);
             break;
         }
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
@@ -55,7 +55,7 @@ Simulation::Simulation(const loki::Setup &setup)
                          ", number of jobs = ", m_jobManager.njobs());
 }
 
-Simulation::Simulation(const json_type &cnf)
+Simulation::Simulation(const std::filesystem::path &basePath,const json_type &cnf)
     : m_workingConditions(cnf.at("workingConditions")),
     m_jobManager()
 {
@@ -65,11 +65,11 @@ Simulation::Simulation(const json_type &cnf)
 	{
             case EedfType::boltzmann:
                 initializeJobs(cnf.at("workingConditions"),true);
-                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(cnf.at("electronKinetics"), &m_workingConditions);
+                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(basePath, cnf.at("electronKinetics"), &m_workingConditions);
             break;
             case EedfType::prescribed:
                 initializeJobs(cnf.at("workingConditions"),false);
-                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(cnf.at("electronKinetics"), &m_workingConditions);
+                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(basePath, cnf.at("electronKinetics"), &m_workingConditions);
             break;
         }
         m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);

@@ -7,6 +7,8 @@
 #include <chrono>
 #include <cmath>
 
+namespace fs = std::filesystem;
+
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
 
@@ -22,10 +24,10 @@
 namespace loki
 {
 
-ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
+ElectronKinetics::ElectronKinetics(const fs::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions),
     m_grid(setup.numerics.energyGrid),
-    mixture(&grid(), setup, workingConditions),
+    mixture(basePath, &grid(), setup, workingConditions),
     fieldOperator(grid()),
     inelasticOperator(grid()),
     eedf(grid().nCells())
@@ -33,10 +35,10 @@ ElectronKinetics::ElectronKinetics(const ElectronKineticsSetup &setup, WorkingCo
     initialize();
 }
 
-ElectronKinetics::ElectronKinetics(const json_type &cnf, WorkingConditions *workingConditions)
+ElectronKinetics::ElectronKinetics(const fs::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions),
     m_grid(Grid::fromConfig(cnf.at("numerics").at("energyGrid"))),
-    mixture(&grid(), cnf, workingConditions),
+    mixture(basePath, &grid(), cnf, workingConditions),
     fieldOperator(grid()),
     inelasticOperator(grid()),
     eedf(grid().nCells())
@@ -62,8 +64,8 @@ void ElectronKinetics::solve()
     doSolve();
 }
 
-ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-: ElectronKinetics(setup,workingConditions),
+ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
+: ElectronKinetics(basePath,setup,workingConditions),
     ionizationOperator(setup.ionizationOperatorType),
     eeOperator(setup.includeEECollisions ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
@@ -79,8 +81,8 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const ElectronKineticsSetup
     initialize();
 }
 
-ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const json_type &cnf, WorkingConditions *workingConditions)
-: ElectronKinetics(cnf,workingConditions),
+ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
+: ElectronKinetics(basePath, cnf,workingConditions),
     ionizationOperator(getIonizationOperatorType(cnf.at("ionizationOperatorType"))),
     eeOperator(cnf.at("includeEECollisions") ? new ElectronElectronOperator(grid()) : nullptr),
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
@@ -1346,8 +1348,8 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 
 
 
-ElectronKineticsPrescribed::ElectronKineticsPrescribed(const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-: ElectronKinetics(setup,workingConditions),
+ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::path &basePath,const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
+: ElectronKinetics(basePath, setup,workingConditions),
   shapeParameter(setup.shapeParameter)
 {
     if (setup.ionizationOperatorType != IonizationOperatorType::conservative)
@@ -1357,8 +1359,8 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const ElectronKineticsSet
     initialize();
 }
 
-ElectronKineticsPrescribed::ElectronKineticsPrescribed(const json_type &cnf, WorkingConditions *workingConditions)
-: ElectronKinetics(cnf,workingConditions),
+ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::path &basePath,const json_type &cnf, WorkingConditions *workingConditions)
+: ElectronKinetics(basePath,cnf,workingConditions),
   shapeParameter(cnf.at("shapeParameter").get<unsigned>())
 {
     if (getIonizationOperatorType(cnf.at("ionizationOperatorType")) != IonizationOperatorType::conservative)
