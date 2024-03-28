@@ -231,49 +231,54 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
 
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
-    const std::string gasName = cnf.at("particle");
+    const json_type &ser_cnf = cnf.at("serialized");
+
+    const std::string gasName = ser_cnf.at("particle");
     // this is how it is now done for the electron for legacy input
     if (gasName == "e")
     {
         Log<Message>::Warning("Ignoring state attributes for electrons.");
         return StateEntry::electronEntry();
     }
-    const int charge_int = cnf.at("charge").get<int>();
+    const int charge_int = ser_cnf.at("charge").get<int>();
     const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
+
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
-    if (cnf.contains("electronic"))
+    if (ser_cnf.contains("electronic"))
     {
-        const json_type &el_cnf = cnf.at("electronic");
-        if (el_cnf.size() != 1)
+        const json_type &el_cnf = ser_cnf.at("electronic");
+        if (!el_cnf.is_object())
         {
             throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
         }
-        e = el_cnf[0].at("summary");
-        if (el_cnf[0].contains("vibrational"))
+        e = el_cnf.at("summary");
+        if (el_cnf.contains("vibrational"))
         {
-            const json_type &vib_cnf = el_cnf[0].at("vibrational");
-            if (vib_cnf.size() == 0)
-            {
-                throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
-            }
-            else if (vib_cnf.size() == 1)
+            const json_type &vib_cnf = el_cnf.at("vibrational");
+            // if (vib_cnf.size() == 0)
+            // {
+            //     throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+            // }
+            if (vib_cnf.is_object())
             {
                 // we expect a number, but sometimes a string is encountered, like "10+"
-                v = vib_cnf[0].at("v").type() == json_type::value_t::string
-                        ? vib_cnf[0].at("v").get<std::string>()
-                        : std::to_string(vib_cnf[0].at("v").get<int>());
+                v = vib_cnf.at("summary").get<std::string>();
+                // v = vib_cnf.at("v").type() == json_type::value_t::string
+                //         ? vib_cnf.at("v").get<std::string>()
+                //         : std::to_string(vib_cnf.at("v").get<int>());
 
-                if (vib_cnf[0].contains("rotational"))
+                if (vib_cnf.contains("rotational"))
                 {
-                    const json_type &rot_cnf = vib_cnf[0].at("rotational");
-                    if (rot_cnf.size() == 0)
+                    const json_type &rot_cnf = vib_cnf.at("rotational");
+                    // if (rot_cnf.size() == 0)
+                    // {
+                    //     throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
+                    // }
+                    if (rot_cnf.is_object())
                     {
-                        throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
-                    }
-                    else if (rot_cnf.size() == 1)
-                    {
-                        J = std::to_string(rot_cnf[0].at("J").get<int>());
+                        // J = std::to_string(rot_cnf[0].at("J").get<int>());
+                        J = rot_cnf.at("summary").get<std::string>();
                     }
                     else
                     {
