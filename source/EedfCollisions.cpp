@@ -1047,7 +1047,8 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const G
             Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
             const bool isElasticOrEffective =
                 (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
-            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
+            // FIXME: Load all cross section info objects.
+            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf.at("info").at(0)));
         }
         catch (std::exception &exc)
         {
