@@ -718,7 +718,7 @@ EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixtur
     return state;
 }
 
-void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, GasMixture &composition, const Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid,
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
@@ -730,7 +730,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, Ga
     std::ifstream in(file);
     if (!in.is_open())
     {
-        Log<FileError>::Warning(file);
+        Log<FileError>::Warning(file.generic_string());
         return;
     }
 
@@ -763,7 +763,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::string &file, Ga
             }
             if (!std::getline(in, line) || !std::regex_search(line, mProcess, reProcess))
             {
-                Log<LXCatError>::Error(file);
+                Log<LXCatError>::Error(file.generic_string());
             }
 
             try

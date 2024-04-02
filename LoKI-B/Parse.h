@@ -32,6 +32,7 @@
 #include "LoKI-B/Exports.h"
 #include <string>
 #include <iosfwd>
+#include <filesystem>
 
 namespace loki {
 namespace Parse {
@@ -121,7 +122,7 @@ lokib_export bool removeComments(std::istream& is, std::string &dest);
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
-lokib_export bool stringBufferFromFile(const std::string &fileName, std::string &dest);
+lokib_export bool stringBufferFromFile(const std::filesystem::path &fileName, std::string &dest);
 
 } // namespace Parse
 } // namespace loki

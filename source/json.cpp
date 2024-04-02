@@ -13,12 +13,12 @@ json_type read_json_from_stream(std::istream &is)
     return json_type::parse(str);
 }
 
-json_type read_json_from_file(const std::string &fname)
+json_type read_json_from_file(const std::filesystem::path &fname)
 {
     std::ifstream is(fname);
     if (!is)
     {
-        Log<Message>::Error("Could not open file '", fname, "' for reading.");
+        Log<Message>::Error("Could not open file '", fname.generic_string(), "' for reading.");
     }
     try
     {
@@ -26,7 +26,7 @@ json_type read_json_from_file(const std::string &fname)
     }
     catch (std::exception &exc)
     {
-        throw std::runtime_error("Error reading file '" + fname + "':\n" + std::string(exc.what()));
+        throw std::runtime_error("Error reading file '" + fname.generic_string() + "':\n" + std::string(exc.what()));
     }
 }
 

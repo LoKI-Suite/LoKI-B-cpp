@@ -5,6 +5,7 @@
 #ifndef LOKI_CPP_STATEENTRY_H
 #define LOKI_CPP_STATEENTRY_H
 
+#include <filesystem>
 #include <ostream>
 #include <set>
 #include <string>
@@ -62,7 +63,7 @@ lokib_export StateEntry propertyStateFromString(const std::string &propertyStrin
 /** Parses state property file \a fileName into \a entries, a vector of
  *  StateEntry/double pairs.
  */
-lokib_export void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries);
+lokib_export void statePropertyFile(const std::filesystem::path &fileName, std::vector<std::pair<StateEntry, double>> &entries);
 
 } // namespace loki
 
