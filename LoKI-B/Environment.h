@@ -34,7 +34,7 @@ namespace loki {
  *  \a required is false, return an empty string is. If the
  *  variable is not set and \a required is true, throw a
  *  std::runtime_error.
- *   
+ *
  *  \author Jan van Dijk
  *  \date   May 2013
  */
