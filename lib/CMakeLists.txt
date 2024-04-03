@@ -6,6 +6,7 @@ target_sources(loki-b PRIVATE
    ../source/EedfUtilities.cpp
    ../source/ElectronKinetics.cpp
    ../source/Enumeration.cpp
+   ../source/Environment.cpp
    ../source/Gas.cpp
    ../source/GasMixture.cpp
    ../source/Gnuplot.cpp

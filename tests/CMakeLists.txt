@@ -3,7 +3,7 @@
 #https://stackoverflow.com/questions/21394768/cmake-cannot-find-test-if-cmake-runtime-output-directory-is-changed
 function (target_add_test target)
   add_test (NAME ${target} COMMAND $<TARGET_FILE:${target}>)
-
+  set_property(TEST ${target} PROPERTY ENVIRONMENT "LOKI_TEST_INPUT_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
   if (LOKIB_COVERAGE)
     set(LOKIB_COVERAGE_TESTS ${LOKIB_COVERAGE_TESTS} ${target} PARENT_SCOPE)
   endif()
