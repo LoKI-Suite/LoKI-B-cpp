@@ -56,7 +56,7 @@ class Log
     }
 
     template <typename... T>
-    inline static void Error(const T &... message)
+    inline static void Error [[noreturn]] (const T &... message)
     {
         std::cerr << RED << "[Error] ";
         ErrorType::print(message...);
