@@ -325,16 +325,16 @@ Some relevant special cases are:
 In particular, we have the following expressions for the mean speed, the component of the
 mean velocity along the electric field and the mean energy:
 \begin{alignat}{2}
-	\MEAN{v} &= \gamma\int\limits_0^\infty u f^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron speed ($v=\gamma \sqrt{u}$)} \label{eq:meanv} \\
-	\MEAN{v_z} = \MEAN{v\cos\theta} &= \frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\mbox{mean velocity component $\parallel E$} \label{eq:meanvz} \\
-	\MEAN{u} &= \int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron energy} \label{eq:meanu}
+	\MEAN{v} &= \gamma\int\limits_0^\infty u f^0_u(u,z,t)\dd{u} && \quad\quad\text{mean electron speed ($v=\gamma \sqrt{u}$)} \label{eq:meanv} \\
+	\MEAN{v_z} = \MEAN{v\cos\theta} &= \frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\text{mean velocity component $\parallel E$} \label{eq:meanvz} \\
+	\MEAN{u} &= \int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\text{mean electron energy} \label{eq:meanu}
 \end{alignat}
 Using $F^{0,1}$ instead of $f^{0,1}$ or, equivalently, multiplying some of the previous results
 with $n_e$, gives some important density and flux density expressions:
 \begin{alignat}{2}
-	n_u = n_e\MEAN{u} &= n_e\int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\mbox{mean electron energy density} \label{eq:n_u} \\
-	\Gamma_e = n_e\MEAN{v_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron flux density component $\parallel E$} \label{eq:Gamma_e} \\
-	\Gamma_u = n_e\MEAN{uv_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty u^2f^1_u(u,z,t)\dd{u} && \quad\quad\mbox{electron energy flux density component $\parallel E$} \label{eq:Gamma_u}
+	n_u = n_e\MEAN{u} &= n_e\int\limits_0^\infty u\sqrt{u} f^0_u(u,z,t)\dd{u} && \quad\quad\text{mean electron energy density} \label{eq:n_u} \\
+	\Gamma_e = n_e\MEAN{v_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty uf^1_u(u,z,t)\dd{u} && \quad\quad\text{electron flux density component $\parallel E$} \label{eq:Gamma_e} \\
+	\Gamma_u = n_e\MEAN{uv_z} &= n_e\frac{\gamma}{3}\int\limits_0^\infty u^2f^1_u(u,z,t)\dd{u} && \quad\quad\text{electron energy flux density component $\parallel E$} \label{eq:Gamma_u}
 \end{alignat}
 
 Finally, let us see how we can integrate terms of the form $u^p\dd{(u^q F^{0,1})}/\dd{u}$
@@ -375,19 +375,20 @@ and by taking $E$ outside of the $u$-differentation these are
 	&\PDEV{F_v^1}{t}
 	+ \gamma \sqrt{u}\PDEV{F_v^0}{z}
 	- E\gamma \sqrt{u}\PDEV{F_v^0}{u}
-	= -\nu_m(u) F_v^1(u).
+	= -\nu_m(u) F_v^1(u),
 	\label{eq:ebe-2term-hagelaar-F-v1}
 \end{align}
 where we have defined the momentum transfer frequency $\nu_m(u,z,t)$ as
 \begin{equation}
-	\nu_m(u,z,t) = N\sigma_m(u,z,t)\gamma \sqrt{u},
+	\nu_m(u,z,t) = N\sigma_m(u,z,t)\gamma \sqrt{u}.
 	\label{eq:nu_m}
 \end{equation}
-which depends on time and space coordinates via the molar fractions that appear in
-the expression for $\sigma_m(u,z,t)$.
+Note that the quantities $\nu_m$ and $\sigma_m$ depends on time and space
+coordinates via the molar fractions that appear in the expression for
+$\sigma_m(u,z,t)$.
 \begin{framed}
-	State the expression for $\nu_m(u)$ in terms of the composition variables and cross sections here,
-	including references.
+	TODO: State the expression for $\nu_m(u)$ in terms of the composition
+	variables and cross sections here, including references?
 \end{framed}
 
 The equations that describe the {\em energy} representation $F^{0,1}_u(u)$ are not
@@ -444,19 +445,19 @@ $\tilde{C}_u(u)$,
 This symbol also appears in \cite[eq. 14]{Hagelaar2005}.
 In terms of this new symbol, the electron source can be expressed as
 \begin{equation}
-	S_e(z,t) = n_e\MEAN{\nu_{\mbox{eff}}}
-	\quad\mbox{or}\quad
-	S_e(z,t) = n_eN\MEAN{K_{\mbox{eff}}},
+	S_e(z,t) = n_e\MEAN{\nu_{\text{eff}}}
+	\quad\text{or}\quad
+	S_e(z,t) = n_eN\MEAN{K_{\text{eff}}},
 	\label{eq:S_e}
 \end{equation}
 where we have introduced the effective ionization frequency
-$\MEAN{\nu_{\mbox{eff}}}=N\MEAN{K_{\mbox{eff}}}$, and the mean effective rate coefficient
+$\MEAN{\nu_{\text{eff}}}=N\MEAN{K_{\text{eff}}}$, and the mean effective rate coefficient
 \begin{equation}
-	\MEAN{K_{\mbox{eff}}}(z,t)
+	\MEAN{K_{\text{eff}}}(z,t)
 	= \int\limits_0^\infty\tilde{C}^0(u)\dd{u}.
 	\label{eq:K_eff}
 \end{equation}
-The dependence of $\MEAN{\nu_{\mbox{eff}}}$ and $\MEAN{K_{\mbox{eff}}}$ on the space and time
+The dependence of $\MEAN{\nu_{\text{eff}}}$ and $\MEAN{K_{\text{eff}}}$ on the space and time
 coordinates is through the dependence on the distribution function
 $f^0_u(u,z,t)$ and the molar fractions of the target species that are
 involved in ionization or attachment reactions. A detailed discussion of
@@ -522,17 +523,17 @@ the source term $\tilde{C}^0$ to be functions of space and time coordinates.
 Let us consider a homogeneous plasma, so $\partial/\partial z=0$. For such system
 equation \eqref{eq:particle-balance} reduces to
 \begin{equation}
-	\frac{1}{n_e}\DERIV{n_e}{t} = N\MEAN{K_{eff}}
+	\frac{1}{n_e}\DERIV{n_e}{t} = N\MEAN{K_{\text{eff}}}
 \end{equation}
 and the equations \eqref{eq:ebe-2term-f-u0}--\eqref{eq:ebe-2term-f-u1},
 after division by $N$, take the form
 \begin{align}
-	&\sqrt{u}f^0_u\MEAN{K_{eff}}
+	&\sqrt{u}f^0_u\MEAN{K_{\text{eff}}}
 	+\frac{\sqrt{u}}{N}\PDEV{f^0_u}{t}
 	- \frac{\gamma}{3}\frac{E}{N}\PDEV{u f^1}{u}
 	= \tilde{C}^0,
 	\label{eq:ebe-2term-f-u0-ddt} \\
-	&f^1_u\MEAN{\nu_{eff}}
+	&f^1_u\MEAN{\nu_{\text{eff}}}
 	+\PDEV{f^1_u}{t}
 	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
 	= -\nu_m(u)f^1_u.
@@ -541,34 +542,34 @@ after division by $N$, take the form
 The second equation can be written as
 \begin{equation}
 	f^1_u(u)
-	+ \frac{1}{\MEAN{\nu_{eff}}+\nu_m(u)}\PDEV{f^1_u}{t}
-	= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{eff}}+\nu_m(u)}\DERIV{f^0}{u}.
+	+ \frac{1}{\MEAN{\nu_{\text{eff}}}+\nu_m(u)}\PDEV{f^1_u}{t}
+	= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{\text{eff}}}+\nu_m(u)}\DERIV{f^0}{u}.
 \end{equation}
 Setting $\partial f^1_u(u)/\partial t$ gives us the quasi-steady-state solution of $f^1_u(u)$,
 \begin{equation}
 	f^1_{u,qss}(u,t)
-	:= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{eff}}+\nu_m(u)}\DERIV{f^0}{u}
+	:= E\frac{\gamma\sqrt{u}}{\MEAN{\nu_{\text{eff}}}+\nu_m(u)}\DERIV{f^0}{u}
 	= \frac{E(t)}{N}\frac{1}{\Omega_{trans}(u,t)}\PDEV{f^0}{u},
 \end{equation}
 where
 \begin{equation}
-	\Omega_{trans}(u,t) = \sigma_c(u) + \frac{1}{\gamma\sqrt{u}}\MEAN{K_{\mbox{eff}}}(t).
+	\Omega_{trans}(u,t) = \sigma_c(u) + \frac{1}{\gamma\sqrt{u}}\MEAN{K_{\text{eff}}}(t).
 \end{equation}
 Backsubstitution in the full equation for $f^1_u(u)$, that can be written as
 \begin{equation}
-	\PDEV{f^1_u}{t} = -(\MEAN{\nu_{\mbox{eff}}}+\nu_m(u))(f^1_u(u,t)-f^1_{u,qss}(u,t)).
+	\PDEV{f^1_u}{t} = -(\MEAN{\nu_{\text{eff}}}+\nu_m(u))(f^1_u(u,t)-f^1_{u,qss}(u,t)).
 \end{equation}
 This equation has a clear interpretation: the time-derivative of $f^1_u$ steers that
 function in the direction of its quasi-steady state solution. For energy $u$, that
 solution will be reached on the time scale $(\MEAN{\nu_m}+\nu_m(u))^{-1}$ --- if the
 equilibrium solution $f^1_{u,qss}(u,t)$ itself does not change on that time scale.
 The latter requirement is fulfilled if $E(t)$ and $f^0(u,t)$ do not vary significantly
-on that time scale (note that also $\MEAN{K_{\mbox{eff}}}$ depends on time via $f^0(u,t)$).
+on that time scale (note that also $\MEAN{K_{\text{eff}}}$ depends on time via $f^0(u,t)$).
 
 If we assume that indeed $f^1_u(u,t)\approx f^1_{u,qss}(u,t)$, this result can be
 backsubstituted in equation \eqref{eq:ebe-2term-f-u0-ddt}, yielding
 \begin{equation}
-	\sqrt{u}f^0_u\MEAN{K_{eff}}
+	\sqrt{u}f^0_u\MEAN{K_{\text{eff}}}
 	+\frac{\sqrt{u}}{N}\PDEV{f^0_u}{t}
 	- \gamma\left(\frac{E(t)}{N}\right)^2\PDEV{}{u}\left({\cal D}_{trans}^0(u)\PDEV{f^0}{u}\right)
 	= \tilde{C}^0,
@@ -615,7 +616,7 @@ Integration of the first equation over all energies yields
 \begin{equation}
 	\frac{1}{n_e}\PDEV{n_e}{t}
 	+ \MEAN{v_z}\frac{1}{n_e}\PDEV{n_e}{z}
-	=  \MEAN{\nu_{eff}},
+	=  \MEAN{\nu_{\text{eff}}},
 	\label{eq:t-spat-constraint}
 \end{equation}
 which shows that the space- and time-derivatives of the electron density are dependent
@@ -633,26 +634,26 @@ that one of the time or spatial derivatives is zero (next sections)? I cannot im
 that has not already been tried before.
 One could consider to tabulate results as a function not only of $E/N$, but also of
 some parameter that describes the relative importance of the two derivatives. For example,
-one could write the time and space derivatives as $\nu_t$ and $\alpha_{\mbox{eff}}$, so
+one could write the time and space derivatives as $\nu_t$ and $\alpha_{\text{eff}}$, so
 \begin{align}
-	\nu_t + \MEAN{v_z}\alpha_{\mbox{eff}} = \MEAN{\nu_{eff}}
+	\nu_t + \MEAN{v_z}\alpha_{\text{eff}} = \MEAN{\nu_{\text{eff}}}
 	\iff
-	\nu_t(\alpha_{\mbox{eff}}) = \MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}},
+	\nu_t(\alpha_{\text{eff}}) = \MEAN{\nu_{\text{eff}}} - \MEAN{v_z}\alpha_{\text{eff}},
 \end{align}
 and use this expression to eliminate $\nu_t$ from equations
 \eqref{eq:ebe-2term-f-u0(u)}--\eqref{eq:ebe-2term-f-u1(u)}.
 \begin{align}
-	&\sqrt{u}f^0_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
-	+ \frac{\gamma}{3}uf^1_u\alpha_{\mbox{eff}}
+	&\sqrt{u}f^0_u\left(\MEAN{\nu_{\text{eff}}} - \MEAN{v_z}\alpha_{\text{eff}}\right)
+	+ \frac{\gamma}{3}uf^1_u\alpha_{\text{eff}}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	=  N\tilde{C}^0,
 	\\
-	&f^1_u\left(\MEAN{\nu_{eff}} - \MEAN{v_z}\alpha_{\mbox{eff}}\right)
-	+ \gamma \sqrt{u}f^0_u\alpha_{\mbox{eff}}
+	&f^1_u\left(\MEAN{\nu_{\text{eff}}} - \MEAN{v_z}\alpha_{\text{eff}}\right)
+	+ \gamma \sqrt{u}f^0_u\alpha_{\text{eff}}
 	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
 	= -\nu_m(u)f^1_u.
 \end{align}
-One could then calculate/tabulate EEDF results as a function of $E/N$ {\em and} $\alpha_{\mbox{eff}}/N$,
+One could then calculate/tabulate EEDF results as a function of $E/N$ {\em and} $\alpha_{\text{eff}}/N$,
 for example. What impact would such more general approach have on fluid models that
 use results of the two-term expansion?
 
@@ -675,18 +676,18 @@ only on time, yielding
 	\nonumber
 \end{align}
 For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e}
-tell us that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\mbox{eff}}}$. This allows the second equation
+tell us that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\text{eff}}}$. This allows the second equation
 to be rewritten as
 \begin{align}
 	&f^1_u(u)
 	= \frac{E}{N}\frac{1}{\Omega_{pt}(u)}\PDEV{f^0_u}{u},
 	\label{eq:ebe-2term-f-u1(u)-temp} \\
-	&\Omega_{pt} := \sigma_m(u) + \MEAN{K_{\mbox{eff}}}/(\gamma\sqrt{u}),
+	&\Omega_{pt} := \sigma_m(u) + \MEAN{K_{\text{eff}}}/(\gamma\sqrt{u}),
 	\label{eq:OmegaPT}
 \end{align}
 and substitution into the first equation yields, after division by $N$,
 \begin{equation}
-	\sqrt{u}f^0_u\MEAN{K_{\mbox{eff}}}
+	\sqrt{u}f^0_u\MEAN{K_{\text{eff}}}
 	- \gamma\left(\frac{E}{N}\right)^2\PDEV{}{u}\left({\cal D}_{pt}^0(u)\PDEV{f^0_u}{u}\right)
 	= \tilde{C}^0.
 	\label{eq:ebe-2term-f-u0(u)-temp-subst}
@@ -718,7 +719,7 @@ Furthermore, following Hagelaar et al., the first term on the left-hand side of
 the equation for $f^0(u)$ is defined to be $-\tilde{R}_{pt}$, where
 $\tilde{R}_{pt}$ called the `growth renormalization term'.
 \begin{equation}
-	\tilde{R}_{pt}(u) = -\sqrt{u}f^0_u\MEAN{K_{\mbox{eff}}},
+	\tilde{R}_{pt}(u) = -\sqrt{u}f^0_u\MEAN{K_{\text{eff}}},
 \end{equation}
 Bringing this to the right-hand side of the equation, that takes the form that is also
 found in \cite[eq. 25]{Hagelaar2005},
@@ -728,9 +729,9 @@ found in \cite[eq. 25]{Hagelaar2005},
 
 
 When solving this equation, iterations are needed until the value of
-$\MEAN{K_{\mbox{eff}}}$ is consistent with the eedf $f^0(u)$. Note that
+$\MEAN{K_{\text{eff}}}$ is consistent with the eedf $f^0(u)$. Note that
 the field term needs to be re-discretized as well in every iteration,
-since that also depends on $\MEAN{K_{\mbox{eff}}}$ via $\Omega_{pt}(u)$.
+since that also depends on $\MEAN{K_{\text{eff}}}$ via $\Omega_{pt}(u)$.
 
 Let us now take a look at the electron particle and energy flux densities.
 By multiplying equation \eqref{eq:ebe-2term-f-u1(u)-temp} with $\frac{1}{3}\gamma u n_e$,
@@ -820,23 +821,23 @@ The {\em Spatial Growth} model allows only {\em spatial} variations of $n_e$, yi
 	\label{eq:ebe-2term-f-u1(u)-spat-raw}
 \end{align}
 For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e}
-tell us that $\dd{\Gamma_e}/\dd{z}=n_e\MEAN{\nu_{\mbox{eff}}}$. Equation \eqref{eq:Gamma_u}
+tell us that $\dd{\Gamma_e}/\dd{z}=n_e\MEAN{\nu_{\text{eff}}}$. Equation \eqref{eq:Gamma_u}
 gives the expression for the flux, and equation \eqref{eq:meanvz} makes clear that
 $\MEAN{v_z}$ can be taken out of the $\partial/\partial z$, since $f^1(u)$ does not depend
 on the spatial coordinate by our assumptions. This gives
 \begin{equation}
-	\MEAN{v_z}\PDEV{n_e}{z}=n_e\MEAN{\nu_{\mbox{eff}}}.
+	\MEAN{v_z}\PDEV{n_e}{z}=n_e\MEAN{\nu_{\text{eff}}}.
 \end{equation}
 For $\MEAN{v_z}\neq 0$ this can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} := \frac{1}{n_e}\PDEV{n_e}{z}=\frac{\MEAN{\nu_{\mbox{eff}}}}{\MEAN{v_z}}.
+	\alpha_{\text{eff}} := \frac{1}{n_e}\PDEV{n_e}{z}=\frac{\MEAN{\nu_{\text{eff}}}}{\MEAN{v_z}}.
 	\label{eq:alpha_eff}
 \end{equation}
 Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equations
 \eqref{eq:ebe-2term-f-u0(u)-spat-raw} and \eqref{eq:ebe-2term-f-u1(u)-spat-raw} yields
 \begin{align}
 	&
-	  \frac{\gamma}{3}uf^1_u\frac{\alpha_{\mbox{eff}}}{N}
+	  \frac{\gamma}{3}uf^1_u\frac{\alpha_{\text{eff}}}{N}
 	- \frac{\gamma}{3}\frac{E}{N}\PDEV{u f^1}{u}
 	= \tilde{C}^0,
 	\label{eq:ebe-2term-f-u0(u)-spat}
@@ -844,7 +845,7 @@ Using \eqref{eq:alpha_eff} to eliminate the spatial derivative of $n_e$ from equ
 	&
 	f^1_u =
 	\frac{1}{\sigma_m(u)}\left(\frac{E}{N}\PDEV{f^0_u}{u}
-	- \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right).
+	- \frac{\alpha_{\text{eff}}}{N}f^0_u\right).
 	\label{eq:ebe-2term-f-u1(u)-spat}
 \end{align}
 By multiplying the last equation with $\gamma u/3$, integrating over all energies and
@@ -853,8 +854,8 @@ using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
 	\MEAN{v_z} = \frac{\gamma}{3}\int\limits_0^\infty uf^1_u\dd{u}
 	=
 		  E           \frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
-		- \alpha_{\mbox{eff}}\frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)f^0_u\dd{u}
-	= \mu_e E - D_e\alpha_{\mbox{eff}}.
+		- \alpha_{\text{eff}}\frac{\gamma}{N}\int\limits_0^\infty {\cal D}_m^0(u)f^0_u\dd{u}
+	= \mu_e E - D_e\alpha_{\text{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
 \end{equation}
 Here we have used expression \eqref{eq:mueN} for the reduced electron diffusion coefficient
@@ -864,43 +865,43 @@ $D_eN$, and introduced the (reduced) electron diffusion coefficient,
 \end{equation}
 The expression for $D_eN$ is given in \cite[eq. 46a]{Manual_2_2_0}.
 
-Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\alpha_{\mbox{eff}}$,
+Combination with equation \eqref{eq:alpha_eff} gives a quadratic equation for $\alpha_{\text{eff}}$,
 \begin{equation}
-	\alpha_{\mbox{eff}}(\mu_eE-D_e\alpha_{\mbox{eff}}) - \MEAN{\nu_{\mbox{eff}}} =0,
+	\alpha_{\text{eff}}(\mu_eE-D_e\alpha_{\text{eff}}) - \MEAN{\nu_{\text{eff}}} =0,
 \end{equation}
 which can be solved to obtain
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\text{eff}} = \frac{1}{2D_e}\left(\mu_eE \pm\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\text{eff}}}}\right).
 \end{equation}
-The roots are real if $(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}>0$. When simplifying,
+The roots are real if $(\mu_eE)^2-4D_e\MEAN{\nu_{\text{eff}}}>0$. When simplifying,
 note that normally $\mu$ is negative, $E$ could be positive or negative, $\alpha$ has the
-same sign as the product $\mu_eE$, and $\MEAN{\nu_{\mbox{eff}}}$ can be positive or negative
+same sign as the product $\mu_eE$, and $\MEAN{\nu_{\text{eff}}}$ can be positive or negative
 (negative if there is more attachment than ionization).
 It is zero when the discriminant is zero, or may be complex.
 Note that there are two solutions. We choose the one that has the desired property that
-$\alpha_{\mbox{eff}}=0$ when $\MEAN{\nu_{\mbox{eff}}}=0$. This can be written as
+$\alpha_{\text{eff}}=0$ when $\MEAN{\nu_{\text{eff}}}=0$. This can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{1}{2D_e}\left(\mu_eE -\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}\right).
+	\alpha_{\text{eff}} = \frac{1}{2D_e}\left(\mu_eE -\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\text{eff}}}}\right).
 	\label{eq:sst-alpha-solution}
 \end{equation}
 NOTE: if $\mu_eE\neq 0$ this can be written as
 \begin{equation}
-	\alpha_{\mbox{eff}} = \frac{\mu_eE}{2D_e}\left(1 -\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right).
+	\alpha_{\text{eff}} = \frac{\mu_eE}{2D_e}\left(1 -\sqrt{1-\frac{4D_e\MEAN{\nu_{\text{eff}}}}{(\mu_eE)^2}}\right).
 	\label{eq:sst-alpha-solution-muE!=0}
 \end{equation}
 Substitution of equation \eqref{eq:ebe-2term-f-u1(u)-spat} in equation \eqref{eq:ebe-2term-f-u0(u)-spat}
 gives an equation for $f^0(u)$,
 \begin{equation}
-	  \gamma\frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
-        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	  \gamma\frac{\alpha_{\text{eff}}}{N}{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
 	- \gamma\frac{E}{N}\PDEV{}{u}\left(
 		{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
-		- \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+		- \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
 	\right)
 	= \tilde{C}^0.
 	\label{eq:ebe-2term-f-u0(u)-spat-subst}
 \end{equation}
-By bringing all terms that depend on $\alpha_{\mbox{eff}}f^0(u)$ to the right-hand side
+By bringing all terms that depend on $\alpha_{\text{eff}}f^0(u)$ to the right-hand side
 of the equation and using definition \eqref{eq:H_E,x} with $x=m$, that can be
 rewritten as
 \begin{equation}
@@ -911,8 +912,8 @@ where, just like for the temporal growth case, a growth renormalization term $\t
 has been introduced, which is now given by
 \begin{equation}
 	\tilde{R}_{sst}(u) =
-	  -\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
-        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	  -\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)\left(\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
 	+ \frac{E}{N}\PDEV{}{u}\left({\cal D}_m^0(u)f^0_u\right)
 	\right].
 	\label{eq:Rsst-orig}
@@ -921,26 +922,26 @@ We can rewrite equation \eqref{eq:Rsst-orig} by expanding the derivative of the
 product ${\cal D}_m^0(u)f^0_u$ and reordering terms,
 \begin{align}
 	\tilde{R}_{sst}(u)
-	  &=-\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)\left(2\frac{E}{N}\PDEV{f^0_u}{u}
-        - \frac{\alpha_{\mbox{eff}}}{N}f^0_u\right)
+	  &=-\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)\left(2\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
 	+ \frac{E}{N}f^0_u\PDEV{{\cal D}_m^0(u)}{u}
 	\right]
 	\nonumber \\
-	  &= -\gamma\frac{\alpha_{\mbox{eff}}}{N}\left[{\cal D}_m^0(u)2\frac{E}{N}\PDEV{f^0_u}{u}
-	+ \left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u}-\frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)f^0_u
+	  &= -\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)2\frac{E}{N}\PDEV{f^0_u}{u}
+	+ \left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u}-\frac{\alpha_{\text{eff}}}{N}{\cal D}_m^0(u)\right)f^0_u
 	\right].
 	\label{eq:Rsst-alts}
 \end{align}
 The first form of this equation is what you find in the BOLSIG+ paper \cite[eq. 19]{Hagelaar2005}
-(after changing $\alpha_{\mbox{eff}}\rightarrow -\alpha_{\mbox{eff}}$).
+(after changing $\alpha_{\text{eff}}\rightarrow -\alpha_{\text{eff}}$).
 In the last step, the terms involving $f^0_u$ and its derivative have been separated,
 which is more convenient when the terms are discretized.
 On the other hand, we can use ${\cal D}_m^0(u)\dd{f^0_u}/\dd{u} = \dd{{\cal D}_m^0(u)f^0_u}/\dd{u} - f^0_u\dd{{\cal D}_m^0(u)}/\dd{u}$
 to obtain
 \begin{align}
 	\tilde{R}_{sst}(u)
-	= \gamma\frac{\alpha_{\mbox{eff}}}{N}\left[
-	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\mbox{eff}}}{N}{\cal D}_m^0(u)\right)
+	= \gamma\frac{\alpha_{\text{eff}}}{N}\left[
+	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\text{eff}}}{N}{\cal D}_m^0(u)\right)
 	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
 	\right].
 \end{align}
@@ -959,7 +960,7 @@ to obtain
 		\item \SRC{fieldOperator} is reused; it provides the term that is also present in the absence of growth.
 		\item \SRC{fieldMatrixSpatGrowth} provides
 		\[
-			\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
+			\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
 		\]
 		which corresponds to the additional contribution to the field term. These terms
 		together correspond to equation (30) of the manual.
@@ -969,15 +970,15 @@ to obtain
 			that in the discretization of \SRC{ionSpatialGrowthU} and the diffusion
 			coefficient and mobility of the electrons (see below).
 		\end{framed}
-		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\mbox{eff}}/N)^2{\cal D}_{sst}^0$,
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0$,
 			the first term of equation (29) of the manual.
-		\item The remaining term is $\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
+		\item The remaining term is $\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
 			and is provided by \SRC{ionSpatialGrowthU}.
 			A central-difference scheme for the derivative of $f(u)$ yields the approximation
 			\begin{equation}
-				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
+				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
 				\doteq
-				\frac{\alpha_{\mbox{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u}
+				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u}
 				:=
 				C_k\frac{f_{k+1}-f_{k-1}}{2\Delta u},
 			\end{equation}
@@ -1029,12 +1030,12 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 \noindent {\bf Notes and Questions --- Theory:}
 \begin{itemize}
 \item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
-	Why should the second solution of the equation for $\alpha_{\mbox{eff}}$ be rejected?
+	Why should the second solution of the equation for $\alpha_{\text{eff}}$ be rejected?
 \item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
 	velocities are equal (but opposite). Then the above definition fails. How
 	can we fix this?
-	In case $\MEAN{v_z}=0$, should we adopt $\alpha_{\mbox{eff}}=0$? We
-	also want $\alpha_{\mbox{eff}}=0$ if $\MEAN{\nu_{\mbox{eff}}}=0$.
+	In case $\MEAN{v_z}=0$, should we adopt $\alpha_{\text{eff}}=0$? We
+	also want $\alpha_{\text{eff}}=0$ if $\MEAN{\nu_{\text{eff}}}=0$.
 	What if the velocity and frequency are {\em both} zero?
 \item Why should complex roots (if any) be ignored/patched? Physically
 	these would result in oscillatory $n_e(z)$. Is that wrong per se?
@@ -1048,7 +1049,7 @@ Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $Nu$ and integration
 yields the energy balance for the spatial growth case. After multiplication with $n_e$
 we get
 \begin{equation}
-	\alpha_{\mbox{eff}}\Gamma_u -(q_e\Gamma_e/e) E = n_eN\int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
+	\alpha_{\text{eff}}\Gamma_u -(q_e\Gamma_e/e) E = n_eN\int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
 \end{equation}
 Here we have used equation \eqref{eq:Gamma_u}, and the dissipation term is obtained in the
 same way as it was in the derivation of equation \eqref{eq:energy-balance}.
@@ -1056,7 +1057,7 @@ same way as it was in the derivation of equation \eqref{eq:energy-balance}.
 The electron energy flux density is given by equations \eqref{eq:Gamma_u}. Substitution
 of equation \eqref{eq:ebe-2term-f-u1(u)-spat} for $f^1(u)$ for the spatial growth case yields
 \begin{equation}
-	\Gamma_u = \frac{E}{N}(\mu_u N)n_e\MEAN{u} - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)n_e\MEAN{u},
+	\Gamma_u = \frac{E}{N}(\mu_u N)n_e\MEAN{u} - \frac{\alpha_{\text{eff}}}{N}(D_uN)n_e\MEAN{u},
 	\label{eq:Gamma_u-sst}
 \end{equation}
 where we have used equation \eqref{eq:muuN} and have defined the (reduced) electron energy diffusion
@@ -1074,57 +1075,57 @@ The expression for LoKI-B's $D_uN$ is given in \cite[eq. 48a]{Manual_2_2_0}.
 The particle flux density is obtained by multiplying equation \eqref{eq:ebe-2term-f-u1(u)-spat-v_z}
 with $n_e$,
 \begin{equation}
-	\Gamma_z = n_e(\mu_e E - D_e\alpha_{\mbox{eff}}).
+	\Gamma_z = n_e(\mu_e E - D_e\alpha_{\text{eff}}).
 \end{equation}
 The expression for $\Gamma_z$ can be used to evaluate the power that is absorbed per electron
 at unit background gas density by the field directly, the result can be written as
 \begin{equation}
-	\frac{P_E}{N} := \frac{q_e}{e}\frac{\Gamma_zE}{n_eN} = \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}.
+	\frac{P_E}{N} := \frac{q_e}{e}\frac{\Gamma_zE}{n_eN} = \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\text{eff}}}{N}\right)\frac{E}{N}.
 \end{equation}
 Substitution of equation \eqref{eq:sst-alpha-solution} yields
 \begin{equation}
-	\frac{P_E}{N} = \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)\frac{1}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
+	\frac{P_E}{N} = \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)\frac{1}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\text{eff}}}}{(\mu_eE)^2}}\right),
 \end{equation}
 which is equivalent to the result found in the BOLSIG+ manual \cite[p. 18]{BolsigManual2016}
 (item 19) for the spatial growth case.
 \begin{framed}
-NOTE/TODO: the expression after substitution of the solution of $\alpha_{\mbox{eff}}$ above is
+NOTE/TODO: the expression after substitution of the solution of $\alpha_{\text{eff}}$ above is
 only valid for $E\neq 0$. This is based on the last form of
 \begin{equation}
 	\MEAN{v_z}
 	=\frac{\Gamma_z}{n_e}
-	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\mbox{eff}}}}
-	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\mbox{eff}}}}{(\mu_eE)^2}}\right),
+	= \frac{\mu_e E}{2} +\frac{1}{2}\sgn(\mu_eE)\sqrt{(\mu_eE)^2-4D_e\MEAN{\nu_{\text{eff}}}}
+	= \frac{\mu_e E}{2}\left(1 +\sqrt{1-\frac{4D_e\MEAN{\nu_{\text{eff}}}}{(\mu_eE)^2}}\right),
 \end{equation}
 but also the case $E=0$ should be captured here, suggesting the intermediate form. (That will have
-a positive discriminant if $\MEAN{\nu_{\mbox{eff}}}<0$.)
+a positive discriminant if $\MEAN{\nu_{\text{eff}}}<0$.)
 \end{framed}
 
 Alternatively, the term from the field operator
-that is proportional to $\alpha_{\mbox{eff}}$ can be combined with the first term on the
+that is proportional to $\alpha_{\text{eff}}$ can be combined with the first term on the
 left-hand side of the energy balance, thus combining all terms that are related to the
 spatial inhomogeneities. Substitution of the expression for $\Gamma_z$ and equation
 \eqref{eq:Gamma_u-sst} in the energy balance and division by $Nn_e$ result in
 \begin{equation}
-	\frac{\alpha_{\mbox{eff}}}{N}\MEAN{u}\left(\frac{E}{N}(\mu_u N) - \frac{\alpha_{\mbox{eff}}}{N}(D_uN)\right)
-	- \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\mbox{eff}}}{N}\right)\frac{E}{N}
+	\frac{\alpha_{\text{eff}}}{N}\MEAN{u}\left(\frac{E}{N}(\mu_u N) - \frac{\alpha_{\text{eff}}}{N}(D_uN)\right)
+	- \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\text{eff}}}{N}\right)\frac{E}{N}
 	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u},
 \end{equation}
 and regrouping terms yields
 \begin{equation}
-	-\frac{\alpha_{\mbox{eff}}}{N}\left(
-		\MEAN{u}\left[\frac{\alpha_{\mbox{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
+	-\frac{\alpha_{\text{eff}}}{N}\left(
+		\MEAN{u}\left[\frac{\alpha_{\text{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
 		- \frac{q_e}{e} (D_eN)\frac{E}{N}
 	\right)
 	- \frac{q_e}{e}\left(\frac{E}{N}\right)^2(\mu_eN)
 	= \int\limits_0^\infty u \tilde{C}^0(u)\dd{u}.
 \end{equation}
 The first term (negated) now corresponds to the `growth power' (item 22) in \cite[p. 19]{BolsigManual2016}
-(after negating both $\alpha_{\mbox{eff}}$ and $\mu_u$, see section \ref{sec:compatibility},
+(after negating both $\alpha_{\text{eff}}$ and $\mu_u$, see section \ref{sec:compatibility},
 \begin{equation}
 	\frac{P_{growth,sst}}{N} =
-	\frac{\alpha_{\mbox{eff}}}{N}\left(
-		\MEAN{u}\left[\frac{\alpha_{\mbox{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
+	\frac{\alpha_{\text{eff}}}{N}\left(
+		\MEAN{u}\left[\frac{\alpha_{\text{eff}}}{N}(D_uN) - \frac{E}{N}(\mu_u N)\right]
 		- \frac{q_e}{e} (D_eN)\frac{E}{N}
 	\right).
 \end{equation}
@@ -1224,7 +1225,7 @@ also see section \ref{sec:dH/du-disc}.
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
 and all terms of the final equation are divided by $\gamma$. As a result, in the manual they appear as
 \begin{equation}
-	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\mbox{with}\quad G^{man}_x(u)=N H_x(u).
+	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\text{with}\quad G^{man}_x(u)=N H_x(u).
 	\label{eq:CvsGman}
 \end{equation}
 In the {\em code} (matlab and C++), no tricks are done, the terms are all brought
@@ -1991,13 +1992,13 @@ upper boundary of the energy grid such that the dynamic range of the
 EEDF is within a user-specified specific range. The number of decades
 that the EEDF drops is given by the expression
 \begin{equation}
-    N_d = \log_{10} f_{\mbox{max}} - \log_{10} f_{\mbox{min}}.
+    N_d = \log_{10} f_{\text{max}} - \log_{10} f_{\text{min}}.
 \end{equation}
 LoKI-B assumes that the highest and lowest EEDF values are attained on
 the first and last energy grid point, respectively. This is the expression
 that is also implemented in the MATLAB version of LoKI-B. In case of
-an underflow for high energy values, such that $f_{\mbox{min}}=0$, while
-$f_{\mbox{max}}$ is finite, MATLAB produces the value \SRC{Inf}, since
+an underflow for high energy values, such that $f_{\text{min}}=0$, while
+$f_{\text{max}}$ is finite, MATLAB produces the value \SRC{Inf}, since
 \SRC{log10} is specified to return \SRC{-Inf} for zero-valued arguments\footnote{
 See: \url{https://nl.mathworks.com/help/matlab/ref/log10.html}}.
 In such case, a test like \SRC{Inf > N_max} will evaluate as \SRC{true}
@@ -2008,7 +2009,7 @@ for zero-valued arguments.
 It is tempting to combine the logarithms in this expression, wich would
 result in
 \begin{equation}
-    N_d= \log_{10} \frac{f_{\mbox{max}}}{f_{\mbox{min}}}.
+    N_d= \log_{10} \frac{f_{\text{max}}}{f_{\text{min}}}.
 \end{equation}
 It is important to realize that these expressions may give different
 results in the case of underflow, when {\em signed} zeros are produced:
@@ -2017,14 +2018,14 @@ signed zero \SRC{-0.0} as separate numbers, although they do compare
 equal\footnote{See: \url{https://en.wikipedia.org/wiki/Signed_zero}}.
 However, for a positive finite number $f$ we have \SRC{f/(+0.0)=+Inf}
 and \SRC{f/(-0.0)=-Inf}, and while \SRC{log10(+Inf)=+Inf}, we have
-\SRC{log10(-Inf)=NaN}. This means that for a positive $f_{\mbox{max}}$ we get
+\SRC{log10(-Inf)=NaN}. This means that for a positive $f_{\text{max}}$ we get
 \begin{equation}
-    \log_{10} f_{\mbox{max}} - \log_{10}(\pm 0.0)
-  = \log_{10} f_{\mbox{max}} - (-\infty) = \infty.
+    \log_{10} f_{\text{max}} - \log_{10}(\pm 0.0)
+  = \log_{10} f_{\text{max}} - (-\infty) = \infty.
 \end{equation}
 whereas
 \begin{equation}
-  \log_{10} (f_{\mbox{max}}/(\pm 0.0)) = \log_{10}(\pm\infty),
+  \log_{10} (f_{\text{max}}/(\pm 0.0)) = \log_{10}(\pm\infty),
 \end{equation}
 which gives \SRC{NaN} instead of \SRC{Inf} for a signed zero.
 
@@ -2042,10 +2043,10 @@ code, so it does not have to be repeated three times in the code.
 Let $[D_m,D_p]$ denote the user-specified dynamic range of the EEDF,
 and $D(u_x)$ be the dynamic range that is realized for an upper
 energy that is equal to $u_x$. The `smart grid feature' can be used
-to adjust $u_{\mbox{max}}$ such that $D(u_{\mbox{max}})\in[D_m,D_p]$.
+to adjust $u_{\text{max}}$ such that $D(u_{\text{max}})\in[D_m,D_p]$.
 The original implementation uses an adjustment with a user-specified
-factor, first lowering $u_{\mbox{max}}$ until the lower boundary is
-respected, then increasing $u_{\mbox{max}}$ until the upper boundary
+factor, first lowering $u_{\text{max}}$ until the lower boundary is
+respected, then increasing $u_{\text{max}}$ until the upper boundary
 is respected. This can be a slow process, and there is no guarantee
 that the criteria are actually met after the algorithm is finished:
 when the adjustment factor is too high, you may go from too low to
@@ -2058,24 +2059,24 @@ of two parts. Firstly, values $u_m$ and $u_p$ are determined such that
 $[D(u_m),D(u_p)]$ has overlap with $[D_m,D_p]$. (The latter interval
 may be enclosed entirely by the former, or the overlap may be partial).
 Secondly, the interval $[u_m,u_P]$ is bisected until $[D(u_m),D(u_p)]$
-is fully within the specified range and the final $u_{\mbox{max}}$ is
+is fully within the specified range and the final $u_{\text{max}}$ is
 chosen from $[u_m,u_P]$. In detail:
 \begin{enumerate}
-  \item Set $u_m=u_p=u_{\mbox{max}}$, solve the EEDF and calculate $D(u_M)$;
+  \item Set $u_m=u_p=u_{\text{max}}$, solve the EEDF and calculate $D(u_M)$;
 	if that is in the required range, we are ready.
   \item If $D(u_p)$ is below the required range, keep doubling $u_p$,
-	setting $u_{\mbox{max}}=u_p$,
+	setting $u_{\text{max}}=u_p$,
 	solving the EEDF and calculating $D(u_p)$ unless it is in the
 	required range or above. Else:
         If $D(u_m)$ is above the required range, keep halving $u_m$,
-	setting $u_{\mbox{max}}=u_m$,
+	setting $u_{\text{max}}=u_m$,
 	solving the EEDF and calculating $D(u_m)$ unless it is in the
 	required range or below.
-  \item Until $D(u_{\mbox{max}})$ is in the specified range,
-	set $u_{\mbox{max}}=(u_m+u_p)/2$, solve the EEDF and calculate
-	$D(u_{\mbox{max}})$. If $D(u_{\mbox{max}})<D_m$,
-	set $u_m=u_{\mbox{max}}$, else if $D(u_{\mbox{max}})>D_p$,
-	set $u_p=u_{\mbox{max}}$. (This bisects the interval until
+  \item Until $D(u_{\text{max}})$ is in the specified range,
+	set $u_{\text{max}}=(u_m+u_p)/2$, solve the EEDF and calculate
+	$D(u_{\text{max}})$. If $D(u_{\text{max}})<D_m$,
+	set $u_m=u_{\text{max}}$, else if $D(u_{\text{max}})>D_p$,
+	set $u_p=u_{\text{max}}$. (This bisects the interval until
 	one of its end points matches the criterium.)
 \end{enumerate}
 \begin{framed}
@@ -2256,7 +2257,7 @@ Theoretical TODO's:
     \item Show that the modifications are valid within the accuracy of
 	the discretization and show that it does not change the physics. We
 	expect (at least) that any discretization/modification error vanishes
-	for ${\cal N}\rightarrow\infty$ for a fixed $u_{\mbox{max}}$ (so
+	for ${\cal N}\rightarrow\infty$ for a fixed $u_{\text{max}}$ (so
 	$\Delta u\downarrow 0$. Note that the number of cells and,
 	consequently, the matrices, grow when ${\cal N}$ is increased, so how
 	do we test something like $\bmat{b}=\bmat{a}^T$ in such limit? What
@@ -2466,8 +2467,8 @@ This section relies on the following properties of the $\delta$ function
 \begin{align}
 	\int\limits_{u_1}^{u_2} f(u)\delta(u-u_0)\dd{u} &= \begin{cases}
 		f(u_0)	&:\quad u_1<u_0<u_2 \\
-			\mbox{undefined}	&:\quad u=u_1 \vee u=u_2 \\
-		0	&:\quad \mbox{otherwise}
+			\text{undefined}	&:\quad u=u_1 \vee u=u_2 \\
+		0	&:\quad \text{otherwise}
 	\end{cases} \label{eq:delta-integrals}
 	\\
 	\delta(u-u_0)f(u) &=\delta(u-u_0)f(u_0), \label{eq:del(u-u0)f(u)=del(u-u0)f(u0)}
@@ -2913,7 +2914,7 @@ has been fixed along the same lines.
 In \cite[eqn. 3a]{Tejero2019} the final form of the two-term approximation of the
 Boltzmann equation with a temporal growth term is written as
 \begin{equation}
-  \frac{1}{N\gamma}\MEAN{\nu_{\mbox{eff}}}uf(u) + \frac{1}{N\gamma}\DERIV{G(u)}{u} = S(u).
+  \frac{1}{N\gamma}\MEAN{\nu_{\text{eff}}}uf(u) + \frac{1}{N\gamma}\DERIV{G(u)}{u} = S(u).
 \end{equation}
 The equation with the spatial growth model is similar, only the first term takes
 a different form. The equation is subject to the normalization condition
@@ -2923,7 +2924,7 @@ a different form. The equation is subject to the normalization condition
 \end{equation}
 Bringing all terms of the EBE to the right-hand side of the equation yields
 \begin{equation}
-  -\frac{1}{N\gamma}\MEAN{\nu_{\mbox{eff}}}uf(u) - \frac{1}{N\gamma}\DERIV{G(u)}{u} + S(u) = 0.
+  -\frac{1}{N\gamma}\MEAN{\nu_{\text{eff}}}uf(u) - \frac{1}{N\gamma}\DERIV{G(u)}{u} + S(u) = 0.
   \label{eq:EBE-temp}
 \end{equation}
 In LoKI-B, this particular form of the equation is cast in matrix-vector form,
