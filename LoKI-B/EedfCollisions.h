@@ -40,6 +40,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Power.h"
 
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -158,7 +159,7 @@ public:
      *  storage of the collisions.
      *  \todo Explain isExtra.
      */
-    void loadCollisionsClassic(const std::string &file, GasMixture& composition, const Grid *energyGrid, bool isExtra);
+    void loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     /** Loads the collisions from a json mixture section. Such section must contain two
      *  subsections: an object "states" that consists of key-value pairs that represent

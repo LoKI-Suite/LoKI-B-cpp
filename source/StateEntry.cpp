@@ -360,7 +360,7 @@ StateEntry propertyStateFromString(const std::string &propertyString)
     return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
 }
 
-void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateEntry, double>> &entries)
+void statePropertyFile(const std::filesystem::path &fileName, std::vector<std::pair<StateEntry, double>> &entries)
 {
     /** \bug 'S 1.2.3' will be accepted by this regex. Subsequently,
      *        getValue will result in the value 1.2, since that does
@@ -371,7 +371,7 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
     std::string fileBuffer;
     if (!Parse::stringBufferFromFile(fileName, fileBuffer))
     {
-        Log<Message>::Error("Could not open state property file '" + fileName + "' for reading.");
+        Log<Message>::Error("Could not open state property file '" + fileName.generic_string() + "' for reading.");
     }
     std::stringstream ss{fileBuffer};
     std::string line;
@@ -384,7 +384,7 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
         std::smatch m;
         if (!std::regex_search(line, m, expr))
         {
-            throw std::runtime_error("Syntax error in file '" + fileName + "', line '" + line +
+            throw std::runtime_error("Syntax error in file '" + fileName.generic_string() + "', line '" + line +
                                      "': expected a state name and a numeric argument.");
         }
         const std::string stateString = m.str(1);
@@ -392,7 +392,7 @@ void statePropertyFile(const std::string &fileName, std::vector<std::pair<StateE
         double value;
         if (!Parse::getValue(valueString, value))
         {
-            throw std::runtime_error("Syntax error in file '" + fileName + "', line '" + line +
+            throw std::runtime_error("Syntax error in file '" + fileName.generic_string() + "', line '" + line +
                                      "': could not convert argument '" + valueString + "' to a number.");
         }
         entries.emplace_back(propertyStateFromString(stateString), value);

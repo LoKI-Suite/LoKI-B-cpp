@@ -105,7 +105,7 @@ bool removeComments(std::istream& is, std::string &dest)
     return true;
 }
 
-bool stringBufferFromFile(const std::string &fileName, std::string &dest)
+bool stringBufferFromFile(const std::filesystem::path &fileName, std::string &dest)
 {
     std::ifstream is(fileName);
     return is && removeComments(is,dest);
