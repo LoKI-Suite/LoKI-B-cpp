@@ -135,6 +135,29 @@ inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std:
     }
 }
 
+inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states,
+                                    const std::vector<double> &arguments, StatePropertyType type)
+{
+    if (type != StatePropertyType::statisticalWeight)
+        Log<WrongPropertyError>::Error("rotationalDegeneracy_H2");
+
+    if (!arguments.empty())
+        Log<NumArgumentsError>::Error("rotationalDegeneracy_H2");
+
+    if (states.at(0)->type != rotational)
+        Log<Message>::Error("Trying to assign rotational degeneracy to non-rotational state.");
+
+    for (auto *state : states)
+    {
+        double J;
+
+        if (!Parse::getValue(state->J, J))
+            Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
+
+        state->statisticalWeight = (2 - std::pow(-1, J)) * (2 * J + 1);
+    }
+}
+
 inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states,
                                     const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -198,13 +221,14 @@ inline void constantValue(const std::vector<Gas::State *> &states, double value,
 inline void callByName(const std::string &name, const std::vector<Gas::State *> &states,
                        const std::vector<double> &arguments, StatePropertyType type)
 {
-
     if (name == "boltzmannPopulation")
         boltzmannPopulation(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
     else if (name == "rigidRotorEnergy")
         rigidRotorEnergy(states, arguments, type);
+    else if (name == "rotationalDegeneracy_H2")
+        rotationalDegeneracy_H2(states, arguments, type);
     else if (name == "rotationalDegeneracy_N2")
         rotationalDegeneracy_N2(states, arguments, type);
     else if (name == "rotationalDegeneracy")
