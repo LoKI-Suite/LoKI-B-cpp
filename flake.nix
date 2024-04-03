@@ -68,7 +68,9 @@
 
           nativeBuildInputs = with pkgs; [ cmake ninja nlohmann_json eigen ];
 
-          cmakeFlags = [ "-DENABLE_INSTALL=ON" ];
+          cmakeFlags =
+            [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
+          ninjaFlags = [ "loki" ];
         };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
