@@ -31,6 +31,36 @@ A Clang format style file is present at the root of this repository (`.clang-for
       another path, run cmake with an additional option like -DEIGEN_PATH=/opt/include/eigen3
 1. run: `make -j <NUM_JOBS>`
     - where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when compiling; just use the number of physical cores in your system. Omit this flag to use the default settings.
+
+### Linux using [Nix](https://nixos.org/)
+
+1. Setting up the LoKI-B development environment.
+
+   To launch a development shell use
+   ```bash
+   nix develop
+   ```
+   in the root of the repository. This shell will contain all necessary dependencies to build LoKI-B. Additionally, all binaries can be built using
+   ```bash
+   nix build
+   ```
+   Alternatively, a Cobertura coverage report can be generated using
+   ```bash
+   nix build .#coverage
+   ```
+   The resulting output will be available in `<repo_root>/result`.
+
+2. Installing LoKI-B without manually cloning the repository.
+
+   The LoKI-B binary can be built and run anywhere by issuing
+   ```bash
+   nix run github:loki-suite/loki-b <input_file>
+   ```
+   
+   Similarly, a shell can be launched with access to the `loki` binary using
+   ```bash
+   nix shell github:loki-suite/loki-b
+   ```
     
 ### Windows
 1. run: `cmake -D<BACKEND_FLAG>=ON ..`

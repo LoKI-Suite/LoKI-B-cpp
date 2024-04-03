@@ -1,0 +1,108 @@
+{
+  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11"; };
+
+  outputs = { self, nixpkgs }:
+    let
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+
+      gccEnv = pkgs.gcc11Stdenv;
+
+      latex = with pkgs;
+        (texlive.combine {
+          inherit (texlive)
+            scheme-small amsmath hyperref mhchem latexmk enumitem titlesec
+            texcount framed siunitx;
+        });
+
+      shellInputs = with pkgs; [
+        # Build system
+        ninja
+        cmake
+
+        # Dependencies
+        eigen
+        nlohmann_json
+        openblas
+
+        # Documentation
+        doxygen
+
+        # Coverage
+        gcovr
+      ];
+    in {
+      devShells.${system} = rec {
+        dev = gccEnv.mkDerivation {
+          name = "loki-b-dev";
+          buildInputs = shellInputs ++ (with pkgs; [
+            # Development tools
+            clang-tools
+
+            # Needed to make clang-tools not complain.
+            llvmPackages.openmp
+
+            # Plotting
+            gnuplot
+
+            # Workflow testing
+            act
+
+            # LaTeX
+            latex
+          ]);
+        };
+        ci = gccEnv.mkDerivation {
+          name = "loki-b-ci";
+          buildInputs = shellInputs;
+        };
+        default = dev;
+      };
+
+      packages.${system} = rec {
+        loki-b = gccEnv.mkDerivation {
+          pname = "loki-b";
+          version = "0.0.1";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [ cmake ninja nlohmann_json eigen ];
+
+          cmakeFlags =
+            [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
+          ninjaFlags = [ "loki" ];
+        };
+        coverage = gccEnv.mkDerivation {
+          pname = "loki-b-coverage";
+          version = "0.0.1";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            nlohmann_json
+            eigen
+            gcovr
+          ];
+
+          cmakeFlags = [ "-Dcoverage=ON" "-DCMAKE_BUILD_TYPE=Debug" ];
+          ninjaFlags = [ "coverage" ];
+
+          installPhase = ''
+            mkdir $out
+            mv coverage.xml $out/coverage.xml
+          '';
+        };
+        default = loki-b;
+      };
+
+      apps.${system} = rec {
+        loki-b = {
+          type = "app";
+          program = "${self.packages.${system}.loki-b}/bin/loki";
+        };
+        default = loki-b;
+      };
+    };
+}
