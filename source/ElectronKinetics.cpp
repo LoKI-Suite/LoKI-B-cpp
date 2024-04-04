@@ -4,6 +4,7 @@
 
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/EedfUtilities.h"
 #include <chrono>
 #include <cmath>
 
@@ -1290,14 +1291,23 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                     grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
+                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
     } else
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
                                     grid().getCells().cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
+                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
     }
     swarmParameters.redMobCoeff = -SI::gamma / 3. *
-                                  grid().getNodes()
-                                      .segment(1, n - 1)
+                                      grid().getNodes().segment(1, n - 1)
+                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                                      .cwiseQuotient(tCS.segment(1, n - 1))
+                                      .sum();
+    swarmParameters.redMobilityEnergy = -SI::gamma / 3. *
+                                      grid().getNodes().segment(1, n - 1)
+                                      .cwiseProduct(grid().getNodes().segment(1, n - 1))
                                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
@@ -1425,7 +1435,8 @@ void ElectronKineticsPrescribed::doSolve()
         double maxEnergy = std::pow(decades/std::log10(std::exp(1)),1/g)*1.5*Te*gamma_3_2g/gamma_5_2g;
         updateMaxEnergy(maxEnergy);
     }
-    evaluateEEDF(shapeParameter,Te);
+    // evaluate the EEDF
+    makePrescribedEDF(eedf,grid(),shapeParameter,Te);
 
     evaluatePower();
 
@@ -1438,25 +1449,6 @@ void ElectronKineticsPrescribed::doSolve()
                          nullptr);
 }
 
-void ElectronKineticsPrescribed::evaluateEEDF(double g, double Te)
-{
-    const double gamma_3_2g = std::tgamma(3/(2*g));
-    const double gamma_5_2g = std::tgamma(5/(2*g));
-    // calculate the eedf without normalization:
-    for (Grid::Index k = 0; k != grid().nCells(); ++k)
-    {
-        /** \todo This follows the MATLAB code. But the prefactors can be removed,
-         *  since this is normalized afterwards anyway.
-         */
-        const double energy = grid().getCell(k);
-        eedf(k) = std::pow(gamma_5_2g,1.5) * std::pow(gamma_3_2g,-2.5) * std::pow(2/(3*Te),1.5)
-            *std::exp(-std::pow(energy*gamma_5_2g*2/(gamma_3_2g*3*Te),g));
-    }
-    /** \todo maybe make normalizeEEDF a member of the base class?
-     */
-    // normalize:
-    eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
-}
 
 void ElectronKineticsPrescribed::evaluatePower()
 {
