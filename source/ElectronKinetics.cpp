@@ -1487,40 +1487,37 @@ void ElectronKineticsPrescribed::evaluatePower()
         + power.vibrational.backward
         + power.rotational.backward;
 
-    double totalGain = 0;
-    double totalLoss = 0;
-
-    /** \todo get rid of this; do 'for (double value : { ... this list ... })'
-     *  in the line below.
-     */
-    double powerValues[13]{
-        power.field,
-        power.elasticGain, power.elasticLoss,
-        power.carGain, power.carLoss,
-        power.excitation.forward, power.excitation.backward,
-        power.vibrational.forward, power.vibrational.backward,
-        power.rotational.forward, power.rotational.backward,
-        power.eDensGrowth,
-        power.electronElectron
-    };
-
-    for (double value : powerValues)
-    {
-        if (value > 0)
-            totalGain += value;
-        else
-            totalLoss += value;
-    }
     power.balance =
-        power.field
+        /* skip power.field, see below... */
         + power.elasticNet
         + power.carNet
         + power.inelastic
         + power.superelastic
         + power.eDensGrowth
         + power.electronElectron;
-    power.relativeBalance = std::abs(power.balance) / totalGain;
-    power.reference = totalGain;
+
+    /* next, calculate E/N from the requirement that power.balance==0.
+     * we have P_tot = P_field + P_other, and P_field(E/N) = C*(E/N)^2 for some C.
+     * 1) This C can be calculated as P_field(E/N=1). We then find that
+     * 2) P_tot = 0 => P_field = -P_other, and
+     * 3) P_field = P_field(E/N=1)*(E/N)^2 => E/N = sqrt(P_field/P_field(E/N=1)).
+     */
+    // 1. Calculate P_1 := P_field(E/N=1)
+    const double dummyEoN = 1.0;
+    const double WoN = m_workingConditions->reducedExcFreqSI();
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),dummyEoN,WoN);
+    double P_1;
+    fieldOperator.evaluatePower(grid(),eedf,P_1);
+    // 2. we calculate P_E such that the power balance will be satisfied
+    power.field = -power.balance;
+    // 3. E_N = sqrt(P_field/P_field(E/N=1)).
+    //    set this E/N value in the workingCOndition object, so it will be printed correctly.
+    m_workingConditions->updateReducedField(std::sqrt(power.field/P_1)/SI::Townsend);
+
+    // by construction, the power balance will now be satisfied.
+    power.balance = 0.0;
+    power.relativeBalance = 0.0;
+    power.reference = 0.0;
 }
 
 void ElectronKineticsPrescribed::evaluateSwarmParameters()
