@@ -1361,7 +1361,7 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::pa
 
 ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::path &basePath,const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(basePath,cnf,workingConditions),
-  shapeParameter(cnf.at("shapeParameter").get<unsigned>())
+  shapeParameter(cnf.at("shapeParameter").get<double>())
 {
     if (getIonizationOperatorType(cnf.at("ionizationOperatorType")) != IonizationOperatorType::conservative)
     {
