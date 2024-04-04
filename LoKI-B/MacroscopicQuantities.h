@@ -13,6 +13,8 @@ struct SwarmParameters
     double redMobCoeff{0.};
     double redTownsendCoeff{0.};
     double redAttCoeff{0.};
+    double redDiffCoeffEnergy{-1.};
+    double redMobilityEnergy{-1.};
     double meanEnergy{0.};
     double characEnergy{0.};
     double Te{0.};

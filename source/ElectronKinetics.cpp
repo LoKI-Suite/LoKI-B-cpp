@@ -1291,14 +1291,23 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                     grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
+                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
     } else
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
                                     grid().getCells().cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
+                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
     }
     swarmParameters.redMobCoeff = -SI::gamma / 3. *
-                                  grid().getNodes()
-                                      .segment(1, n - 1)
+                                      grid().getNodes().segment(1, n - 1)
+                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                                      .cwiseQuotient(tCS.segment(1, n - 1))
+                                      .sum();
+    swarmParameters.redMobilityEnergy = -SI::gamma / 3. *
+                                      grid().getNodes().segment(1, n - 1)
+                                      .cwiseProduct(grid().getNodes().segment(1, n - 1))
                                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();

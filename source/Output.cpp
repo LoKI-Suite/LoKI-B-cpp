@@ -280,30 +280,44 @@ void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     if (m_initTable)
     {
-        os << "RedField(Td)         RedDif(1/(ms))       RedMob(1/(msV))      RedTow(m2)           "
-                      "RedAtt(m2)           MeanE(eV)            CharE(eV)            EleTemp(eV)          "
-                      "DriftVelocity(m/s)   RelativePowerBalance" << std::endl;
+        os	<< "RedField(Td)          "
+		<< "RedDif(1/(ms))        "
+		<< "RedMob(1/(msV))       "
+		<< "DriftVelocity(m/s)    "
+		<< "RedTow(m2)            "
+                << "RedAtt(m2)            "
+		<< "RedDiffE(eV/(ms))     "
+		<< "RedMobE(eV/(msV))     "
+		<< "MeanE(eV)             "
+		<< "CharE(eV)             "
+		<< "EleTemp(eV)           "
+                << "RelativePowerBalance"
+		<< std::endl;
         m_initTable = false;
     }
-    os << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeffEnergy;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityEnergy;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
     os << ' ';
-    os << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+    os << ' ';
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+    os << ' ';
+    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
     os << std::endl;
 }
 
