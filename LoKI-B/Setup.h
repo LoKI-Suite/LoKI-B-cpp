@@ -243,7 +243,7 @@ struct lokib_export ElectronKineticsSetup : public SetupBase
 {
     bool isOn{false};
     EedfType eedfType;
-    uint8_t shapeParameter{0};
+    double shapeParameter{0};
     IonizationOperatorType ionizationOperatorType;
     GrowthModelType growthModelType;
     bool includeEECollisions{false};

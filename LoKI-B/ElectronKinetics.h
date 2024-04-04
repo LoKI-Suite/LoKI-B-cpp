@@ -274,7 +274,7 @@ private:
     /** The parameter that controls the shape of the eedf (1 Maxwellian,
      *  2 Druyvesteyn)
      */
-    const uint8_t shapeParameter;
+    const double shapeParameter;
 };
 
 } // namespace loki
