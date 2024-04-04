@@ -265,8 +265,6 @@ private:
     void initialize();
     void evaluateFieldOperator();
     void evaluateMatrix();
-    /// Use arguments g, Te, prepare to make this a free function
-    void evaluateEEDF(double g, double Te);
     // calculation of the power terms
     void evaluatePower();
     // storage and calculation of the swarm parameters
