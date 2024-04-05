@@ -1580,8 +1580,8 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
      * until 9f0200138acf2ca3006fb0a27af524002ce41d41 (including)
      * In an ideal world, these are the same, but there will be differences because of the
      * discretization of the EEDF and the truncation to some u_max. It would be interesting
-     * to print both values, the discrepancy is a measure for the discretization and and
-     * energy truncation errors.
+     * to print both values, the discrepancy is a measure for the discretization and energy 
+     * truncation errors.
      */
     swarmParameters.Te = m_workingConditions->electronTemperature();
 }
