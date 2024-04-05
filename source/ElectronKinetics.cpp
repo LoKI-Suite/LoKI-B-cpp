@@ -1528,10 +1528,18 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
 
     swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
+    swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
+                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
 
     swarmParameters.redMobCoeff = -SI::gamma / 3. *
                                   grid().getNodes()
                                       .segment(1, n - 1)
+                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                                      .cwiseQuotient(tCS.segment(1, n - 1))
+                                      .sum();
+    swarmParameters.redMobilityEnergy = -SI::gamma / 3. *
+                                      grid().getNodes().segment(1, n - 1)
+                                      .cwiseProduct(grid().getNodes().segment(1, n - 1))
                                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
@@ -1560,10 +1568,19 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
 
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
-    swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
-
-    // TODO: is this correct? (simulations after the first will have a different value for Te).
-    m_workingConditions->updateElectronTemperature(swarmParameters.Te);
+    /* Just assign the working condition Te (which is input), as is also done in MATLAB.
+     * NOTE that in v1.0.0 of the MATLAB code (Code/PrescribedEedf.m line 365) there is
+     * a comment that suggests the calculation Te = 2./3.*swarmParameters.meanEnergy. This
+     * comment disappeared in version 2.2.0. Also in the C++ version the calculation was
+     * implemented as
+     *   swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
+     * until 9f0200138acf2ca3006fb0a27af524002ce41d41 (including)
+     * In an ideal world, these are the same, but there will be differences because of the
+     * discretization of the EEDF and the truncation to some u_max. It would be interesting
+     * to print both values, the discrepancy is a measure for the discretization and energy 
+     * truncation errors.
+     */
+    swarmParameters.Te = m_workingConditions->electronTemperature();
 }
 
 } // namespace loki
