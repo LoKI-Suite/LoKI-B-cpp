@@ -38,6 +38,41 @@ namespace loki
 
 namespace {
 
+/** All lines in the input file that are non-empty after removing
+ *  comments (starting with a %-sign) are stored in this class,
+ *  which sets up a vector of Line objects. Valid lines in LoKI-B
+ *  input lines consist of a number of whitespace characters,
+ *  stored in Line member 'indent', followed by
+ *
+ *    1) <key>: [value]
+ *    2) - value.
+ *
+ *  A key, followed by a value represents a regular key-value pair;
+ *  the value can be an integer or floating point number, a literal
+ *  true of false or a string. Note that the value can contain whitespace,
+ *  everything after <key>: is considered to be part of the value,
+ *  but leading and trailing whitespace (and comments) are trimmed.
+ *  As an example, the line
+ *  \verbatim
+      pair:  A B % comment\endverbatim
+ *  will result in value "A B".
+ *  When [value] is omitted, a key-object pair will be inserted.
+ *
+ *  When the value is missing, the value is made a JSON object or array.
+ *  The object/array contant is formed by the subsequent lines with a
+ *  indentation level higher than the one that has the key. An array
+ *  is created if these subsequent lines are of the form "- value",
+ *  an object if these lines are of the form "<key>: [value]".
+ *
+ *  Finally, values are parsed mostly as in JSON: the literals true and
+ *  false result in a boolean, literals like 42 as integers, 42.0 and 1e3
+ *  as floating point numbers. (Only) if these conversions fail, a string
+ *  value is produced, as for the value "A B".
+ *
+ *  The function readSection produces JSON output from a Lines object.
+ *
+ *  \sa readSection
+ */
 struct Lines
 {
 	Lines(std::istream& is);
@@ -162,7 +197,7 @@ void readSection(json_type& parent, Lines::const_iterator& it, Lines::const_iter
 } // namespace
 
 json_type legacyToJSON(std::istream& is)
-try 
+try
 {
 	Lines lines(is);
 	json_type root;
