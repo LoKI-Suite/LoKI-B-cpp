@@ -29,10 +29,9 @@
 
 #include "ideas/LegacyToJSON.h"
 #include <fstream>
-#include <vector>
-#include <stack>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace loki
 {
