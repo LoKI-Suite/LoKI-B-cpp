@@ -1,16 +1,57 @@
+/** \file A utility for converting a legacy LoKI-B input file to JSON format.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Jan van Dijk
+ *  \date   8 April 2024
+ */
+
 #include "ideas/LegacyToJSON.h"
 
 int main(int argc, const char* argv[])
+try
 {
 	loki::json_type json;
-	if (argc==2)
+	switch (argc)
 	{
-		json = loki::legacyToJSON(argv[1]);
-	}
-	else
-	{
-		json = loki::legacyToJSON(std::cin);
+		case 1:
+			json = loki::legacyToJSON(std::cin);
+		break;
+		case 2:
+			json = loki::legacyToJSON(argv[1]);
+		break;
+		default:
+			throw std::runtime_error("Usage: loki_legacytojson [input file]\n"
+				"This program converts a legacy LoKI-B input file to json format\n"
+				"and prints the result to the console. If no input file is provided,\n"
+				"input will be read from the standard input stream.");
+			return 1;
+		break;
 	}
 	std::cout << json.dump(2) << std::endl;
 	return 0;
+}
+catch(std::exception& exc)
+{
+	std::cerr << exc.what() << std::endl;
+	return 1;
 }
