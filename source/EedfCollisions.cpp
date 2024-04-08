@@ -722,10 +722,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
-    /** \todo Valid doubles like 1.57e1 are not matched, in which case the threshold
-     *        specification will be ignored and 0 will be assumed.
-     */
-    const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
+    const std::regex reThreshold(R"(E = (([0-9]*[.])?[0-9]+([eE][-+]?\d+)?) eV)");
     const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
     std::ifstream in(file);
     if (!in.is_open())
