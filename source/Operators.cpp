@@ -444,16 +444,10 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                 if (targetDensity != 0)
                 {
-                    const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
-                    Grid::Index numThreshold;
+                    Vector cellCrossSection(cellNumber);
 
-                    if (grid.isUniform())
-                    {
-                        numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
-                    } else
-                    {
-                       numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
-                    }
+                    collision->crossSection->interpolate(grid.getCells(), cellCrossSection);
+                    Grid::Index numThreshold = static_cast<uint32_t>(std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin() - 1);
 
                     if (grid.isUniform())
                     {
@@ -700,9 +694,10 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             hasValidCollisions = true;
 
             const double delta = collision->getTarget()->delta();
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
-            const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
+            Vector cellCrossSection(grid.nCells());
+            collision->crossSection->interpolate(grid.getCells(), cellCrossSection);
+            Grid::Index numThreshold = static_cast<uint32_t>(std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin() - 1);
 
             switch (ionizationOperatorType)
             {
@@ -861,12 +856,13 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              */
             includeNonConservativeAttachment = true;
 
-            const double targetDensity = collision->getTarget()->delta();
-
             /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
              *        in the two places where it is needed (one if the merger below can be done).
              */
-            const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
+            Vector cellCrossSection(cellNumber);
+            collision->crossSection->interpolate(grid.getCells(), cellCrossSection);
+
+            const double targetDensity = collision->getTarget()->delta();
 
             // This is eq. 13c of \cite Manual_2_2_0
             for (Grid::Index k = 0; k < cellNumber; ++k)

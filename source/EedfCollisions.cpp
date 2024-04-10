@@ -166,19 +166,8 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 
     Vector cellCrossSection(n);
 
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
-    }
-    int lmin;
-    if (grid->isUniform())
-    {
-        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
-    } else
-    {
-        lmin = static_cast<uint32_t>((std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin())) - 1;
-    }
-    
+    crossSection->interpolate(grid->getCells(), cellCrossSection);
+    int lmin = static_cast<uint32_t>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin() - 1);
     double ineSum = 0;
 
     if (grid->isUniform())
@@ -238,12 +227,8 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
     Vector cellCrossSection(n);
 
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
-    }
-
-    auto lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+    crossSection->interpolate(grid->getCells(), cellCrossSection);
+    int lmin = static_cast<uint32_t>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin() - 1);
 
     if (type() == CollisionType::ionization)
     {
@@ -332,20 +317,10 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 
     const Grid::Index nNodes = grid->nCells() + 1;
     const Grid::Index nCells = grid->nCells();
-
-    int lmin;
-    if (grid->isUniform())
-    {
-        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
-    } else
-    {
-        lmin = static_cast<Grid::Index>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()) - 1;
-    }
-    
-
-    const Vector cellCrossSection =
-        .5 * (crossSection->segment(lmin, nNodes - 1 - lmin) + crossSection->tail(nNodes - 1 - lmin));
-
+    int lmin = (crossSection->threshold() == 0) ? 0 : 
+        static_cast<uint32_t>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin() - 1);
+    Vector cellCrossSection(nCells - lmin);
+    crossSection->interpolate(grid->getCells().tail(nCells - lmin), cellCrossSection);
     if (grid->isUniform())
     {
         m_ineRateCoeff = SI::gamma * grid->du() *
