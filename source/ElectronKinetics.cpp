@@ -270,6 +270,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     const double EoN = m_workingConditions->reducedFieldSI();
 
     const Vector& cellTotalCrossSection(mixture.collision_data().totalCellCrossSection());
+
     boltzmannMatrix
         = elasticMatrix
         + fieldMatrix*(EoN*EoN)
@@ -1015,7 +1016,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
             const double correction = energyIntegral(grid(), interpolateNodalToCell(grid(), g_fieldSpatialGrowth), eedf);
-            const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
+            const Vector cellCrossSection = mixture.collision_data().totalCellCrossSection();
             power.field -= SI::gamma * correction;
 
             const double powerMobility = - fgPrimeEnergyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
@@ -1319,7 +1320,7 @@ void ElectronKineticsPrescribed::evaluatePower()
 void ElectronKineticsPrescribed::evaluateSwarmParameters()
 {
     const Vector& cellCS(mixture.collision_data().totalCellCrossSection());
-    const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
+    const Vector D0 = grid().getCells().cwiseQuotient(3. * cellCS);
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
     swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);

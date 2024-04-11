@@ -315,7 +315,6 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         return {this, 0.0, 0.0};
     }
 
-    const Grid::Index nNodes = grid->nCells() + 1;
     const Grid::Index nCells = grid->nCells();
     int lmin = (crossSection->threshold() == 0) ? 0 : 
         static_cast<uint32_t>(std::upper_bound(grid->getCells().begin(),grid->getCells().end(), crossSection->threshold()) - grid->getCells().begin() - 1);
@@ -957,6 +956,7 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
     // 1. resize and zero-initialize the elastic and total cross sections
     m_elasticCrossSection.setZero(grid.nCells() + 1);
     m_totalCrossSection.setZero(grid.nCells() + 1);
+    m_totalCellCrossSection.setZero(grid.nCells());
 
     for (const auto &cd : data_per_gas())
     {
@@ -970,6 +970,9 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
         {
             m_elasticCrossSection += *collision->crossSection * (collision->getTarget()->delta() * massRatio);
             m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
+            Vector cellElasticCrossSection;
+            collision->crossSection->interpolate(grid.getCells(),cellElasticCrossSection);
+            m_totalCellCrossSection +=  cellElasticCrossSection * collision->getTarget()->delta();
         }
         // 3. add inelastic terms (also from reverse processes, if enabled)
         //    (note: here inelastic also includes non-conserving process:
@@ -981,17 +984,21 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
             for (auto &collision : cd.collisions(ctype))
             {
                 m_totalCrossSection += *collision->crossSection * collision->getTarget()->delta();
-
+                Vector cellNonConservingCrossSection(grid.nCells());
+                collision->crossSection->interpolate(grid.getCells(),cellNonConservingCrossSection);
+                m_totalCellCrossSection += cellNonConservingCrossSection * collision->getTarget()->delta();
                 if (collision->isReverse())
                 {
                     Vector superElastic;
+                    Vector superElasticCells;
                     collision->superElastic(grid.getNodes(), superElastic);
+                    collision->superElastic(grid.getCells(), superElasticCells);
                     m_totalCrossSection += superElastic * collision->m_rhsHeavyStates[0]->delta();
+                    m_totalCellCrossSection += superElasticCells * collision->m_rhsHeavyStates[0]->delta();
                 }
             }
         }
     }
-    interpolateNodalToCell(grid,m_totalCrossSection,m_totalCellCrossSection);
 }
 
 void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const Vector &eedf)
