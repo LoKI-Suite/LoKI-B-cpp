@@ -1,3 +1,5 @@
+enable_testing()
+
 #This custom target_add_test function also handles target relocation 
 #by the CMAKE_RUNTIME_OUTPUT_DIRECTORY directive. see also: 
 #https://stackoverflow.com/questions/21394768/cmake-cannot-find-test-if-cmake-runtime-output-directory-is-changed
