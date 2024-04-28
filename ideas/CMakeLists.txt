@@ -20,6 +20,10 @@ target_link_libraries(loki_legacytojson PRIVATE loki-b)
 add_executable(loki_steps loki_steps.cpp)
 target_link_libraries(loki_steps PRIVATE loki-b)
 
-add_executable(test_statecontainer test_statecontainer.cpp)
-target_link_libraries(test_statecontainer PRIVATE loki-b)
-target_add_test(test_statecontainer)
+add_executable(loki_test_legacy_to_json test_legacy_to_json.cpp LegacyToJSON.cpp)
+target_link_libraries(loki_test_legacy_to_json PRIVATE loki-b)
+target_add_test(loki_test_legacy_to_json)
+
+add_executable(loki_test_statecontainer test_statecontainer.cpp)
+target_link_libraries(loki_test_statecontainer PRIVATE loki-b)
+target_add_test(loki_test_statecontainer)
