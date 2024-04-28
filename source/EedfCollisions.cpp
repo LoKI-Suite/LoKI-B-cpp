@@ -722,7 +722,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
-    const std::regex reThreshold(R"(E = (([0-9]*[.])?[0-9]+([eE][-+]?\d+)?) eV)");
+    const std::regex reThreshold(R"(E = +(\S*) +eV)");
     const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
     std::ifstream in(file);
     if (!in.is_open())
@@ -754,9 +754,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
             double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold))
             {
-                std::stringstream ss(mThreshold[1]);
-                if (!(ss >> threshold))
-                    Log<Message>::Error("Non numerical threshold value.");
+		threshold = Parse::getValue(mThreshold[1]);
             }
             if (!std::getline(in, line) || !std::regex_search(line, mProcess, reProcess))
             {
