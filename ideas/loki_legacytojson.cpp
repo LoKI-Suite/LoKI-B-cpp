@@ -26,6 +26,7 @@
  */
 
 #include "ideas/LegacyToJSON.h"
+#include <stdexcept>
 
 int main(int argc, const char* argv[])
 try
