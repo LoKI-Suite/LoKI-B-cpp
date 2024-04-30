@@ -1,0 +1,23 @@
+name: Notes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v25
+    - name: Build the cpp_notes document
+      run: nix build .#notes
+    - name: Archive the resulting PDF
+      uses: actions/upload-artifact@v4
+      with:
+        name: cpp_notes.pdf
+        path: result/cpp_notes.pdf
+        retention-days: 7

@@ -12,7 +12,7 @@
         (texlive.combine {
           inherit (texlive)
             scheme-small amsmath hyperref mhchem latexmk enumitem titlesec
-            texcount framed siunitx;
+            texcount framed siunitx upquote cm-super;
         });
 
       shellInputs = with pkgs; [
@@ -92,6 +92,28 @@
           installPhase = ''
             mkdir $out
             mv coverage.xml $out/coverage.xml
+          '';
+        };
+        notes = gccEnv.mkDerivation {
+          pname = "loki-b-notes";
+          version = "0.0.1";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            nlohmann_json
+            eigen
+            latex
+          ];
+
+          cmakeFlags = [ "-Dwith-doc=ON" ];
+          ninjaFlags = [ "lokib_doc_pdf" ];
+
+          installPhase = ''
+            mkdir $out
+            mv doc/notes/cpp_notes.pdf $out
           '';
         };
         default = loki-b;
