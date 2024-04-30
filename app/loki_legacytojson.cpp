@@ -25,7 +25,7 @@
  *  \date   30 April 2024
  */
 
-#include "ideas/LegacyToJSON.h"
+#include "LoKI-B/LegacyToJSON.h"
 #include <stdexcept>
 
 int main(int argc, const char* argv[])

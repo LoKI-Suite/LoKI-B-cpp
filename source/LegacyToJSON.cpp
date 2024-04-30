@@ -27,7 +27,7 @@
  *  \date   30 April 2024
  */
 
-#include "ideas/OffSideToJSON.h"
+#include "LoKI-B/OffSideToJSON.h"
 #include "LoKI-B/Parse.h"
 
 namespace loki
