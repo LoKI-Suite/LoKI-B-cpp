@@ -44,8 +44,8 @@ void patchRange(json_type& cnf, const std::string& unit)
 	else if (cnf.is_number())
 	{
 		json_type cnf2;
-		cnf2["value:"] = cnf;
-		cnf2["unit:"] = unit;
+		cnf2["value"] = cnf;
+		cnf2["unit"] = unit;
 		cnf = cnf2;
 	}
 	else
@@ -61,6 +61,7 @@ void patchWorkingConditions(json_type& wc)
 	const std::vector<std::pair<std::string,std::string>> params
 	{
 		{"gasPressure", "Pa"},
+		{"gasTemperature", "K"},
 		{"electronDensity", "m^-3"},
 		{"electronTemperature", "eV"},
 		{"excitationFrequency", "Hz"},
