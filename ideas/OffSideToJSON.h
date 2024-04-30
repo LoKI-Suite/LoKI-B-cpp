@@ -1,4 +1,6 @@
-/** \file A utility for converting a legacy LoKI-B input file to JSON format.
+/** \file
+ *
+ *  Conversion of 'off-side rule' files to JSON.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -25,34 +27,37 @@
  *  \date   8 April 2024
  */
 
-#include "ideas/LegacyToJSON.h"
-#include <stdexcept>
+#ifndef LOKI_CPP_OFFSIDETOJSON_H
+#define LOKI_CPP_OFFSIDETOJSON_H
 
-int main(int argc, const char* argv[])
-try
+#include "LoKI-B/json.h"
+#include <iostream>
+#include <filesystem>
+
+namespace loki
 {
-	loki::json_type json;
-	switch (argc)
-	{
-		case 1:
-			json = loki::legacyToJSON(std::cin);
-		break;
-		case 2:
-			json = loki::legacyToJSON(argv[1]);
-		break;
-		default:
-			throw std::runtime_error("Usage: loki_legacytojson [input file]\n"
-				"This program converts a legacy LoKI-B input file to json format\n"
-				"and prints the result to the console. If no input file is provided,\n"
-				"input will be read from the standard input stream.");
-			return 1;
-		break;
-	}
-	std::cout << json.dump(2) << std::endl;
-	return 0;
-}
-catch(std::exception& exc)
-{
-	std::cerr << exc.what() << std::endl;
-	return 1;
-}
+
+/** Reads an offSide LoKI-B input file from stream \a is, converts it to a JSON
+ *  object and returns the result. See section 5 of \cite Manual_2_2_0 for
+ *  details about the file format.
+ *
+ *  \author Jan van Dijk
+ *  \date   8 April 2024
+ */
+json_type offSideToJSON(std::istream& is);
+
+/** Creates and input file stream for file \a fname and returns the result of
+ *  calling the stream-overload of this function. A runtime_error is thrown if
+ *  file \a fname could not be opened.
+ *
+ *  \author Jan van Dijk
+ *  \date   8 April 2024
+ */
+json_type offSideToJSON(const std::filesystem::path& fname);
+
+} // namespace loki
+
+
+
+#endif // LOKI_CPP_OFFSIDETOJSON_H
+

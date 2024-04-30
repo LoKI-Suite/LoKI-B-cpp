@@ -14,15 +14,15 @@ else()
 	target_link_libraries(json2lxcat PRIVATE nlohmann_json::nlohmann_json)
 endif()
 
-add_executable(loki_legacytojson loki_legacytojson.cpp LegacyToJSON.cpp)
-target_link_libraries(loki_legacytojson PRIVATE loki-b)
+add_executable(loki_offsidetojson loki_offsidetojson.cpp OffSideToJSON.cpp)
+target_link_libraries(loki_offsidetojson PRIVATE loki-b)
 
 add_executable(loki_steps loki_steps.cpp)
 target_link_libraries(loki_steps PRIVATE loki-b)
 
-add_executable(loki_test_legacy_to_json test_legacy_to_json.cpp LegacyToJSON.cpp)
-target_link_libraries(loki_test_legacy_to_json PRIVATE loki-b)
-target_add_test(loki_test_legacy_to_json)
+add_executable(loki_test_offside_to_json test_offside_to_json.cpp OffSideToJSON.cpp)
+target_link_libraries(loki_test_offside_to_json PRIVATE loki-b)
+target_add_test(loki_test_offside_to_json)
 
 add_executable(loki_test_statecontainer test_statecontainer.cpp)
 target_link_libraries(loki_test_statecontainer PRIVATE loki-b)
