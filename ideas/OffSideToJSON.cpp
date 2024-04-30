@@ -1,6 +1,6 @@
 /** \file
  *
- *  Convert legacy LoKI-B input files to JSON.
+ *  Conversion of 'off-side rule' files to JSON.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -27,7 +27,7 @@
  *  \date   8 April 2024
  */
 
-#include "ideas/LegacyToJSON.h"
+#include "ideas/OffSideToJSON.h"
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -262,7 +262,7 @@ void readSection(json_type& parent, Lines::const_iterator& it, Lines::const_iter
 
 } // namespace
 
-json_type legacyToJSON(std::istream& is)
+json_type offSideToJSON(std::istream& is)
 try
 {
 	Lines lines(is);
@@ -283,14 +283,14 @@ catch (std::exception& exc)
 	throw std::runtime_error(std::string("Error parsing stream: ") + exc.what());
 }
 
-json_type legacyToJSON(const std::filesystem::path& fname)
+json_type offSideToJSON(const std::filesystem::path& fname)
 {
 	std::ifstream ifs(fname);
 	if (!ifs)
 	{
 		throw std::runtime_error("Error opening file '" + fname.generic_string() + "' for reading.");
 	}
-	return legacyToJSON(ifs);
+	return offSideToJSON(ifs);
 }
 
 } // namespace loki

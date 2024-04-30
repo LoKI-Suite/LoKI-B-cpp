@@ -1,6 +1,6 @@
 /** \file
  *
- *  Test the lokib::Event<> template.
+ *  Tests for function offSideToJSON.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -27,7 +27,7 @@
  *  \date   11 September 2022
  */
 
-#include "ideas/LegacyToJSON.h"
+#include "ideas/OffSideToJSON.h"
 #include "tests/TestUtilities.h"
 #include <iostream>
 #include <sstream>
@@ -38,7 +38,7 @@ void do_test_error(const std::string& str)
     std::stringstream ss;
     ss << str << '\n';
     try {
-        const loki::json_type json = loki::legacyToJSON(ss);
+        const loki::json_type json = loki::offSideToJSON(ss);
         // if we did *not* get an exception, the test fails.
         ++nerrors;
         std::cout << "ERROR: code was expected to fail. Parsed:\n" << json.dump(2) << std::endl;
@@ -85,7 +85,7 @@ root:
     std::stringstream ss;
     ss << str << '\n';
     try {
-        const loki::json_type json = loki::legacyToJSON(ss);
+        const loki::json_type json = loki::offSideToJSON(ss);
         std::cout << "OK. Parsed:\n" << json.dump(2) << std::endl;
 	test_expr(json["root"]["S"]=="D");
 	test_expr(json["root"]["Bf"]==false);
