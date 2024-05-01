@@ -10,7 +10,7 @@ auto json = R"json(
 {
     "workingConditions": {
         "reducedField": 10.0,
-        "electronTemperature": "0.03",
+        "electronTemperature": 0.03,
         "excitationFrequency": 0,
         "gasPressure": 133.32,
         "gasTemperature": 0,
@@ -187,10 +187,15 @@ void checkRMSE(const loki::Grid &grid,
     }
 }
 
+/// \todo can be removed once the json above is patched. See loki::legacyToJSON below.
+#include "LoKI-B/LegacyToJSON.h"
+
 int main(int argc, char **argv)
 {
     try
     {
+        /// \todo the json literal above is still 'old JSON'. patch it.
+	json = loki::legacyToJSON(json);
         std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(".", json));
         simulation->m_obtainedResults.addListener(checkRMSE);
         simulation->run();

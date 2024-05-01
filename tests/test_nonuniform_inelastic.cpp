@@ -16,6 +16,9 @@
 #include <iostream>
 #include <fstream>
 
+/// \todo can be removed once the json above is patched. See loki::legacyToJSON below.
+#include "LoKI-B/LegacyToJSON.h"
+
 
 int nTot = 3000;
 double fraction = 0.15;
@@ -275,6 +278,8 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
         throw std::runtime_error("Could not open file '" + fname + "' for reading.");
     }
     auto j = nlohmann::json::parse(ifs);
+    /// \todo the json literal above is still 'old JSON'. patch it for the time being.
+    j = loki::legacyToJSON(j);
     double zero = 0.03 * deltau;
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
@@ -349,6 +354,8 @@ nlohmann::json doubleDeltaPeaks(int nCells, double frac)
         throw std::runtime_error("Could not open file '" + fname + "' for reading.");
     }
     auto j = nlohmann::json::parse(ifs);
+    /// \todo the json literal above is still 'old JSON'. patch it for the time being.
+    j = loki::legacyToJSON(j);
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak1 - 0.1*duPeak1)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak1)/Umax, (U0 + duPeak1)/Umax);
     Vector part3 = Vector::LinSpaced(n*(U1 - U0)/Umax + 1, (U0 + duPeak1 + 0.1*duPeak1)/Umax, (U1 - duPeak2 - 0.1*duPeak2)/Umax);
@@ -410,6 +417,8 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
         throw std::runtime_error("Could not open file '" + fname + "' for reading.");
     }
     auto j = nlohmann::json::parse(ifs);
+    /// \todo the json literal above is still 'old JSON'. patch it for the time being.
+    j = loki::legacyToJSON(j);
     double zero = deltau * 0.03;
     Vector part1 = Vector::LinSpaced(n*U0/Umax, 0.0/Umax, (U0 - duPeak - 0.1*duPeak)/Umax);
     Vector part2 = Vector::LinSpaced(n1, (U0 - duPeak)/Umax, (U0 + duPeak)/Umax);
