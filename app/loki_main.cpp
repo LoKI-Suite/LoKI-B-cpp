@@ -101,11 +101,11 @@ try
 
     auto begin = std::chrono::high_resolution_clock::now();
     bool convert_input = false;
-    std::string input_file;
+    std::filesystem::path fileName;
     if (argc==2)
     {
             convert_input = false;
-            input_file = argv[1];
+            fileName = argv[1];
     }
     else if (argc==3)
     {
@@ -114,13 +114,12 @@ try
                 throw std::runtime_error(usage_str);
             }
             convert_input = true;
-            input_file = argv[2];
+            fileName = argv[2];
     }
     else
     {
         throw std::runtime_error(usage_str);
     }
-    const std::filesystem::path fileName(input_file);
 
     std::vector<std::unique_ptr<loki::Output>> output;
     /* Arguments: [--convert] filename
