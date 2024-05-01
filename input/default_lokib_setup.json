@@ -7,7 +7,7 @@
     "_reducedField": {
       "range": { "function": "linspace", "min": 50, "max": 100, "steps": 6 }
     },
-    "electronTemperature": "0.03",
+    "electronTemperature": 0.03,
     "excitationFrequency": 0,
     "gasPressure": 133.32,
     "gasTemperature": 300,

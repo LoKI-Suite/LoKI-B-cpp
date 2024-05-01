@@ -27,6 +27,7 @@
  *  \date   2 May 2019 (first C++ version)
  */
 
+#include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
@@ -77,6 +78,7 @@ void handleExistingOutputPath(std::string &folder)
     std::getline(std::cin, folder);
 }
 
+const char* usage_str = "Usage: loki [--convert] <inputfile>";
 
 int main(int argc, char **argv)
 try
@@ -101,17 +103,45 @@ try
     loki::json_type data_out;
 #endif
     auto begin = std::chrono::high_resolution_clock::now();
-    if (argc != 2)
+    bool convert_input = false;
+    std::string input_file;
+    if (argc==2)
     {
-        throw std::runtime_error("Usage: loki <inputfile>");
+            convert_input = false;
+            input_file = argv[1];
+    }
+    else if (argc==3)
+    {
+            if (argv[1]!=std::string{"--convert"})
+            {
+                throw std::runtime_error(usage_str);
+            }
+            convert_input = true;
+            input_file = argv[2];
+    }
+    else
+    {
+        throw std::runtime_error(usage_str);
     }
 
     std::unique_ptr<loki::Simulation> simulation;
     std::unique_ptr<loki::Output> output;
-    std::filesystem::path fileName(argv[1]);
-    if (fileName.has_extension() && fileName.extension() == ".json")
+    std::filesystem::path fileName(input_file);
+    /* Arguments: [--convert] filename
+     * Without convert, the JSON or legacy file will be used as such.
+     * When convert is passed, a .in file will be converted to 'new JSON' and used,
+     * a .json file will be patched ('old json' to new 'json').
+     */
+    const bool input_is_json = fileName.has_extension() && fileName.extension() == ".json";
+    if (convert_input || input_is_json)
     {
-        const loki::json_type cnf = loki::read_json_from_file(fileName);
+        const loki::json_type cnf = input_is_json
+	    ? (convert_input ? loki::legacyToJSON(loki::read_json_from_file(fileName)) : loki::read_json_from_file(fileName))
+	    : loki::legacyToJSON(fileName);
+        if (convert_input)
+        {
+            std::cout << "Input file << '" << fileName << "' was converted. Result:\n" << cnf.dump(2) << std::endl;
+        }
         simulation.reset(new loki::Simulation(fileName, cnf));
         if (cnf.at("output").at("isOn"))
         {
