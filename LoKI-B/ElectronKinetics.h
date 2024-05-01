@@ -12,7 +12,6 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/Power.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/Operators.h"
 
@@ -28,7 +27,6 @@ using ResultEvent =
 class ElectronKinetics
 {
 protected:
-    ElectronKinetics(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKinetics(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions);
     // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
@@ -131,7 +129,6 @@ private:
 class ElectronKineticsBoltzmann : public ElectronKinetics
 {
 public:
-    ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions);
 protected:
     /** solve the Boltzmann equation. Calls solveSingle or solveSmartGrid,
@@ -256,7 +253,6 @@ private:
 class ElectronKineticsPrescribed : public ElectronKinetics
 {
 public:
-    ElectronKineticsPrescribed(const std::filesystem::path &basePath,const ElectronKineticsSetup &setup, WorkingConditions *workingConditions);
     ElectronKineticsPrescribed(const std::filesystem::path &basePath,const json_type &cnf, WorkingConditions *workingConditions);
 protected:
     virtual void doSolve();

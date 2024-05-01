@@ -228,16 +228,6 @@ void GasMixture::evaluateReducedDensities()
     }
 }
 
-void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const StatePropertiesSetup &setup, const WorkingConditions *workingConditions)
-{
-
-    loadStateProperty(basePath, setup.energy, StatePropertyType::energy, workingConditions);
-    loadStateProperty(basePath, setup.statisticalWeight, StatePropertyType::statisticalWeight, workingConditions);
-    loadStateProperty(basePath, setup.population, StatePropertyType::population, workingConditions);
-
-    checkPopulations();
-}
-
 void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, const WorkingConditions *workingConditions)
 {
 
@@ -246,45 +236,6 @@ void GasMixture::loadStateProperties(const std::filesystem::path &basePath, cons
     loadStateProperty(basePath, cnf.at("population"), StatePropertyType::population, workingConditions);
 
     checkPopulations();
-}
-
-void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup)
-{
-    readGasPropertyFile(basePath, m_gases, setup.mass, "mass", true,
-        [](Gas& gas, double value) { gas.mass=value; } );
-    readGasPropertyFile(basePath, m_gases, setup.harmonicFrequency, "harmonicFrequency", false,
-        [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
-    readGasPropertyFile(basePath, m_gases, setup.anharmonicFrequency, "anharmonicFrequency", false,
-        [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
-    readGasPropertyFile(basePath, m_gases, setup.electricQuadrupoleMoment, "electricQuadrupoleMoment", false,
-        [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
-    readGasPropertyFile(basePath, m_gases, setup.rotationalConstant, "rotationalConstant", false,
-        [](Gas& gas, double value) { gas.rotationalConstant=value; } );
-
-    // Parse fractions
-    const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
-    std::smatch m;
-
-    for (const auto &fractionStr : setup.fraction)
-    {
-        if (!std::regex_search(fractionStr, m, r))
-            Log<Message>::Error("Could not parse gas fractions.");
-
-        const auto &name = m.str(1);
-
-        auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name() == name); });
-
-        if (it == m_gases.end())
-            Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
-
-        std::stringstream ss(m.str(2));
-
-        if (!(ss >> (*it)->fraction))
-            Log<Message>::Error("Could not parse gas fractions.");
-    }
-
-    checkGasFractions();
 }
 
 void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)

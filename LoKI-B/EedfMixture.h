@@ -18,11 +18,10 @@ class EedfMixture
 {
   public:
     /** Initializes the gas mixture by loading the desired collisions from LXCat files.
-     *  These files are read from the electron kinetics setup structure. It also
+     *  These files are read from the electron kinetics setup structure \a cnf. It also
      *  requires a pointer to the energy grid in order to properly initialize the
      *  cross sections of the collisions.
      */
-    EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const ElectronKineticsSetup &setup, const WorkingConditions *workingConditions);
     EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
 
     const GasMixture& composition() const { return m_composition; }
@@ -42,11 +41,6 @@ class EedfMixture
      */
     void loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
 
-    /** One extra property needs to be set from a file: OPBParameter.
-     *  This override sets this parameter and then calls Gas::loadGasProperties to set the
-     *  rest of its properties.
-     */
-    void loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup);
     /** One extra property needs to be set from a file: OPBParameter.
      *  This override sets this parameter and then calls Gas::loadGasProperties to set the
      *  rest of its properties.

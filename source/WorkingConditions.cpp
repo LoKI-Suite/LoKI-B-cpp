@@ -10,29 +10,6 @@
 namespace loki
 {
 
-// TODO: Comment on WorkingConditions().
-
-WorkingConditions::WorkingConditions(const WorkingConditionsSetup &setup)
-    : m_gasPressure(setup.gasPressure),
-      m_gasTemperature(setup.gasTemperature),
-      m_gasDensity(m_gasPressure / (Constant::boltzmann * m_gasTemperature)),
-      m_electronDensity(setup.electronDensity),
-      //chamberLength(setup.chamberLength),
-      //chamberRadius(setup.chamberRadius),
-      m_excitationFrequency(setup.excitationFrequency)
-{
-    /* set the reducedField and electronTemperature to dummy
-     * values. These are set by the JobManager when prepareFirstJobs
-     * or nextJob() is called.
-     */
-    m_reducedField = std::numeric_limits<double>::quiet_NaN();
-    // see WorkingConditions.h: electronTemperature does not seem to be used.
-    m_electronTemperature = std::numeric_limits<double>::quiet_NaN();
-
-    /// \todo More parameters may need to be made available
-    m_argumentMap.emplace("gasTemperature", &m_gasTemperature);
-}
-
 WorkingConditions::WorkingConditions(const json_type &cnf)
     : m_gasPressure(cnf.at("gasPressure").at("value").get<double>()),
       m_gasTemperature(cnf.at("gasTemperature").at("value").get<double>()),

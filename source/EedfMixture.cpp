@@ -10,60 +10,6 @@
 namespace loki
 {
 
-EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const ElectronKineticsSetup &setup,
-                               const WorkingConditions *workingConditions)
-{
-    loadCollisions(basePath, setup.LXCatFiles, grid);
-    if (!setup.LXCatFilesExtra.empty())
-    {
-        loadCollisions(basePath, setup.LXCatFilesExtra, grid, true);
-    }
-
-    this->loadGasProperties(basePath, setup.gasProperties);
-    for (auto &gas : composition().gases())
-    {
-        gas->propagateFraction();
-    }
-
-    /// \todo Store the electron state pointer as a member? Does the state type matter?
-    Gas::State *electron = m_composition.findState(StateEntry::electronEntry());
-    if (!electron)
-    {
-        throw std::runtime_error("No electron species has been found in the process list.");
-    }
-    /** For the electron, the root state has a population of 0 (the default),
-     *  other states in the hierarchy (which have no siblings) 1. This code
-     *  can be simplified once a final decision has been made how to represent
-     *  the electron State. As a charged state? An electronic state? Or just as
-     *  the root of the gas? At present, a charged state seems best, because the
-     *  charge of the electron gas is meaningful. If we move to a situation where
-     *  ionic varieties (such as N2^+) are made separate gases, and the gas itself
-     *  hosts the properties (such as charge), it makes more sens to let the
-     *  root be 'the' electronic state, since there is no need for additional structure.
-     */
-    // for (State *s = electron; s->type() != StateType::root; s = s->parent())
-    // {
-    //     s->setPopulation(1.0);
-    // }
-    composition().loadStateProperties(basePath, setup.stateProperties, workingConditions);
-    composition().evaluateReducedDensities();
-
-    for (auto& cd : m_collision_data.data_per_gas())
-    {
-        if (!cd.isDummy())
-        {
-            cd.checkElasticCollisions(electron, grid);
-        }
-    }
-
-    for (const std::string& gasName : setup.CARgases)
-    {
-        this->addCARGas(gasName);
-    }
-
-    //        this->evaluateTotalAndElasticCS();
-}
-
 EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
 {
     if (cnf.contains("mixture"))
@@ -136,13 +82,6 @@ void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const st
         }
     }
     Log<Message>::Notify("Finished loading collisions.");
-}
-
-void EedfMixture::loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup)
-{
-    composition().loadGasProperties(basePath, setup);
-    readGasPropertyFile(basePath, composition().gases(), setup.OPBParameter, "OPBParameter", false,
-        [this](Gas& gas, double value) { this->collision_data().get_data_for(gas).setOPBParameter(value); } );
 }
 
 void EedfMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)

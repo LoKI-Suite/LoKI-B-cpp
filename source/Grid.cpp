@@ -33,13 +33,6 @@
 namespace loki
 {
 
-Grid::SmartGridParameters::SmartGridParameters(const SmartGridSetup& smartGrid)
-    : minEedfDecay(smartGrid.minEedfDecay),
-      maxEedfDecay(smartGrid.maxEedfDecay), updateFactor(smartGrid.updateFactor)
-{
-    checkConfiguration();
-}
-
 Grid::SmartGridParameters::SmartGridParameters(const json_type& cnf)
     : minEedfDecay(cnf.at("minEedfDecay").get<unsigned>()),
       maxEedfDecay(cnf.at("maxEedfDecay").get<unsigned>()),
@@ -114,20 +107,6 @@ Grid Grid::fromConfig(const json_type &cnf)
         }
         return Grid(cnf.at("cellNumber").get<unsigned>(),cnf.at("maxEnergy").get<double>());
     }
-}
-
-Grid::Grid(const EnergyGridSetup &gridSetup) : Grid(gridSetup.cellNumber, gridSetup.maxEnergy)
-{
-    const SmartGridSetup& sg = gridSetup.smartGrid;
-    /* Try to set up the smartGrid only if any of the configuration
-     * parameters does not have the default value (see Setup.h).
-     * We use that to test that a configuration has been read from file.
-     */
-    if (sg.minEedfDecay!=0 || sg.maxEedfDecay!=0 || sg.updateFactor !=0.0)
-    {
-        m_smartGrid.reset(new SmartGridParameters(gridSetup.smartGrid));
-    }
-    Log<Message>::Notify("Created the energy grid.");
 }
 
 Grid::Grid(const json_type &cnf)

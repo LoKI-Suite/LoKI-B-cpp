@@ -2,7 +2,6 @@
 #define LOKI_CPP_GASMIXTUREBASE_H
 
 #include "LoKI-B/Gas.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
 #include "LoKI-B/Parse.h"
@@ -27,6 +26,7 @@ namespace loki
  *
  *  \todo For now, the electron gas (name=="e") is skipped. Decide how to handle electron properties.
  *  \todo Error reporting should be fixed. The file name is not displayed, the field instead.
+ *  \todo Update comments. There is no GasPropertiesSetup structure, only a local fileBuffer.
  */
 template <typename GasListType, typename HandlerType>
 void readGasPropertyFile(const std::filesystem::path &basePath, 
@@ -192,8 +192,6 @@ class GasMixture
     /** Loads the state properties as specified in the input file. It also calls
      *  checkPopulations.
      */
-    void loadStateProperties(const std::filesystem::path &basePath, const StatePropertiesSetup &setup, 
-                             const WorkingConditions *workingConditions);
     void loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, 
                              const WorkingConditions *workingConditions);
     /** Loads the gas properties from the database files specified in the main input
@@ -208,9 +206,7 @@ class GasMixture
      *        configuration data. Some properties can then be stored in a property
      *        map that is stored in the (deived) mixture class, instead of in the
      *        Gas class, where not all properties are always relevant.
-     *        This also applies to the other loadGasProperties overload.
      */
-    void loadGasProperties(const std::filesystem::path &basePath, const GasPropertiesSetup &setup);
     void loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf);
 
     using StateMap = std::map<std::string, Gas::State *>;

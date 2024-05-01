@@ -25,17 +25,6 @@ namespace fs = std::filesystem;
 namespace loki
 {
 
-ElectronKinetics::ElectronKinetics(const fs::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-    : m_workingConditions(workingConditions),
-    m_grid(setup.numerics.energyGrid),
-    mixture(basePath, &grid(), setup, workingConditions),
-    fieldOperator(grid()),
-    inelasticOperator(grid()),
-    eedf(grid().nCells())
-{
-    initialize();
-}
-
 ElectronKinetics::ElectronKinetics(const fs::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions),
     m_grid(Grid::fromConfig(cnf.at("numerics").at("energyGrid"))),
@@ -63,23 +52,6 @@ void ElectronKinetics::updateMaxEnergy(double uMax)
 void ElectronKinetics::solve()
 {
     doSolve();
-}
-
-ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-: ElectronKinetics(basePath,setup,workingConditions),
-    ionizationOperator(setup.ionizationOperatorType),
-    eeOperator(setup.includeEECollisions ? new ElectronElectronOperator(grid()) : nullptr),
-    fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
-    ionSpatialGrowthD(grid().nCells(), grid().nCells()),
-    ionSpatialGrowthU(grid().nCells(), grid().nCells()),
-    fieldMatrixTempGrowth(grid().nCells(), grid().nCells()),
-    ionTemporalGrowth(grid().nCells(), grid().nCells())
-{
-    this->mixingParameter = setup.numerics.nonLinearRoutines.mixingParameter;
-    this->maxEedfRelError = setup.numerics.nonLinearRoutines.maxEedfRelError;
-    this->maxPowerBalanceRelError = setup.numerics.maxPowerBalanceRelError;
-    this->growthModelType = setup.growthModelType;
-    initialize();
 }
 
 ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
@@ -1355,19 +1327,6 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 }
 
 
-
-
-
-ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::path &basePath,const ElectronKineticsSetup &setup, WorkingConditions *workingConditions)
-: ElectronKinetics(basePath, setup,workingConditions),
-  shapeParameter(setup.shapeParameter)
-{
-    if (setup.ionizationOperatorType != IonizationOperatorType::conservative)
-    {
-        throw std::runtime_error("ionizationOperatorType must be 'conservative' for EEDF type 'Prescribed'.");
-    }
-    initialize();
-}
 
 ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::path &basePath,const json_type &cnf, WorkingConditions *workingConditions)
 : ElectronKinetics(basePath,cnf,workingConditions),

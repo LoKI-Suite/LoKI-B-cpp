@@ -33,7 +33,6 @@
 
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/JobSystem.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
 #include "LoKI-B/Exports.h"
@@ -76,7 +75,6 @@ namespace loki
 class lokib_export Simulation
 {
 public:
-    explicit Simulation(const std::filesystem::path &basePath, const Setup &setup);
     explicit Simulation(const std::filesystem::path &basePath, const json_type &cnf);
     // Copying this object is not allowed.
     Simulation(const Simulation &other) = delete;
@@ -86,8 +84,6 @@ public:
     void run();
 
 private:
-
-    void initializeJobs(const WorkingConditionsSetup &setup, bool useReducedFieldParameter);
     void initializeJobs(const json_type &cnf, bool useReducedFieldParameter);
 
     std::unique_ptr<ElectronKinetics> m_electronKinetics;

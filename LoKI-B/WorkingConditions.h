@@ -6,7 +6,6 @@
 #define LOKI_CPP_WORKINGCONDITIONS_H
 
 #include "LoKI-B/Event.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/json.h"
 #include "LoKI-B/Constant.h"
 #include <string>
@@ -26,7 +25,6 @@ class WorkingConditions
 
     // constructors and destructor
 
-    WorkingConditions(const WorkingConditionsSetup &setup);
     WorkingConditions(const json_type &cnf);
     ~WorkingConditions() = default;
     // Copying this object is not allowed.
