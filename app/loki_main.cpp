@@ -120,6 +120,7 @@ try
     {
         throw std::runtime_error(usage_str);
     }
+    const std::filesystem::path fileName(input_file);
 
     std::vector<std::unique_ptr<loki::Output>> output;
     /* Arguments: [--convert] filename
