@@ -34,13 +34,13 @@ WorkingConditions::WorkingConditions(const WorkingConditionsSetup &setup)
 }
 
 WorkingConditions::WorkingConditions(const json_type &cnf)
-    : m_gasPressure(cnf.at("gasPressure").get<double>()),
-      m_gasTemperature(cnf.at("gasTemperature").get<double>()),
+    : m_gasPressure(cnf.at("gasPressure").at("value").get<double>()),
+      m_gasTemperature(cnf.at("gasTemperature").at("value").get<double>()),
       m_gasDensity(m_gasPressure / (Constant::boltzmann * m_gasTemperature)),
-      m_electronDensity(cnf.at("electronDensity").get<double>()),
+      m_electronDensity(cnf.at("electronDensity").at("value").get<double>()),
       //chamberLength(cnf.at("chamberLength").get<double>()),
       //chamberRadius(cnf.at("chamberRadius").get<double>()),
-      m_excitationFrequency(cnf.at("excitationFrequency").get<double>())
+      m_excitationFrequency(cnf.at("excitationFrequency").at("value").get<double>())
 {
     /* set the reducedField and electronTemperature to dummy
      * values. These are set by the JobManager when prepareFirstJobs

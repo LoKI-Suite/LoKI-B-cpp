@@ -53,7 +53,9 @@ class lokib_export Range
   public:
     using size_type = std::size_t;
 
-    /** Create a new Range object from string \a str. The caller must
+    /** \todo this supports the legacy parser. Remove when the time comes.
+     *
+     *  Create a new Range object from string \a str. The caller must
      *  assume ownership of the pointer that is returned by this function.
      *
      *  The argument can describe a single value, or a linear of logarithmic
@@ -68,6 +70,15 @@ class lokib_export Range
      *  \sa RangeLogSpace
      */
     static Range *create(const std::string &str);
+    /** Create a new Range object from JSON object \a cnf. The caller must
+     *  assume ownership of the pointer that is returned by this function.
+     *
+     *  \todo Describe the object once we agree on the structure.
+     *
+     *  \sa RangeSingleValue
+     *  \sa RangeLinSpace
+     *  \sa RangeLogSpace
+     */
     static Range *create(const json_type &cnf);
     virtual ~Range();
 

@@ -34,7 +34,6 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
-#include <regex>
 
 namespace loki
 {
@@ -153,80 +152,78 @@ class RangeArray : public Range
 };
 
 
-static Range *createLinLogRange(const std::string &rangeString)
+static Range *createLinLogRange(const json_type &json)
 {
     try
     {
-        static const std::regex r(
-            R"(\s*((?:logspace)|(?:linspace))\(\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(\d+\.?\d*))");
-        std::smatch m;
-
-        if (!std::regex_search(rangeString, m, r))
-        {
-            throw std::runtime_error("Parse error.");
-        }
-
-        std::stringstream ss;
-
-        const std::string function = m.str(1);
-
-        double start, stop;
-        Range::size_type nvalues;
-
-        ss << m[2];
-        ss >> start;
-        ss.clear();
-        ss << m[3];
-        ss >> stop;
-        ss.clear();
-        ss << m[4];
-        ss >> nvalues;
-
+        const std::string function = json.at("range");
         if (function == "linspace")
-            return new RangeLinSpace(start, stop, nvalues);
+            return new RangeLinSpace(json.at("min"), json.at("max"), json.at("nvalues"));
         else if (function == "logspace")
-            return new RangeLogSpace(start, stop, nvalues);
+            return new RangeLogSpace(json.at("min"), json.at("max"), json.at("nvalues"));
         else
             throw std::runtime_error("Unknown function '" + function + "'.");
     }
     catch (std::exception &exc)
     {
-        throw std::runtime_error("Error creating range from string '" + rangeString + ":\n" + std::string(exc.what()));
+        throw std::runtime_error("Error creating range from object '" + json.dump(2) + ":\n" + std::string(exc.what()));
     }
 }
 
-Range *Range::create(const std::string &str)
+Range *Range::create(const std::string &rangeString)
 {
     double value;
-    if (Parse::getValue(str, value))
+    if (Parse::getValue(rangeString, value))
     {
         // if it was a number (getValue succeeded), create a single-value-range
         return new RangeSingleValue{value};
     }
     else
     {
-        // otherwise we assume it is a span (linear or logarithmic)
-        return createLinLogRange(str);
+        // otherwise we assume it is a span (linear or logarithmic).
+        // e.g. "logspan(-3.0,3.0,7)". Convert this string to a suitable
+        // JSON object and use that to construct the range.
+        try
+        {
+            const Parse::FunctionCall func(3,rangeString);
+            json_type cnf;
+            cnf["range"] = func.name();
+            cnf["min"] = func.arg(0);
+            cnf["max"] = func.arg(1);
+            cnf["nvalues"] = func.arg(2);
+            return createLinLogRange(cnf);
+        }
+        catch (std::exception &exc)
+        {
+            throw std::runtime_error("Error creating range from string '" + rangeString + ":\n" + std::string(exc.what()));
+        }
     }
 }
 
 Range *Range::create(const json_type &cnf)
 {
-    if (cnf.type() == json_type::value_t::string)
+    if (cnf.contains("value"))
+    {
+        return new RangeSingleValue(cnf.at("value"));
+    }
+    else if (cnf.contains("range"))
     {
         return createLinLogRange(cnf);
     }
     else if (cnf.type() == json_type::value_t::array)
     {
+        /** \todo Define semantics for an array-range. How to handle units?
+         *  This mode does not exist in MATLAB-LoKI-B.
+         */
         return new RangeArray(cnf);
     }
     else
     {
-        return new RangeSingleValue(cnf.get<double>());
+        throw std::runtime_error("Cannot create a range from section '" + cnf.dump(2) + "'.");
     }
 }
 
-/** A Parameter controls one of the parameters of a parametrized model.
+/** A Parameter controls one of the parameters of a parameterized model.
  *  It manages a Range object that describes the value(s) of the parameter
  *  for which the model must be run, In addition it manages a callback function,
  *  which is called by the JobMaanager when this parameter value changes:
@@ -241,12 +238,11 @@ class JobManager::Parameter
         : m_callback(callback), m_name(name), m_range(range), m_active_ndx(0)
     {
     }
-
     const std::string &name() const
     {
         return m_name;
     }
-    /** callback is the function that gets called by the JobManager when a
+    /** m_callback is the function that gets called by the JobManager when a
      *  new value in the range is activated.
      */
     const callback_type m_callback;
