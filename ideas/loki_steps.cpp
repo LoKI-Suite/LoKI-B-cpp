@@ -29,8 +29,8 @@
 
 #include <iostream>
 
+#include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/LinearAlgebra.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include "LoKI-B/Gnuplot.h"
 #include "LoKI-B/Output.h"
@@ -99,8 +99,11 @@ try
     {
         throw std::runtime_error("Usage: loki <inputfile>");
     }
-    const std::filesystem::path fileName(argv[1]);
-    const loki::json_type cnf = loki::read_json_from_file(fileName);
+    std::filesystem::path fileName(argv[1]);
+    const bool input_is_json = fileName.has_extension() && fileName.extension() == ".json";
+    const loki::json_type cnf = input_is_json
+        ? loki::read_json_from_file(fileName)
+        : loki::legacyToJSON(fileName);
 
     loki::WorkingConditions workingConditions(cnf.at("workingConditions"));
     std::unique_ptr<loki::ElectronKinetics> electron_kinetics;
