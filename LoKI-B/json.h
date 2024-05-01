@@ -1,7 +1,19 @@
 #ifndef LOKI_CPP_JSON_H
 #define LOKI_CPP_JSON_H
 
-//#define JSON_DIAGNOSTICS
+/** Instruct nlohmann::json objects to keep track of their parents, so
+ *  sensible error messages can be produced when (for example) access
+ *  to an element or a type conversion fails.
+ *
+ *  See https://json.nlohmann.me/api/macros/json_diagnostics/
+ *
+ *  gcc is known to produce false positives when the -Warray-bounds
+ *  flag is used --- and indeed it does. The warning messages are so
+ *  noisy that the compiler output is rendered useless. That flag has
+ *  therefore been disabled in CMakeLists.txt. For more details, see
+ *  https://github.com/nlohmann/json/issues/3808
+ */
+#define JSON_DIAGNOSTICS 1
 
 #include <nlohmann/json.hpp>
 #include "LoKI-B/Exports.h"
