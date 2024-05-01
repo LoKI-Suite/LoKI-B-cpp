@@ -26,35 +26,49 @@
  */
 
 #include "LoKI-B/LegacyToJSON.h"
+#include "LoKI-B/json.h"
 #include <stdexcept>
 
-int main(int argc, const char* argv[])
+int main(int argc, const char *argv[])
 try
 {
-	loki::json_type json;
-	switch (argc)
-	{
-		case 1:
-			json = loki::legacyToJSON(std::cin);
-		break;
-		case 2:
-			json = loki::legacyToJSON(std::filesystem::path(argv[1]));
-		break;
-		default:
-			throw std::runtime_error("Usage: loki_legacytojson [input file]\n"
-				"This program converts a legacy LoKI-B file to json format\n"
-				"and makes the necessary modifications to allow the usage of\n"
-				"this file with LoKI-B. The resulting JSON object is printed\n"
-				"to the console. If no input file is provided, input will be\n"
-				"read from the standard input stream.");
-			return 1;
-		break;
-	}
-	std::cout << json.dump(2) << std::endl;
-	return 0;
+    loki::json_type json;
+    switch (argc)
+    {
+    case 1:
+        json = loki::legacyToJSON(std::cin);
+        break;
+    case 2: {
+        const auto path = std::filesystem::path(argv[1]);
+        if (path.extension() == ".json")
+        {
+            json = loki::legacyToJSON(loki::read_json_from_file(path));
+        }
+        else if (path.extension() == ".in")
+        {
+            json = loki::legacyToJSON(std::filesystem::path(argv[1]));
+        }
+        else
+        {
+            throw ::std::runtime_error("Expected a file with extension '.json', or '.in'.");
+        }
+        break;
+    }
+    default:
+        throw std::runtime_error("Usage: loki_legacytojson [input file]\n"
+                                 "This program converts a legacy LoKI-B file to json format\n"
+                                 "and makes the necessary modifications to allow the usage of\n"
+                                 "this file with LoKI-B. The resulting JSON object is printed\n"
+                                 "to the console. If no input file is provided, input will be\n"
+                                 "read from the standard input stream.");
+        return 1;
+        break;
+    }
+    std::cout << json.dump(2) << std::endl;
+    return 0;
 }
-catch(std::exception& exc)
+catch (std::exception &exc)
 {
-	std::cerr << exc.what() << std::endl;
-	return 1;
+    std::cerr << exc.what() << std::endl;
+    return 1;
 }
