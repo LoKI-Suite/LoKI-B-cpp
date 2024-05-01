@@ -30,12 +30,61 @@
 #define LOKI_CPP_PARSE_H
 
 #include "LoKI-B/Exports.h"
+#include "LoKI-B/json.h"
 #include <string>
 #include <iosfwd>
 #include <filesystem>
 
 namespace loki {
 namespace Parse {
+
+/** An object of type FunctionCall parses a function with a particular arity
+ *  from a string. The string must be of the form
+ *  name '(' [ argument (',' argument )*] ')'. The string 'name' must have
+ *  the same format as a function name in C++ or MATLAB, 'argument' is either
+ *  a 'name' or a numerical value. Upon construction, the function name and
+ *  the arguments are stored in data members for later access. The arguments
+ *  are converted to JSON values; if such conversion fails it is stored as
+ *  a JSON string.
+ *
+ *  Examples:
+ *
+ *    logspan(-3.0,3.0,7)
+ *    _g12(x,false)
+ *
+ *  \sa     makeJsonFromFunctionCall
+ *  \author Jan van Dijk
+ *  \date   April 2024
+ */
+struct FunctionCall
+{
+    FunctionCall(unsigned arity, const std::string& str);
+    using Arguments = std::vector<json_type>;
+    unsigned arity() const { return m_args.size(); }
+    const std::string& name() const { return m_name; }
+    const Arguments& args() const { return m_args; }
+    const json_type& arg(unsigned i) const { return m_args[i]; }
+private:
+    std::string m_name;
+    Arguments m_args;
+};
+
+/** Create a JSON object from a function call string and return the result.
+ *  The arguments \a fkey and \a akeys are the keys that are used for the
+ *  name of the function, as parsed from \a str, and its arguments.
+ *
+ *  As an example, when this function is called with arguments "atan2(4,3)",
+ *  "function" and {"y","x}, it will return the JSON object
+ *  { "function": "atan2", "x": "3", "y": "4" }.
+ *
+ *  \sa     FunctionCall
+ *  \author Jan van Dijk
+ *  \date   April 2024
+ */
+json_type makeJsonFromFunctionCall(
+    const std::string& str,
+    const std::string& fkey,
+    const std::vector<std::string>& akeys);
 
 /** Parse \a valueString into double \a value. The function returns true if
  *  the conversion was successful, false otherwise. In the latter case the

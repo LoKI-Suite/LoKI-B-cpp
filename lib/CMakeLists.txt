@@ -13,8 +13,10 @@ target_sources(loki-b PRIVATE
    ../source/Grid.cpp
    ../source/JobSystem.cpp
    ../source/json.cpp
+   ../source/LegacyToJSON.cpp
    ../source/LinearAlgebra.cpp
    ../source/LookupTable.cpp
+   ../source/OffSideToJSON.cpp
    ../source/Operators.cpp
    ../source/Output.cpp
    ../source/Parse.cpp

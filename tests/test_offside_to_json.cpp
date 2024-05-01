@@ -27,7 +27,7 @@
  *  \date   11 September 2022
  */
 
-#include "ideas/OffSideToJSON.h"
+#include "LoKI-B/OffSideToJSON.h"
 #include "tests/TestUtilities.h"
 #include <iostream>
 #include <sstream>

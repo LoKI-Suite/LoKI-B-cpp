@@ -27,7 +27,7 @@
  *  \date   8 April 2024
  */
 
-#include "ideas/OffSideToJSON.h"
+#include "LoKI-B/OffSideToJSON.h"
 #include <fstream>
 #include <stdexcept>
 #include <string>
