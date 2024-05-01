@@ -53,27 +53,10 @@ class lokib_export Range
   public:
     using size_type = std::size_t;
 
-    /** \todo this supports the legacy parser. Remove when the time comes.
-     *
-     *  Create a new Range object from string \a str. The caller must
-     *  assume ownership of the pointer that is returned by this function.
-     *
-     *  The argument can describe a single value, or a linear of logarithmic
-     *  value range. Some sample input and the values it will produce are:
-     *  \verbatim
-          "42.0"             # 42.0
-          "linspan(0,20,3)"  # 0, 10, 20
-          "logspan(2,4,3)"   # 1e2, 1e3, 1e4 \endverbatim
-     *
-     *  \sa RangeSingleValue
-     *  \sa RangeLinSpace
-     *  \sa RangeLogSpace
-     */
-    static Range *create(const std::string &str);
     /** Create a new Range object from JSON object \a cnf. The caller must
      *  assume ownership of the pointer that is returned by this function.
      *
-     *  \todo Describe the object once we agree on the structure.
+     *  \todo Describe the possible content of \a cnf once the dust has settled.
      *
      *  \sa RangeSingleValue
      *  \sa RangeLinSpace

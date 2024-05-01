@@ -151,69 +151,36 @@ class RangeArray : public Range
     std::vector<double> array;
 };
 
-
-static Range *createLinLogRange(const json_type &json)
-{
-    try
-    {
-        const std::string function = json.at("range");
-        if (function == "linspace")
-            return new RangeLinSpace(json.at("min"), json.at("max"), json.at("nvalues"));
-        else if (function == "logspace")
-            return new RangeLogSpace(json.at("min"), json.at("max"), json.at("nvalues"));
-        else
-            throw std::runtime_error("Unknown function '" + function + "'.");
-    }
-    catch (std::exception &exc)
-    {
-        throw std::runtime_error("Error creating range from object '" + json.dump(2) + ":\n" + std::string(exc.what()));
-    }
-}
-
-Range *Range::create(const std::string &rangeString)
-{
-    double value;
-    if (Parse::getValue(rangeString, value))
-    {
-        // if it was a number (getValue succeeded), create a single-value-range
-        return new RangeSingleValue{value};
-    }
-    else
-    {
-        // otherwise we assume it is a span (linear or logarithmic).
-        // e.g. "logspan(-3.0,3.0,7)". Convert this string to a suitable
-        // JSON object and use that to construct the range.
-        try
-        {
-            const Parse::FunctionCall func(3,rangeString);
-            json_type cnf;
-            cnf["range"] = func.name();
-            cnf["min"] = func.arg(0);
-            cnf["max"] = func.arg(1);
-            cnf["nvalues"] = func.arg(2);
-            return createLinLogRange(cnf);
-        }
-        catch (std::exception &exc)
-        {
-            throw std::runtime_error("Error creating range from string '" + rangeString + ":\n" + std::string(exc.what()));
-        }
-    }
-}
-
 Range *Range::create(const json_type &cnf)
 {
+    /** \todo handle (or at least check) the unit. Add the target unit as
+     *  argument of this function to allow that.
+     */
     if (cnf.contains("value"))
     {
         return new RangeSingleValue(cnf.at("value"));
     }
     else if (cnf.contains("range"))
     {
-        return createLinLogRange(cnf);
+        const std::string function = cnf.at("range");
+        if (function == "linspace")
+        {
+            return new RangeLinSpace(cnf.at("min"), cnf.at("max"), cnf.at("nvalues"));
+        }
+        else if (function == "logspace")
+        {
+            return new RangeLogSpace(cnf.at("min"), cnf.at("max"), cnf.at("nvalues"));
+        }
+        else
+        {
+            throw std::runtime_error("Unknown range type '" + function +
+                "'. Expected 'linspace' or 'logspace'.");
+        }
     }
     else if (cnf.type() == json_type::value_t::array)
     {
-        /** \todo Define semantics for an array-range. How to handle units?
-         *  This mode does not exist in MATLAB-LoKI-B.
+        /** \todo Define semantics for an array-range. Where to state the unit?
+         *  This mode does not exist in MATLAB-LoKI-B, IIRC.
          */
         return new RangeArray(cnf);
     }
