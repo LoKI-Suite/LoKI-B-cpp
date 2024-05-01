@@ -67,7 +67,7 @@ FunctionCall::FunctionCall(unsigned arity, const std::string& str)
 
     /* 2. Set up a regular expression object and parse the string. Issue an
      *    error if the string cannot be parsed as a call to a function with
-     *    three arguments.
+     *    'arity' arguments.
      */
     const std::regex r{func_call};
     std::smatch m;
