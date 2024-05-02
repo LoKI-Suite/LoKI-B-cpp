@@ -27,8 +27,10 @@
  *  \date   30 April 2024
  */
 
+#include "LoKI-B/Log.h"
 #include "LoKI-B/OffSideToJSON.h"
 #include "LoKI-B/Parse.h"
+#include <regex>
 
 namespace loki
 {
@@ -76,12 +78,41 @@ void patchWorkingConditions(json_type& wc)
 	}	
 }
 
+/* change an array of strings of the form "X = 1.0" into a object with
+ * elements of the form '"X": 1.0'
+ */
+void patchFractions(json_type& fracs)
+{
+    json_type new_fracs;
+    // Parse fractions
+    const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*)$)");
+    std::smatch m;
+
+    for (json_type& frac : fracs)
+    {
+        try
+        {
+            const std::string propertyString = frac;
+            if (!std::regex_search(propertyString, m, r))
+            {
+                Log<Message>::Error("Could not parse gas fraction '" + frac.get<std::string>() + "'.");
+            }
+            const auto name = m.str(1);
+            const double value = Parse::getValue(m.str(2));
+            new_fracs[m.str(1)] = value;
+        }
+        catch (std::exception& exc)
+        {
+            Log<Message>::Error("Could not parse gas fraction '" + frac.get<std::string>() + "': " + exc.what());
+        }
+    }
+    fracs = new_fracs;
+}
+
+
 void patchElectronKinetics(json_type& ek)
 {
-	/// \todo See how we want the JSON.
-	//  GasProperties/fraction is now "N2 = 1"
-	// stateProperties/{energy,opoulation,statisticalWeight}
-	// also do not look right.
+	patchFractions(ek.at("gasProperties").at("fraction"));
 }
 
 json_type legacyToJSON(const json_type& legacy)
