@@ -6,22 +6,25 @@
 namespace loki {
 
 CAROperator::CAROperator(const CARGases& cg)
-: carGases(cg)
+: carGases(cg), m_sigma0B(0)
 {
+    /** \todo Check here also that electricQuadrupoleMoment
+     *  and rotationalConstant have been set for all CAR gases?
+     */
 }
 
 void CAROperator::evaluate(const Grid& grid)
 {
-    const double a02 = Constant::bohrRadius*Constant::bohrRadius;
-    double sigma0B = 0.;
+    constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;
+    m_sigma0B = 0.;
     for (const auto &gas : carGases)
     {
         const double Qau = gas->electricQuadrupoleMoment/(Constant::electronCharge*a02);
-        sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
+        m_sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
     }
-    sigma0B *= (8.*Constant::pi*a02/15.)*sigma0B;
+    m_sigma0B *= (8.*Constant::pi*a02/15.);
 
-    g = grid.getNodes() * (4. * sigma0B);
+    g = grid.getNodes() * (4. * m_sigma0B);
     // Boundary conditions. See Tejero2019 below equation 16b.
     g[0] = 0.;
     g[grid.nCells()] = 0.;
