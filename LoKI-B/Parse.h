@@ -163,11 +163,6 @@ lokib_export bool removeComments(std::istream& is, std::string &dest);
  *  cannot be opened, false is returned, otherwise the result of the call
  *  to removeComments is returned.
  *
- *  \todo the string INPUT "/" is prepended unconditionally. This is better
- *        decided by the caller. It would be cleaner and more general to
- *        not do such magic and use \a fileName as-is. The comments above
- *        already reflect that future situation.
- *
  *  \author Daan Boer and Jan van Dijk
  *  \date   November 2020
  */
