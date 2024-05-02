@@ -48,9 +48,9 @@ GasProperties::GasProperties(const std::filesystem::path &basePath, const json_t
             // Replace this with a member "mass: " [ { "gasname", "mass" }, ... ]
             std::filesystem::path path(p.value());
             if (path.is_relative())
-            { 
+            {
                 path = basePath.parent_path() / path;
-            }           
+            }
             m_data[p.key()] = readGasPropertyFile(path);
         }
         else if (p.value().type() == json_type::value_t::object)
