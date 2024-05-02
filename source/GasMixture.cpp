@@ -251,23 +251,15 @@ void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const 
     readGasProperty(basePath, m_gases, cnf, "rotationalConstant", false,
         [](Gas& gas, double value) { gas.rotationalConstant=value; } );
 
-    // Parse fractions
-    const std::regex r(R"(([\w\d]*)\s*=\s*(\d*\.?\d*))");
-    std::smatch m;
-
-    for (const std::string fractionStr : cnf.at("fraction"))
+    for (const auto& entry : cnf.at("fraction").items())
     {
-        if (!std::regex_search(fractionStr, m, r))
-            Log<Message>::Error("Could not parse gas fractions.");
-        const auto &name = m.str(1);
-        auto it = std::find_if(m_gases.begin(), m_gases.end(),
-                               [&name](std::unique_ptr<Gas> &gas) { return (gas->name() == name); });
-        if (it == m_gases.end())
-            Log<Message>::Error("Trying to set fraction for non-existent gas: " + name + '.');
-        std::stringstream ss(m.str(2));
-
-        if (!(ss >> (*it)->fraction))
-            Log<Message>::Error("Could not parse gas fractions.");
+        // entry: { key, value } = { gasname, fraction }
+        Gas* gas = findGas(entry.key());
+        if (!gas)
+        {
+            Log<Message>::Error("Trying to set fraction for non-existent gas: " + entry.key() + '.');
+        }
+        gas->fraction = entry.value();
     }
     checkGasFractions();
 }
