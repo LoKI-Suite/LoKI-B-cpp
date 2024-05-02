@@ -21,7 +21,6 @@ target_sources(loki-b PRIVATE
    ../source/Output.cpp
    ../source/Parse.cpp
    ../source/Power.cpp
-   ../source/Setup.cpp
    ../source/Simulation.cpp
    ../source/StateEntry.cpp
    ../source/WorkingConditions.cpp

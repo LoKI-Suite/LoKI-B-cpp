@@ -32,29 +32,6 @@
 namespace loki
 {
 
-Simulation::Simulation(const std::filesystem::path &basePath,const loki::Setup &setup)
-    : m_workingConditions(setup.workingConditions),
-    m_jobManager()
-{
-    if (setup.electronKinetics.isOn)
-    {
-        switch (setup.electronKinetics.eedfType)
-	{
-            case EedfType::boltzmann:
-                initializeJobs(setup.workingConditions,true);
-                m_electronKinetics = std::make_unique<ElectronKineticsBoltzmann>(basePath, setup.electronKinetics, &m_workingConditions);
-            break;
-            case EedfType::prescribed:
-                initializeJobs(setup.workingConditions,false);
-                m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(basePath, setup.electronKinetics, &m_workingConditions);
-            break;
-        }
-        m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
-    }
-    Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
-                         ", number of jobs = ", m_jobManager.njobs());
-}
-
 Simulation::Simulation(const std::filesystem::path &basePath,const json_type &cnf)
     : m_workingConditions(cnf.at("workingConditions")),
     m_jobManager()
@@ -93,40 +70,6 @@ void Simulation::run()
 
 Simulation::~Simulation()
 {
-}
-
-void Simulation::initializeJobs(const WorkingConditionsSetup &setup, bool useReducedFieldParameter)
-{
-    if (useReducedFieldParameter)
-    {
-        // Repeat this for any other fields that can be declared as a range.
-        try
-        {
-            m_jobManager.addParameter(
-                "ReducedField",
-                std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
-                Range::create(setup.reducedField));
-        }
-        catch (std::exception &exc)
-        {
-            Log<Message>::Error("Error setting up reduced field: '" + std::string(exc.what()));
-        }
-    }
-    else
-    {
-        // Repeat this for any other fields that can be declared as a range.
-        try
-        {
-            m_jobManager.addParameter(
-                "ElectronTemperature",
-                std::bind(&WorkingConditions::updateElectronTemperature, std::ref(m_workingConditions), std::placeholders::_1),
-                Range::create(setup.electronTemperature));
-        }
-        catch (std::exception &exc)
-        {
-            Log<Message>::Error("Error setting up electron temperature: '" + std::string(exc.what()));
-        }
-    }
 }
 
 void Simulation::initializeJobs(const json_type &cnf, bool useReducedFieldParameter)

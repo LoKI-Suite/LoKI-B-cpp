@@ -82,6 +82,8 @@ gui:
 % ---  configuration of the output files ---
 output:
   isOn: true
+  writeText: false
+  writeJSON: true
   folder: simulation
   dataFiles:
     - eedf

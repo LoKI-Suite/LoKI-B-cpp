@@ -20,40 +20,6 @@ Output::~Output()
 {
 }
 
-Output::Output(const Setup &s, const WorkingConditions *workingConditions)
-    : m_workingConditions(workingConditions)
-{
-    saveEedf = false;
-    savePower = false;
-    saveSwarm = false;
-    saveRates = false;
-    saveTable = false;
-
-    for (const auto &entry : s.output.dataFiles)
-    {
-        if (entry == "eedf")
-        {
-            saveEedf = true;
-        }
-        else if (entry == "swarmParameters")
-        {
-            saveSwarm = true;
-        }
-        else if (entry == "rateCoefficients")
-        {
-            saveRates = true;
-        }
-        else if (entry == "powerBalance")
-        {
-            savePower = true;
-        }
-        else if (entry == "lookUpTable")
-        {
-            saveTable = true;
-        }
-    }
-}
-
 Output::Output(const json_type &cnf, const WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions)
 {
@@ -103,16 +69,6 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
         writeRateCoefficients(collData.m_rateCoefficients, collData.m_rateCoefficientsExtra);
     if (saveTable)
         writeLookuptable(power, swarmParameters);
-}
-
-FileOutput::FileOutput(const Setup &setup, const WorkingConditions *workingConditions,
-        const PathExistsHandler& handler)
- : Output(setup,workingConditions), m_folder(OUTPUT "/" + setup.output.folder)
-{
-    m_initTable = true;
-    createPath(handler);
-    std::ofstream ofs{m_folder + "/setup.in"};
-    ofs << setup.fileContent << std::endl;
 }
 
 FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
@@ -345,12 +301,6 @@ void FileOutput::createPath(const PathExistsHandler& handler)
     {
         fs::create_directories(path);
     }
-}
-
-JsonOutput::JsonOutput(json_type& root, const Setup &setup, const WorkingConditions *workingConditions)
- : Output(setup,workingConditions), m_root(root), m_active(nullptr)
-{
-    m_root["setup"] = setup.fileContent;
 }
 
 JsonOutput::JsonOutput(json_type& root, const json_type &cnf, const WorkingConditions *workingConditions)

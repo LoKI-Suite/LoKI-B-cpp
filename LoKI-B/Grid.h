@@ -32,7 +32,6 @@
 
 #include "LoKI-B/Event.h"
 #include "LoKI-B/LinearAlgebra.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/json.h"
 #include <memory>
 #include <stdexcept>
@@ -77,9 +76,8 @@ namespace loki
  *  given number of cells and energy range [0,u_max]. Another overload
  *  creates a grid from a collection of sorted normalized node positions,
  *  which must span the range [0,1], and u_max. This will in general result
- *  in a non-uniform mesh. Other constructor overloads create a grid object
- *  from the parameters that are specified in a json_type object, or from
- *  a traditional LoKI-B EnergyGridSetup object.
+ *  in a non-uniform mesh. Another constructor overloads create a grid object
+ *  from the parameters that are specified in a json_type object.
  *
  *  The Grid class stores the energies of the faces and cells in vectors.
  *  Constant references to these vectors can be retrieved with the members
@@ -101,8 +99,8 @@ namespace loki
  *  smartGrid(), which returns a pointer to an object of the nested class type
  *  SmartGridParameters, or a nullptr when no smart grid support was configured.
  *  The smart grid functionality is configured at construction time when a
- *  smartGrid section is present in the grid configuration (of type json_type
- *  or EnergyGridSetup). See the SmartGridParameters documentation for details.
+ *  smartGrid section is present in the grid configuration.
+ *  See the SmartGridParameters documentation for details.
  *
  *  When the grid is changed during the simulation, various actions may
  *  need to be undertaken. This can be achieved by registering listeners to
@@ -138,7 +136,6 @@ class Grid
      * the maxEnergy and the nodeDistribution function.
      */
     Grid(const Vector &nodeDistribution, double maxEnergy);
-    explicit Grid(const EnergyGridSetup &gridSetup);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
      *  When an element "smartGrid" is present, a SmartGridParameters
@@ -236,7 +233,6 @@ class Grid
     class SmartGridParameters
     {
       public:
-        SmartGridParameters(const SmartGridSetup &smartGrid);
         SmartGridParameters(const json_type &cnf);
         /// \todo We don't we use a more straighforward type here, like unsigned?
         const uint16_t minEedfDecay;

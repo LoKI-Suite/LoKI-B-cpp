@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cmath>
 
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 
 #define TOLERANCE 2e-5

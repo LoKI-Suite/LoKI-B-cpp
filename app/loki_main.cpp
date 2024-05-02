@@ -29,7 +29,6 @@
 
 #include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/LinearAlgebra.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include "LoKI-B/Gnuplot.h"
 #include "LoKI-B/Output.h"
@@ -92,23 +91,21 @@ try
      */
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
-    /* When WRITE_OUTPUT_TO_JSON_OBJECT is defined, a JSONOutput object will
-     * be set up instead of af FileOutput object. The variable data_out will
-     * act as its output root object. Note that support is incomplete, see
-     * Output.cpp.
+
+    /* The target for JSON output. This will be initialized if JSON output
+     * is asked for (see the cnf.at("output") bit below). In that case this
+     * object will be written to console at the end of the simulation (not
+     * yet to file). Note that support is incomplete, see Output.cpp.
      */
-    /// \todo Make WRITE_OUTPUT_TO_JSON_OBJECT user-configurable, remove the macro
-//#define WRITE_OUTPUT_TO_JSON_OBJECT
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-    loki::json_type data_out;
-#endif
+    std::unique_ptr<loki::json_type> json_output_data;
+
     auto begin = std::chrono::high_resolution_clock::now();
     bool convert_input = false;
-    std::string input_file;
+    std::filesystem::path fileName;
     if (argc==2)
     {
             convert_input = false;
-            input_file = argv[1];
+            fileName = argv[1];
     }
     else if (argc==3)
     {
@@ -117,70 +114,79 @@ try
                 throw std::runtime_error(usage_str);
             }
             convert_input = true;
-            input_file = argv[2];
+            fileName = argv[2];
     }
     else
     {
         throw std::runtime_error(usage_str);
     }
 
-    std::unique_ptr<loki::Simulation> simulation;
-    std::unique_ptr<loki::Output> output;
-    std::filesystem::path fileName(input_file);
+    std::vector<std::unique_ptr<loki::Output>> output;
     /* Arguments: [--convert] filename
-     * Without convert, the JSON or legacy file will be used as such.
-     * When convert is passed, a .in file will be converted to 'new JSON' and used,
-     * a .json file will be patched ('old json' to new 'json').
+     * - If filename has extension '.in', conversion to JSON is always done and
+     *   option --convert is ignored when specified.
+     * - If filename has extensio .json, --convert can be used to patch a 'legacy'
+     *   JSON file (a 'literal' translation of the '.in' file to JSON) to bring it
+     *   in the required form. When the JSON file already is already in the 'new'
+     *   JSON format, do NOT pass --convert.
      */
     const bool input_is_json = fileName.has_extension() && fileName.extension() == ".json";
-    if (convert_input || input_is_json)
+    const loki::json_type cnf = input_is_json
+        ? (convert_input ? loki::legacyToJSON(loki::read_json_from_file(fileName)) : loki::read_json_from_file(fileName))
+        : loki::legacyToJSON(fileName);
+    if (convert_input)
     {
-        const loki::json_type cnf = input_is_json
-	    ? (convert_input ? loki::legacyToJSON(loki::read_json_from_file(fileName)) : loki::read_json_from_file(fileName))
-	    : loki::legacyToJSON(fileName);
-        if (convert_input)
+        if (!input_is_json)
         {
-            std::cout << "Input file << '" << fileName << "' was converted. Result:\n" << cnf.dump(2) << std::endl;
+            std::cout << "Warning: option --convert is ignored: conversion is "
+                         "implicit for legacy ('.in') input files." << std::endl;
         }
-        simulation.reset(new loki::Simulation(fileName, cnf));
-        if (cnf.at("output").at("isOn"))
+        else
         {
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-            output.reset(
-                new loki::JsonOutput(data_out, cnf, &simulation->m_workingConditions);
-#else
-            output.reset(
-                new loki::FileOutput(cnf, &simulation->m_workingConditions,
+            std::cout << "Input file << '" << fileName << "' was converted. "
+                         "Result:\n" << cnf.dump(2) << std::endl;
+        }
+    }
+    loki::Simulation simulation(fileName, cnf);
+    if (cnf.at("output").at("isOn"))
+    {
+        // Write text files by default: in the absence of "writeText" or
+        // when such key exists and its value is true.
+        if (cnf.at("output").contains("writeText")==false || cnf.at("output").at("writeText"))
+        {
+            output.emplace_back(
+                new loki::FileOutput(cnf, &simulation.m_workingConditions,
                         &handleExistingOutputPath));
-#endif
-            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
         }
-    }
-    else
-    {
-        const loki::Setup setup(argv[1]);
-        simulation.reset(new loki::Simulation(argv[1], setup));
-        if (setup.output.isOn)
+        // Write JSON (to the console, at the end) only when asked for: when key 'writeJSON' exists
+        // AND the value is true.
+        if (cnf.at("output").contains("writeJSON")==true && cnf.at("output").at("writeJSON"))
         {
-            output.reset(
-                new loki::FileOutput(setup, &simulation->m_workingConditions,
-                    &handleExistingOutputPath));
-            simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());
+            json_output_data.reset(new loki::json_type);
+            output.emplace_back(
+                new loki::JsonOutput(*json_output_data, cnf, &simulation.m_workingConditions));
         }
     }
+    // register all output producers with the simulation.m_obtainedResults event
+    for (const auto& out : output)
+    {
+        simulation.m_obtainedResults.addListener(&loki::Output::saveCycle, out.get());
+    }
 
-    simulation->m_obtainedResults.addListener(handleResults);
+    simulation.m_obtainedResults.addListener(handleResults);
 
-    simulation->run();
+    simulation.run();
     auto end = std::chrono::high_resolution_clock::now();
     std::cerr << "Simulation finished, elapsed time = "
               << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
               << "mus" << std::endl;
 
-#ifdef WRITE_OUTPUT_TO_JSON_OBJECT
-    std::cout << "Output data:" << std::endl;
-    std::cout << data_out.dump(2) << std::endl;
-#endif
+    // if data wer harvested (also) in JSON form, print the JSON output object to screen.
+    if (json_output_data)
+    {
+        std::cout << "Output data (JSON format):" << std::endl;
+        std::cout << json_output_data->dump(2) << std::endl;
+    }
 
     return 0;
 }
