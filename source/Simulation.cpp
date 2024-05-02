@@ -28,6 +28,7 @@
  */
 
 #include "LoKI-B/Simulation.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {

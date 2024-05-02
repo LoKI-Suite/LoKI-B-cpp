@@ -5,6 +5,7 @@
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
+#include "LoKI-B/Log.h"
 #include <chrono>
 #include <cmath>
 
