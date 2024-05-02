@@ -211,7 +211,7 @@ Lines::Lines(std::istream& is)
  *     is added to \a parent. If parent is null, it is changed into an object
  *     first.
  *   - When the key is empty, we assume that \a parent is an array. We simply
- *     push back the value to the array. Of parent is null, it is changed into
+ *     push back the value to the array. If parent is null, it is changed into
  *     an array first.
  *   - When the value is empty, a member of the form
  *       'key': null
