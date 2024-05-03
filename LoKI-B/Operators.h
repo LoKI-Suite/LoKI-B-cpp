@@ -47,8 +47,9 @@ namespace loki {
         /// updates member g, then the CAR matrix \a mat
         void evaluate(const Grid& grid, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
-        Vector g;
         const CARGases carGases;
+        double m_sigma0B;
+        Vector g;
     };
 
     class ElasticOperator
