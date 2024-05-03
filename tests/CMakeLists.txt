@@ -27,6 +27,9 @@ target_link_libraries(bolsig_extract PRIVATE loki-b)
 add_executable(compare_tables compare_tables.cpp)
 target_link_libraries(compare_tables PRIVATE loki-b)
 
+add_executable(loki_test_gas_properties test_gas_properties.cpp)
+target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
+
 add_executable(loki_test_offside_to_json test_offside_to_json.cpp)
 target_link_libraries(loki_test_offside_to_json PRIVATE loki-b)
 
