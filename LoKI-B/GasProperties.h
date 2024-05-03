@@ -39,7 +39,7 @@ namespace loki {
  *  'gasProperties' section. It stores the data in a private json object.
  *  The elements' keys are the property names, the values are JSON objects.
  *  The latter's elements' keys are the names of the gases for which the
- *  property is available, and the value of that property.
+ *  property is available, the values are the values of that property.
  *
  *  \author Jan van Dijk
  *  \date   2. May 2024

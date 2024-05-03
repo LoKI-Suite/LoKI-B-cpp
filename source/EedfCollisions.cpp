@@ -408,10 +408,16 @@ std::string EedfCollision::typeAsString() const
     }
 }
 
-EedfCollisionDataGas::EedfCollisionDataGas(Gas &gas)
+EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, Gas &gas)
     : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
-      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)), m_OPBParameter(-1)
+      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
+      m_OPBParameter(gasProps.get("OPBParameter",gas.name(),-1.0,true))
 {
+    if (m_OPBParameter>0)
+    {
+        Log<Message>::Notify("Set OPB parameter for gas "
+                             + m_gas.name() + " to " + std::to_string(m_OPBParameter));
+    }
 }
 
 void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
@@ -696,11 +702,11 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     return coll;
 }
 
-EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixture &composition, const StateEntry &entry)
+EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(const GasProperties& gasProps, GasMixture &composition, const StateEntry &entry)
 {
     // find the state in the composition object (and let that create it if it does not
     // yet exist)
-    State *state = composition.ensureState(entry);
+    State *state = composition.ensureState(gasProps,entry);
     // check that an entry exists in the for the state's gas in the m_data_per_gas
     // array; create such entry if that is not the case
     auto it = m_data_per_gas.begin();
@@ -713,12 +719,12 @@ EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixtur
     }
     if (it == m_data_per_gas.end())
     {
-        m_data_per_gas.emplace_back(state->gas());
+        m_data_per_gas.emplace_back(gasProps,state->gas());
     }
     return state;
 }
 
-void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid,
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
@@ -790,11 +796,11 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 std::vector<State *> rhsStates;
                 for (auto &stateEntry : entry_lhsStates)
                 {
-                    lhsStates.emplace_back(ensureState(composition, stateEntry));
+                    lhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
                 for (auto &stateEntry : entry_rhsStates)
                 {
-                    rhsStates.emplace_back(ensureState(composition, stateEntry));
+                    rhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
                 Collision *coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
                                                reverseAlso, isExtra);
@@ -818,7 +824,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
     }
 }
 
-void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture &composition, const Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const GasProperties& gasProps, GasMixture &composition, const Grid *energyGrid,
                                                   bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
@@ -826,7 +832,7 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixt
     // 1. read the states
     for (const auto &[key, value] : mcnf.at("states").items())
     {
-        ensureState(composition, entryFromJSON(key, value));
+        ensureState(gasProps, composition, entryFromJSON(key, value));
     }
     // 2. read the processes
     for (const auto &pcnf : mcnf.at("processes"))

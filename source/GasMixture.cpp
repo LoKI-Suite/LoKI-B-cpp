@@ -13,33 +13,33 @@ GasMixture::~GasMixture()
 {
 }
 
-Gas *GasMixture::addGas(const std::string& name)
+Gas *GasMixture::addGas(const GasProperties& gasProps, const std::string& name)
 {
     if (findGas(name))
     {
         throw std::logic_error("Attempt to register gas with name '" + name + "' twice.");
     }
-    return m_gases.emplace_back(new Gas(name)).get();
+    return m_gases.emplace_back(new Gas(gasProps,name)).get();
 }
 
-Gas *GasMixture::ensureGas(const std::string &name)
+Gas *GasMixture::ensureGas(const GasProperties& gasProps, const std::string &name)
 {
     Gas *gas = findGas(name);
     if (!gas)
     {
-        gas = addGas(name);
+        gas = addGas(gasProps,name);
     }
     return gas;
 }
 
-Gas::State *GasMixture::ensureState(const StateEntry &entry)
+Gas::State *GasMixture::ensureState(const GasProperties& gasProps, const StateEntry &entry)
 {
     typename StateMap::iterator it = m_states.find(entry.m_id);
     if (it != m_states.end())
     {
         return it->second;
     }
-    Gas::State *state = ensureGas(entry.m_gasName)->ensureState(entry);
+    Gas::State *state = ensureGas(gasProps,entry.m_gasName)->ensureState(entry);
     m_states[entry.m_id] = state;
     return state;
 }
@@ -236,32 +236,6 @@ void GasMixture::loadStateProperties(const std::filesystem::path &basePath, cons
     loadStateProperty(basePath, cnf.at("population"), StatePropertyType::population, workingConditions);
 
     checkPopulations();
-}
-
-void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)
-{
-    readGasProperty(basePath, m_gases, cnf, "mass", true,
-        [](Gas& gas, double value) { gas.mass=value; } );
-    readGasProperty(basePath, m_gases, cnf, "harmonicFrequency", false,
-        [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
-    readGasProperty(basePath, m_gases, cnf, "anharmonicFrequency", false,
-        [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
-    readGasProperty(basePath, m_gases, cnf, "electricQuadrupoleMoment", false,
-        [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
-    readGasProperty(basePath, m_gases, cnf, "rotationalConstant", false,
-        [](Gas& gas, double value) { gas.rotationalConstant=value; } );
-
-    for (const auto& entry : cnf.at("fraction").items())
-    {
-        // entry: { key, value } = { gasname, fraction }
-        Gas* gas = findGas(entry.key());
-        if (!gas)
-        {
-            Log<Message>::Error("Trying to set fraction for non-existent gas: " + entry.key() + '.');
-        }
-        gas->fraction = entry.value();
-    }
-    checkGasFractions();
 }
 
 } // namespace loki

@@ -2,8 +2,9 @@
 #define LOKI_CPP_GASBASE_H
 
 #include "LoKI-B/Enumeration.h"
-#include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Exports.h"
+#include "LoKI-B/GasProperties.h"
+#include "LoKI-B/StateEntry.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -145,7 +146,7 @@ class lokib_export Gas
     };
     /// \todo Get rid of State, use State exclusively here and elsewhere.
     using State = State;
-    explicit Gas(std::string name);
+    explicit Gas(const GasProperties& gasProps, std::string name);
     virtual ~Gas();
     /** Prints the (first non-ionic then ionic) electronic states and their
      *  children.
@@ -199,14 +200,14 @@ class lokib_export Gas
 
     const std::string m_name;
   public:
-    double mass;
-    double harmonicFrequency;
-    double anharmonicFrequency;
-    double rotationalConstant;
-    double electricDipoleMoment;
-    double electricQuadrupoleMoment;
-    double polarizability;
-    double fraction;
+    const double mass;
+    const double harmonicFrequency;
+    const double anharmonicFrequency;
+    const double rotationalConstant;
+    //const double electricDipoleMoment;
+    const double electricQuadrupoleMoment;
+    //const double polarizability;
+    const double fraction;
 };
 
 lokib_export std::ostream &operator<<(std::ostream &os, const Gas::State &state);

@@ -3,6 +3,7 @@
 //
 
 #include "LoKI-B/EedfMixture.h"
+#include "LoKI-B/GasProperties.h"
 #include "LoKI-B/Log.h"
 
 #include <stdexcept>
@@ -12,20 +13,20 @@ namespace loki
 
 EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
 {
+    const GasProperties gasProps(basePath, cnf.at("gasProperties"));
     if (cnf.contains("mixture"))
     {
-        m_collision_data.loadCollisionsJSON(cnf.at("mixture"), m_composition, grid, false);
+        m_collision_data.loadCollisionsJSON(cnf.at("mixture"), gasProps, m_composition, grid, false);
     }
     if (cnf.contains("LXCatFiles"))
     {
-        loadCollisions(basePath, cnf.at("LXCatFiles").get<std::vector<std::string>>(), grid);
+        loadCollisions(basePath, cnf.at("LXCatFiles").get<std::vector<std::string>>(), gasProps, grid);
     }
     if (cnf.contains("LXCatFilesExtra"))
     {
-        loadCollisions(basePath, cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
+        loadCollisions(basePath, cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), gasProps, grid, true);
     }
 
-    this->loadGasProperties(basePath, cnf.at("gasProperties"));
     for (auto &gas : composition().gases())
     {
         gas->propagateFraction();
@@ -59,7 +60,7 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     //        this->evaluateTotalAndElasticCS();
 }
 
-void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra)
+void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const GasProperties& gasProps, const Grid *energyGrid, bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
 
@@ -74,21 +75,14 @@ void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const st
         if (fileName.has_extension() && fileName.extension() == ".json")
         {
             const json_type cnf = read_json_from_file(fileName);
-            m_collision_data.loadCollisionsJSON(cnf, m_composition, energyGrid, isExtra);
+            m_collision_data.loadCollisionsJSON(cnf, gasProps, m_composition, energyGrid, isExtra);
         }
         else
         {
-            m_collision_data.loadCollisionsClassic(fileName, m_composition, energyGrid, isExtra);
+            m_collision_data.loadCollisionsClassic(fileName, gasProps, m_composition, energyGrid, isExtra);
         }
     }
     Log<Message>::Notify("Finished loading collisions.");
-}
-
-void EedfMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)
-{
-    composition().loadGasProperties(basePath, cnf);
-    readGasProperty(basePath, composition().gases(), cnf, "OPBParameter", false,
-        [this](Gas& gas, double value) { this->collision_data().get_data_for(gas).setOPBParameter(value); } );
 }
 
 void EedfMixture::addCARGas(const std::string& gasName)

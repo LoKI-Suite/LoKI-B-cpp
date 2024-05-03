@@ -20,12 +20,12 @@ int main()
     double Tg = 300;
     double kT = Constant::kBeV*Tg;
     
-    auto gas = Gas("carGas");
-    gas.anharmonicFrequency = 1;
-    gas.electricQuadrupoleMoment = 1;
-    gas.harmonicFrequency = 1;
-    gas.rotationalConstant = 1;
-    gas.fraction = 1;
+    loki::GasProperties gasProps;
+    gasProps.set("mass","N2",4.651834066656000e-26);
+    gasProps.set("electricQuadrupoleMoment","N2",4.890341121851876e-40);
+    gasProps.set("rotationalConstant","N2",2.477501826053967e-4);
+    gasProps.set("fraction","N2",1);
+    Gas gas(gasProps,"N2");
 
     std::vector<const loki::Gas*> carGases;
     carGases.push_back(&gas);
