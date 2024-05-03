@@ -9,6 +9,7 @@ target_sources(loki-b PRIVATE
    ../source/Environment.cpp
    ../source/Gas.cpp
    ../source/GasMixture.cpp
+   ../source/GasProperties.cpp
    ../source/Gnuplot.cpp
    ../source/Grid.cpp
    ../source/JobSystem.cpp
