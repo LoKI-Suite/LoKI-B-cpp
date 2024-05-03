@@ -89,10 +89,9 @@ auto json = R"json(
             ]
         },
         "gasProperties": {
-            "_mass": "test_masses.txt",
-            "mass": [
-                { "name": "X", "mass": 1.66e-27 }
-            ],
+            "mass": {
+                "X": 1.66e-27
+            },
             "fraction": [
                 "X = 1"
             ]

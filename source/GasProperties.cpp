@@ -28,6 +28,8 @@
  */
 
 #include "LoKI-B/GasProperties.h"
+#include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 
 #include <string>
@@ -36,6 +38,11 @@ namespace loki {
 
 GasProperties::GasProperties()
 {
+    // If not yet available, add the "mass" property of "e", the electron.
+    if (!has("mass","e"))
+    {
+        set("mass","e",Constant::electronMass);
+    }
 }
 
 GasProperties::GasProperties(const std::filesystem::path &basePath, const json_type& pnode)
@@ -63,6 +70,11 @@ GasProperties::GasProperties(const std::filesystem::path &basePath, const json_t
         {
             std::cout << "Gas properties: skipping: " << p.key() << ": " << p.value().dump(2) << std::endl;
         }
+    }
+    // If not yet available, add the "mass" property of "e", the electron.
+    if (!has("mass","e"))
+    {
+        set("mass","e",Constant::electronMass);
     }
 }
 
@@ -94,6 +106,42 @@ json_type GasProperties::readGasPropertyFile(const std::filesystem::path& fname)
         result[gas] = value;
     }
     return result;
+}
+
+bool GasProperties::has(const std::string& propertyName) const
+{
+    return data().contains(propertyName);
+}
+
+bool GasProperties::has(const std::string& propertyName, const std::string& key) const
+{
+    return data().contains(propertyName) && data()[propertyName].contains(key);
+}
+
+double GasProperties::get(const std::string& propertyName, const std::string& key) const
+{
+    return data().at(propertyName).at(key);
+}
+
+double GasProperties::get(const std::string& propertyName, const std::string& key, double alt, bool warn) const
+{
+    const json_type* res_ptr = data().contains(propertyName)
+        ? (data()[propertyName].contains(key) ? &data()[propertyName][key] : nullptr)
+        : nullptr;
+    if (res_ptr)
+    {
+        return *res_ptr;
+    }
+    if (warn)
+    {
+        Log<GasPropertyError>::Warning(propertyName + " for " + key);
+    }
+    return alt;
+}
+
+void GasProperties::set(const std::string& propertyName, const std::string& key, double value)
+{
+    m_data[propertyName][key] = value;
 }
 
 } // namespace loki

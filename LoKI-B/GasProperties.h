@@ -47,12 +47,58 @@ namespace loki {
 class GasProperties
 {
 public:
+    /** Set up a default GasProperties object. This adds one property: the
+     *  "mass" of "e", the electron and is set to loki::Constant::electronMass
+     *  (See LoKI-B/Constant.h).
+     */
     GasProperties();
+    /** Read the properties that are specified in LoKI-B gasProperties section
+     *  \a pnode. The \a basePath is the file relative to which included files
+     *  will be resolved (e.g. Databases/masses.txt). The \a pnode must be a
+     *  JSON object. The key of each element is used as property name, the
+     *  argument can be:
+     *  1) a file name, as in "mass": "Databases/masses.txt"
+     *  2) an array of key-double pairs. As an example, the fractions of gases
+     *     N2 and O2 can be configured by: "fraction": { "N2": 0.8, "O2": 0.2 }.
+     */
     GasProperties(const std::filesystem::path &basePath, const json_type& pnode);
+    /** Return true if this object has a collection (possibly empty) of values
+     *  of property \a propertyName.
+     */
+    bool has(const std::string& propertyName) const;
+    /** Returns true if property \a propertyName is available for item \a key.
+     */
+    bool has(const std::string& propertyName, const std::string& key) const;
+    /** Get property \a propertyName for item \a key. If the property cannot be
+     *  found, a runtime_exception is thrown.
+     */
+    double get(const std::string& propertyName, const std::string& key) const;
+    /** Get property \a propertyName for item \a key. If the property cannot be
+     *  found, return alternative value \a alt instead. When \a warn is true
+     *  (the default), write a warning message to the console when the requested
+     *  property is not available.
+     */
+    double get(const std::string& propertyName, const std::string& key, double alt, bool warn=true) const;
+    /** Set property \a propertyName of item \a key to value. If that property
+     *  already exists, its value will be modified, otherwise the property will
+     *  be added.
+     */
+    void set(const std::string& propertyName, const std::string& key, double value);
+    /** Return a constant reference to the json object in which all properties
+     *  are stored.
+     */
     const json_type& data() const { return m_data; }
-    json_type& data() { return m_data; }
 private:
+    /** Read properties from file \a fname. That file must be a LoKI-B
+     *  database file. Percentage signs start comments, and lines that are
+     *  non-empty after stripping the comments must contain key-value pairs,
+     *  the values must be valid double values.
+     *  The properties are stored as elements of a JSON object that contains
+     *  the values for all keys and is returned by this function. A runtime
+     *  error is thrown when the file cannot be read or contains bad data.
+     */
     json_type readGasPropertyFile(const std::filesystem::path& fname) const;
+    /// The json object in which all properties are stored.
     json_type m_data;
 };
 
