@@ -108,9 +108,9 @@
             ]
         },
         "gasProperties": {
-            "mass": [
-                { "name": "X", "mass": 3.643753424e-26 }
-            ],
+            "mass": {
+                "X": 3.643753424e-26
+            },
             "fraction": [
                 "X = 1"
             ]

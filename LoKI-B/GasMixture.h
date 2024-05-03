@@ -100,14 +100,11 @@ void readGasPropertyJson(const GasListType& gasList,
     {
         if (gas->name() == "e")
             continue;
-		bool found = false;
-        for (auto& el : cnf)
+	bool found = false;
+        if (cnf.contains(gas->name()))
 	{
-            if (el.at("name") == gas->name())
-            {
-                found = true;
-                handler(*gas, el.at(propertyName).get<double>());
-            }
+            found = true;
+            handler(*gas, cnf.at(gas->name()).template get<double>());
         }
         if (!found)
         {
@@ -128,7 +125,7 @@ void readGasProperty(const std::filesystem::path &basePath,
                      bool required,
                      HandlerType handler)
 {
-    if (cnf.contains(propertyName) && cnf.at(propertyName).is_array())
+    if (cnf.contains(propertyName) && cnf.at(propertyName).is_object())
     {
         readGasPropertyJson(gasList,cnf.at(propertyName),propertyName,required,handler);
     }
