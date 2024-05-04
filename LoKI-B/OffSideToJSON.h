@@ -37,9 +37,11 @@
 namespace loki
 {
 
-/** Reads an offSide LoKI-B input file from stream \a is, converts it to a JSON
- *  object and returns the result. See section 5 of \cite Manual_2_2_0 for
- *  details about the file format.
+/** Reads an 'offSide' LoKI-B input file from stream \a is, converts it to a
+ *  JSON object and returns the result. See section 5 of \cite Manual_2_2_0 for
+ *  details about the file format. For details of the algorithm that is used for
+ *  parsing the legacy content, see the documentation of class \c Lines and
+ *  function \c readSection(), both provided in file source/OffSideToJSON.cpp.
  *
  *  \author Jan van Dijk
  *  \date   8 April 2024
