@@ -1,17 +1,25 @@
 importScripts("loki_bindings.js");
 
-function lxcat_get(module, input) {
+async function lxcat_get(module, input) {
   for (const [i, file] of input.electronKinetics.LXCatFiles.entries()) {
     if (file.substr(0, 5) == "http:") {
-      const http = new XMLHttpRequest();
-      http.open("GET", file, false);
-      http.send(null);
+      const response = await fetch(
+        file, 
+        {
+          cache: "no-cache", 
+          credentials: "include", 
+          headers: {
+            "Content-Type": "application/json", 
+            "Authorization": "Bearer <TOKEN>"
+          },
+        }
+      )
 
       // const valid = validate(JSON.parse(http.responseText));
       // if (!valid) console.log("AJV error: ", validate.errors);
 
       input.electronKinetics.LXCatFiles[i] = "/" + i + ".json";
-      module.FS.writeFile("/" + i + ".json", http.responseText, {
+      module.FS.writeFile("/" + i + ".json", await response.text(), {
         flags: "w+",
       });
     }
@@ -34,9 +42,9 @@ async function json_output(str) {
 
 self.onmessage = ({ data }) => {
   if (data.type === "COMPUTE") {
-    create_module().then((module) => {
+    create_module().then(async (module) => {
       parsed = JSON.parse(data.input);
-      lxcat_get(module, parsed);
+      await lxcat_get(module, parsed);
       module.run(JSON.stringify(parsed), worker_plot.bind(module), json_output);
     });
   }

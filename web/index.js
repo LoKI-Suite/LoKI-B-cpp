@@ -53,14 +53,22 @@ dl_button.addEventListener("click", (_event) => {
   download("results.json", results, "text/json");
 });
 
-ref_button.addEventListener("click", (_event) => {
+ref_button.addEventListener("click", async (_event) => {
   let references = "";
   for (const file of global_input.electronKinetics.LXCatFiles) {
     if (file.substr(0, 5) == "http:") {
-      const http = new XMLHttpRequest();
-      http.open("GET", file, false);
-      http.send(null);
-      const lxcat_input = JSON.parse(http.responseText);
+      const response = await fetch(
+        file, 
+        {
+          cache: "no-cache", 
+          credentials: "include", 
+          headers: {
+            "Content-Type": "application/json", 
+            "Authorization": "Bearer <TOKEN>"
+          },
+        }
+      )
+      const lxcat_input = await response.json();
       for (const id in lxcat_input.references) {
         references += lxcat_input.references[id];
       }
