@@ -11,6 +11,7 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
   -s MODULARIZE=1 \
   -s EXPORT_NAME=create_module \
   -s EXPORTED_RUNTIME_METHODS=FS,run \
+  -s NO_DISABLE_EXCEPTION_CATCHING \
   --bind \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_LXCat.json@JSON/N2/ \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_rot_LXCat.json@JSON/N2/ \
