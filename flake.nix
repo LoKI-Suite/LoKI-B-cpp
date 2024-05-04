@@ -25,6 +25,9 @@
         nlohmann_json
         openblas
 
+        # WebAssembly compilation
+        emscripten
+
         # Documentation
         doxygen
 
