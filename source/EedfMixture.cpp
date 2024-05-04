@@ -39,8 +39,8 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
         throw std::runtime_error("No electron species has been found in the process list.");
     }
     /// \todo See the comments about the population in the other overload
-    composition().loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
-    composition().evaluateReducedDensities();
+    m_composition.loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
+    m_composition.evaluateReducedDensities();
 
     for (auto &cd : m_collision_data.data_per_gas())
     {

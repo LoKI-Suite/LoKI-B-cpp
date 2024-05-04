@@ -27,8 +27,8 @@ class GasMixture
     void print(std::ostream &os);
     /** Checks whether the sum of the gas fractions is equal to 1.
      */
-    void checkGasFractions();
-    void checkPopulations();
+    void checkGasFractions() const;
+    void checkPopulations() const;
     // Vector of pointers to all the gases in the mixture.
     const Gases &gases() const { return m_gases; }
     /** Tries to add a new gas based on a given name and returns a pointer to it. If a
@@ -38,6 +38,9 @@ class GasMixture
     /** Tries to find a gas in the gas mixture specified by a supplied name. If the
      *  gas is present, a pointer to this gas is returned, otherwise a nullptr is
      *  returned.
+     */
+    const Gas *findGas(const std::string &name) const;
+    /** See the non-constant overload of this member.
      */
     Gas *findGas(const std::string &name);
     /** Tries to find a state in the gas mixture specified by a supplied name. If the

@@ -25,7 +25,6 @@ class EedfMixture
     EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
 
     const GasMixture& composition() const { return m_composition; }
-    GasMixture& composition() { return m_composition; }
 
     const std::vector<const Gas *>& CARGases() const { return m_CARGases; }
     const EedfCollisionDataMixture& collision_data() const { return m_collision_data; }

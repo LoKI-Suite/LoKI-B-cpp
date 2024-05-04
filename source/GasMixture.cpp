@@ -58,7 +58,7 @@ void GasMixture::print(std::ostream &os)
     }
 }
 
-void GasMixture::checkGasFractions()
+void GasMixture::checkGasFractions() const
 {
     double norm = 0;
 
@@ -71,10 +71,17 @@ void GasMixture::checkGasFractions()
         Log<Message>::Error("Gas fractions are not properly normalized.");
 }
 
-void GasMixture::checkPopulations()
+void GasMixture::checkPopulations() const
 {
     for (auto &gas : m_gases)
         gas->checkPopulations();
+}
+
+const Gas *GasMixture::findGas(const std::string &name) const
+{
+    auto it = std::find_if(m_gases.begin(), m_gases.end(),
+                           [&name](const std::unique_ptr<Gas> &gas) { return gas->name() == name; });
+    return it == m_gases.end() ? nullptr : it->get();
 }
 
 Gas *GasMixture::findGas(const std::string &name)
