@@ -54,6 +54,7 @@
             # LaTeX
             latex
           ]);
+          EM_CACHE = "./cache";
         };
         ci = gccEnv.mkDerivation {
           name = "loki-b-ci";
