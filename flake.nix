@@ -76,6 +76,31 @@
             [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
           ninjaFlags = [ "loki" ];
         };
+        loki-web = gccEnv.mkDerivation {
+          pname = "loki-web";
+          version = "0.0.1";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [ cmake gnumake emscripten python3 ];
+
+          EM_CACHE = "./cache";
+
+          cmakeFlags = [
+            "-DUSE_BUILTIN_EIGEN=ON -DUSE_BUILTIN_NLOHMANN_JSON=ON -DUSE_OPENMP=OFF"
+          ];
+
+          makeFlags = [ "-C build" "loki_bindings" ];
+
+          configurePhase = ''
+            emcmake cmake -DUSE_BUILTIN_EIGEN=ON -DUSE_BUILTIN_NLOHMANN_JSON=ON -DUSE_OPENMP=OFF -B build
+          '';
+
+          installPhase = ''
+            mkdir -p $out/share/loki-web
+            mv web/*.{html,js,wasm,data} $out/share/loki-web
+          '';
+        };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
           version = "0.0.1";
