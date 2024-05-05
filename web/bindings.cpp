@@ -4,7 +4,6 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Output.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include <chrono>
 #include <exception>
