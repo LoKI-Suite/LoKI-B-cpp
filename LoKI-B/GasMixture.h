@@ -56,21 +56,12 @@ class GasMixture
      *  \todo reconsider all the state accessors. Which interfaces do we really need.
      */
     Gas::State::ChildContainer findStates(const StateEntry &entry);
-    /** Loads the data concerning a single property of the states (energy, statistical
-     *  weight, or population) from a vector of entries as supplied by the setup object.
-     *  First it determines whether the current entry requires loading by direct value,
-     *  file or function, then it acts accordingly. The property that needs to be set
-     *  is defined by the propertyType variable. Furthermore, it also needs a pointer
-     *  to the WorkingConditions structure to access the argument map (which maps its
-     *  member variables to names by which they are addressed in the input files).
-     */
-    void loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
-                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Evaluates the densities of all states in the state tree. \todo Explain. All states of all gases?
      */
     void evaluateReducedDensities();
-    /** Loads the state properties as specified in the input file. It also calls
-     *  checkPopulations.
+    /** Loads the state properties energy, statisticalWeight and population
+     *  as specified in subsections "energy", "statisticalWeight" and "population"
+     *  of \a cnf. Each is handled by a call to private member loadStateProperty.
      */
     void loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, 
                              const WorkingConditions *workingConditions);
@@ -88,6 +79,62 @@ class GasMixture
     Gas::State *ensureState(const GasProperties& gasProps, const StateEntry &entry);
     Gas::State *findStateById(const std::string &stateId);
   private:
+    /** propEntry should be an object that can contain:
+     *
+     *  1. {
+             "states": <stateID>,
+             "value": <value>
+     *     }
+     *  2. {
+             "states": <stateID>,
+             "function":
+             {
+               "name": <funcname>,
+               "arguments": <arguments>
+             }
+           }
+     *     <arguments> is an array. Each argument is either a parameter name
+     *     (a string) or a direct value (a double).
+     *
+     *  First it determines whether the current entry requires loading by direct value,
+     *  file or function, then it acts accordingly. The property that needs to be set
+     *  is defined by the propertyType variable. Furthermore, it also needs a pointer
+     *  to the WorkingConditions structure to access the argument map (which maps its
+     *  member variables to names by which they are addressed in the input files).
+     */
+    void loadStatePropertyEntry(const json_type& propEntry,
+                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
+    /** Sets a property (energy, statistical weight, population) of selected states
+     *  as specified in json array \a stateProp. The  members of this array must be
+     *  objects of the form { "file": <filename> }, or of the form that is expected
+     *  for the propEntry argument of member \c loadStatePropertyEntry.
+     *
+     *  If a file specification is found, a JSON object with the same structure
+     *  as argument \a stateProp is created, and loadStateProperty is called
+     *  recursively with that JSON object as argument (as if that file were
+     *  included in the place of the { "file: <filename> } object). If the
+     *  filename has extension ".json", it will be used as is. For other files
+     *  the JSON object is created via a call to to readLegacyStatePropertyFile,
+     *  which converts the legacy LoKI-B "*.in" file format to JSON.
+     *
+     *  For every "value" or "function" node, loadStatePropertyEntry is called to
+     *  set the values of the property of the selected states.
+     *
+     *  Argument \a basePath is needed to resolve the location of included files with
+     *  a relative path name. Argument \a propertyType indices which property (data
+     *  member) of the states is being configures, the \a workingConditions are needed
+     *  to translate parameter names (that can be used as function arguments) into their
+     *  numerical values.
+     *
+     *  \sa loadStatePropertyEntry
+     *  \sa loadStateProperties
+     *  \sa statePropertyFile
+     *
+     *  \todo There is the risk of infinite recursion if a file refers to that
+     *        same file (possibly indirectly).
+     */
+    void loadStateProperty(const std::filesystem::path &basePath, const json_type& stateProp,
+                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
     Gas *addGas(const GasProperties& gasProps, const std::string& name);
     Gases m_gases;
     StateMap m_states;

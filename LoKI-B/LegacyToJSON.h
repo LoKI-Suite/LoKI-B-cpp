@@ -70,9 +70,30 @@ json_type legacyToJSON(std::istream& is);
  */
 json_type legacyToJSON(const std::filesystem::path& fname);
 
+/** Read properties from file \a fname. That file must be a LoKI-B
+ *  database file. Percentage signs start comments, and lines that are
+ *  non-empty after stripping the comments must contain key-value pairs,
+ *  the values must be valid double values.
+ *  The properties are stored as elements of a JSON object that contains
+ *  the values for all keys and is returned by this function. A runtime
+ *  error is thrown when the file cannot be read or contains bad data.
+ */
+json_type readLegacyGasPropertyFile(const std::filesystem::path& fname);
+
+/** Parses legacy state property file \a fileName, stores the result in JSON
+ *  format and returns the result. For the format of the JSON object, see the
+ *  documentation of \c GasMixture::loadStateProperty.
+ *
+ *  After stripping LoKI-style comments, starting with a percentage sign
+ *  the file must contain lines with two items, separated by whitespace,
+ *  representing a state string and the initializer. The latter must be
+ *  a numerical value or a function call. The latter takes the form of a
+ *  string, followed by an argument list of the form @arg1[,arg2]...,
+ *  where the arguments are numerical values of parameter names. In order
+ *  to support those, we can re-use the code from function patchStateProperty.
+ */
+lokib_export json_type readLegacyStatePropertyFile(const std::filesystem::path &fileName);
+
 } // namespace loki
 
-
-
 #endif // LOKI_CPP_LEGACYTOJSON_H
-

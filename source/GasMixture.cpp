@@ -1,10 +1,9 @@
 #include "LoKI-B/GasMixture.h"
+#include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
 
 #include <filesystem>
-#include <regex>
 
 namespace loki
 {
@@ -104,101 +103,89 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
     return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
 }
 
-void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
+void GasMixture::loadStatePropertyEntry(const json_type& propEntry,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-
-    for (const auto &line : entryVector)
+    std::cout << "loadStatePropertyEntry: handling:\n" << propEntry.dump(2) << std::endl;
+    const StateEntry entry = propertyStateFromString(propEntry.at("states"));
+    /** \todo Should this be part of propertyStateFromString?
+     *        Is there a reason to accept a 'none'-result?
+     */
+    if (entry.m_level == none)
     {
-        // look for a line of the form "S = E"
-        static const std::regex reProperty(R"((\S+)\s+=\s+(\S+)\s*$)");
-        std::smatch m;
-        if (std::regex_search(line, m, reProperty))
+        throw std::runtime_error("loadStateProperty: illegal "
+                        "state identifier '" + propEntry.at("states").get<std::string>() + "'.");
+    }
+    Gas::State::ChildContainer states = findStates(entry);
+    if (states.empty())
+    {
+        throw std::runtime_error("loadStateProperty: could not find "
+                        "state or state group '" + propEntry.at("states").get<std::string>() + "'.");
+    }
+
+    // 2. Now apply the expression.
+    // Try to parse expr as a number first...
+    if (propEntry.contains("value"))
+    {
+        // expr is a number, now parsed into value.
+        PropertyFunctions::constantValue(states, propEntry["value"], propertyType);
+    }
+    else
+    {
+        // expr is not a number. We treat is a function (maybe with arguments).
+        const std::string functionName = propEntry.at("function").at("name");
+
+        // create an argument list for the function (possibly empty)
+        std::vector<double> arguments;
+        if (propEntry.at("function").contains("arguments"))
+        for (const auto& arg : propEntry.at("function").at("arguments"))
         {
-            // Found. E can be a literal value, or a function with arguments.
-            // value or function
-            const std::string state_id = m.str(1);
-            const std::string expr = m.str(2);
-
-            // 1. get the state or state group that the expression will
-            //    be applied to.
-            const StateEntry entry = propertyStateFromString(state_id);
-            /** \todo Should this be part of propertyStateFromString?
-             *        Is there a reason to accept a 'none'-result?
-             */
-            if (entry.m_level == none)
+            double pvalue;
+            if (arg.is_number())
             {
-                throw std::runtime_error("loadStateProperty: illegal "
-                                "state identifier '" + line + "'.");
+                pvalue = arg;
             }
-            Gas::State::ChildContainer states = findStates(entry);
-            if (states.empty())
+            else if (arg.is_string())
             {
-                throw std::runtime_error("loadStateProperty: could not find "
-                                "state or state group '" + line + "'.");
-            }
-
-            // 2. Now apply the expression.
-            // Try to parse expr as a number first...
-            double value;
-            if (Parse::getValue(expr, value))
-            {
-                // expr is a number, now parsed into value.
-                PropertyFunctions::constantValue(states, value, propertyType);
+                pvalue = workingConditions->getParameter(arg);
             }
             else
             {
-                // expr is not a number. We treat is a function (maybe with arguments).
-                static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
-                std::smatch fm;
-                if (!std::regex_match(expr, fm, reFuncArgs))
-                {
-                    throw std::runtime_error("Could not parse function "
-                        "name and argument list from string '"
-                        + expr + "'.");
-                }
-                const std::string functionName = fm.str(1);
-                const std::string argumentString = fm.str(2);
-
-                // create an argument list for the function (possibly empty)
-                std::vector<double> arguments;
-                static const std::regex reArgList(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
-                for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), reArgList);
-                     it != std::sregex_iterator(); ++it)
-                {
-                    const std::string arg{it->str(1)};
-                    double pvalue;
-                    if (Parse::getValue(arg, pvalue))
-                    {
-                        // pvalue set by getValue
-                    }
-                    else if (workingConditions->findParameter(arg))
-                    {
-                        pvalue = workingConditions->getParameter(arg);
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Argument '" + arg + "' is neither a numerical "
-                                    "pvalue, nor a known parameter name.");
-                    }
-                    arguments.emplace_back(pvalue);
-                }
-                PropertyFunctions::callByName(functionName, states, arguments, propertyType);
+                throw std::runtime_error("Argument '" + arg.dump(2) + "' is neither a numerical "
+                            "value, nor a parameter name.");
             }
+            arguments.emplace_back(pvalue);
         }
-        else
-        {
-            std::vector<std::pair<StateEntry, double>> entries;
-            // const std::string fileName = line;
-            std::filesystem::path fileName(line);
+        PropertyFunctions::callByName(functionName, states, arguments, propertyType);
+    }
+}
 
-            if (fileName.is_relative()) {
+void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const json_type& stateProp,
+                                   StatePropertyType propertyType, const WorkingConditions *workingConditions)
+{
+    for (const auto &propEntry : stateProp)
+    {
+        if (propEntry.contains("file"))
+        {
+            std::cout << "loadStateProperty: handling: " << propEntry.dump() << std::endl;
+            std::filesystem::path fileName(propEntry.at("file"));
+            if (fileName.is_relative())
+            {
                 fileName = basePath.parent_path() / fileName;
             }
-
             try
             {
-                statePropertyFile(fileName, entries);
+                if (fileName.extension()==".json")
+                {
+                    const json_type entries = read_json_from_file(fileName);
+                    loadStateProperty(basePath, entries, propertyType, workingConditions);
+                }
+                else
+                {
+                    // support for legacy (".in") files.
+                    const json_type entries = readLegacyStatePropertyFile(fileName);
+                    loadStateProperty(basePath, entries, propertyType, workingConditions);
+                }
             }
             catch (std::exception& exc)
             {
@@ -206,23 +193,10 @@ void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const 
                                         + statePropertyName(propertyType) + "': "
                                         + std::string{exc.what()} );
             }
-
-            /** \todo Also in case we read a property file, the expression type could be a function.
-             *        It would be nice if the external file case behaves the same as the inline case.
-             *        This could be achieved by first assembling a collection of tasks (either from
-             *        the settings node or from file), then execute these tasks. That will be more
-             *        general and simplify this function at the same time.
-             */
-            for (auto &entry : entries)
-            {
-                Gas::State::ChildContainer states = findStates(entry.first);
-                if (states.empty())
-                {
-                    throw std::runtime_error("loadStateProperty: could not find "
-                                    "state or state group '" + entry.first.m_id + "'.");
-                }
-                PropertyFunctions::constantValue(states, entry.second, propertyType);
-            }
+        }
+        else
+        {
+            loadStatePropertyEntry(propEntry, propertyType, workingConditions);
         }
     }
 }

@@ -110,15 +110,6 @@ public:
      */
     const json_type& data() const { return m_data; }
 private:
-    /** Read properties from file \a fname. That file must be a LoKI-B
-     *  database file. Percentage signs start comments, and lines that are
-     *  non-empty after stripping the comments must contain key-value pairs,
-     *  the values must be valid double values.
-     *  The properties are stored as elements of a JSON object that contains
-     *  the values for all keys and is returned by this function. A runtime
-     *  error is thrown when the file cannot be read or contains bad data.
-     */
-    json_type readGasPropertyFile(const std::filesystem::path& fname) const;
     /// The json object in which all properties are stored.
     json_type m_data;
 };
