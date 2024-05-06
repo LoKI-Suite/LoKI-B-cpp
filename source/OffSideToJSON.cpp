@@ -29,9 +29,10 @@
 
 #include "LoKI-B/OffSideToJSON.h"
 #include <fstream>
+#include <list>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <list>
 
 namespace loki
 {
