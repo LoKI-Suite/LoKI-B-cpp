@@ -1,6 +1,7 @@
 #ifndef LOKI_CPP_GASMIXTUREBASE_H
 #define LOKI_CPP_GASMIXTUREBASE_H
 
+#include "LoKI-B/Exports.h"
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/GasProperties.h"
 #include "LoKI-B/WorkingConditions.h"
@@ -19,10 +20,14 @@ namespace loki
 
 /** Gas mixture base class...
  */
-class GasMixture
+class lokib_export GasMixture
 {
   public:
     using Gases = std::vector<std::unique_ptr<Gas>>;
+    GasMixture() = default;
+    GasMixture(const GasMixture& other) = delete;
+    GasMixture(GasMixture&& other) = delete;
+    const GasMixture& operator=(const GasMixture& other) = delete;
     ~GasMixture();
     void print(std::ostream &os);
     /** Checks whether the sum of the gas fractions is equal to 1.
