@@ -88,7 +88,7 @@ json_type readLegacyGasPropertyFile(const std::filesystem::path& fname);
  *  the file must contain lines with two items, separated by whitespace,
  *  representing a state string and the initializer. The latter must be
  *  a numerical value or a function call. The latter takes the form of a
- *  string, followed by an argument list of the form @arg1[,arg2]...,
+ *  string, followed by an argument list of the form "@arg1[,arg2]...",
  *  where the arguments are numerical values of parameter names. In order
  *  to support those, we can re-use the code from function patchStateProperty.
  */

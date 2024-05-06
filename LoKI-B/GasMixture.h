@@ -80,20 +80,23 @@ class GasMixture
     Gas::State *findStateById(const std::string &stateId);
   private:
     /** propEntry should be an object that can contain:
-     *
-     *  1. {
+     *  \verbatim
+           {
              "states": <stateID>,
              "value": <value>
-     *     }
-     *  2. {
+           } \endverbatim
+
+     *  or
+     *  \verbatim
+           {
              "states": <stateID>,
              "function":
              {
                "name": <funcname>,
                "arguments": <arguments>
              }
-           }
-     *     <arguments> is an array. Each argument is either a parameter name
+           } \endverbatim
+     *     "<arguments>" is an array. Each argument is either a parameter name
      *     (a string) or a direct value (a double).
      *
      *  First it determines whether the current entry requires loading by direct value,
@@ -106,7 +109,7 @@ class GasMixture
                            StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Sets a property (energy, statistical weight, population) of selected states
      *  as specified in json array \a stateProp. The  members of this array must be
-     *  objects of the form { "file": <filename> }, or of the form that is expected
+     *  objects of the form "{ "file": <filename> }", or of the form that is expected
      *  for the propEntry argument of member \c loadStatePropertyEntry.
      *
      *  If a file specification is found, a JSON object with the same structure
