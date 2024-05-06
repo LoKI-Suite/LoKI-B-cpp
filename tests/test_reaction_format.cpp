@@ -1,5 +1,5 @@
-#include "LoKI-B/Parse.h"
 #include "LoKI-B/Gas.h"
+#include "LoKI-B/GasProperties.h"
 
 bool test_parser(const std::string stateString)
 {

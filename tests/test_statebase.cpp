@@ -8,7 +8,7 @@
  */
 
 #include "LoKI-B/Gas.h"
-#include "LoKI-B/Parse.h"
+#include "LoKI-B/GasProperties.h"
 
 unsigned ntests=0;
 unsigned nerrors=0;
