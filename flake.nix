@@ -82,18 +82,25 @@
 
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [ cmake gnumake emscripten python3 ];
+          nativeBuildInputs = with pkgs; [
+            cmake
+            gnumake
+            eigen
+            nlohmann_json
+            emscripten
+            python3
+          ];
 
           EM_CACHE = "./cache";
-
-          cmakeFlags = [
-            "-DUSE_BUILTIN_EIGEN=ON -DUSE_BUILTIN_NLOHMANN_JSON=ON -DUSE_OPENMP=OFF"
-          ];
 
           makeFlags = [ "-C build" "loki_bindings" ];
 
           configurePhase = ''
-            emcmake cmake -DUSE_BUILTIN_EIGEN=ON -DUSE_BUILTIN_NLOHMANN_JSON=ON -DUSE_OPENMP=OFF -B build
+            emcmake cmake \
+              -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
+              -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
+              -DUSE_OPENMP=OFF \
+              -B build
           '';
 
           installPhase = ''
