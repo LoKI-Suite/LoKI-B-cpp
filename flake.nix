@@ -93,7 +93,8 @@
 
           EM_CACHE = "./.cache/emscripten";
 
-          makeFlags = [ "-C build" "loki_bindings" ];
+          makeFlags =
+            [ "-C build" "loki_bindings" "-j ${pkgs.coreutils}/bin/nproc" ];
 
           configurePhase = ''
             emcmake cmake \
