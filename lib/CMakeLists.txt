@@ -70,6 +70,11 @@ if(USE_OPENMP)
    target_link_libraries(loki-b PRIVATE OpenMP::OpenMP_CXX )
 endif()
 
+if(LOKIB_USE_HDF5)
+        target_link_libraries(loki-b PUBLIC HighFive)
+endif()
+
+
 install(
    TARGETS loki-b
    EXPORT loki_cpp-targets

@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.14)
 project(loki_cpp)
 file(STRINGS "VERSION.txt" PROJECT_VERSION)
 
+#Enable fetching packages from git etc
+include(FetchContent)
+
+# Adopt cmake policy 0135
+# When fetching external content, set the timestamp of fetched
+# files to the time of extraction, so dependent files will be
+# correctly rebuilt.
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 #Some Utility macros and functions
 include(CMake/LoKIUtilities.cmake)
 
@@ -235,6 +246,68 @@ elseif(USE_OPENBLAS)
 else()
   message(STATUS "Using Eigen internal expressions")
 endif()
+
+###########################################
+# HDF5 (HighFive)
+##########################################
+option (with-hdf5 "-Dwith-hdf5=true|false: enable HDF5 data logging" OFF)
+set(LOKIB_USE_HDF5 OFF)
+if(with-hdf5)
+
+    #Attempt to find a system-installed HighFive
+    message("Looking for HighFive...")
+    find_package(HighFive QUIET)
+
+    if(HighFive_FOUND)
+        message("-- System-installed HighFive found")
+    else()
+        #No system-installed highfive found. Fetch it from git instead
+        #If you want to avoid these automated dowloads, download and
+        #install HighFive yourself.
+        # To do so, follow these steps, in any directory of your liking
+        # (/tmp, ~/local, etc...):
+        # git clone https://github.com/BlueBrain/HighFive.git
+        # mkdir HighFive/build
+        # cd HighFive/build
+        # cmake ..
+        # make
+        # sudo make install
+
+        message(STATUS "No system-installed or user-installed HighFive found, fetching from git...")
+        message(STATUS "If you want to use a system-installed HighFive, download and install it.")
+
+        #release v 2.6.2 (Nov 22, 2022)
+        FetchContent_Declare(HighFive
+            URL  https://github.com/BlueBrain/HighFive/archive/refs/tags/v2.6.2.zip
+        )
+        message(STATUS "Done fetching HighFive.")
+
+        # Don't build unit tests
+        set(HIGHFIVE_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+        set(HIGHFIVE_USE_BOOST  OFF CACHE BOOL "" FORCE)
+        set(HIGHFIVE_EXAMPLES   OFF CACHE BOOL "" FORCE)
+        set(HIGHFIVE_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+
+        FetchContent_MakeAvailable(HighFive)
+
+	# The line below might be needed if you run into this compile error
+	# triggered due to -Werror=undef:
+        # _deps/highfive-src/include/highfive/bits/H5Object_misc.hpp:91:6: error:
+        # "H5Oget_info_vers" is not defined, evaluates to 0 [-Werror=undef]
+        #       if (H5Oget_info_vers < 3)
+        #
+	#TODO: create issue on the HighFive Github page
+	#  target_compile_definitions(HighFive INTERFACE H5Oget_info_vers=3)
+    endif()
+    #Allow direct dumping of Eigen objects
+    if(LOKIB_USE_EIGEN)
+        set(HIGHFIVE_USE_EIGEN  ON CACHE BOOL "" FORCE)
+        target_compile_definitions(HighFive INTERFACE H5_USE_EIGEN)
+    endif()
+    add_compile_definitions(LOKIB_USE_HIGHFIVE)
+    set(LOKIB_USE_HDF5 ON)
+endif()
+
 
 add_subdirectory(lib)
 if(EMSCRIPTEN)
