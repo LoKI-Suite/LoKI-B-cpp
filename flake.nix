@@ -54,7 +54,7 @@
             # LaTeX
             latex
           ]);
-          EM_CACHE = "./cache";
+          EM_CACHE = "./.cache/emscripten";
         };
         ci = gccEnv.mkDerivation {
           name = "loki-b-ci";
@@ -91,7 +91,7 @@
             python3
           ];
 
-          EM_CACHE = "./cache";
+          EM_CACHE = "./.cache/emscripten";
 
           makeFlags = [ "-C build" "loki_bindings" ];
 
