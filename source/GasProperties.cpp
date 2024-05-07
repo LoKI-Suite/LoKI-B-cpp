@@ -38,11 +38,8 @@ namespace loki {
 
 GasProperties::GasProperties()
 {
-    // If not yet available, add the "mass" property of "e", the electron.
-    if (!has("mass","e"))
-    {
-        set("mass","e",Constant::electronMass);
-    }
+    // Add the "mass" property of "e", the electron.
+    set("mass","e",Constant::electronMass);
 }
 
 GasProperties::GasProperties(const std::filesystem::path &basePath, const json_type& pnode)
