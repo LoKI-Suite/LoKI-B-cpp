@@ -16,6 +16,12 @@
 #include "LoKI-B/json.h"
 #include "LoKI-B/Exports.h"
 
+#ifdef LOKIB_USE_HIGHFIVE
+
+#include <highfive/H5Easy.hpp>
+
+#endif // LOKIB_USE_HDF5
+
 namespace loki
 {
 
@@ -87,6 +93,29 @@ private:
     json_type& m_root;
     json_type* m_active;
 };
+
+#ifdef LOKIB_USE_HIGHFIVE
+
+class lokib_export HDF5Output : public Output
+{
+public:
+    HDF5Output(const std::filesystem::path& fileName, const json_type &cnf, const WorkingConditions *workingConditions);
+protected:
+    virtual void setDestination(const std::string& subFolder);
+    virtual void writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const;
+    virtual void writeSwarm(const SwarmParameters &swarmParameters) const;
+    virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
+    virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                               const std::vector<RateCoefficient> &extraRateCoefficients) const;
+    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+private:
+    /// \todo needed?
+    static json_type makeQuantity(const std::string& name, double value, const std::string unit);
+    mutable H5Easy::File m_file;
+    std::string m_active_path;
+};
+
+#endif // LOKIB_USE_HIGHFIVE
 
 } // namespace loki
 

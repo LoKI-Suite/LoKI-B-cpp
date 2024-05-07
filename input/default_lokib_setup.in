@@ -84,6 +84,8 @@ output:
   isOn: true
   writeText: false
   writeJSON: true
+  writeHDF5: true
+  HDF5File: output.h5
   folder: simulation
   dataFiles:
     - eedf
