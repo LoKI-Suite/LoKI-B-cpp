@@ -84,7 +84,7 @@
 
           nativeBuildInputs = with pkgs; [
             cmake
-            gnumake
+            ninja
             eigen
             nlohmann_json
             emscripten
@@ -93,11 +93,11 @@
 
           EM_CACHE = "./.cache/emscripten";
 
-          makeFlags =
-            [ "-C build" "loki_bindings" "-j ${pkgs.coreutils}/bin/nproc" ];
+          ninjaFlags = [ "-C build" "loki_bindings" ];
 
           configurePhase = ''
             emcmake cmake \
+              -GNinja \
               -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
               -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
               -DUSE_OPENMP=OFF \
