@@ -727,7 +727,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
     std::ifstream in(file);
     if (!in.is_open())
     {
-        Log<FileError>::Warning(file.generic_string());
+        Log<FileError>::Error(file.generic_string());
         return;
     }
 
