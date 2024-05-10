@@ -271,7 +271,7 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
 
     double sigma0 = 1e-22;
     double sigma1 = 1e-19;
-    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR",true) + "/../input/JSON/Delta/nonuniform-two-single.json";
+    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR") + "/../input/JSON/Delta/nonuniform-two-single.json";
     std::ifstream ifs(fname);
     if (!ifs)
     {
@@ -347,7 +347,7 @@ nlohmann::json doubleDeltaPeaks(int nCells, double frac)
     double sigma0 = 1e-22;
     double sigma1 = 1e-19;
 
-    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR",true) + "/../input/JSON/Delta/nonuniform-double.json";
+    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR") + "/../input/JSON/Delta/nonuniform-double.json";
     std::ifstream ifs(fname);
     if (!ifs)
     {
@@ -410,7 +410,7 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     // double deltau = Umax/nCells;
 
     double sigma0 = 1e-21;
-    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR",true) + "/../input/JSON/Delta/nonuniform.json";
+    const std::string fname = getEnvironmentVariable("LOKI_TEST_INPUT_DIR") + "/../input/JSON/Delta/nonuniform.json";
     std::ifstream ifs(fname);
     if (!ifs)
     {

@@ -94,12 +94,12 @@ public:
     using State = Gas::State;
     using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
     using CollisionsType = std::vector<CollisionVector>;
-    EedfCollisionDataGas(const GasProperties& gasProps, Gas& gas);
+    EedfCollisionDataGas(const GasProperties& gasProps, const Gas& gas);
     EedfCollisionDataGas(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas(EedfCollisionDataGas&&) = default;
     EedfCollisionDataGas& operator=(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
-    ~EedfCollisionDataGas() {}
+    ~EedfCollisionDataGas() = default;
 
     // We need to store the collisions per Gas since we need to calculate
     // the mass ratio when evaluating the total and elastic cross-sections.
@@ -127,7 +127,7 @@ private:
     PowerTerm evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
                                        const Vector &eedf) const;
-    Gas& m_gas;
+    const Gas& m_gas;
     CollisionsType m_collisions;
     CollisionsType m_collisionsExtra;
     std::map<const State *, std::vector<EedfCollision *>> m_state_collisions;

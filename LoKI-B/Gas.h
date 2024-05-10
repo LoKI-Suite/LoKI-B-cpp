@@ -19,32 +19,21 @@ class lokib_export Gas
     {
       public:
         using ChildContainer = std::vector<State *>;
-        State(const StateEntry &entry, Gas *gas, State &parent);
-        State(Gas *gas);
+        State(const StateEntry &entry, const Gas *gas, const State &parent);
+        State(const Gas *gas);
         State(const State&) = delete;
         State(State&&) = default;
         State& operator=(const State&) = delete;
         State& operator=(State&&) = delete;
 	virtual ~State();
-
         const Gas &gas() const
         {
             return *m_gas;
         }
-        Gas &gas()
-        {
-            return *m_gas;
-        }
-
         const State *parent() const
         {
             return m_parent;
         }
-        State *parent()
-        {
-            return m_parent;
-        }
-
         const ChildContainer &children() const
         {
             return m_children;
@@ -107,17 +96,6 @@ class lokib_export Gas
             return state;
         }
 
-      private:
-
-        /// \todo Make const?
-        Gas *m_gas;
-        /// \todo Make const?
-        State *m_parent;
-
-      public:
-        /// \todo make private
-        ChildContainer m_children;
-
         double population() const { return m_population; }
         void setPopulation(double population) { m_population = population; }
         /** The reduced density is the density of this state, divided by the
@@ -132,7 +110,12 @@ class lokib_export Gas
          *  are initialized to zero.
          */
         double delta() const { return m_delta; }
+      private:
+        const Gas *m_gas;
+        const State *m_parent;
+        ChildContainer m_children;
       public:
+        /// \todo Make the following members private, provide accessors if necessary
         const StateType type;
         const std::string charge, e, v, J;
         double energy;
@@ -144,9 +127,7 @@ class lokib_export Gas
 	// vector of unique_ptr<const State>.
 	std::vector<std::unique_ptr<const State>> m_state_deleter;
     };
-    /// \todo Get rid of State, use State exclusively here and elsewhere.
-    using State = State;
-    explicit Gas(const GasProperties& gasProps, std::string name);
+    Gas(const GasProperties& gasProps, std::string name);
     virtual ~Gas();
     /** Prints the (first non-ionic then ionic) electronic states and their
      *  children.

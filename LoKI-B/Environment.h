@@ -1,9 +1,9 @@
 /** \file
  *
  *  Functions for querying environment variables.
- *  containers (per gas and for a mixture) of such collisions.
  *  This code is based on the PLASIMO code plutil/environment.h
  *  and accompanying .cpp file, see see https://plasimo.phys.tue.nl.
+ *  Copyright (C) 2013-2024 J. van Dijk
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,16 +29,13 @@
 
 namespace loki {
 
-/** If the environment variable \a envvar exists, return its
- *  value as a std::string. If the variable is not set, and
- *  \a required is false, return an empty string is. If the
- *  variable is not set and \a required is true, throw a
- *  std::runtime_error.
+/** If the environment variable \a envvar exists, return its value as a
+ *  std::string. Otherwise, throw a std::runtime_error.
  *
  *  \author Jan van Dijk
  *  \date   May 2013
  */
-std::string getEnvironmentVariable(const std::string& envvar, bool required);
+std::string getEnvironmentVariable(const std::string& envvar);
 
 } // namespace loki
 

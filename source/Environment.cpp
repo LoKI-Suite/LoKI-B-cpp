@@ -29,15 +29,15 @@
 
 namespace loki {
 
-std::string getEnvironmentVariable(const std::string& envvar, bool required)
+std::string getEnvironmentVariable(const std::string& envvar)
 {
 	const char* value = std::getenv(envvar.c_str());
-	if (required && !value)
+	if (!value)
 	{
 		throw std::runtime_error( "Environment variable '"
 			+ envvar + "' required, but not set.");
 	}
-	return value ? value : "";
+	return value;
 }
 
 } // namespace loki
