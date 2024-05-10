@@ -283,7 +283,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         {
             double w = OPBParameter;
 
-            if (w == 0)
+            if (w < 0)
                 w = crossSection->threshold();
 
             Vector TICS = Vector::Zero(grid->nCells());
@@ -410,7 +410,7 @@ std::string EedfCollision::typeAsString() const
 
 EedfCollisionDataGas::EedfCollisionDataGas(Gas &gas)
     : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
-      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)), m_OPBParameter(0.)
+      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)), m_OPBParameter(-1)
 {
 }
 
