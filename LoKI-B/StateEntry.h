@@ -60,11 +60,6 @@ lokib_export StateEntry entryFromJSON(const std::string& id, const json_type &cn
  */
 lokib_export StateEntry propertyStateFromString(const std::string &propertyString);
 
-/** Parses state property file \a fileName into \a entries, a vector of
- *  StateEntry/double pairs.
- */
-lokib_export void statePropertyFile(const std::filesystem::path &fileName, std::vector<std::pair<StateEntry, double>> &entries);
-
 } // namespace loki
 
 #endif // LOKI_CPP_STATEENTRY_H

@@ -9,8 +9,6 @@
 #include <chrono>
 #include <cmath>
 
-namespace fs = std::filesystem;
-
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
 
@@ -26,7 +24,7 @@ namespace fs = std::filesystem;
 namespace loki
 {
 
-ElectronKinetics::ElectronKinetics(const fs::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
+ElectronKinetics::ElectronKinetics(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions)
     : m_workingConditions(workingConditions),
     m_grid(Grid::fromConfig(cnf.at("numerics").at("energyGrid"))),
     mixture(basePath, &grid(), cnf, workingConditions),

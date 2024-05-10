@@ -78,6 +78,99 @@ void patchWorkingConditions(json_type& wc)
 	}	
 }
 
+void patchStateProperty(json_type& stateProp)
+{
+    // make a copy, clear fracs and re-add the properties in new form
+    const std::vector<std::string> entryVector = stateProp;
+    stateProp = json_type{};
+    for (const auto &line : entryVector)
+    {
+        // look for a line of the form "S = E"
+        static const std::regex reProperty(R"((\S+)\s+=\s+(\S+)\s*$)");
+        std::smatch m;
+        if (std::regex_search(line, m, reProperty))
+        {
+            // Found. E can be a literal value, or a function with arguments.
+            // value or function
+            const std::string state_id = m.str(1);
+            const std::string expr = m.str(2);
+
+            // 2. Now apply the expression.
+            // Try to parse expr as a number first...
+            double value;
+            if (Parse::getValue(expr, value))
+            {
+                json_type prop;
+                prop["states"] = state_id;
+                prop["value"] = value;
+                stateProp.push_back(prop);
+            }
+            else
+            {
+                // expr is not a number. We treat is a function (maybe with arguments).
+                static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
+                std::smatch fm;
+                if (!std::regex_match(expr, fm, reFuncArgs))
+                {
+                    throw std::runtime_error("Could not parse function "
+                        "name and argument list from string '"
+                        + expr + "'.");
+                }
+                const std::string functionName = fm.str(1);
+                const std::string argumentString = fm.str(2);
+
+                json_type prop;
+                prop["states"] = state_id;
+                json_type func;
+                func["name"] = functionName;
+
+                // create an argument list for the function (possibly empty)
+                std::vector<double> arguments;
+                static const std::regex reArgList(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
+                for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), reArgList);
+                     it != std::sregex_iterator(); ++it)
+                {
+                    // pvalue set by getValue
+                    json_type val_node;
+                    const std::string arg{it->str(1)};
+                    double pvalue;
+                    if (Parse::getValue(arg, pvalue))
+                    {
+                        val_node = pvalue;
+                    }
+                    else
+                    {
+                        val_node = arg;
+                    }
+                    func["arguments"].push_back(val_node);
+                }
+                prop["function"] = func;
+                stateProp.push_back(prop);
+            }
+        }
+        else
+        {
+            json_type prop;
+            prop["file"] = line;
+            stateProp.push_back(prop);
+            /** \todo Also in case we read a property file, the expression type could be a function.
+             *        It would be nice if the external file case behaves the same as the inline case.
+             *        This could be achieved by first assembling a collection of tasks (either from
+             *        the settings node or from file), then execute these tasks. That will be more
+             *        general and simplify this function at the same time.
+             */
+        }
+    }
+}
+
+void patchStateProperties(json_type& props)
+{
+    for (auto& prop : props)
+    {
+        patchStateProperty(prop);
+    }
+}
+
 /* change an array of strings of the form "X = 1.0" into a object with
  * elements of the form '"X": 1.0'
  */
@@ -112,7 +205,8 @@ void patchFractions(json_type& fracs)
 
 void patchElectronKinetics(json_type& ek)
 {
-	patchFractions(ek.at("gasProperties").at("fraction"));
+    patchFractions(ek.at("gasProperties").at("fraction"));
+    patchStateProperties(ek.at("stateProperties"));
 }
 
 json_type legacyToJSON(const json_type& legacy)
@@ -137,6 +231,78 @@ json_type legacyToJSON(std::istream& is)
 json_type legacyToJSON(const std::filesystem::path& fname)
 {
 	return legacyToJSON(offSideToJSON(fname));
+}
+
+json_type readLegacyGasPropertyFile(const std::filesystem::path& fname)
+{
+    if (fname.extension()==".json")
+    {
+        return read_json_from_file(fname);
+    }
+    json_type result;
+    std::string str;
+    if (!Parse::stringBufferFromFile(fname,str))
+    {
+        throw std::runtime_error("Error opening/reading file '"
+            + fname.generic_string() + "'.");
+    }
+    std::stringstream ss;
+    ss << str;
+    while (!ss.eof())
+    {
+        std::string gas;
+        double value;
+        ss >> gas >> value;
+        if (ss.fail())
+        {
+            throw std::runtime_error("Bad data in file '"
+                + fname.generic_string() + "'.");
+        }
+        result[gas] = value;
+    }
+    return result;
+}
+
+json_type readLegacyStatePropertyFile(const std::filesystem::path &fileName)
+{
+    Log<Message>::Notify("Processing state property file '" + fileName.generic_string() + "'.");
+    json_type entries;
+    /** \bug 'S 1.2.3' will be accepted by this regex. Subsequently,
+     *        getValue will result in the value 1.2, since that does
+     *        not care about trailing characters.
+     */
+    static const std::regex word(R"((\S+)\s*$)");
+    static const std::regex assign(R"((\S+)\s+(\S+)\s*$)");
+
+    std::string fileBuffer;
+    if (!Parse::stringBufferFromFile(fileName, fileBuffer))
+    {
+        Log<Message>::Error("Could not open state property file '" + fileName.generic_string() + "' for reading.");
+    }
+    std::stringstream ss{fileBuffer};
+    std::string line;
+    while (std::getline(ss, line))
+    {
+        std::smatch m;
+        if (std::regex_search(line, m, assign))
+        {
+            const std::string stateString = m.str(1);
+            const std::string valueString = m.str(2);
+            entries.push_back(stateString + " = " + valueString);
+        }
+        else if (std::regex_search(line, m, word))
+        {
+            const std::string fname = m.str(1);
+            entries.push_back(fname);
+        }
+        else
+        {
+            throw std::runtime_error("Syntax error in file '" + fileName.generic_string() + "', line '" + line +
+                                     "': expected '<states> = <value|function call>' or a file name.");
+        }
+    }
+    patchStateProperty(entries);
+    return entries;
 }
 
 } // namespace loki

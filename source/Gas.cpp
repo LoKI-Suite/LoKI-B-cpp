@@ -216,9 +216,16 @@ Gas::State *Gas::State::find(const StateEntry &entry)
     return it == m_children.end() ? nullptr : *it;
 }
 
-Gas::Gas(std::string name)
-    : m_root(new State(this)), m_name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
-      rotationalConstant{-1}, electricDipoleMoment{-1}, electricQuadrupoleMoment{-1}, polarizability{-1}, fraction{0}
+Gas::Gas(const GasProperties& gasProps, std::string name)
+    : m_root(new State(this)), m_name{name},
+      mass{gasProps.get("mass",name)},
+      harmonicFrequency{gasProps.get("harmonicFrequency",name,-1)},
+      anharmonicFrequency{gasProps.get("anharmonicFrequency",name,-1)},
+      rotationalConstant{gasProps.get("rotationalConstant",name,-1)},
+      //electricDipoleMoment{gasProps.get("electricDipoleMoment",name,-1)},
+      electricQuadrupoleMoment{gasProps.get("electricQuadrupoleMoment",name,-1)},
+      //polarizability{gasProps.get("polarizability",name,-1)},
+      fraction{gasProps.get("fraction",name,0)}
 {
 }
 

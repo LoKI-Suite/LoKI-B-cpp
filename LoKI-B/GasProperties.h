@@ -36,10 +36,31 @@
 namespace loki {
 
 /** This class manages the information that is contained in a LoKI-B
- *  'gasProperties' section. It stores the data in a private json object.
- *  The elements' keys are the property names, the values are JSON objects.
- *  The latter's elements' keys are the names of the gases for which the
- *  property is available, and the value of that property.
+ *  'gasProperties' section. It stores the data in a json object. The class
+ *  provides members \c has() to check if particular data are available,
+ *  \c get() to retrieve property values and \c set to add or modify properties.
+ *
+ *  Member \c data() returns a constant reference to the entire data collection.
+ *  The object is structured as a map-of-maps. The keys of the elements are
+ *  the names of the properties that this class knows about, the values are
+ *  objects themselves, consisting of pairs of (gas) names and property values.
+ *  This is illustrated by the following example:
+ *
+ *  \verbatim
+    {
+        "mass": {
+            "N2": 4.651834066656e-26
+            "O2": 5.313392820191999e-26,
+            "e": 9.10938356e-31,
+            ...
+        },
+        "rotationalConstant": {
+            "N2": 2.477501826053967e-4,
+            "O2": 1.782496009128667e-4
+            ...
+        },
+        ...
+    } \endverbatim
  *
  *  \author Jan van Dijk
  *  \date   2. May 2024
@@ -70,7 +91,7 @@ public:
      */
     bool has(const std::string& propertyName, const std::string& key) const;
     /** Get property \a propertyName for item \a key. If the property cannot be
-     *  found, a runtime_exception is thrown.
+     *  found, a runtime_error is thrown.
      */
     double get(const std::string& propertyName, const std::string& key) const;
     /** Get property \a propertyName for item \a key. If the property cannot be
@@ -89,15 +110,6 @@ public:
      */
     const json_type& data() const { return m_data; }
 private:
-    /** Read properties from file \a fname. That file must be a LoKI-B
-     *  database file. Percentage signs start comments, and lines that are
-     *  non-empty after stripping the comments must contain key-value pairs,
-     *  the values must be valid double values.
-     *  The properties are stored as elements of a JSON object that contains
-     *  the values for all keys and is returned by this function. A runtime
-     *  error is thrown when the file cannot be read or contains bad data.
-     */
-    json_type readGasPropertyFile(const std::filesystem::path& fname) const;
     /// The json object in which all properties are stored.
     json_type m_data;
 };

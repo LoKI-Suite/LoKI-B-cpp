@@ -35,13 +35,13 @@ try
 {
     if (argc <3 || argc > 5)
     {
-        throw std::runtime_error("Usage: loki_gassproperies <input file> <json pointer> [<property name> [<gas name>]].\n"
+        throw std::runtime_error("Usage: loki_gasproperies <input file> <json pointer> [<property name> [<gas name>]].\n"
                                  "This program reads the gasProperties section that is defined by the input file name\n"
                                  "and json pointer. It prints the known properties to std::cout. If a third argument\n"
                                  "is provided, only the information about the requested property is listed. If a fourth\n"
                                  "argument is provided, the property will only be shown for te given gas.\n"
                                  "\n"
-                                 "Example: loki_gassproperies ../input/default_lokib_setup.in /electronKinetics/gasProperties mass N4\n"
+                                 "Example: ./app/loki_gasproperties ../input/default_lokib_setup.in /electronKinetics/gasProperties mass N4\n"
                                  "will print the mass of N4, when argument N4 is omitted, all known masses are printed.\n");
     }
     loki::json_type json;

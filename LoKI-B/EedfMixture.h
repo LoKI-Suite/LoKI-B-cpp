@@ -25,7 +25,6 @@ class EedfMixture
     EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions);
 
     const GasMixture& composition() const { return m_composition; }
-    GasMixture& composition() { return m_composition; }
 
     const std::vector<const Gas *>& CARGases() const { return m_CARGases; }
     const EedfCollisionDataMixture& collision_data() const { return m_collision_data; }
@@ -39,13 +38,7 @@ class EedfMixture
      *  otherwise, the legacy LXCat file format is assumed and member loadCollisionsClassic
      *  is called on the file.
      */
-    void loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra = false);
-
-    /** One extra property needs to be set from a file: OPBParameter.
-     *  This override sets this parameter and then calls Gas::loadGasProperties to set the
-     *  rest of its properties.
-     */
-    void loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf);
+    void loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const GasProperties& gasProps, const Grid *energyGrid, bool isExtra = false);
 
     /// \todo comment addCARGas
     void addCARGas(const std::string& gasName);

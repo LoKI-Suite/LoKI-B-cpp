@@ -94,8 +94,8 @@ public:
     using State = Gas::State;
     using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
     using CollisionsType = std::vector<CollisionVector>;
-    explicit EedfCollisionDataGas(Gas& gas);
-    EedfCollisionDataGas(const Gas&) = delete;
+    EedfCollisionDataGas(const GasProperties& gasProps, Gas& gas);
+    EedfCollisionDataGas(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas(EedfCollisionDataGas&&) = default;
     EedfCollisionDataGas& operator=(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
@@ -115,7 +115,6 @@ public:
      */
     const GasPower& evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
     double OPBParameter() const { return m_OPBParameter; }
-    void setOPBParameter(double value) { m_OPBParameter = value; }
     const Gas& gas() const { return m_gas; }
 private:
     /* the following three members are used (only) for Effective -> Elastic,
@@ -159,7 +158,7 @@ public:
      *  storage of the collisions.
      *  \todo Explain isExtra.
      */
-    void loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid, bool isExtra);
+    void loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     /** Loads the collisions from a json mixture section. Such section must contain two
      *  subsections: an object "states" that consists of key-value pairs that represent
@@ -173,7 +172,7 @@ public:
      *  \todo The meta information in the set objects ("_id", "complete", "description",
      *  "contributor" etc. are ignored so far.
      */
-    void loadCollisionsJSON(const json_type &mcnf, GasMixture& composition, const Grid *energyGrid, bool isExtra);
+    void loadCollisionsJSON(const json_type &mcnf, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     const EedfCollisionDataGasArray& data_per_gas() const { return m_data_per_gas; }
     EedfCollisionDataGasArray& data_per_gas() { return m_data_per_gas; }
@@ -223,7 +222,7 @@ private:
         const Collision::StateVector &lhsStates, const Collision::CoeffVector &lhsCoeffs,
         const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
         bool reverseAlso, bool isExtra);
-    State *ensureState(GasMixture& composition, const StateEntry &entry);
+    State *ensureState(const GasProperties& gasProps, GasMixture& composition, const StateEntry &entry);
     EedfCollisionDataGasArray m_data_per_gas;
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
     Vector m_elasticCrossSection;
