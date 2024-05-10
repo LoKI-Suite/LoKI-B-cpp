@@ -408,7 +408,7 @@ std::string EedfCollision::typeAsString() const
     }
 }
 
-EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, Gas &gas)
+EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const Gas &gas)
     : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
       m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
       m_OPBParameter(gasProps.get("OPBParameter",gas.name(),-1.0,true))

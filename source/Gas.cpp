@@ -8,7 +8,7 @@
 namespace loki
 {
 
-Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
+Gas::State::State(const StateEntry &entry, const Gas *gas, const State &parent)
     : m_gas(gas), m_parent(&parent), type(static_cast<StateType>(parent.type + 1)),
       charge(type == StateType::charge ? entry.m_charge : parent.charge),
       e(type == StateType::electronic ? entry.m_e : parent.e), v(type == StateType::vibrational ? entry.m_v : parent.v),
@@ -50,7 +50,7 @@ Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
 #endif
 }
 
-Gas::State::State(Gas *gas)
+Gas::State::State(const Gas *gas)
     : m_gas(gas), m_parent(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
       v(std::string{}), J(std::string{}), energy(-1), statisticalWeight(-1), m_population(0), m_delta(0)
 {
@@ -158,7 +158,7 @@ void Gas::State::printChildren(std::ostream &os) const
     for (uint8_t i = electronic; i < type; ++i)
         space.append("  ");
 
-    for (auto state : m_children)
+    for (auto state : children())
     {
         if (state != nullptr)
         {
@@ -170,12 +170,12 @@ void Gas::State::printChildren(std::ostream &os) const
 
 void Gas::State::checkPopulations() const
 {
-    if (m_children.empty())
+    if (children().empty())
         return;
 
     double totalPopulation = 0.;
 
-    for (auto *state : m_children)
+    for (auto *state : children())
     {
         totalPopulation += state->population();
         state->checkPopulations();
@@ -203,7 +203,7 @@ void Gas::State::evaluateReducedDensities()
     else
         m_delta = population() * parent()->delta();
 
-    for (auto *state : m_children)
+    for (auto *state : children())
     {
         state->evaluateReducedDensities();
     }
@@ -212,8 +212,8 @@ void Gas::State::evaluateReducedDensities()
 Gas::State *Gas::State::find(const StateEntry &entry)
 {
     auto it =
-        std::find_if(m_children.begin(), m_children.end(), [&entry](State *child) { return *child >= entry; });
-    return it == m_children.end() ? nullptr : *it;
+        std::find_if(children().begin(), children().end(), [&entry](State *child) { return *child >= entry; });
+    return it == children().end() ? nullptr : *it;
 }
 
 Gas::Gas(const GasProperties& gasProps, std::string name)
@@ -278,10 +278,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_e == "*" && entry.m_level == electronic)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find electronic state.
@@ -296,10 +296,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_v == "*" && entry.m_level == vibrational)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find vibrational state.
@@ -314,10 +314,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_J == "*" && entry.m_level == rotational)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find rotational state
