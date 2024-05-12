@@ -26,11 +26,11 @@ async function lxcat_get(module, input, token) {
   }
 }
 
-async function worker_plot(x_ptr, x_size, y_ptr, y_size) {
+async function worker_plot(reduced_field, x_ptr, x_size, y_ptr, y_size) {
   const x_arr = new Float64Array(this.HEAPF64.buffer, x_ptr, x_size);
   const y_arr = new Float64Array(this.HEAPF64.buffer, y_ptr, y_size);
   const data = new Array(x_size).fill().map((_, index) => {
-    return { x: x_arr[index], y: y_arr[index] };
+    return { reduced_field, x: x_arr[index], y: y_arr[index] };
   });
 
   postMessage({ type: "DATA", results: data });

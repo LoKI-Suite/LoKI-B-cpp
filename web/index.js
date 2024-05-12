@@ -6,6 +6,7 @@ let file = "";
 let token = "";
 let global_input = {};
 let results = {};
+let totalData = [];
 
 const file_input = document.getElementById("file-input");
 const run_button = document.getElementById("run-button");
@@ -27,7 +28,8 @@ token_input.addEventListener("change", (event) => {
 
 worker.onmessage = ({ data }) => {
   if (data.type === "DATA") {
-    plot(data.results);
+    totalData = totalData.concat(data.results);
+    plot(totalData);
   }
   if (data.type === "DONE") {
     // handleJsonOutput(data.results);
@@ -46,6 +48,7 @@ run_button.addEventListener("click", (_event) => {
   file
     .text()
     .then((input) => {
+      totalData = [];
       global_input = JSON.parse(input);
       worker.postMessage({
         type: "COMPUTE",
