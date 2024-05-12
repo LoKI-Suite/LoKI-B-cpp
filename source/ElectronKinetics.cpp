@@ -1258,6 +1258,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     {
         tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
     }
+    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
     if (grid().isUniform())
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
@@ -1483,6 +1484,8 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
     const Grid::Index n = grid().nCells();
 
     Vector tCS(mixture.collision_data().totalCrossSection());
+
+    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
 
     swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
