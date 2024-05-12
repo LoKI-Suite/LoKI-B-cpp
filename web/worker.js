@@ -1,6 +1,6 @@
 importScripts("loki_bindings.js");
 
-async function lxcat_get(module, input) {
+async function lxcat_get(module, input, token) {
   for (const [i, file] of input.electronKinetics.LXCatFiles.entries()) {
     if (file.substr(0, 5) == "http:") {
       const response = await fetch(
@@ -10,7 +10,7 @@ async function lxcat_get(module, input) {
           credentials: "include", 
           headers: {
             "Content-Type": "application/json", 
-            "Authorization": "Bearer <TOKEN>"
+            "Authorization": `Bearer ${token}`
           },
         }
       )
@@ -44,7 +44,7 @@ self.onmessage = ({ data }) => {
   if (data.type === "COMPUTE") {
     create_module().then(async (module) => {
       parsed = JSON.parse(data.input);
-      await lxcat_get(module, parsed);
+      await lxcat_get(module, parsed, data.token);
       module.run(JSON.stringify(parsed), worker_plot.bind(module), json_output);
     });
   }

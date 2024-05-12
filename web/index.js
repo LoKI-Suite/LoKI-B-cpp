@@ -3,11 +3,13 @@ import { handleJsonOutput } from "./json_output.js";
 
 export let module;
 let file = "";
+let token = "";
 let global_input = {};
 let results = {};
 
 const file_input = document.getElementById("file-input");
 const run_button = document.getElementById("run-button");
+const token_input = document.getElementById("token-input");
 const dl_button = document.getElementById("dl-button");
 const ref_button = document.getElementById("ref-button");
 
@@ -17,6 +19,10 @@ const worker = new Worker("./worker.js");
 file_input.addEventListener("change", (event) => {
   // const list = event.target.files;
   file = event.target.files[0];
+});
+
+token_input.addEventListener("change", (event) => {
+  token = event.target.value;
 });
 
 worker.onmessage = ({ data }) => {
@@ -44,6 +50,7 @@ run_button.addEventListener("click", (_event) => {
       worker.postMessage({
         type: "COMPUTE",
         input,
+        token
       });
     })
     .catch((err) => console.log(err));
@@ -64,7 +71,7 @@ ref_button.addEventListener("click", async (_event) => {
           credentials: "include", 
           headers: {
             "Content-Type": "application/json", 
-            "Authorization": "Bearer <TOKEN>"
+            "Authorization": `Bearer ${token}`
           },
         }
       )
