@@ -208,22 +208,23 @@ FieldOperator::FieldOperator(const Grid& grid)
 {
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
 {
     assert(g.size()==grid.getNodes().size());
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
+        const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
         g[i] = (EoN * EoN / 3) * grid.getNode(i) /
-          (totalCS[i] + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*totalCS[i]));
+          (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,EoN,WoN);
+    evaluate(grid,totalCS,EoN,WoN,CIEff);
 
     if (grid.isUniform())
     {
@@ -677,7 +678,6 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
             if (threshold > grid.getNode(grid.nCells()))
                 continue;
-
             hasValidCollisions = true;
 
             const double delta = collision->getTarget()->delta();
