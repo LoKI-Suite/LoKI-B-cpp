@@ -151,8 +151,9 @@ void ElectronKineticsBoltzmann::evaluateFieldOperator()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    const double CIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,CIEff,fieldMatrix);
+    /// \todo Should we use the real value (CIEff) here? That will be 0 for DC or spatial growth
+    const double dummyCIEff = 0.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff,fieldMatrix);
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
@@ -1255,6 +1256,29 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
 
+    const double WoN = m_workingConditions->reducedExcFreqSI();
+    if (WoN>0.0)
+    {
+        const Vector OmegaC = tCS.array() + CIEff / (SI::gamma*grid().getNodes().array().sqrt());
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. *
+                      grid().getNodes().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .sum();
+        /** \todo The cast to a Vector in the code below is bad for performance;
+         *  this should also compile without.
+         */
+        double muHFIm = (+SI::gamma / 3. *
+                      WoN/SI::gamma) *
+                      Vector(grid().getNodes().array().sqrt().segment(1, n - 1))
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .cwiseQuotient(OmegaC.segment(1, n - 1))
+                      .sum();
+        swarmParameters.redMobilityHF = { muHFRe, muHFIm };
+    }
+
     if (growthModelType == GrowthModelType::spatial && nonConservative)
     {
         swarmParameters.driftVelocity = -swarmParameters.redDiffCoeff * alphaRedEff +
@@ -1322,8 +1346,8 @@ void ElectronKineticsPrescribed::evaluateFieldOperator()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    const double CIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,CIEff);
+    const double dummyCIEff = 0.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff);
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
@@ -1478,6 +1502,34 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
 
+    const double WoN = m_workingConditions->reducedExcFreqSI();
+    if (WoN>0.0)
+    {
+        /* NOTE: in the prescribed case, only conservative processes should be
+         * taken into account. In that case CIEff==0 and OmegaC==tCS. Otherwise,
+         * the code below is equal to the code in the function
+         * ElectronKineticsBoltzmann::evaluateSwarmParameters. We highlight that
+         * fact by using OmegaC, but making it just a reference to tCS.
+         */
+        const Vector& OmegaC = tCS;
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. *
+                      grid().getNodes().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .sum();
+        /** \todo The cast to a Vector in the code below is bad for performance;
+         *  this should also compile without.
+         */
+        double muHFIm = (+SI::gamma / 3. *
+                      WoN/SI::gamma) *
+                      Vector(grid().getNodes().array().sqrt().segment(1, n - 1))
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .cwiseQuotient(OmegaC.segment(1, n - 1))
+                      .sum();
+        swarmParameters.redMobilityHF = { muHFRe, muHFIm };
+    }
     swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
