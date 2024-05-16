@@ -21,18 +21,18 @@ electronKinetics:
   growthModelType: spatial % temporal or spatial
   includeEECollisions: false
   LXCatFiles:            % cross section files
-    - CO2/CO2_LXCat.txt
+    - CO2_LXCat.txt
   effectiveCrossSectionPopulations:   % see doc
-    - CO2/CO2_effectivePop.txt
+    - ../CO2/CO2_effectivePop.txt
   gasProperties:        % properties of the gases (S.I. Units)
-    mass: Databases/masses.txt
+    mass: ../Databases/masses.txt
     fraction:
       - CO2 = 1
-    harmonicFrequency: Databases/harmonicFrequencies.txt
-    anharmonicFrequency: Databases/anharmonicFrequencies.txt
-    rotationalConstant: Databases/rotationalConstants.txt
-    electricQuadrupoleMoment: Databases/quadrupoleMoment.txt
-    OPBParameter: Databases/OPBParameter.txt
+    harmonicFrequency: ../Databases/harmonicFrequencies.txt
+    anharmonicFrequency: ../Databases/anharmonicFrequencies.txt
+    rotationalConstant: ../Databases/rotationalConstants.txt
+    electricQuadrupoleMoment: ../Databases/quadrupoleMoment.txt
+    OPBParameter: ../Databases/OPBParameter.txt
   stateProperties:      % properties of the states (S.I. Units except for the energy [eV]) 
     statisticalWeight:
       - CO2(X,v=000) = 1.0
