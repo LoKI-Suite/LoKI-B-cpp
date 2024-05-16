@@ -1,10 +1,16 @@
 {
-  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11"; };
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    pin-emscripten_3-1-15.url =
+      "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+  };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, pin-emscripten_3-1-15 }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      emscripten_3-1-15 =
+        pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
@@ -26,7 +32,7 @@
         openblas
 
         # WebAssembly compilation
-        emscripten
+        emscripten_3-1-15
 
         # Documentation
         doxygen
@@ -87,7 +93,7 @@
             ninja
             eigen
             nlohmann_json
-            emscripten
+            emscripten_3-1-15
             python3
           ];
 
