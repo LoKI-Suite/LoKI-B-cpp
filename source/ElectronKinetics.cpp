@@ -67,6 +67,11 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
     this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
     this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
+    if (growthModelType == GrowthModelType::spatial && workingConditions->reducedExcFreqSI()!=0.0)
+    {
+        throw std::runtime_error("The excitation frequency must be zero when "
+                                 "the spatial growth model is used.");
+    }
     initialize();
 }
 
