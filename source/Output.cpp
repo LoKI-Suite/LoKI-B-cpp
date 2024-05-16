@@ -136,6 +136,8 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
         writeTerm(os,"Reduced Townsend coefficient","m2",swarmParameters.redTownsendCoeff);
         writeTerm(os,"Reduced attachment coefficient","m2",swarmParameters.redAttCoeff);
     }
+    writeTerm(os,"Reduced energy diffusion coefficient","eV/(ms)",swarmParameters.redDiffCoeffEnergy);
+    writeTerm(os,"Reduced energy mobility","eV/(msV)",swarmParameters.redMobilityEnergy);
     writeTerm(os,"Mean energy","eV",swarmParameters.meanEnergy);
     writeTerm(os,"Characteristic energy","eV",swarmParameters.characEnergy);
     writeTerm(os,"Electron temperature","eV",swarmParameters.Te);
