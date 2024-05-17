@@ -20,7 +20,7 @@ class Collision
 {
   public:
     using State = Gas::State;
-    using StateVector = std::vector<State *>;
+    using StateVector = std::vector<const State *>;
     using CoeffVector = std::vector<uint16_t>;
 
     virtual ~Collision()
