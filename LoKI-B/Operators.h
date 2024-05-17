@@ -183,6 +183,24 @@ namespace loki {
         bool includeNonConservativeAttachment;
     };
 
+    std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac);
+
+    std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int targetBegin);
+
+    std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, 
+                                                            int targetEnd);
+
+    std::vector<std::tuple<int, double>> distributeNCells(const Grid &grid, double targetCell, int targetBegin,
+                                                          int targetEnd, Grid::Index origin, double threshold,
+                                                          bool reverse, double frac);
+
+    std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid &grid, double threshold, double source,
+                                                                 int sourceidx, bool reverse, double frac);
+
+    std::vector<std::tuple<int, double>> distributeNCellsIonization(const Grid& grid, double targetCell, int targetBegin,
+                                                                     int targetEnd, Grid::Index origin);
+
+    std::vector<std::tuple<int, double>> oneTakesAllDistribution(const Grid& grid, int sourceidx);
 } // namespace loki
 
 #endif // LOKI_CPP_OPERATORS_H

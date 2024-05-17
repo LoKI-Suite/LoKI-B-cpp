@@ -156,7 +156,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
             {   
                 const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
                 const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
-                
+
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
@@ -249,7 +249,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
             {
                 const double Amin = 1/grid.duNode(k);
                 const double Bmin = 1/grid.duNode(k);
-                
+
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
@@ -284,6 +284,7 @@ std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double 
 {
     std::vector<std::tuple<int, double>> alpha;
     std::array<double, 2> alphaMinPlus;
+
     if (targetCell > grid.getCell(targetBegin))
     {
         alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
@@ -312,7 +313,7 @@ std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double
 }
 
 std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
-    Grid::Index origin, double threshold, bool reverse = false)
+                                                     Grid::Index origin, double threshold, bool reverse = false, double frac = 1.0)
 {
     double targetMiddleLeft;
     double targetMiddleRight;
@@ -320,16 +321,16 @@ std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double t
     double fractionRight;
     if (reverse)
     {
-        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) + threshold) / 2.;
-        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) + threshold) / 2.;
-        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) + threshold)) / grid.duCell(origin);
-        fractionRight = (grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) + threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + frac * grid.getNode(origin + 1) + threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (frac * grid.getNode(origin) + threshold)) / grid.duCell(origin);
+        fractionRight = (frac * grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
     } else
     {
-        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
-        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
-        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
-        fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) - threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd) + frac * grid.getNode(origin + 1) - threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (frac * grid.getNode(origin) - threshold)) / grid.duCell(origin);
+        fractionRight = (frac * grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
     }
 
     double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
@@ -352,24 +353,25 @@ std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double t
 }
 
 
-std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, int sourceidx, bool reverse = 0)
+std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, int sourceidx, 
+                                                             bool reverse = 0, double frac = 1.0)
 {
     double targetCell;
     int targetBegin;
     int targetEnd;
     if (reverse)
     {
-        targetCell = source + threshold;
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) + threshold) - 
+        targetCell = frac * source + threshold;
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) + threshold) - 
             grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) + threshold) -
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) + threshold) -
             grid.getNodes().begin() - 1;
     } else
     {
-        targetCell = source - threshold;
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) - threshold) - 
+        targetCell = frac * source - threshold;
+        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) - threshold) - 
             grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) - threshold) -
+        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) - threshold) -
             grid.getNodes().begin() - 1;
     }
 
@@ -383,6 +385,62 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
     } else
     {
         alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
+    }
+
+    return alpha;
+}
+
+std::vector<std::tuple<int, double>> distributeNCellsIonization(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
+    Grid::Index origin)
+{
+    double targetMiddleRight;
+    double fractionRight;
+    targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - grid.getNode(origin)) / 2.;
+    fractionRight = (grid.getNode(origin + 1) - grid.getNode(origin) - grid.getNode(targetEnd)) / grid.duCell(origin);
+
+    double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin) + grid.getNode(targetEnd)) / 2.;
+
+    auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd), fractionRight);
+    alphaMiddle += alphaPlus[0];
+
+    std::vector<std::tuple<int, double>> alpha;
+    for (Grid::Index i = targetBegin; i < targetEnd; i++)
+    {
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd) - grid.getNode(targetBegin)) * alphaMiddle));
+    }
+    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
+
+    return alpha;
+}
+
+std::vector<std::tuple<int, double>> oneTakesAllDistribution(const Grid& grid, int sourceidx)
+{
+    double targetCell;
+    int targetBegin;
+    int targetEnd;
+    targetCell = grid.getCell(sourceidx) - grid.getNode(sourceidx);
+    targetBegin = 0;
+    targetEnd = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx + 1) - grid.getNode(sourceidx)) -
+        grid.getNodes().begin() - 1;
+
+    if (targetEnd == 0)
+    {
+        std::vector<std::tuple<int, double>> alpha;
+        alpha.push_back(std::make_tuple(0, 1.));
+        return alpha;
+    }
+
+    std::vector<std::tuple<int, double>> alpha;
+    if (targetBegin == targetEnd)
+    {
+        alpha = distributeOneCell(grid, targetCell, targetBegin);
+    } else if (targetEnd - targetBegin == 1)
+    {
+        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
+    } else
+    {
+        alpha = distributeNCellsIonization(grid, targetCell, targetBegin, targetEnd, sourceidx);
     }
 
     return alpha;
