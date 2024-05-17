@@ -5,6 +5,7 @@
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/GasProperties.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/LegacyToJSON.h"
 
 #include <stdexcept>
 
@@ -42,11 +43,45 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     m_composition.loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
     m_composition.evaluateReducedDensities();
 
+    EffectivePopulationsMap effectivePopulations;
+    if (cnf.contains("effectiveCrossSectionPopulations"))
+    {
+        for (const auto& f : cnf.at("effectiveCrossSectionPopulations"))
+        {
+            json_type effPop;
+            std::filesystem::path fileName(f);
+
+            if (fileName.is_relative()) {
+                fileName = basePath.parent_path() / fileName;
+            }
+
+            if (fileName.has_extension() && fileName.extension() == ".json")
+            {
+	        effPop = read_json_from_file(fileName);
+            }
+            else
+            {
+	        effPop = readLegacyStatePropertyFile(fileName);
+            }
+            for (const auto& e : effPop)
+            {
+                /// \todo How to handle wildcards?
+                /// \todo Add a constant overload of GasMixture::findStateById
+                const Gas::State* state = const_cast<GasMixture&>(composition()).findStateById(e.at("states"));
+                if (effectivePopulations.count(state))
+                {
+                    throw std::runtime_error("Duplicate specification for state '"
+                        + e.at("states").dump() + "' found while reading file '" + fileName.generic_string() + "'.");
+                }
+                effectivePopulations[state] = e.at("value");
+            }
+        }
+    }
     for (auto &cd : m_collision_data.data_per_gas())
     {
         if (!cd.isDummy())
         {
-            cd.checkElasticCollisions(electron, grid);
+            cd.checkElasticCollisions(electron, grid, effectivePopulations);
         }
     }
     if (cnf.contains("CARgases"))

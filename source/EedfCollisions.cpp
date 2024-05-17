@@ -433,7 +433,7 @@ void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
         .emplace_back(collision);
 }
 
-void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *energyGrid)
+void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulation)
 {
     if (isDummy())
         return;
@@ -442,7 +442,7 @@ void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *e
 
     if (!statesToUpdate.empty())
     {
-        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);
+        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid,effectivePopulation);
         std::vector<uint16_t> stoiCoeff{1, 1};
 
         for (auto *state : statesToUpdate)
@@ -458,7 +458,7 @@ void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *e
     }
 }
 
-CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid *energyGrid)
+CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom)
 {
     /** \todo What happens / should happen if more than one effective collision
      *  is specified? Is that an input error? The code below only uses the first.
@@ -472,13 +472,15 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
 
     Vector rawEl = rawEff; // copy raw effective into raw elastic
 
-    if (m_effectivePopulations.empty())
+    EffectivePopulationsMap effectivePopulationsDefault;
+    if (effectivePopulationsCustom.empty())
     {
-        m_effectivePopulations.emplace(eff->getTarget(), 1.);
-        setDefaultEffPop(eff->getTarget());
+        effectivePopulationsDefault.emplace(eff->getTarget(), 1.);
+        setDefaultEffPop(eff->getTarget(),effectivePopulationsDefault);
     }
 
-    for (const auto &pair : m_effectivePopulations)
+    const EffectivePopulationsMap& effectivePopulations = effectivePopulationsCustom.empty() ? effectivePopulationsDefault : effectivePopulationsCustom;
+    for (const auto &pair : effectivePopulations)
     {
         for (const auto &collision : m_state_collisions[pair.first])
         {
@@ -494,8 +496,11 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
             {
                 collision->superElastic(rawEnergies, crossSection);
 
-                if (m_effectivePopulations.count(collision->m_rhsHeavyStates[0]) == 1)
-                    rawEl -= crossSection * m_effectivePopulations[collision->m_rhsHeavyStates[0]];
+                const auto pop = effectivePopulations.find(collision->m_rhsHeavyStates[0]);
+                if (pop != effectivePopulations.end())
+                {
+                    rawEl -= crossSection * pop->second;
+                }
             }
         }
     }
@@ -521,7 +526,7 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
  *  operation that does not depend on collisional data.
  *  \todo The 300 (K) should not be hardcoded.
  */
-void EedfCollisionDataGas::setDefaultEffPop(State *ground)
+void EedfCollisionDataGas::setDefaultEffPop(State *ground, EffectivePopulationsMap& effectivePopulations)
 {
     // ele ground to 1
     // vib children of ele ground to Boltzmann at 300K
@@ -547,19 +552,21 @@ void EedfCollisionDataGas::setDefaultEffPop(State *ground)
             }
             else if (child->energy < childGround->energy)
             {
+                /// \todo Explain the logic of this line. Also like this in MATLAB?
                 childGround = child;
             }
             double effPop = child->statisticalWeight * std::exp(-child->energy / (Constant::kBeV * 300));
+            /// \todo Explain that the ground state weight does not matter in view of the normalization below.
 
-            m_effectivePopulations.emplace(child, effPop);
+            effectivePopulations.emplace(child, effPop);
             norm += effPop;
         }
         for (auto *child : ground->children())
         {
-            m_effectivePopulations[child] /= (norm / m_effectivePopulations[ground]);
+            effectivePopulations[child] /= (norm / effectivePopulations[ground]);
         }
 
-        setDefaultEffPop(childGround);
+        setDefaultEffPop(childGround,effectivePopulations);
     }
 }
 
