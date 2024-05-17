@@ -506,15 +506,15 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                         for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
-                            if (k > numThreshold)
+                            if (grid.getNode(k+1) + threshold < grid.getCell(grid.nCells() - 1))\
                             {
-                                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
-                                     grid.getCell(k), k);
+                                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                     grid.getCell(k), k, true);
 
                                 for (int i = 0; i < int(alpha.size()); i++)
                                 {
-                                    inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
-                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                     inelasticMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                        targetDensity * grid.getCells()[std::get<0>(alpha[i])] * cellCrossSection[std::get<0>(alpha[i])];
                                 }
                             }
                             inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
@@ -554,24 +554,28 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             for (Grid::Index k = 0; k < cellNumber; ++k)
                             {
-                                if (k >= numThreshold)
+                                if (grid.getNode(k) >= threshold)
                                 {
-                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
-                                         grid.getCell(k), k, true);
-                                    
+                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                         grid.getCell(k), k);
                                     for (int i = 0; i < int(alpha.size()); i++)
                                     {
-                                        inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
+                                        inelasticMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
                                             swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
                                     }
                                 }
 
-                                if (k < cellNumber - numThreshold)
+                                if (grid.getNode(k + 1) + threshold < grid.getCell(cellNumber - 1))
                                 {
-                                    int j = std::upper_bound(grid.getCells().begin(), grid.getCells().end(), grid.getCell(k) + 
-                                         grid.getCell(numThreshold)) - grid.getCells().begin() - 1;
-                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(j) *
-                                                            cellCrossSection[j];
+
+                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                         grid.getCell(k), k, true);
+
+                                    for (int i = 0; i < int(alpha.size()); i++)
+                                    {
+                                        inelasticMatrix(k, k) -= std::get<1>(alpha[i]) *
+                                            swRatio * productDensity * grid.getCells()[std::get<0>(alpha[i])] * cellCrossSection[std::get<0>(alpha[i])];
+                                    }
                                 }
                             }
                         }
