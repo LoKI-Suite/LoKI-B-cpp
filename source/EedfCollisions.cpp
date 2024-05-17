@@ -32,6 +32,7 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/StateEntry.h"
+#include "LoKI-B/Operators.h"
 
 #include <cassert>
 #include <fstream>
@@ -162,6 +163,8 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
     const Grid *grid = crossSection->getGrid();
     const Grid::Index n = grid->nCells();
 
+    double threshold = crossSection->threshold();
+
     PowerTerm collPower;
 
     Vector cellCrossSection(n);
@@ -190,7 +193,26 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getNode(lmin) * ineSum;
     } else
     {
-        collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) * grid->getNode(lmin) * ineSum;
+        double ineSumSrc = 0;
+
+        for (uint32_t i = 0; i < n; ++i)
+        {
+            ineSum -= eedf[i] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i) * grid->getCell(i);
+
+            if (grid->getNode(i + 1) + threshold < grid->getCell(grid->nCells() - 1))
+            {
+                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
+                        grid->getCell(i), i, true, 1.0);
+
+                for (int k = 0; k < int(alpha.size()); k++)
+                {
+                    ineSumSrc  += std::get<1>(alpha[k]) * grid->getCell(std::get<0>(alpha[k]))
+                                    * cellCrossSection[std::get<0>(alpha[k])]
+                                    * grid->duCell(i) * grid->getCell(i) * eedf[std::get<0>(alpha[k])];
+                }
+            }
+        }
+        collPower.forward = SI::gamma * getTarget()->delta() * (ineSum + ineSumSrc);
     }
 
     if (isReverse())
@@ -209,12 +231,29 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
                 SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->du() * grid->getNode(lmin) * supSum;
         } else
         {
-            for (uint32_t i = lmin; i < n; ++i)
+            for (uint32_t i = 0; i < n; ++i)
             {
-                supSum += eedf[i - lmin] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i - lmin);
+                if (grid->getNode(i) > threshold)
+                {
+                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
+                            grid->getCell(i), i, false, 1.0);
+                    
+                    for (int k = 0; k < int(alpha.size()); k++)
+                    {
+                        supSum += std::get<1>(alpha[k]) 
+                             * grid->getCell(i) * cellCrossSection[i]
+                             * grid->duCell(i) * grid->getCell(i) * eedf[std::get<0>(alpha[k])];
+                    }
+                }
+
+                if (grid->getCell(i) + threshold < grid->getCell(n - 1))
+                {
+                    int j = std::upper_bound(grid->getCells().begin(), grid->getCells().end(), grid->getCell(i) + 
+                            threshold) - grid->getCells().begin() - 1;
+                    supSum -= grid->getCell(j) * cellCrossSection[j] * grid->getCell(i) * grid->duCell(i) * eedf[i];
+                }
             }
-            collPower.backward +=
-                SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * grid->duCell(lmin) * grid->getNode(lmin) * supSum;
+            collPower.backward += SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * supSum;
         }
         
     }
