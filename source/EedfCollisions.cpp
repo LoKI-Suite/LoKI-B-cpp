@@ -320,16 +320,40 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         {
             double sum = 0.;
 
-            for (uint32_t i = lmin - 1; i < n; ++i)
+            if (grid->isUniform())
             {
-                sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
-            }
-             if (grid->isUniform())
-            {
+                for (uint32_t i = lmin - 1; i < n; ++i)
+                {
+                    sum += grid->getCell(i) * cellCrossSection[i] * eedf[i];
+                }
                 collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * grid->getCell(lmin - 1) * sum;
             } else
             {
-                collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin-1) * grid->getCell(lmin - 1) * sum;
+                for (uint32_t k = 0; k < n; ++k)
+                {
+                    if (grid->getNode(k+1) + threshold < grid->getCell(grid->nCells() - 1))
+                    {
+                        std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
+                                grid->getCell(k), k, true, 1.0);
+
+                        for (int i = 0; i < int(alpha.size()); i++)
+                        {
+                            sum += std::get<1>(alpha[i]) * grid->getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])]
+                                     * eedf[std::get<0>(alpha[i])] * grid->duCell(k) * grid->getCell(k);
+                        }
+                    }
+
+                    sum -= grid->getCell(k) * cellCrossSection(k) * eedf[k] * grid->duCell(k) * grid->getCell(k);
+
+                    std::vector<std::tuple<int, double>> alpha = oneTakesAllDistribution(*grid, k);
+
+                    for (int i = 0; i < int(alpha.size()); i++)
+                    {
+                        sum += std::get<1>(alpha[i]) * grid->getCell(std::get<0>(alpha[i])) * cellCrossSection(std::get<0>(alpha[i])) * 
+                                 eedf[std::get<0>(alpha[i])] * grid->duCell(k) * grid->getCell(k);
+                    }
+                }
+                collPower.forward = SI::gamma * getTarget()->delta() * sum;
             }
         }
         else if (ionizationOperatorType == IonizationOperatorType::sdcs)
@@ -368,17 +392,20 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
     {
         double sum = 0.;
 
-        for (uint32_t i = lmin; i < n; ++i)
-        {
-            sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
-        }
-
         if (grid->isUniform())
         {
+            for (uint32_t i = lmin; i < n; ++i)
+            {
+                sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i];
+            }
             collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() * sum;
         } else 
         {
-            collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) * sum;
+            for (uint32_t i = lmin; i < n; ++i)
+            {
+                sum += eedf[i] * grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i);
+            }
+            collPower.forward = -SI::gamma * getTarget()->delta() * sum;
         }
     }
     /// \todo For other Collision types, collPower is unitialized at this point
