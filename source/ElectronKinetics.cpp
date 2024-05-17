@@ -1279,15 +1279,22 @@ void ElectronKineticsBoltzmann::evaluatePower()
             for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
                 field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
-                growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
             }
             power.field = SI::gamma * field;
             if (grid().isUniform())
             {
+                for (Grid::Index k = 0; k < grid().nCells(); ++k)
+                {
+                    growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
+                }
                 power.eDensGrowth = -CIEff * grid().du() * growthModel;
             } else
             {
-                power.eDensGrowth = -CIEff * grid().duCell(0) * growthModel;
+                for (Grid::Index k = 0; k < grid().nCells(); ++k)
+                {
+                    growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k)) * grid().duCell(k);
+                }
+                power.eDensGrowth = -CIEff * growthModel;
             }
         
             
@@ -1299,12 +1306,22 @@ void ElectronKineticsBoltzmann::evaluatePower()
             fieldOperator.evaluatePower(grid(),eedf,field);
             // now calculate the additional terms
             double correction = 0., powerDiffusion = 0., powerMobility = 0.;
-            Vector cellCrossSection(grid().nCells());
-            cellCrossSection = .5 * (mixture.collision_data().totalCrossSection().head(grid().nCells()) + mixture.collision_data().totalCrossSection().tail(grid().nCells()));
-            for (Grid::Index k = 1; k < grid().nCells()-1; ++k )
+            Vector cellCrossSection(mixture.collision_data().totalCellCrossSection());
+            Vector nodeCrossSection(mixture.collision_data().totalCrossSection());
+            if (grid().isUniform())
             {
-                    powerMobility +=
-                        grid().getCell(k) * grid().getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
+                for (Grid::Index k = 1; k < grid().nCells()-1; ++k )
+                {
+                        powerMobility +=
+                            grid().getCell(k) * grid().getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
+                }
+            } else
+            {
+                for (Grid::Index k = 1; k < grid().nCells(); ++k )
+                {
+                        powerMobility +=
+                            grid().getNode(k) * grid().getNode(k) * (eedf[k] - eedf[k - 1])/ cellCrossSection[k];
+                }
             }
             /** \todo field and correction are both of the form 'eedf*g'.
              *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
@@ -1325,15 +1342,17 @@ void ElectronKineticsBoltzmann::evaluatePower()
                                         powerMobility);
             } else
             {
-                correction -= eedf.dot((g_fieldSpatialGrowth.tail(grid().nCells()) + g_fieldSpatialGrowth.head(grid().nCells())).cwiseProduct(grid().duCells())/2);
-                powerDiffusion += grid().getCells().dot(grid().getCells().cwiseProduct(eedf).cwiseProduct(grid().duCells()).cwiseQuotient(cellCrossSection));
+                int n = grid().nCells();
+                for (Grid::Index k = 1; k < grid().nCells()-1; ++k )
+                {
+                    correction -=
+                        g_fieldSpatialGrowth[k] * (eedf[k - 1] * grid().duCell(k) + eedf[k] * grid().duCell(k - 1)) / 2;
+                    powerDiffusion += grid().getNode(k) * grid().getNode(k) * (eedf[k - 1] * grid().duCell(k) + eedf[k] * grid().duCell(k - 1)) / 2;
+                }
                 power.field = field + SI::gamma * correction;
                 power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma / 3. * powerDiffusion +
-                                    SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
-                                        (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
-                                        grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
-                                            eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
-                                        powerMobility);
+                                    SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 3.) * 
+                                    (grid().getNode(0) * grid().getNode(0) * eedf[0] / cellCrossSection[0] + powerMobility);
             }
         }
     }
