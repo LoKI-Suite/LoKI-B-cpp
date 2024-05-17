@@ -268,6 +268,8 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
     const Grid *grid = crossSection->getGrid();
     const Grid::Index n = grid->nCells();
 
+    double threshold = crossSection->threshold();
+
     PowerTerm collPower;
 
     Vector cellCrossSection(n);

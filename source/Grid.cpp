@@ -94,7 +94,7 @@ Grid Grid::fromConfig(const json_type &cnf)
 {
     if (cnf.contains("nonuniformGrid"))
     {   
-        if (cnf.at("nonuniformGrid").at("nodeDistribution").is_string())
+        if (cnf.at("nonuniformGrid").at("nodeDistribution").is_object())
         {
             auto range = Range::create(cnf.at("nonuniformGrid").at("nodeDistribution"));
             Vector nodeDistribution(range->size());

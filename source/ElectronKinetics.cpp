@@ -1306,7 +1306,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
             fieldOperator.evaluatePower(grid(),eedf,field);
             // now calculate the additional terms
             double correction = 0., powerDiffusion = 0., powerMobility = 0.;
-            Vector cellCrossSection(mixture.collision_data().totalCellCrossSection());
+            Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, grid().nCells()) + mixture.collision_data().totalCrossSection().segment(1, grid().nCells())) / 2.;
             Vector nodeCrossSection(mixture.collision_data().totalCrossSection());
             if (grid().isUniform())
             {
@@ -1342,7 +1342,6 @@ void ElectronKineticsBoltzmann::evaluatePower()
                                         powerMobility);
             } else
             {
-                int n = grid().nCells();
                 for (Grid::Index k = 1; k < grid().nCells()-1; ++k )
                 {
                     correction -=

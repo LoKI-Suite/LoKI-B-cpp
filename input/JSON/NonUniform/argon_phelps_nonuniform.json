@@ -19,16 +19,16 @@
         "http://localhost:3000/api/scat-css/1171607?refstyle=bibtex"
       ],
       "LXCatFiles": [
-        "JSON/Ar/Ar_Phelps_LXCat.json"
+        "../../JSON/Ar/Ar_Phelps_LXCat.json"
       ],
       "gasProperties": {
-        "mass": "Databases/masses.txt",
+        "mass": "../../Databases/masses.txt",
         "fraction": ["Ar = 1"],
-        "harmonicFrequency": "Databases/harmonicFrequencies.txt",
-        "anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
-        "rotationalConstant": "Databases/rotationalConstants.txt",
-        "electricQuadrupoleMoment": "Databases/quadrupoleMoment.txt",
-        "OPBParameter": "Databases/OPBParameter.txt"
+        "harmonicFrequency": "../../Databases/harmonicFrequencies.txt",
+        "anharmonicFrequency": "../../Databases/anharmonicFrequencies.txt",
+        "rotationalConstant": "../../Databases/rotationalConstants.txt",
+        "electricQuadrupoleMoment": "../../Databases/quadrupoleMoment.txt",
+        "OPBParameter": "../../Databases/OPBParameter.txt"
       },
       "stateProperties": {
         "population": ["Ar(^1S_0) = 1.0"],
@@ -38,8 +38,13 @@
       "numerics": {
         "energyGrid": {
             "nonuniformGrid": {
-                "maxEnergy":40.0,
-                "nodeDistribution": "linspace(0,1,3001)"        
+                "maxEnergy":20.0,
+                "nodeDistribution": {
+                  "max": 1,
+                  "min": 0,
+                  "nvalues": 3001,
+                  "range": "linspace"
+                }
             }  
         },
         "maxPowerBalanceRelError": 1e-9,
@@ -66,4 +71,3 @@
       ]
     }
   }
-  
