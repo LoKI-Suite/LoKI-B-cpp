@@ -21,19 +21,19 @@ electronKinetics:
   growthModelType: spatial % temporal or spatial
   includeEECollisions: false
   LXCatFiles:            % cross section files
-    - Oxygen/O2_LXCat.txt               
-    - Oxygen/O2_rot_LXCat.txt
+    - O2_LXCat.txt               
+    - O2_rot_LXCat.txt
 %   CARgases:             % gases for which CAR is activated
 %    - O2
   gasProperties:        % properties of the gases (S.I. Units)
-    mass: Databases/masses.txt
+    mass: ../Databases/masses.txt
     fraction:
       - O2 = 1
-    harmonicFrequency: Databases/harmonicFrequencies.txt
-    anharmonicFrequency: Databases/anharmonicFrequencies.txt
-    rotationalConstant: Databases/rotationalConstants.txt
-    electricQuadrupoleMoment: Databases/quadrupoleMoment.txt
-    OPBParameter: Databases/OPBParameter.txt
+    harmonicFrequency: ../Databases/harmonicFrequencies.txt
+    anharmonicFrequency: ../Databases/anharmonicFrequencies.txt
+    rotationalConstant: ../Databases/rotationalConstants.txt
+    electricQuadrupoleMoment: ../Databases/quadrupoleMoment.txt
+    OPBParameter: ../Databases/OPBParameter.txt
   stateProperties:      % properties of the states (S.I. Units except for the energy [eV])
     energy:
       - O2(X,v=*) = harmonicOscillatorEnergy
