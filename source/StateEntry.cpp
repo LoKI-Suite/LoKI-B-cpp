@@ -1,6 +1,5 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/StandardPaths.h"
 #include <fstream>
 #include <regex>
 #include <stdexcept>

@@ -138,23 +138,25 @@ void GasMixture::loadStatePropertyEntry(const json_type& propEntry,
         // create an argument list for the function (possibly empty)
         std::vector<double> arguments;
         if (propEntry.at("function").contains("arguments"))
-        for (const auto& arg : propEntry.at("function").at("arguments"))
         {
-            double pvalue;
-            if (arg.is_number())
+            for (const auto& arg : propEntry.at("function").at("arguments"))
             {
-                pvalue = arg;
+                double pvalue;
+                if (arg.is_number())
+                {
+                    pvalue = arg;
+                }
+                else if (arg.is_string())
+                {
+                    pvalue = workingConditions->getParameter(arg);
+                }
+                else
+                {
+                    throw std::runtime_error("Argument '" + arg.dump(2) + "' is neither a numerical "
+                                "value, nor a parameter name.");
+                }
+                arguments.emplace_back(pvalue);
             }
-            else if (arg.is_string())
-            {
-                pvalue = workingConditions->getParameter(arg);
-            }
-            else
-            {
-                throw std::runtime_error("Argument '" + arg.dump(2) + "' is neither a numerical "
-                            "value, nor a parameter name.");
-            }
-            arguments.emplace_back(pvalue);
         }
         PropertyFunctions::callByName(functionName, states, arguments, propertyType);
     }
@@ -211,9 +213,15 @@ void GasMixture::evaluateReducedDensities()
 
 void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, const WorkingConditions *workingConditions)
 {
-
-    loadStateProperty(basePath, cnf.at("energy"), StatePropertyType::energy, workingConditions);
-    loadStateProperty(basePath, cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+    if (cnf.contains("energy"))
+    {
+        loadStateProperty(basePath, cnf.at("energy"), StatePropertyType::energy, workingConditions);
+    }
+    if (cnf.contains("statisticalWeight"))
+    {
+        loadStateProperty(basePath, cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+    }
+    // the population section is mandatory
     loadStateProperty(basePath, cnf.at("population"), StatePropertyType::population, workingConditions);
 
     checkPopulations();
