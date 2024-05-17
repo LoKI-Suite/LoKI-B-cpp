@@ -736,57 +736,102 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 continue;
 
             hasValidCollisions = true;
-
             const double delta = collision->getTarget()->delta();
 
-            int numThreshold;
-            if (grid.isUniform())
-            {
-                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
-            } else
-            {
-                Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
-                numThreshold = static_cast<Grid::Index>(findIndex) - 1;
-            }
             Vector cellCrossSection(grid.nCells());
-
-            for (Grid::Index i = 0; i < grid.nCells(); ++i)
-                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
-
+            collision->crossSection->interpolate(grid.getCells(), cellCrossSection);
+            int numThreshold1 = static_cast<uint32_t>(std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin() - 1);
+            int numThreshold2 = numThreshold1 + 1;
+            int numThreshold = std::abs(threshold - grid.getCell(numThreshold1)) < std::abs(threshold - grid.getCell(numThreshold2)) ? numThreshold1 : numThreshold2;
+           
             switch (ionizationOperatorType)
             {
             case IonizationOperatorType::conservative:
                 break;
 
             case IonizationOperatorType::oneTakesAll:
-                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                if (grid.isUniform())
                 {
-                    // Manual_2_2_0 eq. 15. TODO: Note that newborns are
-                    // inserted in the first cell, so at du/2, not at zero.
-                    if (k < grid.nCells() - numThreshold)
-                        ionizationMatrix(k, k + numThreshold) +=
-                            delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        // Manual_2_2_0 eq. 15. TODO: Note that newborns are
+                        // inserted in the first cell, so at du/2, not at zero.
+                        if (k < grid.nCells() - numThreshold)
+                            ionizationMatrix(k, k + numThreshold) +=
+                                delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                    const double term = delta * grid.getCell(k) * cellCrossSection(k);
+                        const double term = delta * grid.getCell(k) * cellCrossSection(k);
 
-                    ionizationMatrix(k, k) -= term;
-                    ionizationMatrix(0, k) += term;
+                        ionizationMatrix(k, k) -= term;
+                        ionizationMatrix(0, k) += term;
+                    }
+                } else
+                {
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        // Manual_2_2_0 eq. 15. TODO: Note that newborns are
+                        // inserted in the first cell, so at du/2, not at zero.
+                        if (grid.getNode(k+1) + threshold < grid.getCell(grid.nCells() - 1))
+                        {
+                            std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                    grid.getCell(k), k, true);
+
+                            for (int i = 0; i < int(alpha.size()); i++)
+                            {
+                                ionizationMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                    delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                            }
+                        }
+
+                        const double term = delta * grid.getCell(k) * cellCrossSection(k);
+
+                        ionizationMatrix(k, k) -= term;
+
+                        std::vector<std::tuple<int, double>> alpha = oneTakesAllDistribution(grid, k);
+
+                        for (int i = 0; i < int(alpha.size()); i++)
+                        {
+                            ionizationMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) * term;
+                        }
+                    }
                 }
+                
                 break;
 
             case IonizationOperatorType::equalSharing:
-                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                if (grid.isUniform())
                 {
-                    // Manual_2_2_0 eq. 16
-                    ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
-
-                    if (k < (grid.nCells() - numThreshold) / 2)
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
+                        // Manual_2_2_0 eq. 16
+                        ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
 
-                        ionizationMatrix(k, i) += 4 * delta * grid.getCell(i) * cellCrossSection(i);
+                        if (k < (grid.nCells() - numThreshold) / 2)
+                        {
+                            const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
+
+                            ionizationMatrix(k, i) += 4 * delta * grid.getCell(i) * cellCrossSection(i);
+                        }
+                    }
+                } else
+                {
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+
+                        if (grid.getNode(k+1) < (grid.getCell(grid.nCells() - 1) - threshold) / 2)
+                        {
+                            std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                    grid.getCell(k), k, true, 2.0);
+                            for (int i = 0; i < int(alpha.size()); i++)
+                            {
+                                ionizationMatrix(k, std::get<0>(alpha[i])) += 4 * std::get<1>(alpha[i]) *
+                                    delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                            }
+                        }
                     }
                 }
+                
                 break;
             case IonizationOperatorType::sdcs:
 
@@ -883,14 +928,35 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             if (numThreshold == 0)
                 continue;
 
-            for (Grid::Index k = 0; k < grid.nCells(); ++k)
+            if (grid.isUniform())
             {
-                if (k < grid.nCells() - numThreshold)
-                    ionConservativeMatrix(k, k + numThreshold) +=
-                        delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    if (k < grid.nCells() - numThreshold)
+                        ionConservativeMatrix(k, k + numThreshold) +=
+                            delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                    ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                }
+            } else
+            {
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    if (grid.getNode(k+1) + threshold < grid.getCell(grid.nCells() - 1))
+                    {
+                        std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, threshold,
+                                grid.getCell(k), k, true);
+
+                        for (int i = 0; i < int(alpha.size()); i++)
+                        {
+                                ionConservativeMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                        }
+                    }
+                    ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                }
             }
+            
 
             /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
             if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
