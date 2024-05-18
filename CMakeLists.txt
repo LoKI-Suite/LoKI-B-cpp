@@ -75,7 +75,6 @@ else()
     #loki_cxxflags(-Werror=unused-but-set-variable)
     loki_cxxflags(-Werror=unused-result)
     loki_cxxflags(-Werror=ignored-qualifiers)
-    loki_cxxflags(-Werror=zero-as-null-pointer-constant)
     loki_cxxflags(-Werror=misleading-indentation)
     loki_cxxflags(-Werror=reorder)
     # disabled, not supported by gcc 7.5.0:
@@ -84,6 +83,11 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
+
+    if(NOT EMSCRIPTEN)
+        loki_cxxflags(-Werror=zero-as-null-pointer-constant)
+    endif()
+    
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
@@ -91,7 +95,10 @@ else()
         add_link_options(LINKER:-undefined,error)
     else()
         loki_cxxflags(-Werror=undef)
-        add_link_options(LINKER:-no-undefined)
+
+        if(NOT EMSCRIPTEN)
+            add_link_options(LINKER:-no-undefined)
+        endif()
     endif()
 endif()
 loki_gcc_cxxflags(-Werror=shadow)

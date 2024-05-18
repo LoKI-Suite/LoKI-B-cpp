@@ -61,6 +61,17 @@ A Clang format style file is present at the root of this repository (`.clang-for
    ```bash
    nix shell github:loki-suite/loki-b
    ```
+
+   Additionally, the web version (using WebAssembly) can be built using the
+   `loki-web` package.
+   ```bash
+   nix build github:loki-suite/loki-b#loki-web
+   ```
+
+   To serve the pages you can then e.g. use the python http server.
+   ```bash
+   python -m http.server -d result/share/loki-web
+   ```
     
 ### Windows
 1. run: `cmake -D<BACKEND_FLAG>=ON ..`

@@ -1,23 +1,22 @@
 # Clion specific
-
 cmake-build-*/
 .idea/
 
 # VS Code specific
-
 build/
 .vscode/
 
-# Vim specific (clangd)
-
+# Clangd
 .cache/
 .clangd/
 compile_commands.json
 
 # profiler
-
 profiler/
 
 # direnv
 .envrc
 .direnv/
+
+# Nix build output
+result
