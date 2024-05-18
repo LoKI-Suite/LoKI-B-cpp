@@ -70,7 +70,7 @@
 
           cmakeFlags =
             [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
-          ninjaFlags = [ "loki" ];
+          ninjaFlags = [ "loki" "loki_legacytojson" "loki_offsidetojson" ];
         };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
