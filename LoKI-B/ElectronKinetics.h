@@ -240,7 +240,6 @@ private:
     double alphaRedEff{0.};
 
     // code related to temporal growth
-    Vector g_fieldTemporalGrowth;
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
     /** Tolerance settings.

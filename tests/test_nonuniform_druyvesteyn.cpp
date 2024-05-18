@@ -41,8 +41,9 @@ int main()
     SparseMatrix M1(nCells,nCells);
     SparseMatrix M2(nCells,nCells);
 
-    fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, M1);
-    fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, M2);
+    const double CIEff = 0.0;
+    fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, CIEff, M1);
+    fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, CIEff, M2);
 
     ElasticOperator elasticOperator;
     SparseMatrix Melastic1(nCells, nCells);

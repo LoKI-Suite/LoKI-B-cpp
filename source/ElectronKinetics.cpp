@@ -67,6 +67,11 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
     this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
     this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
     this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
+    if (growthModelType == GrowthModelType::spatial && workingConditions->reducedExcFreqSI()!=0.0)
+    {
+        throw std::runtime_error("The excitation frequency must be zero when "
+                                 "the spatial growth model is used.");
+    }
     initialize();
 }
 
@@ -151,7 +156,9 @@ void ElectronKineticsBoltzmann::evaluateFieldOperator()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,fieldMatrix);
+    /// \todo Should we use the real value (CIEff) here? That will be 0 for DC or spatial growth
+    const double dummyCIEff = 0.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff,fieldMatrix);
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
@@ -653,28 +660,10 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
  //       Log<Message>::Notify("Iteration ", iter);
 
         // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
+        fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,CIEffNew,fieldMatrixTempGrowth);
         const long double growthFactor = CIEffNew / SI::gamma;
-
-        g_fieldTemporalGrowth.resize(grid().getNodes().size());
-        g_fieldTemporalGrowth[0] = 0.;
-        for (Grid::Index i=1; i!= g_fieldTemporalGrowth.size()-1; ++i)
-        {
-            // totalCSI = Omega_PT, See \cite Tejero2019 5a or the Manual 2.2.0, below eq. 11b:
-            const double totalCSI = mixture.collision_data().totalCrossSection()[i] + growthFactor / std::sqrt(grid().getNode(i));
-            /* The following g corresponds to the G_E in \cite Tejero2019 equation 6a,
-             * with f^1(u) as in equation 3b
-             * In the Manual 2.2.0: G_E as in 12a, f^1(u) as in 7b
-             */
-            const double OmegaPT = totalCSI + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid().getNode(i)*totalCSI);
-            g_fieldTemporalGrowth[i] = (EoN * EoN / 3) * grid().getNode(i) / OmegaPT;
-        }
-        g_fieldTemporalGrowth[g_fieldTemporalGrowth.size() - 1] = 0.;
-
-        const double sqrStep = grid().du() * grid().du();
-
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            fieldMatrixTempGrowth.coeffRef(k, k) = -(g_fieldTemporalGrowth[k] + g_fieldTemporalGrowth[k + 1]) / sqrStep;
             // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
@@ -682,13 +671,11 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
             if (k > 0)
             {
-                fieldMatrixTempGrowth.coeffRef(k, k - 1) = g_fieldTemporalGrowth[k] / sqrStep;
                 boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
             }
 
             if (k < grid().nCells() - 1)
             {
-                fieldMatrixTempGrowth.coeffRef(k, k + 1) = g_fieldTemporalGrowth[k + 1] / sqrStep;
                 boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
             }
 
@@ -1125,28 +1112,21 @@ void ElectronKineticsBoltzmann::evaluatePower()
     {
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
+    fieldOperator.evaluatePower(grid(),eedf,power.field);
+    // growth terms. Note that GrowthModelType::spatial also adds to power.field
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
     {
         if (growthModelType == GrowthModelType::temporal)
         {
-            // the calculation of field is identical to that in fieldOperator, except
-            // for the usage of g_fieldTemporalGrowth instead of fieldOperator.g;
-            // the former is based on a totalCS that has an additional term
-            // growthFactor / std::sqrt(grid().getNode(i)).
-            double field = 0., growthModel = 0.;
+            double growthModel = 0.;
             for (Grid::Index k = 0; k < grid().nCells(); ++k)
             {
-                field += eedf[k] * (g_fieldTemporalGrowth[k + 1] - g_fieldTemporalGrowth[k]);
                 growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
             }
-            power.field = SI::gamma * field;
             power.eDensGrowth = -CIEff * grid().du() * growthModel;
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
-            // first term 'field': same as in the case that there is no growth
-            double field = 0.;
-            fieldOperator.evaluatePower(grid(),eedf,field);
             // now calculate the additional terms
             double correction = 0., powerDiffusion = 0., powerMobility = 0.;
             Vector cellCrossSection(grid().nCells());
@@ -1171,7 +1151,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
              */
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
-            power.field = field + SI::gamma * grid().du() * correction;
+            power.field += SI::gamma * grid().du() * correction;
             power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
                                 SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
                                     (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
@@ -1179,10 +1159,6 @@ void ElectronKineticsBoltzmann::evaluatePower()
                                         eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
                                     powerMobility);
         }
-    }
-    else
-    {
-        fieldOperator.evaluatePower(grid(),eedf,power.field);
     }
 
     if (eeOperator)
@@ -1256,8 +1232,10 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
+        /// \todo Is tCS[0] updated? That appears to be used below (when writing tCS.head(n))
         tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
     }
+    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
     if (grid().isUniform())
     {
         swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
@@ -1282,6 +1260,26 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
                                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
+
+    const double WoN = m_workingConditions->reducedExcFreqSI();
+    if (WoN>0.0)
+    {
+        const Vector OmegaC = tCS.array() + CIEff / (SI::gamma*grid().getNodes().array().sqrt());
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. *
+                      grid().getNodes().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .sum();
+        double muHFIm = (+SI::gamma / 3. *
+                      WoN/SI::gamma) *
+                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .cwiseQuotient(OmegaC.segment(1, n - 1))
+                      .sum();
+        swarmParameters.redMobilityHF = { muHFRe, muHFIm };
+    }
 
     if (growthModelType == GrowthModelType::spatial && nonConservative)
     {
@@ -1350,7 +1348,8 @@ void ElectronKineticsPrescribed::evaluateFieldOperator()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN);
+    const double dummyCIEff = 0.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff);
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
@@ -1463,7 +1462,8 @@ void ElectronKineticsPrescribed::evaluatePower()
     // 1. Calculate P_1 := P_field(E/N=1)
     const double dummyEoN = 1.0;
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),dummyEoN,WoN);
+    const double dummyCIEff= 0.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),dummyEoN,WoN,dummyCIEff);
     double P_1;
     fieldOperator.evaluatePower(grid(),eedf,P_1);
     // 2. we calculate P_E such that the power balance will be satisfied
@@ -1484,6 +1484,8 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
 
     Vector tCS(mixture.collision_data().totalCrossSection());
 
+    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
+
     swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
     swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
@@ -1502,6 +1504,31 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
                                       .cwiseQuotient(tCS.segment(1, n - 1))
                                       .sum();
 
+    const double WoN = m_workingConditions->reducedExcFreqSI();
+    if (WoN>0.0)
+    {
+        /* NOTE: in the prescribed case, only conservative processes should be
+         * taken into account. In that case CIEff==0 and OmegaC==tCS. Otherwise,
+         * the code below is equal to the code in the function
+         * ElectronKineticsBoltzmann::evaluateSwarmParameters. We highlight that
+         * fact by using OmegaC, but making it just a reference to tCS.
+         */
+        const Vector& OmegaC = tCS;
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. *
+                      grid().getNodes().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .sum();
+        double muHFIm = (+SI::gamma / 3. *
+                      WoN/SI::gamma) *
+                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
+                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
+                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
+                      .cwiseQuotient(OmegaC.segment(1, n - 1))
+                      .sum();
+        swarmParameters.redMobilityHF = { muHFRe, muHFIm };
+    }
     swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
 
     double totalIonRateCoeff = 0., totalAttRateCoeff = 0.;
