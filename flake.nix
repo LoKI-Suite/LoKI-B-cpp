@@ -102,6 +102,16 @@
           ninjaFlags = [ "-C build" "loki_bindings" ];
 
           configurePhase = ''
+            # Create the cache directory.
+            mkdir -p build/$EM_CACHE
+
+            # Copy the prebuilt emscripten cache.
+            cp -r ${emscripten_3-1-15}/share/emscripten/cache/* build/$EM_CACHE
+
+            # Set correct permissions for cache.
+            chmod u+rwX -R build/$EM_CACHE
+
+            # Configure using emscripten.
             emcmake cmake \
               -GNinja \
               -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
