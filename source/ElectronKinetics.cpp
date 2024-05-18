@@ -1271,12 +1271,9 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                       .cwiseQuotient(OmegaPT.segment(1, n - 1))
                       .sum();
-        /** \todo The cast to a Vector in the code below is bad for performance;
-         *  this should also compile without.
-         */
         double muHFIm = (+SI::gamma / 3. *
                       WoN/SI::gamma) *
-                      Vector(grid().getNodes().array().sqrt().segment(1, n - 1))
+                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                       .cwiseQuotient(OmegaPT.segment(1, n - 1))
                       .cwiseQuotient(OmegaC.segment(1, n - 1))
@@ -1523,12 +1520,9 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                       .cwiseQuotient(OmegaPT.segment(1, n - 1))
                       .sum();
-        /** \todo The cast to a Vector in the code below is bad for performance;
-         *  this should also compile without.
-         */
         double muHFIm = (+SI::gamma / 3. *
                       WoN/SI::gamma) *
-                      Vector(grid().getNodes().array().sqrt().segment(1, n - 1))
+                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
                       .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
                       .cwiseQuotient(OmegaPT.segment(1, n - 1))
                       .cwiseQuotient(OmegaC.segment(1, n - 1))
