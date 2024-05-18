@@ -31,6 +31,7 @@
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
 #include "LoKI-B/StateEntry.h"
 
 #include <cassert>
@@ -816,7 +817,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
             double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold))
             {
-		threshold = Parse::getValue(mThreshold[1]);
+		            threshold = Parse::getValue(mThreshold[1]);
             }
             if (!std::getline(in, line) || !std::regex_search(line, mProcess, reProcess))
             {
