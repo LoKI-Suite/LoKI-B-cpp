@@ -30,6 +30,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: deploy
+      cancel-in-progress: true
+
     environment:
       name: github-pages
       url: ${{steps.deployment.outputs.page_url}}
