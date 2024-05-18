@@ -784,15 +784,12 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
-    /** \todo Valid doubles like 1.57e1 are not matched, in which case the threshold
-     *        specification will be ignored and 0 will be assumed.
-     */
-    const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
+    const std::regex reThreshold(R"(E = +(\S*) +eV)");
     const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
     std::ifstream in(file);
     if (!in.is_open())
     {
-        Log<FileError>::Warning(file.generic_string());
+        Log<FileError>::Error(file.generic_string());
         return;
     }
 
@@ -819,9 +816,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
             double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold))
             {
-                std::stringstream ss(mThreshold[1]);
-                if (!(ss >> threshold))
-                    Log<Message>::Error("Non numerical threshold value.");
+		threshold = Parse::getValue(mThreshold[1]);
             }
             if (!std::getline(in, line) || !std::regex_search(line, mProcess, reProcess))
             {
