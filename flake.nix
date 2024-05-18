@@ -31,9 +31,6 @@
         nlohmann_json
         openblas
 
-        # WebAssembly compilation
-        emscripten_3-1-15
-
         # Documentation
         doxygen
 
@@ -50,6 +47,9 @@
 
             # Needed to make clang-tools not complain.
             llvmPackages.openmp
+
+            # WebAssembly compilation
+            emscripten_3-1-15
 
             # Plotting
             gnuplot
