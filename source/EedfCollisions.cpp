@@ -576,6 +576,9 @@ bool EedfCollisionDataGas::isDummy() const
 
 std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate()
 {
+#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 0
+#if NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
+
     std::vector<State *> statesToUpdate;
 
     /** \todo This seems wrong: an effective cross section for the neutrals will
@@ -624,9 +627,34 @@ std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpd
         }
     }
 
-    Log<Message>::Notify(statesToUpdate.size());
+    return statesToUpdate;
+
+#else
+
+    std::vector<State *> statesToUpdate;
+
+    /** \todo This seems wrong: an effective cross section for the neutrals will
+     *  will also be used as a basis for the charged states' elastic cross section,
+     *  it seems.
+     */
+    for (auto *chargeState : m_gas.get_root().children())
+    {
+        for (auto *eleState : chargeState->children())
+        {
+            if (eleState->population() > 0)
+            {
+                auto &colls = m_state_collisions[eleState];
+                auto it = find_if(colls.begin(), colls.end(),
+                                  [](EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
+
+                if (it == colls.end())
+                    statesToUpdate.emplace_back(eleState);
+            }
+        }
+    }
 
     return statesToUpdate;
+#endif // NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
 }
 
 const GasPower &EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
