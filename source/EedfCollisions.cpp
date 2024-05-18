@@ -576,6 +576,61 @@ bool EedfCollisionDataGas::isDummy() const
 
 std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate()
 {
+#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 0
+#if NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
+
+    std::vector<State *> statesToUpdate;
+
+    /** \todo This seems wrong: an effective cross section for the neutrals will
+     *  will also be used as a basis for the charged states' elastic cross section,
+     *  it seems.
+     */
+    const auto hasElastic = [this](loki::Gas::State *state) -> bool {
+            auto &colls = m_state_collisions[state];
+            auto it = find_if(colls.begin(), colls.end(),
+                              [](EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
+            return it != colls.end();
+    };
+
+    const std::function<bool(loki::Gas::State *)> hasElasticRecursive = [hasElastic, &hasElasticRecursive](loki::Gas::State *state) -> bool {
+        // Either the state has an elastic cross section, or all of its (grand)children with 
+        // nonzero population have an elastic cross section.
+        if (!hasElastic(state)) {
+            if (state->children().empty()) {
+                return false;
+            }
+
+            // This assumes that at least one child state needs to have a nonzero population.
+            for (auto * child : state->children()) {
+                if (child->population() > 0) {
+                    if (!hasElasticRecursive(child)) {
+                        return false;
+                    }
+                }
+            }
+
+            // All children have an elastic cross section.
+            return true;
+        } else {
+            return true;
+        }
+    };
+
+    for (auto *chargeState : m_gas.get_root().children())
+    {
+        for (auto *eleState : chargeState->children())
+        {
+            if (eleState->population() > 0 && !hasElasticRecursive(eleState))
+            {
+                statesToUpdate.emplace_back(eleState);
+            }
+        }
+    }
+
+    return statesToUpdate;
+
+#else
+
     std::vector<State *> statesToUpdate;
 
     /** \todo This seems wrong: an effective cross section for the neutrals will
@@ -599,6 +654,7 @@ std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpd
     }
 
     return statesToUpdate;
+#endif // NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
 }
 
 const GasPower &EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
