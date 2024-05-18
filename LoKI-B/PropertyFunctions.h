@@ -154,6 +154,8 @@ inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states,
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
+        // See eq. 72 in \cite Manual_2_2_0. This expression is originally taken from 
+        // \cite Ridenti2015
         state->statisticalWeight = (2 - std::pow(-1, J)) * (2 * J + 1);
     }
 }
@@ -177,6 +179,8 @@ inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states,
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
+        // See eq. 71 in \cite Manual_2_2_0. This expression is originally taken from 
+        // \cite Ridenti2015
         state->statisticalWeight = 3 * (1. + .5 * (1. + std::pow(-1., J))) * (2. * J + 1.);
     }
 }
@@ -200,6 +204,8 @@ inline void rotationalDegeneracy(const std::vector<Gas::State *> &states, const 
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
+        // See eq. 70 in \cite Manual_2_2_0. This expression is originally taken from 
+        // \cite Ridenti2015
         state->statisticalWeight = 2 * J + 1;
     }
 }
