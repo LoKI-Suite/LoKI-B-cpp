@@ -24,7 +24,7 @@ jobs:
         path: "./result/share/loki-web"
 
   Deploy:
-    if: github.event.pull_request.draft == false
+    if: ${{ github.ref == 'refs/heads/main' }}
 
     needs: build
 
