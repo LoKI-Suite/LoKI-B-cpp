@@ -44,7 +44,6 @@ class EedfMixture
     void addCARGas(const std::string& gasName);
 
     GasMixture m_composition;
-
     EedfCollisionDataMixture m_collision_data;
 
     std::vector<const Gas *> m_CARGases;

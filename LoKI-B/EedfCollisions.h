@@ -49,6 +49,8 @@
 namespace loki
 {
 
+using EffectivePopulationsMap = std::map<const Gas::State *, double>;
+
 class EedfCollision : public Collision
 {
 public:
@@ -58,7 +60,6 @@ public:
                   const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse);
     ~EedfCollision();
     const EedfState *getTarget() const;
-    EedfState *getTarget();
     void superElastic(const Vector &energyData, Vector &result) const;
     PowerTerm evaluateConservativePower(const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
@@ -107,7 +108,7 @@ public:
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
     void addCollision(EedfCollision *collision, bool isExtra);
-    void checkElasticCollisions(State *electron, const Grid *energyGrid);
+    void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
     bool isDummy() const;
     const GasPower &getPower() const;
     /** \todo Non-constant because m_power is changed. See if m_power must managed here.
@@ -120,9 +121,9 @@ private:
     /* the following three members are used (only) for Effective -> Elastic,
      * (together with the public checkElasticCollisions).
      */
-    void setDefaultEffPop(State *ground);
-    CrossSection *elasticCrossSectionFromEffective(const Grid *energyGrid);
-    std::vector<State *> findStatesToUpdate();
+    void setDefaultEffPop(const State *ground, EffectivePopulationsMap& effectivePopulation) const;
+    CrossSection *elasticCrossSectionFromEffective(const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
+    std::vector<const State *> findStatesToUpdate() const;
     // two helpers for evaluating power terms
     PowerTerm evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
@@ -132,7 +133,6 @@ private:
     CollisionsType m_collisionsExtra;
     std::map<const State *, std::vector<EedfCollision *>> m_state_collisions;
     std::map<const State *, std::vector<EedfCollision *>> m_state_collisionsExtra;
-    std::map<const State *, double> m_effectivePopulations;
     GasPower m_power;
     double m_OPBParameter;
 };
