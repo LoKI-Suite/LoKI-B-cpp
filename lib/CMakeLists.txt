@@ -44,7 +44,7 @@ endif()
 
 if(USE_BUILTIN_EIGEN)
   target_include_directories(loki-b PUBLIC 
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.3.7/eigen3>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.4.0>
   )
 else()
 	target_link_libraries(loki-b  PUBLIC Eigen3::Eigen)

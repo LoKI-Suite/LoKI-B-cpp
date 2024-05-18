@@ -4,7 +4,6 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Output.h"
-#include "LoKI-B/Setup.h"
 #include "LoKI-B/Simulation.h"
 #include <chrono>
 #include <exception>
@@ -18,13 +17,6 @@ namespace loki
 {
 namespace web
 {
-
-void handleResults(const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
-                   const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
-                   const Vector *firstAnisotropy)
-{
-    EM_ASM({ plot($0, $1, $2, $3); }, grid.getCells().data(), grid.getCells().size(), eedf.data(), eedf.size());
-}
 
 int run(std::string file_contents, emscripten::val callback, emscripten::val output_callback)
 {
@@ -40,7 +32,7 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
          */
         json_type data_out;
 
-        std::unique_ptr<Simulation> simulation(new Simulation(cnf));
+        std::unique_ptr<Simulation> simulation(new Simulation("", cnf));
         std::unique_ptr<Output> output(new JsonOutput(data_out, cnf, &simulation->m_workingConditions));
         /** \todo Perhaps the above should be controlled by
          * cnf.at("output").at("isOn"). \todo Now that JsonOutput works, we have
@@ -53,7 +45,8 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
             [callback](const Grid &grid, const Vector &eedf, const WorkingConditions &wc, const Power &power,
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
                        const Vector *firstAnisotropy) {
-                callback(reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
+                callback(wc.reducedField(),
+                         reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
                          reinterpret_cast<uintptr_t>(eedf.data()), eedf.size());
             });
         simulation->m_obtainedResults.addListener(&loki::Output::saveCycle, output.get());

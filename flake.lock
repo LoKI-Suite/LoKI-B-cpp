@@ -16,9 +16,26 @@
         "type": "github"
       }
     },
+    "pin-emscripten_3-1-15": {
+      "locked": {
+        "lastModified": 1658083977,
+        "narHash": "sha256-yqLXI+viN5+Vx5YpG9gNapKL3/+P6Pkprc36xNdyqSU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "34bfa9403e42eece93d1a3740e9d8a02fceafbca",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "34bfa9403e42eece93d1a3740e9d8a02fceafbca",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "pin-emscripten_3-1-15": "pin-emscripten_3-1-15"
       }
     }
   },

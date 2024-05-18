@@ -22,13 +22,23 @@ export function plot(data) {
       values: data,
     },
     encoding: {
-      x: { field: "x", type: "quantitative", title: "Energy (eV)" },
+      x: { 
+        field: "x", 
+        type: "quantitative", 
+        scale: { type: "log" },
+        title: "Energy (eV)" 
+      },
       y: {
         field: "y",
         type: "quantitative",
         scale: { type: "log" },
         title: "Eedf (eV^{-3/2})",
       },
+      color: { 
+        field: "reduced_field", 
+        type: "nominal", 
+        title: "Reduced field (Td)" 
+      }
     },
     mark: {
       type: "circle",
