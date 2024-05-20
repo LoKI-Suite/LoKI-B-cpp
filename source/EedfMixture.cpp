@@ -46,36 +46,7 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     EffectivePopulationsMap effectivePopulations;
     if (cnf.contains("effectiveCrossSectionPopulations"))
     {
-        for (const auto& f : cnf.at("effectiveCrossSectionPopulations"))
-        {
-            json_type effPop;
-            std::filesystem::path fileName(f);
-
-            if (fileName.is_relative()) {
-                fileName = basePath.parent_path() / fileName;
-            }
-
-            if (fileName.has_extension() && fileName.extension() == ".json")
-            {
-	        effPop = read_json_from_file(fileName);
-            }
-            else
-            {
-	        effPop = readLegacyStatePropertyFile(fileName);
-            }
-            for (const auto& e : effPop)
-            {
-                /// \todo How to handle wildcards?
-                /// \todo Add a constant overload of GasMixture::findStateById
-                const Gas::State* state = const_cast<GasMixture&>(composition()).findStateById(e.at("states"));
-                if (effectivePopulations.count(state))
-                {
-                    throw std::runtime_error("Duplicate specification for state '"
-                        + e.at("states").dump() + "' found while reading file '" + fileName.generic_string() + "'.");
-                }
-                effectivePopulations[state] = e.at("value");
-            }
-        }
+        readEffectivePopulations(basePath,cnf.at("effectiveCrossSectionPopulations"),effectivePopulations);
     }
     for (auto &cd : m_collision_data.data_per_gas())
     {
@@ -93,6 +64,71 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     }
 
     //        this->evaluateTotalAndElasticCS();
+}
+
+void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath, const json_type& effPop, EffectivePopulationsMap& effectivePopulations) const
+{
+    if (effPop.contains("states"))
+    {
+        for (const auto& e : effPop.at("states").items())
+        {
+            /// \todo How to handle wildcards?
+            /// \todo Add a constant overload of GasMixture::findStateById
+            const Gas::State* state = const_cast<GasMixture&>(composition()).findStateById(e.key());
+            if (effectivePopulations.count(state))
+            {
+                throw std::runtime_error("Duplicate specification for state '"
+                    + e.key() + "' found.");
+            }
+            if (e.value().at("type")=="constant")
+            {
+                effectivePopulations[state] = e.value().at("value");
+                std::cout << "readEffectivePopulations: setting effective cross section "
+        		"population of state '" << e.key() << " to "
+                        << e.value().at("value").dump(2) << "'." << std::endl;
+            }
+            else
+            {
+                throw std::runtime_error("readEffectivePopulations for state '"
+                    + e.key() + "': only type 'Constant' is supported.");
+            }
+            /// \todo Should we also support functions here?
+        }
+    }
+    if (effPop.contains("files"))
+    {
+        for (const auto& f : effPop.at("files"))
+        {
+            try {
+                std::cout << "readEffectivePopulations: handling file '" + f.get<std::string>() + "'." << std::endl;
+                readEffectivePopulations(basePath,f.get<std::string>(),effectivePopulations);
+            }
+            catch(std::exception& exc)
+            {
+                throw std::runtime_error("While reading '" + f.get<std::string>() + ": " + exc.what());
+            }
+        }
+    }
+}
+
+void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath, const std::string& f, EffectivePopulationsMap& effectivePopulations) const
+{
+    std::filesystem::path fileName(f);
+
+    if (fileName.is_relative()) {
+        fileName = basePath.parent_path() / fileName;
+    }
+
+    json_type effPop;
+    if (fileName.has_extension() && fileName.extension() == ".json")
+    {
+        effPop = read_json_from_file(fileName);
+    }
+    else
+    {
+        effPop = readLegacyStatePropertyFile(fileName);
+    }
+    readEffectivePopulations(basePath,effPop,effectivePopulations);
 }
 
 void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const GasProperties& gasProps, const Grid *energyGrid, bool isExtra)

@@ -87,22 +87,24 @@ class lokib_export GasMixture
     /** propEntry should be an object that can contain:
      *  \verbatim
            {
-             "states": <stateID>,
-             "value": <value>
+             "<stateID>": {
+               "type": "constant",
+               "value": <value>
+             }
            } \endverbatim
 
      *  or
      *  \verbatim
            {
-             "states": <stateID>,
-             "function":
-             {
+             "<stateID>": {
+               "type": "function",
                "name": <funcname>,
-               "arguments": <arguments>
+               "arguments": [ <arguments> ]
              }
            } \endverbatim
      *     "<arguments>" is an array. Each argument is either a parameter name
-     *     (a string) or a direct value (a double).
+     *     (a string) or a direct value (a double). It can be empty or be
+     *     emitted entirely is the function has no arguments.
      *
      *  First it determines whether the current entry requires loading by direct value,
      *  file or function, then it acts accordingly. The property that needs to be set
@@ -110,17 +112,17 @@ class lokib_export GasMixture
      *  to the WorkingConditions structure to access the argument map (which maps its
      *  member variables to names by which they are addressed in the input files).
      */
-    void loadStatePropertyEntry(const json_type& propEntry,
+    void loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                            StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Sets a property (energy, statistical weight, population) of selected states
      *  as specified in json array \a stateProp. The  members of this array must be
-     *  objects of the form "{ "file": <filename> }", or of the form that is expected
-     *  for the propEntry argument of member \c loadStatePropertyEntry.
+     *  objects of the form "{ "files": [ <filenames>] }", or of the form that is
+     *  expected for the propEntry argument of member \c loadStatePropertyEntry.
      *
-     *  If a file specification is found, a JSON object with the same structure
-     *  as argument \a stateProp is created, and loadStateProperty is called
-     *  recursively with that JSON object as argument (as if that file were
-     *  included in the place of the { "file: <filename> } object). If the
+     *  If files specification is found, a JSON object with the same structure
+     *  as argument \a stateProp is created for each file, and loadStateProperty
+     *  is called recursively with that JSON object as argument (as if that file
+     *  were included in the place of the { "files: <filenames> } member). If the
      *  filename has extension ".json", it will be used as is. For other files
      *  the JSON object is created via a call to to readLegacyStatePropertyFile,
      *  which converts the legacy LoKI-B "*.in" file format to JSON.
