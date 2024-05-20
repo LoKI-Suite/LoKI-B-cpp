@@ -20,23 +20,17 @@
 namespace loki
 {
 
-using ResultEvent =
-    Event<const Grid&, const Vector&, const WorkingConditions&, const Power&, const EedfCollisionDataMixture&,
-          const SwarmParameters&, const Vector*>;
-
 class ElectronKinetics
 {
 protected:
     ElectronKinetics(const std::filesystem::path &basePath, const json_type &cnf, WorkingConditions *workingConditions);
-    // Copying this object is not allowed.
     ElectronKinetics(const ElectronKinetics &other) = delete;
+    ElectronKinetics(ElectronKinetics &&other) = delete;
+    ElectronKinetics& operator=(const ElectronKinetics &other) = delete;
+    ElectronKinetics& operator=(ElectronKinetics &&other) = delete;
 public:
-    // use the detaul destructor
+    // use the default destructor
     virtual ~ElectronKinetics() = default;
-    /** \todo Implement the 'rule of big 5': also delete the move constructor and
-     *  move and copy assignment.
-     */
-    ResultEvent obtainedNewEedf;
 
     /** solve the Boltzmann equation.
      *  After completion, the power terms, rate coefficients, swarm parameters
@@ -46,6 +40,12 @@ public:
     void solve();
 
     const Grid &grid() const { return m_grid; }
+    using ResultEvent =
+        Event<const Grid&, const Vector&, const WorkingConditions&, const Power&, const EedfCollisionDataMixture&,
+              const SwarmParameters&, const Vector*>;
+
+    /// \todo make private, add accessor
+    ResultEvent obtainedNewEedf;
 protected:
     /** Calls updateMaxEnergy(uMax) on the grid. This function allows us to
      *  keep the grid member private and expose only a non-constant reference
@@ -53,8 +53,6 @@ protected:
      */
     void updateMaxEnergy(double uMax);
     virtual void doSolve()=0;
-
-    /// \todo See what can be made private. Introduce accessors where necessary.
 
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.
      *  The result is calculated as log10(|v1/v2|). Note that calcDecades(0,0)=NaN.
@@ -83,6 +81,7 @@ protected:
     {
         return std::log10(std::abs(v1/v2));
     }
+    /// \todo Make private, introduce accessor if necessary.
     WorkingConditions *m_workingConditions;
 private:
     Grid m_grid;
@@ -116,14 +115,6 @@ protected:
      *  as that code is not active.
     std::vector<uint32_t> superElasticThresholds;
      */
-
-private:
-
-    /** Carry out initialization tasks. This function is called by both
-     *  constructor overloads after the argument-type-specific bits have
-     *  been done (those that depend on WorkingCondisions or JSON).
-     */
-    void initialize();
 };
 
 class ElectronKineticsBoltzmann : public ElectronKinetics
@@ -136,8 +127,6 @@ protected:
      */
     virtual void doSolve();
 private:
-    /// shared constructor tasks
-    void initialize();
     /** solve the Boltzmann equation, taking into account only the linear terms.
      */
     void invertLinearMatrix();
@@ -224,12 +213,6 @@ private:
 
     const std::unique_ptr<ElectronElectronOperator> eeOperator;
 
-    double CIEff{0.};
-
-    // use by spatial AND temporal growth
-    GrowthModelType growthModelType;
-    double mixingParameter;
-
     // code related to spatial growth
     // term arising from Manual 2.2.0 eq. 8a with the first term of 8b:
     // (note: fieldMatrix handles the second term of 8b)
@@ -237,12 +220,18 @@ private:
     SparseMatrix fieldMatrixSpatGrowth;
     SparseMatrix ionSpatialGrowthD;
     SparseMatrix ionSpatialGrowthU;
-    double alphaRedEff{0.};
+    double alphaRedEff;
 
     // code related to temporal growth
     Vector g_fieldTemporalGrowth;
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
+    double CIEff;
+
+    // use by spatial AND temporal growth
+    const double mixingParameter;
+    const GrowthModelType growthModelType;
+
     /** Tolerance settings.
      */
     double maxEedfRelError;
@@ -257,8 +246,6 @@ public:
 protected:
     virtual void doSolve();
 private:
-    /// shared constructor tasks
-    void initialize();
     void evaluateFieldOperator();
     void evaluateMatrix();
     // calculation of the power terms

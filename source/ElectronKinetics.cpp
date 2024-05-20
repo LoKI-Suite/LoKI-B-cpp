@@ -30,17 +30,9 @@ ElectronKinetics::ElectronKinetics(const std::filesystem::path &basePath, const 
     mixture(basePath, &grid(), cnf, workingConditions),
     fieldOperator(grid()),
     inelasticOperator(grid()),
+    carOperator(mixture.CARGases().empty() ? nullptr : new CAROperator(mixture.CARGases())),
     eedf(grid().nCells())
 {
-    initialize();
-}
-
-void ElectronKinetics::initialize()
-{
-    if (!mixture.CARGases().empty())
-    {
-        carOperator.reset(new CAROperator(mixture.CARGases()));
-    }
 }
 
 void ElectronKinetics::updateMaxEnergy(double uMax)
@@ -60,17 +52,14 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
+    alphaRedEff(0.),
     fieldMatrixTempGrowth(grid().nCells(), grid().nCells()),
-    ionTemporalGrowth(grid().nCells(), grid().nCells())
-{
-    this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
-    this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
-    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
-    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
-    initialize();
-}
-
-void ElectronKineticsBoltzmann::initialize()
+    ionTemporalGrowth(grid().nCells(), grid().nCells()),
+    CIEff(0.0),
+    mixingParameter(cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter")),
+    growthModelType(getGrowthModelType(cnf.at("growthModelType"))),
+    maxEedfRelError(cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError")),
+    maxPowerBalanceRelError(cnf.at("numerics").at("maxPowerBalanceRelError"))
 {
     boltzmannMatrix.setZero(grid().nCells(), grid().nCells());
 
@@ -258,7 +247,8 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         if (grid().isUniform())
         {
             matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        } else
+        }
+        else
         {
             matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
         }
@@ -1064,8 +1054,8 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
         firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(1);
         firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
         firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(grid().duNodes().segment(1, n - 2) + grid().duNodes().segment(2, n - 2));
-    } 
-   
+    }
+
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
@@ -1313,7 +1303,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     if (grid().isUniform())
     {
         swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
-    } else 
+    } else
     {
         swarmParameters.meanEnergy = (grid().duCells().array()*grid().getCells().array().pow(1.5)*eedf.array()).sum();
     }
@@ -1335,11 +1325,6 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::pa
     {
         throw std::runtime_error("ionizationOperatorType must be 'conservative' for EEDF type 'Prescribed'.");
     }
-    initialize();
-}
-
-void ElectronKineticsPrescribed::initialize()
-{
     grid().updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
     m_workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
     /// \todo Do this here? Not all parameters may have been set at this point.
@@ -1535,7 +1520,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
      * until 9f0200138acf2ca3006fb0a27af524002ce41d41 (including)
      * In an ideal world, these are the same, but there will be differences because of the
      * discretization of the EEDF and the truncation to some u_max. It would be interesting
-     * to print both values, the discrepancy is a measure for the discretization and energy 
+     * to print both values, the discrepancy is a measure for the discretization and energy
      * truncation errors.
      */
     swarmParameters.Te = m_workingConditions->electronTemperature();
