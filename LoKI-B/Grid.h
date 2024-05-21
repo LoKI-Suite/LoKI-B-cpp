@@ -24,7 +24,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer, Jan van Dijk and Jop Hendrikx (C++ version)
- *  \date   2. May 2019 (initial version)
+ *  \date   2 May 2019 (initial version)
  */
 
 #ifndef LOKI_CPP_GRID_H
@@ -111,7 +111,7 @@ namespace loki
  *        cell boundary, that sounds odd.
  *
  *  \author Daan Boer, Jan van Dijk and Jop Hendrikx (C++ version)
- *  \date   2. May 2019 (initial version)
+ *  \date   2 May 2019 (initial version)
  */
 class Grid
 {

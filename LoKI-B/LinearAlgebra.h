@@ -126,7 +126,7 @@ struct HessenbergWorkspace
  *  indeed an upper-Hessenberg matrix.
  *
  *  \author Daan Boer
- *  \date   15. May 2019
+ *  \date   15 May 2019
  */
 double *hessenberg(const double *A, double *b, uint32_t n);
 

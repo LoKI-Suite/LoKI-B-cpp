@@ -27,7 +27,7 @@
  *  (see https://plasimo.nl) by the author.
  *
  *  \author Jan van Dijk
- *  \date   10. November 2013
+ *  \date   10 November 2013
  */
 
 #ifndef LOKI_CPP_TEST_TEST_UTILITIES_H

@@ -49,7 +49,7 @@ namespace loki
  *  An event object is default-constructable but non-copyable.
  *
  *  \author Daan Boer
- *  \date   13. May 2019
+ *  \date   13 May 2019
  */
 template <typename... T>
 class Event
