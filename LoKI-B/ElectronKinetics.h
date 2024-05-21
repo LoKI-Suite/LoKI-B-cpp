@@ -25,7 +25,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   13 July 2023
+ *  \date   13 May 2019
  */
 
 #ifndef LOKI_CPP_ELECTRONKINETICS_H
