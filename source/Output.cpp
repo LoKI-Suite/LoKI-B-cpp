@@ -98,7 +98,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
 
 FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
         const PathExistsHandler& handler)
- : Output(cnf,workingConditions), m_folder(OUTPUT "/" + cnf.at("output").at("folder").get<std::string>())
+ : Output(cnf,workingConditions), m_folder(LOKIB_OUTPUT_DIR "/" + cnf.at("output").at("folder").get<std::string>())
 {
     m_initTable = true;
     createPath(handler);
@@ -316,7 +316,7 @@ void FileOutput::createPath(const PathExistsHandler& handler)
 
         if (!newFolder.empty())
         {
-            m_folder = OUTPUT "/" + newFolder;
+            m_folder = LOKIB_OUTPUT_DIR "/" + newFolder;
             path = fs::path(m_folder);
 
             fs::create_directories(path);
