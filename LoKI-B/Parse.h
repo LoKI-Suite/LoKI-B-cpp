@@ -24,6 +24,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
  */
 
 #ifndef LOKI_CPP_PARSE_H

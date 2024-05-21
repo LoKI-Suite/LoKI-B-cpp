@@ -1,6 +1,6 @@
 /** \file
  *
- *  Declarations of the GasMixture class.
+ *  Declaration of the GasMixture class.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium

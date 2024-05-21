@@ -1,6 +1,6 @@
 /** \file
  *
- *  A lookup table class for LoKI-B
+ *  Declaration of a lookup table class for LoKI-B
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium

@@ -1,6 +1,6 @@
 /** \file
  *
- *  Declarations of the Gas class.
+ *  Declaration of the Gas class.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
