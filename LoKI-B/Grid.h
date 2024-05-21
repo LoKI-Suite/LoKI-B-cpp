@@ -113,6 +113,9 @@ namespace loki
  *  \author Daan Boer, Jan van Dijk and Jop Hendrikx (C++ version)
  *  \date   2. May 2019 (initial version)
  */
+
+class EedfMixture;
+
 class Grid
 {
   public:
@@ -218,6 +221,8 @@ class Grid
      *  then fires the event updatedMaxEnergy.
      */
     void updateMaxEnergy(double uMax);
+
+    void updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture);
 
     /** Event. This is mutable, so a new listener can be added to a constant
      *  grid object.

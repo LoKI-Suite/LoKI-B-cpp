@@ -30,6 +30,8 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/JobSystem.h"
+#include "LoKI-B/EedfMixture.h"
+#include "LoKI-B/NonuniformGridMaker.h"
 
 namespace loki
 {
@@ -144,4 +146,20 @@ void Grid::updateMaxEnergy(double uMax)
     updatedMaxEnergy.emit();
 }
 
+void Grid::updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture)
+{
+    // TODO: Build new nonuniform energy grid.
+    // m_nodes = fnc() * uMax;
+
+    m_nodes = makeGridFromMixture(mixture, uMax, 1e-9, 1.5);
+    m_cells = .5*(m_nodes.tail(m_nodes.size() - 1) + m_nodes.head(m_nodes.size() - 1));
+    m_duCells = m_nodes.tail(m_nodes.size() - 1) - m_nodes.head(m_nodes.size() - 1);
+    m_duNodes.resize(m_nodes.size());
+    m_duNodes[0] = m_cells[0] - 0.;
+    m_duNodes[m_nodes.size()-1] = uMax - m_cells[m_cells.size()-1];
+    m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
+
+    Log<Message>::Notify("Maximum energy = ", uMax, " N Grid points = ", m_nodes.size());
+    updatedMaxEnergy.emit();
+}
 } // namespace loki

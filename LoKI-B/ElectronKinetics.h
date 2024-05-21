@@ -52,6 +52,7 @@ protected:
      *  to the grid (via member grid()).
      */
     void updateMaxEnergy(double uMax);
+    void updateMaxEnergyNonuniform(double uMax);
     virtual void doSolve()=0;
 
     /// \todo See what can be made private. Introduce accessors where necessary.
