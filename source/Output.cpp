@@ -189,6 +189,7 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
 
     writeTerm(os,"Power Balance","eVm3/s", power.balance);
     writeTerm(os,"Relative Power Balance", "%", power.relativeBalance * 100);
+    os << std::endl;
     writeTerm(os,"Elastic collisions (gain)","eVm3/s", power.elasticGain);
     writeTerm(os,"Elastic collisions (loss)","eVm3/s", power.elasticLoss,true);
     writeTerm(os,"Elastic electron-electron (gain)","eVm3/s", power.electronElectronGain,true);
@@ -196,18 +197,22 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
     writeTerm(os,"Elastic electron-electron (net)","eVm3/s", power.electronElectronNet,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Elastic collisions (net)","eVm3/s", power.elasticNet);
+    os << std::endl;
     writeTerm(os,"CAR (gain)","eVm3/s", power.carGain);
     writeTerm(os,"CAR (loss)","eVm3/s", power.carLoss,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"CAR (net)","eVm3/s", power.carNet);
+    os << std::endl;
     writeTerm(os,"Excitation inelastic collisions","eVm3/s", power.excitation.forward);
     writeTerm(os,"Excitation superelastic collisions","eVm3/s", power.excitation.backward,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Excitation collisions (net)","eVm3/s", power.excitation.net());
+    os << std::endl;
     writeTerm(os,"Vibrational inelastic collisions","eVm3/s", power.vibrational.forward);
     writeTerm(os,"Vibrational superelastic collisions","eVm3/s", power.vibrational.backward,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Vibrational collisions (net)","eVm3/s", power.vibrational.net());
+    os << std::endl;
     writeTerm(os,"Rotational inelastic collisions","eVm3/s", power.rotational.forward);
     writeTerm(os,"Rotational superelastic collisions","eVm3/s", power.rotational.backward,true);
     os << std::string(73,'-') << std::endl;
@@ -225,14 +230,17 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
         writeTerm(os,"Excitation superelastic collisions","eVm3/s", gasPower.excitation.backward,true);
         os << std::string(73,'-') << std::endl;
         writeTerm(os,"Excitation collisions (net)","eVm3/s", gasPower.excitation.net());
+        os << std::endl;
         writeTerm(os,"Vibrational inelastic collisions","eVm3/s", gasPower.vibrational.forward);
         writeTerm(os,"Vibrational superelastic collisions","eVm3/s", gasPower.vibrational.backward,true);
         os << std::string(73,'-') << std::endl;
         writeTerm(os,"Vibrational collisions (net)","eVm3/s", gasPower.vibrational.net());
+        os << std::endl;
         writeTerm(os,"Rotational inelastic collisions","eVm3/s", gasPower.rotational.forward);
         writeTerm(os,"Rotational superelastic collisions","eVm3/s", gasPower.rotational.backward,true);
         os << std::string(73,'-') << std::endl;
         writeTerm(os,"Rotational collisions (net)","eVm3/s", gasPower.rotational.net());
+        os << std::endl;
         writeTerm(os,"Ionization collisions","eVm3/s", gasPower.ionization.forward); // no recombination
         writeTerm(os,"Attachment collisions","eVm3/s", gasPower.attachment.forward); // no detachment
     }
