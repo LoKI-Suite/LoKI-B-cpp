@@ -623,7 +623,7 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
             swarmParameters.Te,
             swarmParameters.driftVelocity,
             power.elasticGain,
-            power.carGain
+            power.carGain,
             power.field,
             power.elasticLoss,
             power.carLoss,
