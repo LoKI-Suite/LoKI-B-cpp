@@ -37,6 +37,7 @@
 #include <cstring>
 #include <vector>
 #include <stdexcept>
+#include <type_traits>
 
 namespace loki {
 
@@ -64,6 +65,31 @@ double maxRelDiff(const Vector& v1, const Vector& v2)
 #endif
     // std::cout << "maxRelDiff: " << res << std::endl;
     return res;
+}
+
+std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m)
+{
+    /** \todo In principle, this can be optimized, since for each row the
+     *  columns that are within bands that are in [min,max] do not need to
+     *  be checked another time.
+     */
+    static_assert(std::is_signed_v<Matrix::Index>);
+    /* 'illegal' starting values. For a zero-valued matrix
+     * these will also be the final values.
+     */
+    Matrix::Index min=+std::max(m.rows(),m.cols());
+    Matrix::Index max=-std::max(m.rows(),m.cols());
+    for (Matrix::Index r=0; r!=m.rows(); ++r)
+    for (Matrix::Index c=0; c!=m.cols(); ++c)
+    {
+        if (m(r,c)!=0.0)
+        {
+            const Matrix::Index del = c-r;
+            min = std::min(min,del);
+            max = std::max(max,del);
+        }
+    }
+    return { min, max };
 }
 
 } // namespace loki
