@@ -231,6 +231,12 @@ void ElectronKineticsBoltzmann::doSolve()
 #endif
 }
 
+/* 0: the old code.
+ * 1: the new code. That avoids a second normalization and results in a
+ *    matrix with a nicer sparsity pattern (no fully populated first row).
+ */
+#define LOKIB_AVOID_NORMALIZING_TWICE 0
+
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     // Here the Conservative ionization and attachment matrices are added.
@@ -256,11 +262,55 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
+    /* In this function we use use the matrix, the grid and the eedf vector.
+     * First check that the dimensions of these variables are OK.
+     */
+    if (matrix.rows()!=matrix.cols())
+    {
+        throw std::runtime_error("invertMatrix: the matrix is not square.");
+    }
+    if (matrix.rows()!=grid().nCells())
+    {
+        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the grid's number of cells.");
+    }
+    if (matrix.rows()!=eedf.size())
+    {
+        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the length of the solution vector.");
+    }
+    /* In principle we can allow a matrix with a single row and column, but that
+     * is not of practical interest, and in the code below we use the element
+     * matrix(0,0).
+     */
+    if (matrix.rows()<2)
+    {
+        throw std::runtime_error("invertMatrix: the matrix must have at least 2 rows.");
+    }
 
     if (!inelasticOperator.hasSuperelastics)
     {
+        /* solve Ax=b. On entry of LinAlg::hessenberg, the second argument of
+         * LinAlg::hessenberg (eedf.data) must point to b. After returning,
+         * this vector has been overwritten with the solution vector x of the
+         * system of equations.
+         */
         eedf.setZero();
-        eedf[0] = 1.;
+
+#if LOKIB_AVOID_NORMALIZING_TWICE
+
+        /* replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
+         * the system, eedf is rescaled as to satisfy the normalization condition.
+         * Choosing M(1,1) is semi-arbitrary, but avoids that we unnecessarily
+         * increase the dynamic range of the matrix elements. In principle any
+         * other non-zero value will do.
+         */
+        matrix.row(0).setZero();
+        matrix(0,0)=matrix(1,1);
+        eedf[0] = matrix(1,1);
+
+#else
+        /* replace the first equation with the normalization condition,
+         * int_0^{u_max} f(u)u^{1/2}du \approx sum_c f(u_c) (u_c)^{1/2} du_c = 1.
+         */
 
         if (grid().isUniform())
         {
@@ -269,12 +319,8 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         {
             matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
         }
-        /** We can also just make eedf[0]=1 by implementing the above and:
-         *  matrix.row(0).setZero(); matrix(0,0)=1.0;
-         *  The advantage is that the first row only has the diagonal,
-         *  over-all the matrix has a better sparsity pattern.
-         *  Then we can do the normalization afterwards.
-         */
+        eedf[0] = 1.;
+#endif
 
         LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
     }
@@ -305,18 +351,39 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 
         // LU DECOMPOSITION
         Vector b = Vector::Zero(grid().nCells());
-        b[0] = 1;
 
+#if LOKIB_AVOID_NORMALIZING_TWICE
+
+        matrix.row(0).setZero();
+        matrix(0,0)=matrix(1,1);
+        b[0] = matrix(1,1);
+#else
+        // the old code
         if (grid().isUniform())
         {
             matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        } else
+        }
+        else
         {
             matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
         }
+        b[0] = 1;
+#endif
+
         eedf = matrix.partialPivLu().solve(b);
     }
 
+#if LOKIB_AVOID_NORMALIZING_TWICE
+    // normalize the eedf
+    if (grid().isUniform())
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+    }
+    else
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
+    }
+#else
     /** \todo It seems that the normaization is superfluous, since the normalization condition
      *        is already part of the system (first row of A, first element of b). One could
      *        decide to change the first equation into eedf[0] = 1 and do the normalization
@@ -325,12 +392,14 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
      */
     // std::cout << "NORM: " <<  eedf.dot(grid().getCells().cwiseSqrt() * grid().du()) << std::endl;
     if (grid().isUniform())
-        {
-            eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
-        } else
-        {
-            eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
-        }
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+    }
+    else
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
+    }
+#endif
 
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto end = std::chrono::high_resolution_clock::now();
