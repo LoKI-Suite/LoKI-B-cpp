@@ -262,7 +262,7 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
-    /* In this function we use use the matrix, the grid and the eedf vector.
+    /* In this function we use the matrix, the grid and the eedf vector.
      * First check that the dimensions of these variables are OK.
      */
     if (matrix.rows()!=matrix.cols())
@@ -298,10 +298,10 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 #if LOKIB_AVOID_NORMALIZING_TWICE
 
         /* replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
-         * the system, eedf is rescaled as to satisfy the normalization condition.
-         * Choosing M(1,1) is semi-arbitrary, but avoids that we unnecessarily
-         * increase the dynamic range of the matrix elements. In principle any
-         * other non-zero value will do.
+         * the system, the eedf is rescaled as to satisfy the normalization 
+         * condition. Choosing M(1,1) is semi-arbitrary, but avoids that we 
+         * unnecessarily increase the dynamic range of the matrix elements. In 
+         * principle any other non-zero value will do.
          */
         matrix.row(0).setZero();
         matrix(0,0)=matrix(1,1);
@@ -384,7 +384,7 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
     }
 #else
-    /** \todo It seems that the normaization is superfluous, since the normalization condition
+    /** \todo It seems that the normalization is superfluous, since the normalization condition
      *        is already part of the system (first row of A, first element of b). One could
      *        decide to change the first equation into eedf[0] = 1 and do the normalization
      *        afterwards. That prevents a fully populated first row of the system matrix
