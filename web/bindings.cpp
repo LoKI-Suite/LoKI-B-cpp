@@ -33,7 +33,7 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
         json_type data_out;
 
         std::unique_ptr<Simulation> simulation(new Simulation("", cnf));
-        std::unique_ptr<Output> output(new JsonOutput(data_out, cnf, &simulation->m_workingConditions));
+        std::unique_ptr<Output> output(new JsonOutput(data_out, cnf, &simulation->workingConditions()));
         /** \todo Perhaps the above should be controlled by
          * cnf.at("output").at("isOn"). \todo Now that JsonOutput works, we have
          * two ouput mechanisms in place: handleResults and handleJSONOutput. I
