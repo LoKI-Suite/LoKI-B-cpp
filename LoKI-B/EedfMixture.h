@@ -30,6 +30,12 @@ class EedfMixture
     const EedfCollisionDataMixture& collision_data() const { return m_collision_data; }
     EedfCollisionDataMixture& collision_data() { return m_collision_data; }
   private:
+    void readEffectivePopulations(const std::filesystem::path &basePath,
+                                  const json_type& effPop,
+                                  EffectivePopulationsMap& effectivePopulations) const;
+    void readEffectivePopulations(const std::filesystem::path &basePath,
+                                  const std::string& f,
+                                  EffectivePopulationsMap& effectivePopulations) const;
     /** Loads the collisions from files, supplied through a vector of strings that hold
      *  the filenames. Furthermore, it needs a pointer to the energy grid and a boolean to
      *  indicate whether the collisions are extra, for correct initialization and storage of

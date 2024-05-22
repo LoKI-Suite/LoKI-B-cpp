@@ -103,11 +103,12 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
     return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
 }
 
-void GasMixture::loadStatePropertyEntry(const json_type& propEntry,
+void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-    std::cout << "loadStatePropertyEntry: handling:\n" << propEntry.dump(2) << std::endl;
-    const StateEntry entry = propertyStateFromString(propEntry.at("states"));
+    std::cout << "loadStatePropertyEntry: handling states " << state_id << ":\n" << propEntry.dump(2) << std::endl;
+    // 1. Find the state(s) for which the property must be set.
+    const StateEntry entry = propertyStateFromString(state_id);
     /** \todo Should this be part of propertyStateFromString?
      *        Is there a reason to accept a 'none'-result?
      */
@@ -124,22 +125,18 @@ void GasMixture::loadStatePropertyEntry(const json_type& propEntry,
     }
 
     // 2. Now apply the expression.
-    // Try to parse expr as a number first...
-    if (propEntry.contains("value"))
+    if (propEntry.at("type")=="constant")
     {
-        // expr is a number, now parsed into value.
         PropertyFunctions::constantValue(states, propEntry["value"], propertyType);
     }
-    else
+    else if (propEntry.at("type")=="function")
     {
-        // expr is not a number. We treat is a function (maybe with arguments).
-        const std::string functionName = propEntry.at("function").at("name");
-
+        const std::string functionName = propEntry.at("name");
         // create an argument list for the function (possibly empty)
         std::vector<double> arguments;
-        if (propEntry.at("function").contains("arguments"))
+        if (propEntry.contains("arguments"))
         {
-            for (const auto& arg : propEntry.at("function").at("arguments"))
+            for (const auto& arg : propEntry.at("arguments"))
             {
                 double pvalue;
                 if (arg.is_number())
@@ -160,23 +157,35 @@ void GasMixture::loadStatePropertyEntry(const json_type& propEntry,
         }
         PropertyFunctions::callByName(functionName, states, arguments, propertyType);
     }
+    else
+    {
+        throw std::runtime_error("Unknown property type '" + propEntry.at("type").get<std::string>() + "'.");
+    }
 }
 
 void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const json_type& stateProp,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-    for (const auto &propEntry : stateProp)
+    if (stateProp.contains("states"))
     {
-        if (propEntry.contains("file"))
+        for (const auto& propEntry : stateProp["states"].items())
+        {
+            loadStatePropertyEntry(propEntry.key(),propEntry.value(), propertyType, workingConditions);
+        }
+    }
+    if (stateProp.contains("files"))
+    {
+        for (const auto &propEntry : stateProp["files"])
         {
             std::cout << "loadStateProperty: handling: " << propEntry.dump() << std::endl;
-            std::filesystem::path fileName(propEntry.at("file"));
+            std::filesystem::path fileName(propEntry);
             if (fileName.is_relative())
             {
                 fileName = basePath.parent_path() / fileName;
             }
             try
             {
+                // call this function recursively for each specified file.
                 if (fileName.extension()==".json")
                 {
                     const json_type entries = read_json_from_file(fileName);
@@ -195,10 +204,6 @@ void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const 
                                         + statePropertyName(propertyType) + "': "
                                         + std::string{exc.what()} );
             }
-        }
-        else
-        {
-            loadStatePropertyEntry(propEntry, propertyType, workingConditions);
         }
     }
 }
