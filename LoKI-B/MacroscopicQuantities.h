@@ -30,6 +30,8 @@
 #ifndef LOKI_CPP_MACROSCOPICQUANTITIES_H
 #define LOKI_CPP_MACROSCOPICQUANTITIES_H
 
+#include <complex>
+
 namespace loki {
 
 struct SwarmParameters
@@ -40,6 +42,7 @@ struct SwarmParameters
     double redAttCoeff{0.};
     double redDiffCoeffEnergy{0.};
     double redMobilityEnergy{0.};
+    std::complex<double> redMobilityHF{0.,0.};
     double meanEnergy{0.};
     double characEnergy{0.};
     double Te{0.};

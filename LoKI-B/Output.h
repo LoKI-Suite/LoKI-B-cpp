@@ -63,7 +63,11 @@ protected:
                                const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
     virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
     const WorkingConditions *m_workingConditions;
+    bool isBoltzmann() const { return m_isBoltzmann; }
+    bool isSimulationHF() const { return m_isSimulationHF; }
 private:
+    const bool m_isBoltzmann;
+    const bool m_isSimulationHF;
     bool saveEedf, savePower, saveSwarm, saveRates, saveTable;
 };
 

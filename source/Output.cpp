@@ -46,7 +46,9 @@ Output::~Output()
 }
 
 Output::Output(const json_type &cnf, const WorkingConditions *workingConditions)
-    : m_workingConditions(workingConditions)
+    : m_workingConditions(workingConditions),
+    m_isBoltzmann(cnf.at("electronKinetics").at("eedfType")=="boltzmann"),
+    m_isSimulationHF(m_workingConditions->reducedExcFreqSI()>0.0)
 {
     saveEedf = false;
     savePower = false;
@@ -148,12 +150,22 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
     writeTerm(os,"Reduced electric field", "Td", m_workingConditions->reducedField());
     writeTerm(os,"Reduced diffusion coefficient","1/(ms)",swarmParameters.redDiffCoeff);
     writeTerm(os,"Reduced mobility coefficient","1/(msV)",swarmParameters.redMobCoeff);
-    writeTerm(os,"Reduced Townsend coefficient","m2",swarmParameters.redTownsendCoeff);
-    writeTerm(os,"Reduced attachment coefficient","m2",swarmParameters.redAttCoeff);
+    if (isSimulationHF())
+    {
+        writeTerm(os,"Re(Reduced mobility HF)","1/(msV)", swarmParameters.redMobilityHF.real());
+        writeTerm(os,"Im(Reduced mobility HF)","1/(msV)", swarmParameters.redMobilityHF.imag());
+    }
+    else
+    {
+        writeTerm(os,"Drift velocity","m/s",swarmParameters.driftVelocity);
+        writeTerm(os,"Reduced Townsend coefficient","m2",swarmParameters.redTownsendCoeff);
+        writeTerm(os,"Reduced attachment coefficient","m2",swarmParameters.redAttCoeff);
+    }
+    writeTerm(os,"Reduced energy diffusion coefficient","eV/(ms)",swarmParameters.redDiffCoeffEnergy);
+    writeTerm(os,"Reduced energy mobility","eV/(msV)",swarmParameters.redMobilityEnergy);
     writeTerm(os,"Mean energy","eV",swarmParameters.meanEnergy);
     writeTerm(os,"Characteristic energy","eV",swarmParameters.characEnergy);
     writeTerm(os,"Electron temperature","eV",swarmParameters.Te);
-    writeTerm(os,"Drift velocity","m/s",swarmParameters.driftVelocity);
 }
 
 void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
@@ -258,48 +270,140 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 
 void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
+    /// \todo Write lookUpTablePower.txt and lookUpTableRateCoeff.txt
     std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
-    if (m_initTable)
+    if (isBoltzmann())
     {
-        os	<< "RedField(Td)          "
-		<< "RedDif(1/(ms))        "
-		<< "RedMob(1/(msV))       "
-		<< "DriftVelocity(m/s)    "
-		<< "RedTow(m2)            "
-                << "RedAtt(m2)            "
-		<< "RedDiffE(eV/(ms))     "
-		<< "RedMobE(eV/(msV))     "
-		<< "MeanE(eV)             "
-		<< "CharE(eV)             "
-		<< "EleTemp(eV)           "
+        if (m_initTable)
+        {
+            os
+                << "RedField(Td)          "
+                << "RedDif(1/(ms))        "
+                << "RedMob(1/(msV))       ";
+            if (isSimulationHF())
+            {
+                os
+                    << "R[RedMobHF]((msV)^-1) "
+                    << "I[RedMobHF]((msV)^-1)";
+            }
+            else
+            {
+                os
+                    << "DriftVelocity(m/s)    "
+                    << "RedTow(m2)            "
+                    << "RedAtt(m2)            ";
+            }
+            os
+                << "RedDiffE(eV/(ms))     "
+                << "RedMobE(eV/(msV))     "
+                << "MeanE(eV)             "
+                << "CharE(eV)             "
+                << "EleTemp(eV)           "
                 << "RelativePowerBalance"
-		<< std::endl;
-        m_initTable = false;
+                << std::endl;
+           m_initTable = false;
+        }
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+        if (isSimulationHF())
+        {
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityHF.real();
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityHF.imag();
+        }
+        else
+        {
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
+        }
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeffEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
+        os << std::endl;
     }
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeffEnergy;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityEnergy;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
-    os << ' ';
-    os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
-    os << std::endl;
+    else // prescribed EEDF
+    {
+        if (m_initTable)
+        {
+            os
+                << "EleTemp(eV)           "
+                << "RedField(Td)          "
+                << "RedDif(1/(ms))        "
+                << "RedMob(1/(msV))       ";
+            if (isSimulationHF())
+            {
+                os
+                    << "R[RedMobHF]((msV)^-1) "
+                    << "I[RedMobHF]((msV)^-1)";
+            }
+            else
+            {
+                os
+                    << "DriftVelocity(m/s)    "
+                    << "RedTow(m2)            "
+                    << "RedAtt(m2)            ";
+            }
+            os
+                << "RedDiffE(eV/(ms))     "
+                << "RedMobE(eV/(msV))     "
+                << "MeanE(eV)             "
+                << "CharE(eV)             "
+                << "RelativePowerBalance"
+                << std::endl;
+           m_initTable = false;
+        }
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+        if (isSimulationHF())
+        {
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityHF.real();
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityHF.imag();
+        }
+        else
+        {
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.driftVelocity;
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redTownsendCoeff;
+            os << ' ';
+            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redAttCoeff;
+        }
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeffEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobilityEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+        os << ' ';
+        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100) << '%';
+        os << std::endl;
+    }
 }
 
 void FileOutput::createPath(const PathExistsHandler& handler)
@@ -373,6 +477,7 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 
 void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
+    /// \todo Handle isSimulationHF()
     json_type& out = (*m_active)["swarm_parameters"];
     out.push_back( makeQuantity("Reduced electric field", m_workingConditions->reducedField(), "Td") );
     out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
@@ -387,6 +492,7 @@ void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 
 void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
 {
+    /// \todo Handle isSimulationHF()
     json_type& out = (*m_active)["power_balance"];
     out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
     //out.push_back( { "Field", "eV*m^3/s", power.field });
@@ -451,6 +557,7 @@ void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
 void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                    const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
+    /// \todo Handle isSimulationHF()
     if (rateCoefficients.size())
     {
         json_type& out = (*m_active)["rate_coefficients"];
@@ -484,6 +591,7 @@ void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 
 void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
 {
+    /// \todo Handle isSimulationHF()
     json_type* out = m_root.contains("lookup_table")
                 ? &m_root["lookup_table"]
                 : nullptr;

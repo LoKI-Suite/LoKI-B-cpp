@@ -249,7 +249,6 @@ private:
     double alphaRedEff;
 
     // code related to temporal growth
-    Vector g_fieldTemporalGrowth;
     SparseMatrix fieldMatrixTempGrowth;
     SparseMatrix ionTemporalGrowth;
     double CIEff;
