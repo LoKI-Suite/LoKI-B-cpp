@@ -1,6 +1,32 @@
-//
-// Created by daan on 13-5-19.
-//
+/** \file
+ *
+ *  Interfaces of classes that produce the EEDF and calculate swarm
+ *  parameters and power terms.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   13 July 2023
+ */
 
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
@@ -30,17 +56,9 @@ ElectronKinetics::ElectronKinetics(const std::filesystem::path &basePath, const 
     mixture(basePath, &grid(), cnf, workingConditions),
     fieldOperator(grid()),
     inelasticOperator(grid()),
+    carOperator(mixture.CARGases().empty() ? nullptr : new CAROperator(mixture.CARGases())),
     eedf(grid().nCells())
 {
-    initialize();
-}
-
-void ElectronKinetics::initialize()
-{
-    if (!mixture.CARGases().empty())
-    {
-        carOperator.reset(new CAROperator(mixture.CARGases()));
-    }
 }
 
 void ElectronKinetics::updateMaxEnergy(double uMax)
@@ -60,23 +78,21 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
     fieldMatrixSpatGrowth(grid().nCells(), grid().nCells()),
     ionSpatialGrowthD(grid().nCells(), grid().nCells()),
     ionSpatialGrowthU(grid().nCells(), grid().nCells()),
+    alphaRedEff(0.),
     fieldMatrixTempGrowth(grid().nCells(), grid().nCells()),
-    ionTemporalGrowth(grid().nCells(), grid().nCells())
+
+    ionTemporalGrowth(grid().nCells(), grid().nCells()),
+    CIEff(0.0),
+    mixingParameter(cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter")),
+    growthModelType(getGrowthModelType(cnf.at("growthModelType"))),
+    maxEedfRelError(cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError")),
+    maxPowerBalanceRelError(cnf.at("numerics").at("maxPowerBalanceRelError"))
 {
-    this->mixingParameter = cnf.at("numerics").at("nonLinearRoutines").at("mixingParameter");
-    this->maxEedfRelError = cnf.at("numerics").at("nonLinearRoutines").at("maxEedfRelError");
-    this->maxPowerBalanceRelError = cnf.at("numerics").at("maxPowerBalanceRelError");
-    this->growthModelType = getGrowthModelType(cnf.at("growthModelType"));
     if (growthModelType == GrowthModelType::spatial && workingConditions->reducedExcFreqSI()!=0.0)
     {
         throw std::runtime_error("The excitation frequency must be zero when "
                                  "the spatial growth model is used.");
     }
-    initialize();
-}
-
-void ElectronKineticsBoltzmann::initialize()
-{
     boltzmannMatrix.setZero(grid().nCells(), grid().nCells());
 
     /// \todo the following two tasks should probably be part of the IonizationOperator constructor
@@ -231,6 +247,12 @@ void ElectronKineticsBoltzmann::doSolve()
 #endif
 }
 
+/* 0: the old code.
+ * 1: the new code. That avoids a second normalization and results in a
+ *    matrix with a nicer sparsity pattern (no fully populated first row).
+ */
+#define LOKIB_AVOID_NORMALIZING_TWICE 0
+
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     // Here the Conservative ionization and attachment matrices are added.
@@ -256,6 +278,29 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
+    /* In this function we use the matrix, the grid and the eedf vector.
+     * First check that the dimensions of these variables are OK.
+     */
+    if (matrix.rows()!=matrix.cols())
+    {
+        throw std::runtime_error("invertMatrix: the matrix is not square.");
+    }
+    if (matrix.rows()!=grid().nCells())
+    {
+        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the grid's number of cells.");
+    }
+    if (matrix.rows()!=eedf.size())
+    {
+        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the length of the solution vector.");
+    }
+    /* In principle we can allow a matrix with a single row and column, but that
+     * is not of practical interest, and in the code below we use the element
+     * matrix(0,0).
+     */
+    if (matrix.rows()<2)
+    {
+        throw std::runtime_error("invertMatrix: the matrix must have at least 2 rows.");
+    }
 
 // show the bandwidth?
 #define LOKI_DEBUG_BANDWIDTH 0
@@ -285,21 +330,34 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
          * system of equations.
          */
         eedf.setZero();
-        eedf[0] = 1.;
+
+#if LOKIB_AVOID_NORMALIZING_TWICE
+
+        /* replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
+         * the system, the eedf is rescaled as to satisfy the normalization 
+         * condition. Choosing M(1,1) is semi-arbitrary, but avoids that we 
+         * unnecessarily increase the dynamic range of the matrix elements. In 
+         * principle any other non-zero value will do.
+         */
+        matrix.row(0).setZero();
+        matrix(0,0)=matrix(1,1);
+        eedf[0] = matrix(1,1);
+
+#else
+        /* replace the first equation with the normalization condition,
+         * int_0^{u_max} f(u)u^{1/2}du \approx sum_c f(u_c) (u_c)^{1/2} du_c = 1.
+         */
 
         if (grid().isUniform())
         {
             matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        } else
+        }
+        else
         {
             matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
         }
-        /** We can also just make eedf[0]=1 by implementing the above and:
-         *  matrix.row(0).setZero(); matrix(0,0)=1.0;
-         *  The advantage is that the first row only has the diagonal,
-         *  over-all the matrix has a better sparsity pattern.
-         *  Then we can do the normalization afterwards.
-         */
+        eedf[0] = 1.;
+#endif
 
         LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
     }
@@ -333,19 +391,40 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 
         // LU DECOMPOSITION
         Vector b = Vector::Zero(grid().nCells());
-        b[0] = 1;
 
+#if LOKIB_AVOID_NORMALIZING_TWICE
+
+        matrix.row(0).setZero();
+        matrix(0,0)=matrix(1,1);
+        b[0] = matrix(1,1);
+#else
+        // the old code
         if (grid().isUniform())
         {
             matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        } else
+        }
+        else
         {
             matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
         }
+        b[0] = 1;
+#endif
+
         eedf = matrix.partialPivLu().solve(b);
     }
 
-    /** \todo It seems that the normaization is superfluous, since the normalization condition
+#if LOKIB_AVOID_NORMALIZING_TWICE
+    // normalize the eedf
+    if (grid().isUniform())
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+    }
+    else
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
+    }
+#else
+    /** \todo It seems that the normalization is superfluous, since the normalization condition
      *        is already part of the system (first row of A, first element of b). One could
      *        decide to change the first equation into eedf[0] = 1 and do the normalization
      *        afterwards. That prevents a fully populated first row of the system matrix
@@ -353,12 +432,14 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
      */
     // std::cout << "NORM: " <<  eedf.dot(grid().getCells().cwiseSqrt() * grid().du()) << std::endl;
     if (grid().isUniform())
-        {
-            eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
-        } else
-        {
-            eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
-        }
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
+    }
+    else
+    {
+        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
+    }
+#endif
 
 #ifdef LOKIB_TIME_INVERT_MATRIX
     auto end = std::chrono::high_resolution_clock::now();
@@ -1079,8 +1160,8 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
         firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(1);
         firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
         firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(grid().duNodes().segment(1, n - 2) + grid().duNodes().segment(2, n - 2));
-    } 
-   
+    }
+
     Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
 
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
@@ -1339,7 +1420,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     if (grid().isUniform())
     {
         swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
-    } else 
+    } else
     {
         swarmParameters.meanEnergy = (grid().duCells().array()*grid().getCells().array().pow(1.5)*eedf.array()).sum();
     }
@@ -1361,11 +1442,6 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::pa
     {
         throw std::runtime_error("ionizationOperatorType must be 'conservative' for EEDF type 'Prescribed'.");
     }
-    initialize();
-}
-
-void ElectronKineticsPrescribed::initialize()
-{
     grid().updatedMaxEnergy.addListener(&ElectronKineticsPrescribed::evaluateMatrix, this);
     m_workingConditions->updatedReducedField.addListener(&ElectronKineticsPrescribed::evaluateFieldOperator, this);
     /// \todo Do this here? Not all parameters may have been set at this point.
@@ -1590,7 +1666,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
      * until 9f0200138acf2ca3006fb0a27af524002ce41d41 (including)
      * In an ideal world, these are the same, but there will be differences because of the
      * discretization of the EEDF and the truncation to some u_max. It would be interesting
-     * to print both values, the discrepancy is a measure for the discretization and energy 
+     * to print both values, the discrepancy is a measure for the discretization and energy
      * truncation errors.
      */
     swarmParameters.Te = m_workingConditions->electronTemperature();

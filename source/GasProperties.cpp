@@ -24,7 +24,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Jan van Dijk
- *  \date   2. May 2024
+ *  \date   2 May 2024
  */
 
 #include "LoKI-B/GasProperties.h"

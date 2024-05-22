@@ -6,7 +6,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2022 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -75,27 +75,22 @@ namespace loki
 class lokib_export Simulation
 {
 public:
-    explicit Simulation(const std::filesystem::path &basePath, const json_type &cnf);
-    // Copying this object is not allowed.
+    Simulation(const std::filesystem::path &basePath, const json_type &cnf);
     Simulation(const Simulation &other) = delete;
-    ~Simulation();
-
+    Simulation(Simulation &&other) = delete;
+    Simulation& operator=(const Simulation &other) = delete;
+    Simulation& operator=(Simulation &&other) = delete;
+    ~Simulation() = default;
     /// \todo document run
     void run();
-
+    const WorkingConditions& workingConditions() const { return m_workingConditions; }
+    ElectronKinetics::ResultEvent& obtainedResults() { return m_obtainedResults; }
 private:
     void initializeJobs(const json_type &cnf, bool useReducedFieldParameter);
-
-    std::unique_ptr<ElectronKinetics> m_electronKinetics;
-
-public:
-    /** \todo Make these private, use read-only accessor where necessary
-     *  That avoids accidental modifications of these members that could
-     *  break the proper operation of this class.
-     */
     WorkingConditions m_workingConditions;
     JobManager m_jobManager;
-    ResultEvent m_obtainedResults;
+    std::unique_ptr<ElectronKinetics> m_electronKinetics;
+    ElectronKinetics::ResultEvent m_obtainedResults;
 };
 } // namespace loki
 

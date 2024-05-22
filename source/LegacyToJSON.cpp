@@ -101,9 +101,9 @@ void patchStateProperty(json_type& stateProp)
             if (Parse::getValue(expr, value))
             {
                 json_type prop;
-                prop["states"] = state_id;
+                prop["type"] = "constant";
                 prop["value"] = value;
-                stateProp.push_back(prop);
+                stateProp["states"][state_id] = prop;
             }
             else
             {
@@ -120,9 +120,8 @@ void patchStateProperty(json_type& stateProp)
                 const std::string argumentString = fm.str(2);
 
                 json_type prop;
-                prop["states"] = state_id;
-                json_type func;
-                func["name"] = functionName;
+                prop["type"] = "function";
+                prop["name"] = functionName;
 
                 // create an argument list for the function (possibly empty)
                 std::vector<double> arguments;
@@ -142,23 +141,14 @@ void patchStateProperty(json_type& stateProp)
                     {
                         val_node = arg;
                     }
-                    func["arguments"].push_back(val_node);
+                    prop["arguments"].push_back(val_node);
                 }
-                prop["function"] = func;
-                stateProp.push_back(prop);
+                stateProp["states"][state_id] = prop;
             }
         }
         else
         {
-            json_type prop;
-            prop["file"] = line;
-            stateProp.push_back(prop);
-            /** \todo Also in case we read a property file, the expression type could be a function.
-             *        It would be nice if the external file case behaves the same as the inline case.
-             *        This could be achieved by first assembling a collection of tasks (either from
-             *        the settings node or from file), then execute these tasks. That will be more
-             *        general and simplify this function at the same time.
-             */
+            stateProp["files"].push_back(line);
         }
     }
 }
@@ -207,6 +197,15 @@ void patchElectronKinetics(json_type& ek)
 {
     patchFractions(ek.at("gasProperties").at("fraction"));
     patchStateProperties(ek.at("stateProperties"));
+    if (ek.contains("effectiveCrossSectionPopulations"))
+    {
+        json_type effPop;
+        for (const auto& fileName : ek.at("effectiveCrossSectionPopulations"))
+        {
+            effPop["files"].push_back(fileName.get<std::string>());
+        }
+        ek.at("effectiveCrossSectionPopulations") = effPop;
+    }
 }
 
 json_type legacyToJSON(const json_type& legacy)

@@ -1,6 +1,3 @@
-#ifndef H_LOKI_B_EXPORTS_H
-#define H_LOKI_B_EXPORTS_H
-
 /** \file
  *
  *  DLL import/export macros for LoKI-B.
@@ -9,7 +6,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -46,6 +43,9 @@
  *  \author Jan van Dijk
  *  \date   30 August 2022
  */
+
+#ifndef H_LOKI_B_EXPORTS_H
+#define H_LOKI_B_EXPORTS_H
 
 #if defined(LOKIB_BUILDING_LIBLOKIB)
 
