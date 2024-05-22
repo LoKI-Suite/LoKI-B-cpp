@@ -155,7 +155,7 @@ try
         if (cnf.at("output").contains("writeText")==false || cnf.at("output").at("writeText"))
         {
             output.emplace_back(
-                new loki::FileOutput(cnf, &simulation.m_workingConditions,
+                new loki::FileOutput(cnf, &simulation.workingConditions(),
                         &handleExistingOutputPath));
         }
         // Write JSON (to the console, at the end) only when asked for: when key 'writeJSON' exists
@@ -164,16 +164,16 @@ try
         {
             json_output_data.reset(new loki::json_type);
             output.emplace_back(
-                new loki::JsonOutput(*json_output_data, cnf, &simulation.m_workingConditions));
+                new loki::JsonOutput(*json_output_data, cnf, &simulation.workingConditions()));
         }
     }
-    // register all output producers with the simulation.m_obtainedResults event
+    // register all output producers with the simulation's obtainedResults event
     for (const auto& out : output)
     {
-        simulation.m_obtainedResults.addListener(&loki::Output::saveCycle, out.get());
+        simulation.obtainedResults().addListener(&loki::Output::saveCycle, out.get());
     }
 
-    simulation.m_obtainedResults.addListener(handleResults);
+    simulation.obtainedResults().addListener(handleResults);
 
     simulation.run();
     auto end = std::chrono::high_resolution_clock::now();

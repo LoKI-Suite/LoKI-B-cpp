@@ -6,7 +6,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -24,7 +24,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   15. May 2019
+ *  \date   15 May 2019
  */
 
 #ifndef LOKI_CPP_LINEARALGEBRA_H
@@ -126,7 +126,7 @@ struct HessenbergWorkspace
  *  indeed an upper-Hessenberg matrix.
  *
  *  \author Daan Boer
- *  \date   15. May 2019
+ *  \date   15 May 2019
  */
 double *hessenberg(const double *A, double *b, uint32_t n);
 
