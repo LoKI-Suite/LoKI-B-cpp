@@ -257,8 +257,33 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     auto begin = std::chrono::high_resolution_clock::now();
 #endif
 
+// show the bandwidth?
+#define LOKI_DEBUG_BANDWIDTH 0
+// use the bandwidth to decide on Hessenberg?
+#define LOKI_USE_DEBUG_BANDWIDTH 0
+
+#if LOKI_DEBUG_BANDWIDTH==1 || LOKI_USE_DEBUG_BANDWIDTH==1
+    const auto bw = calculateBandwidth(matrix);
+#endif
+#if LOKI_DEBUG_BANDWIDTH==1
+    std::cout << "In ElectronKineticsBoltzmann::invertMatrix" << std::endl;
+    std::cout << " * Bandwidth: [" << bw.first << ',' << bw.second << ']' << std::endl;
+    std::cout << " * inelasticOperator.hasSuperelastics: " << inelasticOperator.hasSuperelastics << std::endl;
+#endif
+#if LOKI_USE_DEBUG_BANDWIDTH==1
+    if (bw.first==-1)
+#else
     if (!inelasticOperator.hasSuperelastics)
+#endif
     {
+#if LOKI_DEBUG_BANDWIDTH==1
+        std::cout << " * Using hessenberg" << std::endl;
+#endif
+        /* solve Ax=b. On entry of LinAlg::hessenberg, the second argument of
+         * LinAlg::hessenberg (eedf.data) must point to b. After returning,
+         * this vector has been overwritten with the solution vector x of the
+         * system of equations.
+         */
         eedf.setZero();
         eedf[0] = 1.;
 
@@ -280,6 +305,9 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     }
     else
     {
+#if LOKI_DEBUG_BANDWIDTH==1
+        std::cout << " * Using partialPivLu" << std::endl;
+#endif
         /** \todo Explain the idea that is outlined below. Is it correct that p is not used
          *        after the call to LinAlg::hessenbergReductionPartialPiv? Is this icomplete?
          */
