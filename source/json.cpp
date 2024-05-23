@@ -38,8 +38,7 @@ namespace loki
 
 json_type read_json_from_stream(std::istream &is)
 {
-    std::string str((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-    return json_type::parse(str);
+    return json_type::parse(is);
 }
 
 json_type read_json_from_file(const std::filesystem::path &fname)
