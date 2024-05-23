@@ -199,12 +199,6 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
 
-    /** \todo see the comments about superElasticThresholds in the header file.
-    // Sort and erase duplicates.
-    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
-    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
-                                 superElasticThresholds.end());
-    */
     if (eeOperator)
     {
         eeOperator->initialize(grid());
