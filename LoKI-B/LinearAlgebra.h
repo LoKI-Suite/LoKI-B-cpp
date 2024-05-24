@@ -44,6 +44,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <utility>
 
 namespace loki {
 
@@ -81,6 +82,48 @@ using SparseMatrix = Eigen::SparseMatrix<double>;
  *  \date   December 2020
  */
 double maxRelDiff(const Vector& v1, const Vector& v2);
+
+/** Calculates and returns the lower and upper bandwidths of matrix \a m
+ *  (m does not need to be square).
+ *
+ *  Let diagonal 'd' indicate the collection of elements m(r,c), with c=r+d.
+ *  As an example, d=0 is the main diagonal, d=-1 the subdiagonal and d=1 the
+ *  superdiagonal. The members first and second of the return value of this
+ *  function return the (signed) lower and upper bandwidths, which are defined
+ *  as the lowest and highest values of d such that diagonal d contains at least
+ *  one non-zero element.
+ *
+ *  As an example, for a diagonal matrix the return value is {0,0}, for a
+ *  tridiagonal matrix it is {-1,1}. For an strictly lower triangular matrix
+ *  with R rows and C columns we get {-(R-1),01} and for an upper Hessenberg
+ *  matrix the return value is {-1,C-1}. These cases have been visualized
+ *  below.
+  \verbatim
+    X000
+    0X00  {0,0}
+    00X0
+  
+    XX00
+    XXX0 {-1,1}
+    0XXX
+    00XX
+  
+    000000
+    X00000 {-3,0}
+    XX0000
+    XXX000
+  
+    XXXXX
+    XXXXX {-1,4}
+    0XXXX
+    00XXX
+    000XX
+    0000X \endverbatim
+ *
+ *  \author Jan van Dijk
+ *  \date   May 2024
+ */
+std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m);
 
 } // namespace loki
 
