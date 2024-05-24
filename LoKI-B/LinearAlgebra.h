@@ -158,6 +158,25 @@ struct HessenbergWorkspace
     Vector v;
 };
 
+namespace impl {
+
+/** This appears to implement a Givens rotation (simplified form).
+ *  \todo Document the details of this function, explain its role in the
+ *  Hessenberg implementation, provide a reference. Note that a full
+ *  Givens rotation has a slightly different (more complex) interface,
+ *  see for example https://en.wikipedia.org/wiki/Givens_rotation
+ *
+ *  This function is only used in the mplementation of hessenberg. The
+ *  reason for exposing it in this header file that it is also used by
+ *  the permuting hessenberg implementation in ideas/HessenbergExtra.cpp.
+ *
+ *  \author Daan Boer
+ *  \date   15 May 2019
+ */
+void givens(double a, double b, double &c, double &s);
+
+}
+
 /** Solve the matrix-vector equation Ax=b for an upper-Hessenberg matrix.
  *  Argument \a A is a pointer a dense matrix and must use column-major
  *  storage order. On input, \a b must point to the first element of the

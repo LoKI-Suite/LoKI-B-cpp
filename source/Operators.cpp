@@ -502,11 +502,6 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         if (productDensity == 0)
                             continue;
 
-                        /** \todo see the comments about superElasticThresholds in the ElectronKinetics.h.
-                        if (numThreshold > 1)
-                            superElasticThresholds.emplace_back(numThreshold);
-                        */
-
                         if (numThreshold != 1)
                             hasSuperelastics = true;
 

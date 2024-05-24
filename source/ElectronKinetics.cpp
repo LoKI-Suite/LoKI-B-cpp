@@ -199,12 +199,6 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
 
-    /** \todo see the comments about superElasticThresholds in the header file.
-    // Sort and erase duplicates.
-    std::sort(superElasticThresholds.begin(), superElasticThresholds.end());
-    superElasticThresholds.erase(unique(superElasticThresholds.begin(), superElasticThresholds.end()),
-                                 superElasticThresholds.end());
-    */
     if (eeOperator)
     {
         eeOperator->initialize(grid());
@@ -366,30 +360,6 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 #if LOKI_DEBUG_BANDWIDTH==1
         std::cout << " * Using partialPivLu" << std::endl;
 #endif
-        /** \todo Explain the idea that is outlined below. Is it correct that p is not used
-         *        after the call to LinAlg::hessenbergReductionPartialPiv? Is this icomplete?
-         */
-        // TODO: Find a way to distinguish when to use LU and when to use Hessenberg reduction.
-
-        // HESSENBERG WITH PARTIAL PIVOTING
-        //            auto *p = new uint32_t[grid().nCells()];
-        //
-        //            for (Grid::Index i = 0; i < grid().nCells(); ++i)
-        //                p[i] = i;
-        //
-        //            LinAlg::hessenbergReductionPartialPiv(matrix.data(), &superElasticThresholds[0], p,
-        //              grid().nCells(), superElasticThresholds.size());
-        //
-        //            eedf.setZero();
-        //            eedf[0] = 1.;
-        //
-        //            matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        //
-        //            LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
-        //
-        //            delete[] p;
-
-        // LU DECOMPOSITION
         Vector b = Vector::Zero(grid().nCells());
 
 #if LOKIB_AVOID_NORMALIZING_TWICE

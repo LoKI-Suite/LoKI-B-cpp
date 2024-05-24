@@ -134,13 +134,6 @@ protected:
     Power power;
 
     SwarmParameters swarmParameters;
-
-    /** \todo superElasticThresholds is only used in the disabled code path
-     *  in invertMatrix that uses LinAlg::hessenbergReductionPartialPiv.
-     *  It seems that all this should be removed or at least disabled as long
-     *  as that code is not active.
-    std::vector<uint32_t> superElasticThresholds;
-     */
 };
 
 class ElectronKineticsBoltzmann : public ElectronKinetics
