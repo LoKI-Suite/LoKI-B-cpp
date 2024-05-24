@@ -296,8 +296,28 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
         throw std::runtime_error("invertMatrix: the matrix must have at least 2 rows.");
     }
 
+// show the bandwidth?
+#define LOKI_DEBUG_BANDWIDTH 0
+// use the bandwidth to decide on Hessenberg?
+#define LOKI_USE_DEBUG_BANDWIDTH 0
+
+#if LOKI_DEBUG_BANDWIDTH==1 || LOKI_USE_DEBUG_BANDWIDTH==1
+    const auto bw = calculateBandwidth(matrix);
+#endif
+#if LOKI_DEBUG_BANDWIDTH==1
+    std::cout << "In ElectronKineticsBoltzmann::invertMatrix" << std::endl;
+    std::cout << " * Bandwidth: [" << bw.first << ',' << bw.second << ']' << std::endl;
+    std::cout << " * inelasticOperator.hasSuperelastics: " << inelasticOperator.hasSuperelastics << std::endl;
+#endif
+#if LOKI_USE_DEBUG_BANDWIDTH==1
+    if (bw.first==-1)
+#else
     if (!inelasticOperator.hasSuperelastics)
+#endif
     {
+#if LOKI_DEBUG_BANDWIDTH==1
+        std::cout << " * Using hessenberg" << std::endl;
+#endif
         /* solve Ax=b. On entry of LinAlg::hessenberg, the second argument of
          * LinAlg::hessenberg (eedf.data) must point to b. After returning,
          * this vector has been overwritten with the solution vector x of the
@@ -337,7 +357,9 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     }
     else
     {
-        // LU DECOMPOSITION
+#if LOKI_DEBUG_BANDWIDTH==1
+        std::cout << " * Using partialPivLu" << std::endl;
+#endif
         Vector b = Vector::Zero(grid().nCells());
 
 #if LOKIB_AVOID_NORMALIZING_TWICE
