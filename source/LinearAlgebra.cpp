@@ -159,5 +159,47 @@ double *hessenberg(const double *A, double *b, uint32_t n)
     return hessenberg(A,b,n,hws);
 }
 
+void solveTDMA(const Matrix& A, const Vector& b, Vector& x)
+{
+    static_assert(std::is_signed_v<Vector::Index>);
+    Vector P( x.size() );
+    Vector Q( x.size() );
+
+    const Vector::Index last=x.size()-1;
+
+    // 1. forward sweep. Calculares auxiliary vectors P and Q from A and b.
+
+    if (A(0,0)==0.0)
+    {
+            throw std::runtime_error("Solver error: ap==0.");
+    }
+    P[0] = A(0,1)/A(0,0);
+    Q[0] =   b[0]/A(0,0);
+    for (Vector::Index p=1; p <= last ; ++p)
+    {
+            const typename Matrix::Scalar denom = A(p,p)-A(p,p-1)*P[p-1];
+            if (denom==0.0)
+            {
+                     throw std::runtime_error("TDMA solver error: zero denominator.");
+            }
+            const typename Matrix::Scalar _1_denom = 1.0/denom;
+            P[p] = (p==last) ? 0.0 : A(p,p+1)*_1_denom;
+            Q[p] = (b[p]-A(p,p-1)*Q[p-1])*_1_denom;
+    }
+
+    // 2. backward sweep. Calculates x from P and Q.
+
+    x[last]=Q[last];
+    for (Vector::Index p=last-1; p>=0; --p)
+    {
+            x[p] = Q[p] - P[p]*x[p+1];
+    }
+}
+
+void solveTDMA(const Matrix& A, Vector& bx)
+{
+    solveTDMA(A,bx,bx);
+}
+
 } // namespace LinAlg
 } // namespace loki

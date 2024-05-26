@@ -205,6 +205,41 @@ double *hessenberg(const double *A, double *b, uint32_t n);
  */
 double *hessenberg(const double *A, double *b, uint32_t n, HessenbergWorkspace& hws);
 
+/** The TDMA (Tri-Diagonal Matrix Algorithm) or 'Thomas algorithm' solves a
+ *  system Ax=b for a tridiagonal matrix A. For an explanation, see for example
+ *  https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+ *
+ *  Since non-zero entries of A appear only on the diagonal and the first
+ *  subdiagonal and superdiagonal, the i'th equation takes the form
+    \verbatim
+      i=0:                       A(i,i)x(i) + A(i,i+1)x(i) = b(i),
+      0<i<n-1: A(i,i-1)*x(i-1) + A(i,i)x(i) + A(i,i+1)x(i) = b(i),
+      i=n-1:   A(i,i-1)*x(i-1) + A(i,i)x(i)                = b(i). \endverbatim
+ *
+ *  Other elements of \a A are ignored: on return, \a x will be the solution of
+ *  Ax=b only if A is indeed tridiaogonal. That must be ensured by the caller.
+ *  If the matrix is singular, a runtime_error will be thrown.
+ *
+ *  \author Jan van Dijk
+ *  \date   25 May 2024
+ */
+void solveTDMA(const Matrix& A, const Vector& b, Vector& x);
+
+/** Solve Ax=b for a tridiagonal matrix A.
+ *  This overload of solveTDMA expects that on entry the argument \a bx contains
+ *  the right-hand side b. On return, this has been overwritten by the solution
+ *  vector x. See the three-argument overload for more information.
+ *
+ *  This function calls the three-argument overload by passing \a bx for both
+ *  x and b. That is possible because the algorithm consists of two parts: b is
+ *  used only in the first part, to obtain the values of an auxiliary vector,
+ *  x is calculated in the second part, that no longer depends on b.
+ *
+ *  \author Jan van Dijk
+ *  \date   25 May 2024
+ */
+void solveTDMA(const Matrix& A, Vector& bx);
+
 } // namespace LinAlg
 } // namespace loki
 
