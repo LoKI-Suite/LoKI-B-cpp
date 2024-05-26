@@ -241,12 +241,6 @@ void ElectronKineticsBoltzmann::doSolve()
 #endif
 }
 
-/* 0: the old code.
- * 1: the new code. That avoids a second normalization and results in a
- *    matrix with a nicer sparsity pattern (no fully populated first row).
- */
-#define LOKIB_AVOID_NORMALIZING_TWICE 0
-
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     // Here the Conservative ionization and attachment matrices are added.
@@ -266,14 +260,21 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     invertMatrix(boltzmannMatrix);
 }
 
+// show matrix inversion times?
+#define LOKIB_MATRIX_TIME_INVERSION 0
+
+// print the bandwidth and solver choice to the console?
+#define LOKIB_MATRIX_SHOW_BANDWIDTHS 0
+
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 {
-//#define LOKIB_TIME_INVERT_MATRIX
-#ifdef LOKIB_TIME_INVERT_MATRIX
-    auto begin = std::chrono::high_resolution_clock::now();
+#if LOKIB_MATRIX_TIME_INVERSION
+    using namespace std::chrono;
+    const auto begin = high_resolution_clock::now();
 #endif
-    /* In this function we use the matrix, the grid and the eedf vector.
-     * First check that the dimensions of these variables are OK.
+
+    /* 1. In this function we use the matrix, the grid and the eedf vector.
+     *    First check that the dimensions of these variables ae consistent.
      */
     if (matrix.rows()!=matrix.cols())
     {
@@ -289,118 +290,66 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     }
     /* In principle we can allow a matrix with a single row and column, but that
      * is not of practical interest, and in the code below we use the element
-     * matrix(0,0).
+     * matrix(1,1).
      */
     if (matrix.rows()<2)
     {
         throw std::runtime_error("invertMatrix: the matrix must have at least 2 rows.");
     }
 
-// show the bandwidth?
-#define LOKI_DEBUG_BANDWIDTH 0
-// use the bandwidth to decide on Hessenberg?
-#define LOKI_USE_DEBUG_BANDWIDTH 0
+    /* 2. Make the system non-singular by fixing the first value of the EEDF to 1:
+     *   replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
+     *   the system, the eedf is rescaled as to satisfy the normalization
+     *   condition. Choosing M(1,1) is semi-arbitrary, but avoids that we
+     *   unnecessarily increase the dynamic range of the matrix elements. In
+     *   principle any other non-zero value will do.
+     */
+    matrix.row(0).setZero();
+    matrix(0,0)=matrix(1,1);
+    eedf.setZero();
+    eedf[0] = matrix(1,1);
 
-#if LOKI_DEBUG_BANDWIDTH==1 || LOKI_USE_DEBUG_BANDWIDTH==1
+    /* 3. Calculate the lower and upper bandwidth and use the most efficient
+     *    algorithm for solving the matrix. For a tridiagonal matrix (with lower
+     *    and upper band widths [-1,1]) use TDMA, for an upper Hessenberg matrix
+     *    (with bandwidths [-1,X]), use the hessenberg hessenberg solver.
+     *    Otherwise, use eigen's LU solver with partial pivoting.
+     */
+#if LOKIB_MATRIX_TIME_INVERSION
+    const auto begin_bw = high_resolution_clock::now();
+#endif
     const auto bw = calculateBandwidth(matrix);
+#if LOKIB_MATRIX_TIME_INVERSION
+    const auto end_bw = high_resolution_clock::now();
 #endif
-#if LOKI_DEBUG_BANDWIDTH==1
+#if LOKIB_MATRIX_SHOW_BANDWIDTHS==1
     std::cout << "In ElectronKineticsBoltzmann::invertMatrix" << std::endl;
-    std::cout << " * Bandwidth: [" << bw.first << ',' << bw.second << ']' << std::endl;
-    std::cout << " * inelasticOperator.hasSuperelastics: " << inelasticOperator.hasSuperelastics << std::endl;
+    std::cout << " * bandwidth: [" << bw.first << ',' << bw.second << ']' << std::endl;
 #endif
-#if LOKI_USE_DEBUG_BANDWIDTH==1
-    if (bw.first==-1)
-#else
-    if (!inelasticOperator.hasSuperelastics)
-#endif
+    if (bw.first==-1 && bw.second==+1)
     {
-#if LOKI_DEBUG_BANDWIDTH==1
-        std::cout << " * Using hessenberg" << std::endl;
-#endif
+        LinAlg::solveTDMA(matrix,eedf);
+    }
+    else if (bw.first==-1)
+    {
         /* solve Ax=b. On entry of LinAlg::hessenberg, the second argument of
          * LinAlg::hessenberg (eedf.data) must point to b. After returning,
          * this vector has been overwritten with the solution vector x of the
          * system of equations.
          */
-        eedf.setZero();
-
-#if LOKIB_AVOID_NORMALIZING_TWICE
-
-        /* replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
-         * the system, the eedf is rescaled as to satisfy the normalization 
-         * condition. Choosing M(1,1) is semi-arbitrary, but avoids that we 
-         * unnecessarily increase the dynamic range of the matrix elements. In 
-         * principle any other non-zero value will do.
-         */
-        matrix.row(0).setZero();
-        matrix(0,0)=matrix(1,1);
-        eedf[0] = matrix(1,1);
-
-#else
-        /* replace the first equation with the normalization condition,
-         * int_0^{u_max} f(u)u^{1/2}du \approx sum_c f(u_c) (u_c)^{1/2} du_c = 1.
-         */
-
-        if (grid().isUniform())
-        {
-            matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        }
-        else
-        {
-            matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
-        }
-        eedf[0] = 1.;
-#endif
-
         LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
     }
     else
     {
-#if LOKI_DEBUG_BANDWIDTH==1
-        std::cout << " * Using partialPivLu" << std::endl;
-#endif
-        Vector b = Vector::Zero(grid().nCells());
-
-#if LOKIB_AVOID_NORMALIZING_TWICE
-
-        matrix.row(0).setZero();
-        matrix(0,0)=matrix(1,1);
-        b[0] = matrix(1,1);
-#else
-        // the old code
-        if (grid().isUniform())
-        {
-            matrix.row(0) = grid().getCells().cwiseSqrt() * grid().du();
-        }
-        else
-        {
-            matrix.row(0) = grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells());
-        }
-        b[0] = 1;
-#endif
-
+        // at this point, eedf has been set up to contain b.
+        Vector b(eedf);
         eedf = matrix.partialPivLu().solve(b);
     }
-
-#if LOKIB_AVOID_NORMALIZING_TWICE
-    // normalize the eedf
-    if (grid().isUniform())
-    {
-        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
-    }
-    else
-    {
-        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
-    }
-#else
-    /** \todo It seems that the normalization is superfluous, since the normalization condition
-     *        is already part of the system (first row of A, first element of b). One could
-     *        decide to change the first equation into eedf[0] = 1 and do the normalization
-     *        afterwards. That prevents a fully populated first row of the system matrix
-     *        (better sparsity pattern).
+    /* 4. We have calculated the new EEDF, but eedf[0]==1 and the result is
+     *    correct up to a multiplicative constant. Scale the EEDF to satisfy
+     *    the normalization condition (the integral of f(u)sqrt(u) over the
+     *    energies must be unity) to make it final.
      */
-    // std::cout << "NORM: " <<  eedf.dot(grid().getCells().cwiseSqrt() * grid().du()) << std::endl;
     if (grid().isUniform())
     {
         eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
@@ -409,12 +358,13 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
     {
         eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
     }
-#endif
 
-#ifdef LOKIB_TIME_INVERT_MATRIX
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << "Inverted matrix elapsed time = "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "mus" << std::endl;
+#if LOKIB_MATRIX_TIME_INVERSION
+    const auto end = high_resolution_clock::now();
+    std::cerr << " invertMatrix time report:"
+        << "\n * bandwidth: " << duration_cast<microseconds>(end_bw - begin_bw).count() << "mus"
+        << "\n * total:     " << duration_cast<microseconds>(end - begin).count() << "mus"
+        << std::endl;
 #endif
 }
 
@@ -980,6 +930,9 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
             eeOperator->clear();
             Vector eedfOld;
             uint32_t globalIter = 0;
+            /** \todo Should this be configurable? Note that this is also
+             *  hardcoded to 20 in MATLAB
+             */
             const uint32_t maxGlobalIter = 20;
             while (globalIter < maxGlobalIter)
             {
