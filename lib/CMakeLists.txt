@@ -34,7 +34,7 @@ target_include_directories(loki-b  PUBLIC
 
 target_compile_definitions(loki-b PUBLIC LOKIB_BUILDING_LIBLOKIB)
 
-if(USE_BUILTIN_NLOHMANN_JSON)
+if(LOKIB_USE_BUILTIN_NLOHMANN_JSON)
   target_include_directories(loki-b PUBLIC 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0>
   )
@@ -42,7 +42,7 @@ else()
 	target_link_libraries(loki-b PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
-if(USE_BUILTIN_EIGEN)
+if(LOKIB_USE_BUILTIN_EIGEN)
   target_include_directories(loki-b PUBLIC 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.4.0>
   )
@@ -50,12 +50,12 @@ else()
 	target_link_libraries(loki-b  PUBLIC Eigen3::Eigen)
 endif()
 
-if(USE_MKL)
+if(LOKIB_USE_MKL)
   target_link_libraries(loki-b PUBLIC MKL::MKL)
   target_compile_definitions(loki-b PUBLIC EIGEN_USE_MKL_ALL)  
 endif()
 
-if(USE_OPENBLAS)
+if(LOKIB_USE_OPENBLAS)
   #Once the minimum cmake version is bumped to 3.18 or higher, the following two lines
   #may be replaced with a more prefered:
   #target_link_libaries(loki-b INTERFACE BLAS::BLAS LAPACK::LAPACK)
@@ -64,9 +64,9 @@ if(USE_OPENBLAS)
   target_compile_definitions(loki-b  PUBLIC EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
 endif()
 
-if(USE_OPENMP)
+if(LOKIB_USE_OPENMP)
    #OpenMP is only used in source files, so this dependency is private
-   target_compile_definitions(loki-b PRIVATE USE_OPENMP)
+   target_compile_definitions(loki-b PRIVATE LOKIB_USE_OPENMP)
    target_link_libraries(loki-b PRIVATE OpenMP::OpenMP_CXX )
 endif()
 
