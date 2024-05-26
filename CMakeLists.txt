@@ -21,8 +21,8 @@ include(FetchContent)
 # for every file being compiled.
 cmake_policy(SET CMP0092 NEW)
 
-option(ALL_WARNINGS "-DALL_WARNINGS=ON|OFF : Show all warnings" OFF)
-loki_constrain_configure_option(ALL_WARNINGS ON OFF)
+option(LOKIB_ALL_WARNINGS "-DLOKIB_ALL_WARNINGS=ON|OFF : Show all warnings" OFF)
+loki_constrain_configure_option(LOKIB_ALL_WARNINGS ON OFF)
 if (MSVC)
     message(STATUS "Using MSVC compiler")
 
@@ -33,7 +33,7 @@ if (MSVC)
 
     # warning level 4
     loki_msvc_cxxflags(/W4)
-    if(NOT ALL_WARNINGS)
+    if(NOT LOKIB_ALL_WARNINGS)
         #disable some valid, but perhaps not so interesting warnings
         #disable warning C4100: "unreferenced formal parameter"
         loki_msvc_cxxflags(/wd4100)
@@ -53,7 +53,7 @@ if (MSVC)
 else()
     # lots of warnings
     loki_ccxxflags(-Wall)
-    if(ALL_WARNINGS)
+    if(LOKIB_ALL_WARNINGS)
         loki_ccxxflags(-Wextra)
     else()
         #disable some valid, but perhaps not so interesting warnings
