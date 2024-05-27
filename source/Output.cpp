@@ -610,13 +610,13 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
         // make the section, and set up the labels and units
         out = &m_root["lookup_table"];
         /// \todo It would be nice to be able to add the quantities and units as pairs.
-        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow" "RedAtt","MeanE", "CharE", "EleTemp", "DriftVelocity",
-                      "elasticGainPower", "fieldPower", "CARGainPower", "elasticLossPower", "CARLossPower", "ElectronicPower", "superElectronicPower",
-                      "rotPower", "rotSupPower", "vibPower", "vibSupPower", "attachmentPower", "ionizationPower", "eDensGrowthPower", "electronElectronPower",
-                      "refferencePower", "RelativePowerBalance" };
-        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2" "m^2", "eV", "eV", "eV", "m/s",
-                      "eVm3/s", "eVm3/s","eVm3/s","eVm3/s","eVm3/s","eVm3/s", "eVm3/s", "eVm3/s", "eVm3/s", "eVm3/s", "eVm3/s",
-                      "eVm3/s", "eVm3/s", "eVm3/s", "eVm3/s", "eVm3/s", "1" };
+        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow", "RedAtt","MeanE", "CharE", "EleTemp", "DriftVelocity",
+                      "ElasticPowerLoss", "ElasticPowerGain", "FieldPowerGain", "CARPowerLoss", "CARPowerGain", "ElectronicInePower", "ElectronicSupPower",
+                      "RotationalInePower", "RotationalSupPower", "VibrationalInePower", "VibrationalSupPower", "AttachmentPower", "IonizationPower", "eDensGrowthPower", "EEPower",
+                      "ReferencePower", "RelativePowerBalance" };
+        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2", "m^2", "eV", "eV", "eV", "m/s",
+                      "eV*m^3/s", "eV*m^3/s","eV*m^3/s","eV*m^3/s","eV*m^3/s","eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                      "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "1" };
     }
     assert(out);
 
@@ -630,11 +630,11 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
             swarmParameters.characEnergy,
             swarmParameters.Te,
             swarmParameters.driftVelocity,
-            power.elasticGain,
-            power.carGain,
-            power.field,
             power.elasticLoss,
+            power.elasticGain,
+            power.field,
             power.carLoss,
+            power.carGain,
             power.excitation.forward,
             power.excitation.backward,
             power.rotational.forward,
