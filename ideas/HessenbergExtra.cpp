@@ -35,7 +35,7 @@ inline void reduce(double *A, uint32_t first, const uint32_t second, const uint3
     const double ratio = A[start * n + second] / A[start * n + first];
 
     A[start * n + second] = 0.;
-#ifdef USE_OPENMP
+#ifdef LOKIB_USE_OPENMP
 #pragma omp parallel for
 #endif
     for (uint32_t j = start + 1; j < n; ++j)

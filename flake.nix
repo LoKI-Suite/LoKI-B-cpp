@@ -116,7 +116,7 @@
               -GNinja \
               -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
               -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
-              -DUSE_OPENMP=OFF \
+              -DLOKIB_USE_OPENMP=OFF \
               -B build
           '';
 
