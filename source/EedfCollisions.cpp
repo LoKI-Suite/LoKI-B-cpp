@@ -750,13 +750,13 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     {
         if (c.m_coll->is_same_as(*coll_uptr))
         {
-            Log<DoubleCollision>::Warning(*c.m_coll);
 //#define ALLOW_DUPLICATE_PROCESSES
 #ifdef ALLOW_DUPLICATE_PROCESSES
             // duplicates are allowed. The warning is emitted,
             // but no further action needed
+            Log<DoubleCollision>::Warning(*c.m_coll);
 #else
-            return nullptr;
+            Log<DoubleCollision>::Error(*c.m_coll);
 #endif
         }
     }
