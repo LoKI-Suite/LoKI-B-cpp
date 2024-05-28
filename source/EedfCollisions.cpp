@@ -757,7 +757,6 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
             Log<DoubleCollision>::Warning(*c.m_coll);
 #else
             Log<DoubleCollision>::Error(*c.m_coll);
-            return nullptr;
 #endif
         }
     }
