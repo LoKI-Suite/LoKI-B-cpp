@@ -640,14 +640,21 @@ void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& ee
     m_B = m_g_ee * (m_a.transpose() * eedf);
 }
 
-void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
+void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& net, double& gain, double& loss) const
 {
-    /*  One du() comes from the integration, together with eedf).
-     *  The other is the energy gain of an electron moving up one cell,
-     *  I (JvD) believe. Make sure this is explained well in the docs.
-     */
-    power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
-    //std::cout << "EE POWER: " << power << std::endl;
+    net = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
+    Vector Cu(grid.nCells());
+    //Vector Cd(grid.nCells());
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        const double Akm1 = k==              0 ? 0 : m_A(k-1);
+        const double Bkp1 = k==grid.nCells()-1 ? 0 : m_B(k+1);
+        Cu(k) = (Bkp1 + m_A(k) - (m_B(k)+Akm1))/2;
+        //Cd(k) = (Bkp1 - m_A(k) + (m_B(k)-Akm1))/2;
+    }
+    gain = (+SI::gamma * grid.du() * grid.du()) * Cu.dot(eedf);
+    //loss = (-SI::gamma * grid.du() * grid.du()) * Cd.dot(eedf);
+    loss = net - gain;
 }
 
 void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const

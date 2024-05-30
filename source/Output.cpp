@@ -191,7 +191,9 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture& 
     writeTerm(os,"Relative Power Balance", "%", power.relativeBalance * 100);
     writeTerm(os,"Elastic collisions (gain)","eVm3/s", power.elasticGain);
     writeTerm(os,"Elastic collisions (loss)","eVm3/s", power.elasticLoss,true);
-    writeTerm(os,"Elastic electron-electron","eVm3/s", power.electronElectron,true);
+    writeTerm(os,"Elastic electron-electron (gain)","eVm3/s", power.electronElectronGain,true);
+    writeTerm(os,"Elastic electron-electron (loss)","eVm3/s", power.electronElectronLoss,true);
+    writeTerm(os,"Elastic electron-electron (net)","eVm3/s", power.electronElectronNet,true);
     os << std::string(73,'-') << std::endl;
     writeTerm(os,"Elastic collisions (net)","eVm3/s", power.elasticNet);
     writeTerm(os,"CAR (gain)","eVm3/s", power.carGain);
