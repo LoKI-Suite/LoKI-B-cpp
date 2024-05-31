@@ -32,6 +32,7 @@
 
 #include "LoKI-B/json.h"
 #include "LoKI-B/Exports.h"
+#include "LoKI-B/Range.h"
 #include <cstdlib>
 #include <functional>
 #include <memory>
@@ -40,52 +41,6 @@
 
 namespace loki
 {
-
-/** A Range class gives access to a sequence of values and has two public
- *  members: size() returns the number of values, value(size_type)
- *  returns the value for a given index. The number of values is passed
- *  to the constructor and kept in a private member, value() delegates
- *  the retrieval of the value to the protected virtual member get_value.
- *  That member must be implemented by derived classes to do the
- *  actual calculation and retrun the value.
- */
-class lokib_export Range
-{
-  public:
-    using size_type = std::size_t;
-
-    /** Create a new Range object from JSON object \a cnf. The caller must
-     *  assume ownership of the pointer that is returned by this function.
-     *
-     *  \todo Describe the possible content of \a cnf once the dust has settled.
-     *
-     *  \sa RangeSingleValue
-     *  \sa RangeLinSpace
-     *  \sa RangeLogSpace
-     */
-    static Range *create(const json_type &cnf);
-    virtual ~Range();
-
-    /// returns the number of values of this Range.
-    size_type size() const
-    {
-        return m_size;
-    }
-    /// Returns the \a ndx'th value. Argument \a ndx must be smaller than size().
-    double value(size_type ndx) const;
-
-  protected:
-    /// This constructor records \a size, the number of values in the Range
-    Range(size_type size) : m_size(size)
-    {
-    }
-    /// Must be overridden to return the value for \a ndx < size().
-    virtual double get_value(size_type ndx) const = 0;
-
-  private:
-    /// The number of values of this Range
-    const size_type m_size;
-};
 
 /** Class JobManager manages a collection of parameter definitions and
  *  makes it easy to run a simulation for each combination of parameter
