@@ -743,7 +743,8 @@ expression for the electron (particle) flux density,
 \end{equation}
 Here we have introduced the (reduced) electron mobility,
 \begin{equation}
-	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:mueN}
+	\mu_eN = \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
+	\label{eq:mueN}
 \end{equation}
 The expression for $\mu_eN$ is given in \cite[eq. 46b]{Manual_2_2_0}.
 Note that LoKI-B has an additional minus sign in these two equations to make $\mu_e$ positive,
@@ -757,7 +758,8 @@ yields an expression for the electron {\em energy} flux density,
 \end{equation}
 Here we have introduced the (reduced) electron {\em energy} mobility,
 \begin{equation}
-	\mu_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}. \label{eq:muuN}
+	\mu_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
+        \label{eq:muuN}
 \end{equation}
 \begin{framed}
 In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
@@ -1063,7 +1065,8 @@ of equation \eqref{eq:ebe-2term-f-u1(u)-spat} for $f^1(u)$ for the spatial growt
 where we have used equation \eqref{eq:muuN} and have defined the (reduced) electron energy diffusion
 coefficient $D_uN$ as
 \begin{equation}
-	D_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)f(u)\dd{u}. \label{eq:DuN}
+	D_uN = \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)f(u)\dd{u}.
+	\label{eq:DuN}
 \end{equation}
 \begin{framed}
 In the manual, the definitions of $D_u$ and $\mu_u$ in equations 48a-b are different
@@ -1138,9 +1141,87 @@ as stated here are part of the power balance (in the NB just before item 24 on p
 \section{The evaluation of $D_eN$ and $\mu_eN$}
 \label{sec:muD-eval}
 
-The expressions for $D_eN$ and $\mu_eN$ are given in equations
-\eqref{eq:DeN} and \eqref{eq:mueN}.
+The expressions for $D_eN$ and $D_uN$ are given by equation \eqref{eq:DeN} and \eqref{eq:DuN},
+\begin{align*}
+	D_eN &= \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \\
+	D_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{x}^0(u)f(u)\dd{u}.
+\end{align*}
+The approximation of $D_N$ and $D_uN$ is straightforward:
+\begin{align}
+	D_eN &\doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u,
+	\label{eq:DeN-disc} \\
+	D_eN &\doteq \frac{\gamma}{\MEAN{u}} \sum_k u_k{\cal D}^0_kf_k\Delta u,
+	\label{eq:DuN-disc}
+\end{align}
+and this is also what you find in the code.
 
+The expressions for $\mu_eN$ and $\mu_uN$ are given in equation \eqref{eq:mueN}
+and \eqref{eq:muuN},
+\begin{align*}
+	\mu_eN &= \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}, \\
+	\mu_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
+\end{align*}
+These can be expressed in terms of $f(u)$ through a partial integration. For example, for $\mu_eN$
+we find that
+\[
+	\mu_eN
+		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
+		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
+		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
+\]
+This can be approximated as
+\[
+	\mu_eN \doteq -\gamma\sum\limits_{k=0}^{{\cal N}-1}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k\Delta u.
+\]
+In the internal cells, the derivative can be approximated as
+\[
+	\left[\DERIV{{\cal D}^0}{u}\right]_k = \frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
+\]
+In the left and right boundary cells we can use
+\[
+	\left[\DERIV{{\cal D}^0}{u}\right]_0 = \frac{{\cal D}^0_{1}-{\cal D}^0_{0}}{\Delta u},
+	\quad
+	\quad
+	\left[\DERIV{{\cal D}^0}{u}\right]_{\cal N} = \frac{{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2}}{\Delta u}.
+\]
+The result can be written as
+\begin{equation}
+	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k,
+\end{equation}
+with
+\begin{equation}
+	C_k = -\gamma\begin{cases}
+			{\cal D}^0_{1}-{\cal D}^0_{0} & k=0, \\
+			{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2} & k={{\cal N}-1}, \\
+			\frac{1}{2}({\cal D}^0_{1}-{\cal D}^0_{0}) & \text{otherwise}.
+	\end{cases}
+\end{equation}
+Alternatively, we may use the fact that ${\cal D}^0(u=0)=0$, and approximate the derivative as
+$({\cal D}^0_{0}-{\cal D}^0(u=0))/(\Delta u/2) ={\cal D}^0_{0}/(\Delta u/2)=2{\cal D}^0_{0}/\Delta u$,
+which results in the same expression, except
+\[
+	C_0 = -\gamma 2{\cal D}^0_{0}.
+\]
+
+TODO: the expression for $D_uN$. This is very simular: replace $\gamma -> \gamma/\MEAN{u}$ and $D^0_k->u_kD^0_k$.
+
+
+\subsection*{What is at present in LoKI-B}
+
+In the code we have
+\begin{align}
+	\mu_eE
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
+		&= +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}f_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u \nonumber \\
+		&\doteq +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u.
+\end{align}
 In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated,
 rather than the mobility. To that end, the code defines four arrays on the cell
 domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
@@ -1156,21 +1237,6 @@ domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
 			\end{cases} \\
 	{\cal U} &= {\cal U}^+ + {\cal U}^-.
 \end{align}
-The approximation of $D_N$ is straightforward: $D_eN \doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u$, and this
-is also what you find in the code. The evaluation of $\mu_eE$ is not clear to me at all. In the code we have
-\begin{align}
-	\mu_eE
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
-		&= +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
-			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}f_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u \nonumber \\
-		&\doteq +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
-			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u.
-\end{align}
 I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
 \[
 	\mu_eN
@@ -1181,12 +1247,6 @@ I (JvD) can {\em almost} understand this by doing a partial integration of the e
 since ${\cal D}^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
 We now see that the approximation makes sense ... except for the first and last cell, where we have
 ${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
-A correct expression is obtained by replacing the term ${\cal D}^0_{1}/(2\Delta u)$
-with the first order expression $({\cal D}^0_{1}-{\cal D}^0_{0})/\Delta u$ of the derivative.
-Since ${\cal D}^0(u=0)=0$, an alternative expression would be $({\cal D}^0_{0}-{\cal D}^0(u=0))/(\Delta u/2)
-={\cal D}^0_{0}/(\Delta u/2)=2{\cal D}^0_{0}/\Delta u$, it seems.
-At the upper side, ${\cal D}^0_{{\cal N}-2}/(2\Delta u)$ should be
-$({\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2})/\Delta u$.
 Such fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course,
 but note that those are also used in the assembly of one of the spatial growth discretisation
 matrices.
