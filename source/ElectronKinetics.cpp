@@ -835,7 +835,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
         evaluatePower();
 
-        const double ratio = std::abs(power.electronElectron / power.reference);
+        const double ratio = std::abs(power.electronElectronNet / power.reference);
 
         if (maxRelDiff(eedfNew,eedf) < maxEedfRelError)
         {
@@ -1195,7 +1195,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
 
     if (eeOperator)
     {
-        eeOperator->evaluatePower(grid(),eedf,power.electronElectron);
+        eeOperator->evaluatePower(grid(),eedf,power.electronElectronNet, power.electronElectronGain, power.electronElectronLoss);
     }
     // Evaluate power absorbed per electron at unit gas density due to in- and superelastic collisions.
     for (auto &cd : mixture.collision_data().data_per_gas())
@@ -1224,7 +1224,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
     /** \todo get rid of this; do 'for (double value : { ... this list ... })'
      *  in the line below.
      */
-    double powerValues[13]{
+    double powerValues[14]{
         power.field,
         power.elasticGain, power.elasticLoss,
         power.carGain, power.carLoss,
@@ -1232,7 +1232,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
         power.vibrational.forward, power.vibrational.backward,
         power.rotational.forward, power.rotational.backward,
         power.eDensGrowth,
-        power.electronElectron
+        power.electronElectronGain, power.electronElectronLoss
     };
 
     for (double value : powerValues)
@@ -1249,7 +1249,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
         + power.inelastic
         + power.superelastic
         + power.eDensGrowth
-        + power.electronElectron;
+        + power.electronElectronNet;
     power.relativeBalance = std::abs(power.balance) / totalGain;
     power.reference = totalGain;
 }
@@ -1478,7 +1478,7 @@ void ElectronKineticsPrescribed::evaluatePower()
         + power.inelastic
         + power.superelastic
         + power.eDensGrowth
-        + power.electronElectron;
+        + power.electronElectronNet;
 
     /* next, calculate E/N from the requirement that power.balance==0.
      * we have P_tot = P_field + P_other, and P_field(E/N) = C*(E/N)^2 for some C.

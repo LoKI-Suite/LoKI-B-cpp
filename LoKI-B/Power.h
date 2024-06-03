@@ -88,7 +88,9 @@ struct Power : GasPower
      *        energy among the electrons, so I would think that this should
      *        be just zero. Is this meant as a check?
      */
-    double electronElectron{0.};
+    double electronElectronNet{0.};
+    double electronElectronGain{0.};
+    double electronElectronLoss{0.};
     double balance{0.};
     double relativeBalance{0.};
     double reference{0.};

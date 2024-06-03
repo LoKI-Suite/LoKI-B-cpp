@@ -149,7 +149,8 @@ namespace loki {
          *  -(1/N*gamma)*dG_ee/du to matrix \a M.
          */
         void discretizeTerm(Matrix& M, const Grid& grid) const;
-        void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
+        /// Net should be zero, loss = net - gain, should be - gain.
+	void evaluatePower(const Grid& grid, const Vector& eedf, double& net, double& gain, double& loss) const;
         double g_ee() const { return m_g_ee; }
         const Matrix& a() const { return m_a; }
         const Vector& A() const { return m_A; }

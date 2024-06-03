@@ -57,8 +57,8 @@ void test1()
 {
     using namespace loki;
 
-    const unsigned nCells = 400;
-    const double uMax = 4; // eV
+    const unsigned nCells = 1000;
+    const double uMax = 20; // eV
     const double ne = 1e16; // m^-3
     const double n0 = 1e22; // m^-3
 
@@ -119,16 +119,16 @@ void test1()
     std::cout << "# src_int = " << src_int << std::endl;
 
     std::cout << std::endl << std::endl;
-    double pElectronElectron;
-    eeOperator.evaluatePower(grid,eedf,pElectronElectron);
-    /** \todo We have power = (-SI::gamma * grid.du() * grid.du()) * (A - B).dot(eedf);
-     * Calculate up and downfluxes separately, use those to obtain a reference value and
-     * use that.
-     */
-    const double Eup = -SI::gamma * grid.du() * grid.du() * eeOperator.A().dot(eedf);
-    const double Edn = -SI::gamma * grid.du() * grid.du() * eeOperator.B().dot(eedf);
-    std::cout << "# up: " << Eup << ", down: " << Edn << ", net: " << (Eup-Edn) << std::endl;
-    std::cout << "# pElectronElectron = " << pElectronElectron << std::endl;
+    std::cout << "# from evaluatePower:" << std::endl;
+    double pElectronNet;
+    double pElectronGain;
+    double pElectronLoss;
+    eeOperator.evaluatePower(grid,eedf,pElectronNet,pElectronGain,pElectronLoss);
+    std::cout << "# net  = " << pElectronNet << std::endl;
+    std::cout << "# gain = " << pElectronGain << std::endl;
+    std::cout << "# loss = " << pElectronLoss << std::endl;
+    test_expr (std::abs(pElectronNet/pElectronGain) < 1e-10);
+    test_expr (std::abs(pElectronNet/pElectronLoss) < 1e-10);
 }
 
 int main()
