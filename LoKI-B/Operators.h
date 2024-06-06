@@ -212,6 +212,25 @@ namespace loki {
         bool includeNonConservativeAttachment;
     };
 
+    /** Calculate and return coefficients C_i such that muN = sum_i C_i f_i,
+     *  where the sum is over the cell indices and f is the eedf.
+     *  See the two-argument overload of this function for more details.
+     *
+     *  \author Jan van Dijk
+     *  \date   5 June 2024
+     */
+    Vector calculateMuNCoefs(const Vector& D0);
+
+    /** Calculate coefficients C_i such that muN = sum_i C_i f_i,
+     *  where the sum is over the cell indices and f is the eedf.
+     *  NOTE: this returns the signed mobility (negative for electrons),
+     *  add a minus sign yourself if you need |mu_e|, as used in LoKI-B.
+     *
+     *  \author Jan van Dijk
+     *  \date   5 June 2024
+     */
+    Vector calculateMuNCoefs(Vector& C, const Vector& D0);
+
 } // namespace loki
 
 #endif // LOKI_CPP_OPERATORS_H

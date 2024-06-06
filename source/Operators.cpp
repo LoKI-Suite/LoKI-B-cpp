@@ -922,4 +922,46 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
     }
 }
 
+Vector calculateMuNCoefs(Vector& C, const Vector& D0)
+{
+    const Grid::Index N = D0.size();
+    if (N<2)
+    {
+        throw std::runtime_error("calculateMuNCoefs: grid must contain at least two cells.");
+    }
+    C.resize(N);
+    switch (N)
+    {
+        case 2:
+            C[0] = -D0[0] - D0[1];
+            C[1] = -C[0];
+        break;
+        case 3:
+            C[0] = -D0[0]   - D0[1]/2;
+            C[1] = +D0[0]   - D0[2];
+            C[2] = +D0[1]/2 - D0[2];
+        break;
+        default:
+            C[0] = -D0[0] - D0[1]/2;
+            C[1] = +D0[0] - D0[2]/2;
+            for (Grid::Index k=2; k!=N-3; ++k)
+            {
+                C[k] = (D0[k-1] - D0[k+1])/2;
+            }
+            C[N-2] = +D0[N-3]/2 - D0[N-1];
+            C[N-1] = +D0[N-2]/2 + D0[N-1];
+        break;
+    }
+    C *= SI::gamma;
+    return C;
+}
+
+Vector calculateMuNCoefs(const Vector& D0)
+{
+    Vector C;
+    calculateMuNCoefs(C,D0);
+    return C;
+}
+
+
 } // namespace loki

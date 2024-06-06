@@ -964,17 +964,20 @@ to obtain
 		\[
 			\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
 		\]
-		which corresponds to the additional contribution to the field term. These terms
-		together correspond to equation (30) of the manual.
+		which corresponds to the additional contribution to the field term --- the last term of
+		equation \eqref{eq:Rsst-orig}. Together, these field terms correspond
+		to equation (30) of the manual.
 		\begin{framed}
 			On boundary points, only one of the two terms that form the discrete
 			approximation of this derivative is handled. The problem is similar
 			that in the discretization of \SRC{ionSpatialGrowthU} and the diffusion
 			coefficient and mobility of the electrons (see below).
 		\end{framed}
-		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0$,
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0f^0(u)$:
+			the second term on the right-hand side of eqiation \eqref{eq:Rsst-orig},
 			the first term of equation (29) of the manual.
-		\item The remaining term is $\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
+		\item The remaining first term of requation \eqref{eq:Rsst-orig} is
+			$\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
 			and is provided by \SRC{ionSpatialGrowthU}.
 			A central-difference scheme for the derivative of $f(u)$ yields the approximation
 			\begin{equation}
@@ -1001,6 +1004,14 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 \begin{framed}
 			At the boundary points, the discretization seems wrong. The problem
 			is the same as that in the evaluation of $\mu_eE$, see \ref{sec:muD-eval}.
+\end{framed}
+
+\begin{framed}
+			It is important that the same coefficients (here called $C_k$) are used in
+			the discretization of the growth operator as in the evaluation of the
+			mobility. This means that also the mobility must use the expression involving
+			the derivative if the EEDF, instead of the more convenient expression that
+			is based on a partial integration of the integrand.
 \end{framed}
 	\end{itemize}
 \item Confusion is caused in the code by the fact that the
@@ -1161,8 +1172,107 @@ and \eqref{eq:muuN},
 	\mu_eN &= \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}, \\
 	\mu_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
 \end{align*}
-These can be expressed in terms of $f(u)$ through a partial integration. For example, for $\mu_eN$
-we find that
+
+
+\subsection*{Method 1}
+The expression for $\mu_eN$ can be approximated as
+\[
+	\mu_eN \doteq \gamma\sum\limits_{k=0}^{{\cal N}-1}{\cal D}^0(u_k)\left[\DERIV{f}{u}\right]_k\Delta u.
+\]
+In internal cells, the derivative can be approximated as
+\[
+	\left[\DERIV{f}{u}\right]_k = \frac{f_{k+1}-f_{k-1}}{2\Delta u},
+\]
+whereas for left and right boundary cells we can use the asymmetric expressions
+\[
+	\left[\DERIV{f}{u}\right]_0 = \frac{f_{1}-f_{0}}{\Delta u}
+	\quad
+	\quad
+	\left[\DERIV{f}{u}\right]_{{\cal N}-1} = \frac{f_{{\cal N}-1}-f_{{\cal N}-2}}{\Delta u}.
+\]
+For any ${\cal N} \geq 2$, the resulting expression can be written as
+\begin{equation}
+	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k.
+\end{equation}
+For ${\cal N} = 2$ we get
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + {\cal D}_{pt}^0(u_{1})(f_{1}-f_{0}) \\
+	&= \left(-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1})\right)f_{0} + \left({\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1})\right)f_{1},
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1}) & k=0, \\
+			+{\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1}) & k=1.
+	\end{cases}
+\end{equation}
+For ${\cal N} = 3$ we get
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + \frac{1}{2}{\cal D}_{pt}^0(u_1)(f_{2}-f_{0}) + {\cal D}_{pt}^0(u_{2})(f_{2}-f_{1}) \\
+	&=	  \left( -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) \right)f_{0}
+		+ \left( +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) \vphantom{\frac{1}{2}})\right)f_{1}
+		+ \left( +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) \right)f_{2}
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			 -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) & k=0, \\
+			 +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) & k=1, \\
+			 +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) & k=2.
+	\end{cases}
+\end{equation}
+Finally, for ${\cal N} \geq 4$ we have
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)(f_{k+1}-f_{k-1})
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k+1}
+		- \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k-1}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
+		- \frac{1}{2}\sum\limits_{k=0}^{{\cal N}-3}{\cal D}_{pt}^0(u_{k+1})f_{k}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		- \frac{1}{2}\sum\limits_{k=0}^{1}{\cal D}_{pt}^0(u_{k+1})f_{k}
+	\\
+	&
+		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k}
+		\\
+	&
+		+ \frac{1}{2}\sum\limits_{k={{\cal N}-2}}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=	  \left(-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)\right)f_{0}
+			+\left( {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)\right)f_{1} \\
+		&+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k} \\
+		&+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-2}
+			+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-1},
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)          & k=0, \\
+			 {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)          & k=1, \\
+			 \frac{1}{2}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)  & 2\leq k \leq {{\cal N}-3}, \\
+			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-2}, \\
+			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-1}.
+	\end{cases}
+\end{equation}
+
+\subsection*{Method 2}
+The expression for $\mu_eN$ can be expressed in terms of $f(u)$. A partial integration yields
 \[
 	\mu_eN
 		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
@@ -1192,8 +1302,8 @@ with
 \begin{equation}
 	C_k = -\gamma\begin{cases}
 			{\cal D}^0_{1}-{\cal D}^0_{0} & k=0, \\
-			{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2} & k={{\cal N}-1}, \\
-			\frac{1}{2}({\cal D}^0_{1}-{\cal D}^0_{0}) & \text{otherwise}.
+			\frac{1}{2}({\cal D}^0_{k+1}-{\cal D}^0_{k-1}) & 1\leq k \leq {{\cal N}-2}, \\
+			{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2} & k={{\cal N}-1},
 	\end{cases}
 \end{equation}
 Alternatively, we may use the fact that ${\cal D}^0(u=0)=0$, and approximate the derivative as
@@ -1202,8 +1312,11 @@ which results in the same expression, except
 \[
 	C_0 = -\gamma 2{\cal D}^0_{0}.
 \]
+In either case, this equation reults in simpler coefficient expressions, but has the disadvantage that
+is is not consistent with the discretization of the term that results in \SRC{ionSpatialGrowthU}. We
+will therefore adopt Method 1 in the code.
 
-TODO: the expression for $D_uN$. This is very simular: replace $\gamma -> \gamma/\MEAN{u}$ and $D^0_k->u_kD^0_k$.
+TODO: the expression for $\mu_uN$. This is very simular: replace $\gamma -> \gamma/\MEAN{u}$ and $D^0_k->u_kD^0_k$.
 
 
 \subsection*{What is at present in LoKI-B}
