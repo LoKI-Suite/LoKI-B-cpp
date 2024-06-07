@@ -944,7 +944,7 @@ Vector calculateMuNCoefs(Vector& C, const Vector& D0)
         default:
             C[0] = -D0[0] - D0[1]/2;
             C[1] = +D0[0] - D0[2]/2;
-            for (Grid::Index k=2; k!=N-3; ++k)
+            for (Grid::Index k=2; k<=N-3; ++k)
             {
                 C[k] = (D0[k-1] - D0[k+1])/2;
             }
