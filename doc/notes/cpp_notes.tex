@@ -920,6 +920,31 @@ has been introduced, which is now given by
 	\right].
 	\label{eq:Rsst-orig}
 \end{equation}
+\begin{framed}
+A small intermezzo: let's verify the integral of this equation over energy:
+\begin{align*}
+	\int\limits_0^\infty \tilde{R}_{sst}(u)\dd{u}
+	=
+	& -\gamma\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\int\limits_0^\infty{\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u} \\
+	& +\gamma\left(\frac{\alpha_{\text{eff}}}{N}\right)^2\int\limits_0^\infty{\cal D}_m^0(u)f^0_u\dd{u} \\
+	& -\gamma\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\int\limits_0^\infty\PDEV{}{u}\left({\cal D}_m^0(u)f^0_u\right)\dd{u} \\
+	&= -\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}(\mu_eN)
+	   +\left(\frac{\alpha_{\text{eff}}}{N}\right)^2(D_eN)
+	   + 0
+\end{align*}
+and for the integral of the balance equation \eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} we get
+\begin{equation}
+	0 = \MEAN{K_{\text{eff}}} -\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}(\mu_eN) +\left(\frac{\alpha_{\text{eff}}}{N}\right)^2(D_eN).
+\end{equation}
+After multiplication with $N$ this can be written as
+\begin{equation}
+	0 = \MEAN{\nu_{\text{eff}}} -\alpha_{\text{eff}}\mu_eE +\alpha_{\text{eff}}^2D_e.
+\end{equation}
+which is again the equation for $\alpha_{\text{eff}}$. Good.
+TODO: verify that also the discrete form is conistent.
+\end{framed}
+
+
 We can rewrite equation \eqref{eq:Rsst-orig} by expanding the derivative of the
 product ${\cal D}_m^0(u)f^0_u$ and reordering terms,
 \begin{align}
@@ -979,7 +1004,7 @@ to obtain
 		\item The remaining first term of requation \eqref{eq:Rsst-orig} is
 			$\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
 			and is provided by \SRC{ionSpatialGrowthU}.
-			A central-difference scheme for the derivative of $f(u)$ yields the approximation
+			For the internal cells, a central-difference scheme for the derivative of $f(u)$ yields the approximation
 			\begin{equation}
 				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
 				\doteq
