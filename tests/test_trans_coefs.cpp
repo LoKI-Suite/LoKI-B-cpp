@@ -35,7 +35,6 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Operators.h"
 #include <iostream>
-#include <fstream>
 
 #include <Eigen/SparseLU>
 #include <Eigen/OrderingMethods>
