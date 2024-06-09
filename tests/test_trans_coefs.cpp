@@ -33,6 +33,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Integrals.h"
 #include "LoKI-B/Operators.h"
 #include <iostream>
 
@@ -74,9 +75,7 @@ double calculateMuNOld(const Grid& grid, const Vector& D0, const Vector& eedf)
 // df/du, also on the boundary points.
 double calculateMuNFixed(const Grid& grid, const Vector& D0, const Vector& eedf)
 {
-    const Vector MuNCoefs(calculateMuNCoefs(D0));
-    // minus sign wrt the docs: LoKI-B sign convention for mu_e
-    return -MuNCoefs.dot(eedf);
+    return -SI::gamma*fgPrimeEnergyIntegral(grid,D0,eedf);
 }
 
 // alternative method: use a partial integration to change the integrand from
@@ -114,7 +113,7 @@ int main(int argc, const char* argv[])
             {
                 // in m^2
                 cellTotalCrossSection[c] = 1e-20;
-                //cellTotalCrossSection[c] = 1/std::sqrt(grid.getCells()[c]);
+                //cellTotalCrossSection[c] = 1e-20/std::sqrt(grid.getCells()[c]);
             }
             const double TeV = Te*Constant::boltzmann/Constant::electronCharge;
             const Vector eedf = makePrescribedEDF(grid,shape,TeV);
@@ -146,7 +145,7 @@ int main(int argc, const char* argv[])
         {
             // in m^2
             cellTotalCrossSection[c] = 1e-20;
-            //cellTotalCrossSection[c] = 1/std::sqrt(grid.getCells()[c]);
+            //cellTotalCrossSection[c] = 1e-20/std::sqrt(grid.getCells()[c]);
         }
         std::cout << "# Te\tDN\tmuN(old)\tEinstein(old)\tmuN(new)\tEinstein(new)\tmuN(pint)\tEinstein(pint)" << std::endl;
         for (double Te =300; Te<=10000; Te+=100)
