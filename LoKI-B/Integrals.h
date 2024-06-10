@@ -65,9 +65,9 @@ namespace loki {
         }
     }
 
-    /** Calculate coefficients \a C such that C.dot(f) is
-     *  an approximation of \f$ \gamma\int_0^{u_max} g\frac{df}{du}du \f$.
-     *  Argument \a C is resized to D0.size() by this function.
+    /** Calculate coefficients \a C such that C.dot(g) is
+     *  an approximation of \f$ \gamma\int_0^{u_max} C\frac{dg}{du}du \f$.
+     *  Argument \a C is resized to f.size() by this function.
      *
      *  \todo Document assumptions on the grid layout.
      *
@@ -75,35 +75,35 @@ namespace loki {
      *  \date   5 June 2024
      */
     template <class VectorExpr>
-    void fgPrimeEnergyIntegralCoefficients(Vector& C, const VectorExpr& D0)
+    void fgPrimeEnergyIntegralCoefficients(Vector& C, const VectorExpr& f)
     {
-        const Grid::Index N = D0.size();
+        const Grid::Index N = f.size();
         if (N<2)
         {
-            throw std::runtime_error("doCalculateD0dfduIntCoefD0dfduIntCoefs: "
+            throw std::runtime_error("fgPrimeEnergyIntegralCoefficients: "
                                      "grid must contain at least two cells.");
         }
         C.resize(N);
         switch (N)
         {
             case 2:
-                C[0] = -D0[0] - D0[1];
+                C[0] = -f[0] - f[1];
                 C[1] = -C[0];
             break;
             case 3:
-                C[0] = -D0[0]   - D0[1]/2;
-                C[1] = +D0[0]   - D0[2];
-                C[2] = +D0[1]/2 - D0[2];
+                C[0] = -f[0]   - f[1]/2;
+                C[1] = +f[0]   - f[2];
+                C[2] = +f[1]/2 - f[2];
             break;
                 default:
-                C[0] = -D0[0] - D0[1]/2;
-                C[1] = +D0[0] - D0[2]/2;
+                C[0] = -f[0] - f[1]/2;
+                C[1] = +f[0] - f[2]/2;
                 for (Grid::Index k=2; k<=N-3; ++k)
                 {
-                    C[k] = (D0[k-1] - D0[k+1])/2;
+                    C[k] = (f[k-1] - f[k+1])/2;
                 }
-                C[N-2] = +D0[N-3]/2 - D0[N-1];
-                C[N-1] = +D0[N-2]/2 + D0[N-1];
+                C[N-2] = +f[N-3]/2 - f[N-1];
+                C[N-1] = +f[N-2]/2 + f[N-1];
             break;
         }
     }
