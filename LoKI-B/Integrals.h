@@ -38,6 +38,8 @@ namespace loki {
 
     /** Calculate and return an approximation of \f$ \gamma\int_0^{u_max} f(u)g(u)du \f$.
      *  Arguments \a f and \a g must be defined in the cells of the \a grid.
+     *  The function returns \f$ \sum_k f_kg_k(\Delta u)_k \f$; for uniform grids
+     *  Delta u is constant and this reduces to \f$ (\sum_k f_kg_k)\Delta u \f$.
      *
      *  \author Jan van Dijk
      *  \date   5 June 2024
@@ -57,7 +59,7 @@ namespace loki {
         }
         else
         {
-            return (f.cwiseProduct(grid.getCells())).dot(g)*grid.du();
+            return f.cwiseProduct(g).dot(grid.duCells());
             throw std::runtime_error("energyIntegral: non-equidistant "
                                      "meshes are not yet supported.");
         }

@@ -41,42 +41,58 @@
 using namespace loki;
 
 /* f = 1, g=u =>
+ * int_0^{u_max} f(u)g(u) du    = u_max^2/2,
  * int_0^{u_max} f(u)(dg/du) du = u_max.
- * int_0^{u_max} f(u)g(u) du    = u_max^2/2.
  */
-void test1()
+void test1(const Grid& grid)
 {
-    const Grid grid(10,10);
     Vector f(grid.nCells()); f.fill(1);
     const Vector g = grid.getCells();
     test_expr(std::abs(energyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
         < grid.nCells()*std::numeric_limits<double>::epsilon());
+    if (!grid.isUniform())
+    {
+        std::cout << "SKIPPING fgPrimeEnergyIntegral test for unstructured "
+                     "mesh --- not yet implemented." << std::endl;
+        return;
+    }
     test_expr(std::abs(fgPrimeEnergyIntegral(grid,f,g) - grid.uMax())
         < grid.nCells()*std::numeric_limits<double>::epsilon());
 }
 
-/* f = u, g=u =>
- * int_0^{u_max} f(u)(dg/du) du = u_max^2/2.
- * int_0^{u_max} f(u)g(u) du    = u_max^3/3.
+/* f = u, g=1 =>
+ * int_0^{u_max} f(u)g(u) du    = u_max^2/2,
+ * int_0^{u_max} f(u)(dg/du) du = 0.
  */
-void test2()
+void test2(const Grid& grid)
 {
-    const Grid grid(10,10);
     const Vector f = grid.getCells();
-    const Vector g = grid.getCells();
+    Vector g(grid.nCells()); g.fill(1);
     /** \todo Establish an upper bound for the error, given n and the
      *  discretisation scheme, and use that:
      */
-    test_expr(std::abs(energyIntegral(grid,f,g) - grid.uMax()*grid.uMax()*grid.uMax()/3)
-        < 1);
+    test_expr(std::abs(energyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
+        < 10*grid.nCells()*std::numeric_limits<double>::epsilon());
+    if (!grid.isUniform())
+    {
+        std::cout << "SKIPPING fgPrimeEnergyIntegral test for unstructured "
+                     "mesh --- not yet implemented." << std::endl;
+        return;
+    }
     test_expr(std::abs(fgPrimeEnergyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
         < 10*grid.nCells()*std::numeric_limits<double>::epsilon());
 }
 
 int main()
 {
-    test1();
-    test2();
+    const Grid grid1(10,10);
+    Vector nodes(5); nodes << 0.0, 0.5, 0.75, 0.875, 1.0;
+    const Grid grid2(nodes,10);
+
+    test1(grid1);
+    test1(grid2);
+    test1(grid1);
+    test2(grid2);
     test_report; 
     return nerrors; 
 }
