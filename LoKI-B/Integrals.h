@@ -60,8 +60,6 @@ namespace loki {
         else
         {
             return f.cwiseProduct(g).dot(grid.duCells());
-            throw std::runtime_error("energyIntegral: non-equidistant "
-                                     "meshes are not yet supported.");
         }
     }
 
