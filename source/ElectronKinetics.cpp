@@ -31,6 +31,7 @@
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
+#include "LoKI-B/Integrals.h"
 #include "LoKI-B/Log.h"
 #include <chrono>
 #include <cmath>
@@ -1267,49 +1268,22 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
         /// \todo Is tCS[0] updated? That appears to be used below (when writing tCS.head(n))
         tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
     }
-    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
-    if (grid().isUniform())
-    {
-        swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
-                                    grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
-                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-    } else
-    {
-        swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
-                                    grid().getCells().cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-        swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().duCells().cwiseProduct(
-                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf)).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-    }
-    swarmParameters.redMobCoeff = -SI::gamma / 3. *
-                                      grid().getNodes().segment(1, n - 1)
-                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                                      .cwiseQuotient(tCS.segment(1, n - 1))
-                                      .sum();
-    swarmParameters.redMobilityEnergy = -SI::gamma / 3. *
-                                      grid().getNodes().segment(1, n - 1)
-                                      .cwiseProduct(grid().getNodes().segment(1, n - 1))
-                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                                      .cwiseQuotient(tCS.segment(1, n - 1))
-                                      .sum();
+    const Vector cellCS((tCS.head(n) + tCS.tail(n))/2);
+    const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
+
+    swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
+    swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
+    swarmParameters.redMobCoeff = -SI::gamma*fgPrimeEnergyIntegral(grid(),D0,eedf);
+    swarmParameters.redMobilityEnergy = -SI::gamma*fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
 
     const double WoN = m_workingConditions->reducedExcFreqSI();
     if (WoN>0.0)
     {
-        const Vector OmegaC = tCS.array() + CIEff / (SI::gamma*grid().getNodes().array().sqrt());
-        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
-        double muHFRe = -SI::gamma / 3. *
-                      grid().getNodes().segment(1, n - 1)
-                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
-                      .sum();
-        double muHFIm = (+SI::gamma / 3. *
-                      WoN/SI::gamma) *
-                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
-                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
-                      .cwiseQuotient(OmegaC.segment(1, n - 1))
-                      .sum();
+        const Vector OmegaC = cellCS.array() + CIEff / (SI::gamma*grid().getCells().array().sqrt());
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getCells().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. * fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseQuotient(OmegaPT),eedf);
+        double muHFIm = (+SI::gamma / 3. * WoN/SI::gamma) *
+                      fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseSqrt().cwiseQuotient(OmegaPT).cwiseQuotient(OmegaC),eedf);
         swarmParameters.redMobilityHF = { muHFRe, muHFIm };
     }
 
@@ -1511,49 +1485,28 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
 
     Vector tCS(mixture.collision_data().totalCrossSection());
 
-    /// \todo Evaluate redMobilityHF (Re and Im parts) if WoN>0.
+    const Vector cellCS((tCS.head(n) + tCS.tail(n))/2);
+    const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
 
-    swarmParameters.redDiffCoeff = 2. / 3. * SI::gamma * grid().du() *
-                                   grid().getCells().cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-    swarmParameters.redDiffCoeffEnergy = 2. / 3. * SI::gamma * grid().du() *
-                                    grid().getCells().cwiseProduct(grid().getCells()).cwiseProduct(eedf).cwiseQuotient(tCS.head(n) + tCS.tail(n)).sum();
-
-    swarmParameters.redMobCoeff = -SI::gamma / 3. *
-                                  grid().getNodes()
-                                      .segment(1, n - 1)
-                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                                      .cwiseQuotient(tCS.segment(1, n - 1))
-                                      .sum();
-    swarmParameters.redMobilityEnergy = -SI::gamma / 3. *
-                                      grid().getNodes().segment(1, n - 1)
-                                      .cwiseProduct(grid().getNodes().segment(1, n - 1))
-                                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                                      .cwiseQuotient(tCS.segment(1, n - 1))
-                                      .sum();
+    swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
+    swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
+    swarmParameters.redMobCoeff = -SI::gamma*fgPrimeEnergyIntegral(grid(),D0,eedf);
+    swarmParameters.redMobilityEnergy = -SI::gamma*fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
 
     const double WoN = m_workingConditions->reducedExcFreqSI();
     if (WoN>0.0)
     {
         /* NOTE: in the prescribed case, only conservative processes should be
-         * taken into account. In that case CIEff==0 and OmegaC==tCS. Otherwise,
+         * taken into account. In that case CIEff==0 and OmegaC==cellCS. Otherwise,
          * the code below is equal to the code in the function
          * ElectronKineticsBoltzmann::evaluateSwarmParameters. We highlight that
-         * fact by using OmegaC, but making it just a reference to tCS.
+         * fact by using OmegaC, but making it just a reference to cellCS.
          */
-        const Vector& OmegaC = tCS;
-        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getNodes().cwiseProduct(OmegaC)).cwiseInverse();
-        double muHFRe = -SI::gamma / 3. *
-                      grid().getNodes().segment(1, n - 1)
-                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
-                      .sum();
-        double muHFIm = (+SI::gamma / 3. *
-                      WoN/SI::gamma) *
-                      grid().getNodes().cwiseSqrt().segment(1, n - 1)
-                      .cwiseProduct(eedf.tail(n - 1) - eedf.head(n - 1))
-                      .cwiseQuotient(OmegaPT.segment(1, n - 1))
-                      .cwiseQuotient(OmegaC.segment(1, n - 1))
-                      .sum();
+        const Vector& OmegaC = cellCS;
+        const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getCells().cwiseProduct(OmegaC)).cwiseInverse();
+        double muHFRe = -SI::gamma / 3. * fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseQuotient(OmegaPT),eedf);
+        double muHFIm = (+SI::gamma / 3. * WoN/SI::gamma) *
+                      fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseSqrt().cwiseQuotient(OmegaPT).cwiseQuotient(OmegaC),eedf);
         swarmParameters.redMobilityHF = { muHFRe, muHFIm };
     }
     swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
