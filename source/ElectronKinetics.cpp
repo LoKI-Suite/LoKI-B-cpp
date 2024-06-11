@@ -351,14 +351,7 @@ void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
      *    the normalization condition (the integral of f(u)sqrt(u) over the
      *    energies must be unity) to make it final.
      */
-    if (grid().isUniform())
-    {
-        eedf /= eedf.dot(grid().getCells().cwiseSqrt() * grid().du());
-    }
-    else
-    {
-        eedf /= eedf.dot(grid().getCells().cwiseSqrt().cwiseProduct(grid().duCells()));
-    }
+    normalizeEDF(eedf,grid());
 
 #if LOKIB_MATRIX_TIME_INVERSION
     const auto end = high_resolution_clock::now();
@@ -1314,13 +1307,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
     swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
-    if (grid().isUniform())
-    {
-        swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
-    } else
-    {
-        swarmParameters.meanEnergy = (grid().duCells().array()*grid().getCells().array().pow(1.5)*eedf.array()).sum();
-    }
+    swarmParameters.meanEnergy = getMeanEnergy(eedf,grid());
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
@@ -1529,7 +1516,7 @@ void ElectronKineticsPrescribed::evaluateSwarmParameters()
     swarmParameters.redTownsendCoeff = totalIonRateCoeff / swarmParameters.driftVelocity;
     swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
-    swarmParameters.meanEnergy = grid().du() * (grid().getCells().array().pow(1.5) * eedf.array()).sum();
+    swarmParameters.meanEnergy = getMeanEnergy(eedf,grid());
 
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
