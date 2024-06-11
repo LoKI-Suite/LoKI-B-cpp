@@ -449,8 +449,6 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     return j;
 }
 
-#include <cstdlib>
-
 int main()
 {
     using namespace loki;
