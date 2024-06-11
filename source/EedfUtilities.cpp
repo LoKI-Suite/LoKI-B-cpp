@@ -28,26 +28,19 @@
  */
 
 #include "LoKI-B/EedfUtilities.h"
+#include "LoKI-B/Integrals.h"
 #include <cmath>
 
 namespace loki {
 
 double getMeanEnergy(const Vector& edf, const Grid& grid)
 {
-    const Vector cellsThreeOverTwo = grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt());
-    double meanEnergy = grid.du() * cellsThreeOverTwo.dot(edf);
-    return meanEnergy;
+    return energyIntegral(grid,grid.getCells().cwiseProduct(grid.getCells().cwiseSqrt()),edf);
 }
 
 void normalizeEDF(Vector& edf, const Grid& grid)
 {
-    if (grid.isUniform())
-    {
-        edf /= edf.dot(grid.getCells().cwiseSqrt() * grid.du());
-    } else
-    {
-        edf /= edf.dot(grid.getCells().cwiseSqrt().cwiseProduct(grid.duCells())); 
-    }
+    edf /= energyIntegral(grid,grid.getCells().cwiseSqrt(),edf);
 }
 
 void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV)
