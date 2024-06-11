@@ -405,21 +405,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             baseSupDiag[k] = boltzmannMatrix(k, k + 1);
     }
 
-    /** \todo The name is incorrect. This is not the integrand since it already includes
-     *        du and does not yet have the factor f(u).
-     */
-    Vector integrandCI;
-    if (grid().isUniform())
-        {
-            integrandCI = SI::gamma*grid().du() * Vector::Ones(grid().nCells()).transpose() *
-                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
-        } else
-        {
-            integrandCI = SI::gamma*grid().duCells().transpose() *
-                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
-        }
+    const Vector coefsCI = SI::gamma * grid().duCells().transpose()
+                    * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
 
-    double CIEffNew = eedf.dot(integrandCI);
+    double CIEffNew = eedf.dot(coefsCI);
     double CIEffOld = CIEffNew / 3;
     /** \todo Where does the division by 3 come from? Without that, CIEff
      *  is calculated below as a weighted average of old and new values
@@ -594,7 +583,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         invertMatrix(boltzmannMatrix);
 
         CIEffOld = CIEffNew;
-        CIEffNew = eedf.dot(integrandCI);
+        CIEffNew = eedf.dot(coefsCI);
 
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
@@ -666,10 +655,9 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     }
 
     // CIEff is <nu_eff>/N
-    const Vector integrandCI = (SI::gamma * grid().du())
-                    * Vector::Ones(grid().nCells()).transpose()
+    const Vector coefsCI = SI::gamma * grid().duCells().transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
-    double CIEffNew = eedf.dot(integrandCI);
+    double CIEffNew = eedf.dot(coefsCI);
     double CIEffOld = CIEffNew / 3.;
     CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
@@ -709,7 +697,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         invertMatrix(boltzmannMatrix);
 
         CIEffOld = CIEffNew;
-        CIEffNew = eedf.dot(integrandCI);
+        CIEffNew = eedf.dot(coefsCI);
         CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 10e-10) &&
@@ -1144,12 +1132,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
     {
         if (growthModelType == GrowthModelType::temporal)
         {
-            double growthModel = 0.;
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
-            {
-                growthModel += eedf[k] * grid().getCell(k) * std::sqrt(grid().getCell(k));
-            }
-            power.eDensGrowth = -CIEff * grid().du() * growthModel;
+            power.eDensGrowth = -CIEff * getMeanEnergy(eedf,grid());
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
