@@ -50,12 +50,6 @@ void test1(const Grid& grid)
     const Vector g = grid.getCells();
     test_expr(std::abs(energyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
         < grid.nCells()*std::numeric_limits<double>::epsilon());
-    if (!grid.isUniform())
-    {
-        std::cout << "SKIPPING fgPrimeEnergyIntegral test for unstructured "
-                     "mesh --- not yet implemented." << std::endl;
-        return;
-    }
     test_expr(std::abs(fgPrimeEnergyIntegral(grid,f,g) - grid.uMax())
         < grid.nCells()*std::numeric_limits<double>::epsilon());
 }
@@ -73,13 +67,7 @@ void test2(const Grid& grid)
      */
     test_expr(std::abs(energyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
         < 10*grid.nCells()*std::numeric_limits<double>::epsilon());
-    if (!grid.isUniform())
-    {
-        std::cout << "SKIPPING fgPrimeEnergyIntegral test for unstructured "
-                     "mesh --- not yet implemented." << std::endl;
-        return;
-    }
-    test_expr(std::abs(fgPrimeEnergyIntegral(grid,f,g) - grid.uMax()*grid.uMax()/2)
+    test_expr(std::abs(fgPrimeEnergyIntegral(grid,f,g) - 0)
         < 10*grid.nCells()*std::numeric_limits<double>::epsilon());
 }
 

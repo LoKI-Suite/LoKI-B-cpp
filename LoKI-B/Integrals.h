@@ -63,49 +63,6 @@ namespace loki {
         }
     }
 
-    /** Calculate coefficients \a C such that C.dot(g) is
-     *  an approximation of \f$ \gamma\int_0^{u_max} C\frac{dg}{du}du \f$.
-     *  Argument \a C is resized to f.size() by this function.
-     *
-     *  \todo Document assumptions on the grid layout.
-     *
-     *  \author Jan van Dijk
-     *  \date   5 June 2024
-     */
-    template <class VectorExpr>
-    void fgPrimeEnergyIntegralCoefficients(Vector& C, const VectorExpr& f)
-    {
-        const Grid::Index N = f.size();
-        if (N<2)
-        {
-            throw std::runtime_error("fgPrimeEnergyIntegralCoefficients: "
-                                     "grid must contain at least two cells.");
-        }
-        C.resize(N);
-        switch (N)
-        {
-            case 2:
-                C[0] = -f[0] - f[1];
-                C[1] = -C[0];
-            break;
-            case 3:
-                C[0] = -f[0]   - f[1]/2;
-                C[1] = +f[0]   - f[2];
-                C[2] = +f[1]/2 - f[2];
-            break;
-                default:
-                C[0] = -f[0] - f[1]/2;
-                C[1] = +f[0] - f[2]/2;
-                for (Grid::Index k=2; k<=N-3; ++k)
-                {
-                    C[k] = (f[k-1] - f[k+1])/2;
-                }
-                C[N-2] = +f[N-3]/2 - f[N-1];
-                C[N-1] = +f[N-2]/2 + f[N-1];
-            break;
-        }
-    }
-
     /** Calculate and return an approximation of \f$ \gamma\int_0^{u_max} f\frac{dg}{du}du \f$.
      *  Arguments \a f and \a g must be defined in the cells of the \a grid.
      *
@@ -116,6 +73,11 @@ namespace loki {
     double fgPrimeEnergyIntegral(const Grid& grid, const VectorExpr& f, const Vector& g)
     {
         const Grid::Index N = grid.nCells();
+        if (N<2)
+        {
+            throw std::runtime_error("fgPrimeEnergyIntegral: "
+                                     "grid must contain at least two cells.");
+        }
         if (f.size()!=g.size() || f.size()!=N)
         {
             throw std::runtime_error("fgPrimeEnergyIntegral: "
@@ -123,16 +85,18 @@ namespace loki {
         }
         if (grid.isUniform())
         {
+            /** \todo The parenthesized expressions below are the coefficients
+             *  c such that dot(c,f) yields the result. Since we only care about
+             *  the results, not about the coefficients as such, we may decide
+             *  to also implement the isUniform() path in the simpler way that
+             *  is also used for the non-uniform case.
+             */
             // Note that the result is grid-independent in this case (as long as
             // it is uniform).
             double res = 0.0;
             switch (N)
             {
-                case 0:
-                case 1:
-                    throw std::runtime_error("fgPrimeEnergyIntegral: "
-                                             "grid must contain at least two cells.");
-                break;
+                // NOTE: N>=2 has been checked above
                 case 2:
                     res += (-f[0] - f[1])*g[0];
                     res += ( f[0] + f[1])*g[1];
@@ -157,8 +121,17 @@ namespace loki {
         }
         else
         {
-            throw std::runtime_error("fgPrimeEnergyIntegral: non-equidistant "
-                                     "meshes are not yet supported.");
+            // NOTE: N>=2 has been checked above
+            double res = 0.0;
+            res += f[  0]*(g[  1]-g[  0])/grid.duNode(1)*grid.duCell(0);
+            res += f[N-1]*(g[N-1]-g[N-2])/grid.duNode(N-1)*grid.duCell(N-1);
+            for (Grid::Index k=1; k<=N-2; ++k)
+            {
+                const double dum = grid.duNode(k);
+                const double dup = grid.duNode(k+1);
+                res += f[k]*(g[k+1] - g[k-1])/(dum+dup)*grid.duCell(k);
+            }
+            return res;
         }
     }
 
