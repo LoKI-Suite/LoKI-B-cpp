@@ -133,6 +133,38 @@ inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
     }
 }
 
+inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states,
+                                  const std::vector<double> &arguments, StatePropertyType type)
+{
+    if (type != StatePropertyType::energy)
+        Log<WrongPropertyError>::Error("morseOscillatorEnergy");
+
+    if (!arguments.empty())
+        Log<NumArgumentsError>::Error("morseOscillatorEnergy");
+
+    if (states.at(0)->type != vibrational)
+        Log<Message>::Error("Trying to assign Morse oscillator energy to non-vibrational state.");
+
+    if (states.at(0)->gas().harmonicFrequency < 0)
+        Log<Message>::Error("Cannot find harmonicFrequency of the gas " + states.at(0)->gas().name() +
+                            " to evaluate state energies.");
+
+    if (states.at(0)->gas().anharmonicFrequency < 0)
+        Log<Message>::Error("Cannot find anharmonicFrequency of the gas " + states.at(0)->gas().name() +
+                            " to evaluate state energies.");
+
+    for (auto *state : states)
+    {
+        double vibLevel;
+
+        if (!Parse::getValue(state->v, vibLevel))
+            Log<Message>::Error("Non numerical vib level (" + state->v +
+                                ") when trying to assign Morse oscillator energy.");
+
+        state->energy = Constant::plankReducedInEv * (state->gas().harmonicFrequency * (vibLevel + .5) - state->gas().anharmonicFrequency * std::pow(vibLevel + 0.5, 2));
+    }
+}
+
 inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                              StatePropertyType type)
 {
@@ -256,6 +288,8 @@ inline void callByName(const std::string &name, const std::vector<Gas::State *> 
         boltzmannPopulation(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
+    else if (name == "morseOscillatorEnergy")
+        morseOscillatorEnergy(states, arguments, type);
     else if (name == "rigidRotorEnergy")
         rigidRotorEnergy(states, arguments, type);
     else if (name == "rotationalDegeneracy_H2")
