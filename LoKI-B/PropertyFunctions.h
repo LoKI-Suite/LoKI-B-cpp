@@ -179,6 +179,60 @@ inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> 
     }
 }
 
+inline void treanorPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                              StatePropertyType type)
+{
+    if (type != StatePropertyType::population)
+        Log<WrongPropertyError>::Error("treanorPopulation");
+
+    if (arguments.size() != 2)
+        Log<NumArgumentsError>::Error("treanorPopulation");
+
+    const double &tempZero = arguments[0];
+    const double &tempOne = arguments[1];
+    double eZero = -1;
+    double eOne = -1;
+    double norm = 0.;
+
+    for (const auto *state : states) {
+        if (state->type != StateType::vibrational)
+            Log<Message>::Error("Trying to assign a Treanor population to non-vibrational state.");
+
+        if (state->v == "0") {
+            eZero = state->energy;
+        } else if (state->v == "1") {
+            eOne = state->energy;
+        }
+    }
+
+    if (eZero == -1 || eOne == -1)
+        Log<Message>::Error("Unable to find E_0 or E_1 to apply Treanor population.");
+
+    for (auto *state : states)
+    {
+        double vibLevel;
+
+        if (!Parse::getValue(state->v, vibLevel))
+            Log<Message>::Error("Non numerical vib level (" + state->v +
+                                ") when trying to assign Treanor population.");
+
+        const double energy = state->energy;
+        const double g = state->statisticalWeight;
+
+        if (energy == -1)
+            Log<Message>::Error("Unable to find energy of state while applying Treanor population.");
+        if (g == -1)
+            Log<Message>::Error("Unable to find statistical weight of state while applying Treanor population.");
+
+        state->setPopulation(g * std::exp(-(vibLevel * (eOne - eZero) * (1/tempOne - 1/tempZero) + (energy - eZero) / tempZero) / Constant::kBeV));
+        norm += state->population();
+    }
+    for (auto *state : states)
+    {
+        state->setPopulation(state->population()/norm);
+    }
+}
+
 inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
                                      const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -364,6 +418,8 @@ inline void callByName(const std::string &name, const std::vector<Gas::State *> 
         boltzmannPopulationVibrationalCutoff(states, arguments, type);
     else if (name == "boltzmannPopulationRotationalCutoff")
         boltzmannPopulationRotationalCutoff(states, arguments, type);
+    else if (name == "treanorPopulation")
+        treanorPopulation(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
     else if (name == "morseOscillatorEnergy")
