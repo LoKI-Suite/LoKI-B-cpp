@@ -35,7 +35,6 @@
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
-#include "LoKI-B/Enumeration.h"
 
 #include <cmath>
 
@@ -96,17 +95,17 @@ inline void boltzmannPopulation(const std::vector<Gas::State *> &states, const s
 
     for (auto *state : states)
     {
-        state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+        state->setPopulation(state->statisticalWeight * std::exp(-state->energy / (Constant::kBeV * temp)));
         norm += state->population();
     }
     for (auto *state : states)
     {
-        state->setPopulation(state->population()/norm);
+        state->setPopulation(state->population() / norm);
     }
 }
 
-inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
-                                                 StatePropertyType type)
+inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *> &states,
+                                                 const std::vector<double> &arguments, StatePropertyType type)
 {
     if (type != StatePropertyType::population)
         Log<WrongPropertyError>::Error("boltzmannPopulationVibrationalCutoff");
@@ -123,27 +122,31 @@ inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *>
         double vibLevel;
 
         if (state->type != StateType::vibrational)
-            Log<Message>::Error("Trying to assign a Boltzmann population with vibrational cutoff to a non-vibrational state.");
+            Log<Message>::Error(
+                "Trying to assign a Boltzmann population with vibrational cutoff to a non-vibrational state.");
 
         if (!Parse::getValue(state->v, vibLevel))
             Log<Message>::Error("Non numerical vib level (" + state->v +
                                 ") when trying to assign Boltzmann population with vibrational cutoff.");
 
-        if (vibLevel > vMax) {
+        if (vibLevel > vMax)
+        {
             state->setPopulation(0);
-        } else {
-            state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+        }
+        else
+        {
+            state->setPopulation(state->statisticalWeight * std::exp(-state->energy / (Constant::kBeV * temp)));
             norm += state->population();
         }
     }
     for (auto *state : states)
     {
-        state->setPopulation(state->population()/norm);
+        state->setPopulation(state->population() / norm);
     }
 }
 
-inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
-                                                 StatePropertyType type)
+inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> &states,
+                                                const std::vector<double> &arguments, StatePropertyType type)
 {
     if (type != StatePropertyType::population)
         Log<WrongPropertyError>::Error("boltzmannPopulationRotationalCutoff");
@@ -160,22 +163,26 @@ inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> 
         double rotLevel;
 
         if (state->type != StateType::rotational)
-            Log<Message>::Error("Trying to assign a Boltzmann population with rotational cutoff to a non-rotational state.");
+            Log<Message>::Error(
+                "Trying to assign a Boltzmann population with rotational cutoff to a non-rotational state.");
 
         if (!Parse::getValue(state->J, rotLevel))
             Log<Message>::Error("Non numerical rot level (" + state->v +
                                 ") when trying to assign Boltzmann population with rotational cutoff.");
 
-        if (rotLevel > jMax) {
+        if (rotLevel > jMax)
+        {
             state->setPopulation(0);
-        } else {
-            state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+        }
+        else
+        {
+            state->setPopulation(state->statisticalWeight * std::exp(-state->energy / (Constant::kBeV * temp)));
             norm += state->population();
         }
     }
     for (auto *state : states)
     {
-        state->setPopulation(state->population()/norm);
+        state->setPopulation(state->population() / norm);
     }
 }
 
@@ -194,13 +201,17 @@ inline void treanorPopulation(const std::vector<Gas::State *> &states, const std
     double eOne = -1;
     double norm = 0.;
 
-    for (const auto *state : states) {
+    for (const auto *state : states)
+    {
         if (state->type != StateType::vibrational)
             Log<Message>::Error("Trying to assign a Treanor population to non-vibrational state.");
 
-        if (state->v == "0") {
+        if (state->v == "0")
+        {
             eZero = state->energy;
-        } else if (state->v == "1") {
+        }
+        else if (state->v == "1")
+        {
             eOne = state->energy;
         }
     }
@@ -213,8 +224,7 @@ inline void treanorPopulation(const std::vector<Gas::State *> &states, const std
         double vibLevel;
 
         if (!Parse::getValue(state->v, vibLevel))
-            Log<Message>::Error("Non numerical vib level (" + state->v +
-                                ") when trying to assign Treanor population.");
+            Log<Message>::Error("Non numerical vib level (" + state->v + ") when trying to assign Treanor population.");
 
         const double energy = state->energy;
         const double g = state->statisticalWeight;
@@ -224,12 +234,14 @@ inline void treanorPopulation(const std::vector<Gas::State *> &states, const std
         if (g == -1)
             Log<Message>::Error("Unable to find statistical weight of state while applying Treanor population.");
 
-        state->setPopulation(g * std::exp(-(vibLevel * (eOne - eZero) * (1/tempOne - 1/tempZero) + (energy - eZero) / tempZero) / Constant::kBeV));
+        state->setPopulation(
+            g * std::exp(-(vibLevel * (eOne - eZero) * (1 / tempOne - 1 / tempZero) + (energy - eZero) / tempZero) /
+                         Constant::kBeV));
         norm += state->population();
     }
     for (auto *state : states)
     {
-        state->setPopulation(state->population()/norm);
+        state->setPopulation(state->population() / norm);
     }
 }
 
@@ -248,13 +260,17 @@ inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, c
     double eOne = -1;
     double norm = 0.;
 
-    for (const auto *state : states) {
+    for (const auto *state : states)
+    {
         if (state->type != StateType::vibrational)
             Log<Message>::Error("Trying to assign a Treanor-Gordiets population to non-vibrational state.");
 
-        if (state->v == "0") {
+        if (state->v == "0")
+        {
             eZero = state->energy;
-        } else if (state->v == "1") {
+        }
+        else if (state->v == "1")
+        {
             eOne = state->energy;
         }
     }
@@ -266,11 +282,14 @@ inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, c
         Log<Message>::Error("Cannot find anharmonicFrequency of the gas " + states.at(0)->gas().name() +
                             " to evaluate state energies.");
 
-    const double vLimit = std::floor(0.5 * (1 + (eOne - eZero) * tempZero / (Constant::plankReducedInEv * states.at(0)->gas().anharmonicFrequency * tempOne)));
+    const double vLimit =
+        std::floor(0.5 * (1 + (eOne - eZero) * tempZero /
+                                  (Constant::plankReducedInEv * states.at(0)->gas().anharmonicFrequency * tempOne)));
     double vLimitPop = 0;
 
-    const auto computePopulation = [eZero, eOne, tempZero, tempOne](double v, double g, double energy){
-        return g * std::exp(-(v * (eOne - eZero) * (1/tempOne - 1/tempZero) + (energy - eZero) / tempZero) / Constant::kBeV);
+    const auto computePopulation = [eZero, eOne, tempZero, tempOne](double v, double g, double energy) {
+        return g * std::exp(-(v * (eOne - eZero) * (1 / tempOne - 1 / tempZero) + (energy - eZero) / tempZero) /
+                            Constant::kBeV);
     };
 
     for (auto *state : states)
@@ -287,26 +306,32 @@ inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, c
         if (energy == -1)
             Log<Message>::Error("Unable to find energy of state while applying Treanor-Gordiets population.");
         if (g == -1)
-            Log<Message>::Error("Unable to find statistical weight of state while applying Treanor-Gordiets population.");
+            Log<Message>::Error(
+                "Unable to find statistical weight of state while applying Treanor-Gordiets population.");
 
-        if (vibLevel < vLimit) {
-          state->setPopulation(computePopulation(vibLevel, g, energy));
-        } else if (vibLevel == vLimit) {
-          vLimitPop = computePopulation(vibLevel, g, energy);
-          state->setPopulation(vLimitPop);
-        } else {
-          state->setPopulation(vLimitPop * vLimit / vibLevel);
+        if (vibLevel < vLimit)
+        {
+            state->setPopulation(computePopulation(vibLevel, g, energy));
+        }
+        else if (vibLevel == vLimit)
+        {
+            vLimitPop = computePopulation(vibLevel, g, energy);
+            state->setPopulation(vLimitPop);
+        }
+        else
+        {
+            state->setPopulation(vLimitPop * vLimit / vibLevel);
         }
         norm += state->population();
     }
     for (auto *state : states)
     {
-        state->setPopulation(state->population()/norm);
+        state->setPopulation(state->population() / norm);
     }
 }
 
-inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
-                                     const std::vector<double> &arguments, StatePropertyType type)
+inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                     StatePropertyType type)
 {
     if (type != StatePropertyType::energy)
         Log<WrongPropertyError>::Error("harmonicOscillatorEnergy");
@@ -333,8 +358,8 @@ inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
     }
 }
 
-inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states,
-                                  const std::vector<double> &arguments, StatePropertyType type)
+inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                  StatePropertyType type)
 {
     if (type != StatePropertyType::energy)
         Log<WrongPropertyError>::Error("morseOscillatorEnergy");
@@ -361,7 +386,8 @@ inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states,
             Log<Message>::Error("Non numerical vib level (" + state->v +
                                 ") when trying to assign Morse oscillator energy.");
 
-        state->energy = Constant::plankReducedInEv * (state->gas().harmonicFrequency * (vibLevel + .5) - state->gas().anharmonicFrequency * std::pow(vibLevel + 0.5, 2));
+        state->energy = Constant::plankReducedInEv * (state->gas().harmonicFrequency * (vibLevel + .5) -
+                                                      state->gas().anharmonicFrequency * std::pow(vibLevel + 0.5, 2));
     }
 }
 
@@ -392,8 +418,8 @@ inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std:
     }
 }
 
-inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states,
-                                    const std::vector<double> &arguments, StatePropertyType type)
+inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                    StatePropertyType type)
 {
     if (type != StatePropertyType::statisticalWeight)
         Log<WrongPropertyError>::Error("rotationalDegeneracy_H2");
@@ -411,14 +437,14 @@ inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states,
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
-        // See eq. 72 in \cite Manual_2_2_0. This expression is originally taken from 
+        // See eq. 72 in \cite Manual_2_2_0. This expression is originally taken from
         // \cite Ridenti2015
         state->statisticalWeight = (2 - std::pow(-1, J)) * (2 * J + 1);
     }
 }
 
-inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states,
-                                    const std::vector<double> &arguments, StatePropertyType type)
+inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                    StatePropertyType type)
 {
     if (type != StatePropertyType::statisticalWeight)
         Log<WrongPropertyError>::Error("rotationalDegeneracy_N2");
@@ -436,7 +462,7 @@ inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states,
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
-        // See eq. 71 in \cite Manual_2_2_0. This expression is originally taken from 
+        // See eq. 71 in \cite Manual_2_2_0. This expression is originally taken from
         // \cite Ridenti2015
         state->statisticalWeight = 3 * (1. + .5 * (1. + std::pow(-1., J))) * (2. * J + 1.);
     }
@@ -461,7 +487,7 @@ inline void rotationalDegeneracy(const std::vector<Gas::State *> &states, const 
         if (!Parse::getValue(state->J, J))
             Log<Message>::Error("Non numerical rot level (" + state->J + ") when trying to assign rigid rotor energy.");
 
-        // See eq. 70 in \cite Manual_2_2_0. This expression is originally taken from 
+        // See eq. 70 in \cite Manual_2_2_0. This expression is originally taken from
         // \cite Ridenti2015
         state->statisticalWeight = 2 * J + 1;
     }
