@@ -105,6 +105,43 @@ inline void boltzmannPopulation(const std::vector<Gas::State *> &states, const s
     }
 }
 
+inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                                 StatePropertyType type)
+{
+    if (type != StatePropertyType::population)
+        Log<WrongPropertyError>::Error("boltzmannPopulationVibrationalCutoff");
+
+    if (arguments.size() != 2)
+        Log<NumArgumentsError>::Error("boltzmannPopulationVibrationalCutoff");
+
+    const double &temp = arguments[0];
+    const double &vMax = arguments[1];
+    double norm = 0.;
+
+    for (auto *state : states)
+    {
+        double vibLevel;
+
+        if (state->type != StateType::vibrational)
+            Log<Message>::Error("Trying to assign a Boltzmann population with vibrational cutoff to a non-vibrational state.");
+
+        if (!Parse::getValue(state->v, vibLevel))
+            Log<Message>::Error("Non numerical vib level (" + state->v +
+                                ") when trying to assign Boltzmann population with vibrational cutoff.");
+
+        if (vibLevel > vMax) {
+            state->setPopulation(0);
+        } else {
+            state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+            norm += state->population();
+        }
+    }
+    for (auto *state : states)
+    {
+        state->setPopulation(state->population()/norm);
+    }
+}
+
 inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
                                      const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -286,6 +323,8 @@ inline void callByName(const std::string &name, const std::vector<Gas::State *> 
 {
     if (name == "boltzmannPopulation")
         boltzmannPopulation(states, arguments, type);
+    else if (name == "boltzmannPopulationVibrationalCutoff")
+        boltzmannPopulationVibrationalCutoff(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
     else if (name == "morseOscillatorEnergy")
