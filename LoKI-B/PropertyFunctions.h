@@ -233,6 +233,78 @@ inline void treanorPopulation(const std::vector<Gas::State *> &states, const std
     }
 }
 
+inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                      StatePropertyType type)
+{
+    if (type != StatePropertyType::population)
+        Log<WrongPropertyError>::Error("treanorGordietsPopulation");
+
+    if (arguments.size() != 2)
+        Log<NumArgumentsError>::Error("treanorGordietsPopulation");
+
+    const double &tempZero = arguments[0];
+    const double &tempOne = arguments[1];
+    double eZero = -1;
+    double eOne = -1;
+    double norm = 0.;
+
+    for (const auto *state : states) {
+        if (state->type != StateType::vibrational)
+            Log<Message>::Error("Trying to assign a Treanor-Gordiets population to non-vibrational state.");
+
+        if (state->v == "0") {
+            eZero = state->energy;
+        } else if (state->v == "1") {
+            eOne = state->energy;
+        }
+    }
+
+    if (eZero == -1 || eOne == -1)
+        Log<Message>::Error("Unable to find E_0 or E_1 to apply Treanor-Gordiets population.");
+
+    if (states.at(0)->gas().anharmonicFrequency < 0)
+        Log<Message>::Error("Cannot find anharmonicFrequency of the gas " + states.at(0)->gas().name() +
+                            " to evaluate state energies.");
+
+    const double vLimit = std::floor(0.5 * (1 + (eOne - eZero) * tempZero / (Constant::plankReducedInEv * states.at(0)->gas().anharmonicFrequency * tempOne)));
+    double vLimitPop = 0;
+
+    const auto computePopulation = [eZero, eOne, tempZero, tempOne](double v, double g, double energy){
+        return g * std::exp(-(v * (eOne - eZero) * (1/tempOne - 1/tempZero) + (energy - eZero) / tempZero) / Constant::kBeV);
+    };
+
+    for (auto *state : states)
+    {
+        double vibLevel;
+
+        if (!Parse::getValue(state->v, vibLevel))
+            Log<Message>::Error("Non numerical vib level (" + state->v +
+                                ") when trying to assign Treanor-Gordiets population.");
+
+        const double energy = state->energy;
+        const double g = state->statisticalWeight;
+
+        if (energy == -1)
+            Log<Message>::Error("Unable to find energy of state while applying Treanor-Gordiets population.");
+        if (g == -1)
+            Log<Message>::Error("Unable to find statistical weight of state while applying Treanor-Gordiets population.");
+
+        if (vibLevel < vLimit) {
+          state->setPopulation(computePopulation(vibLevel, g, energy));
+        } else if (vibLevel == vLimit) {
+          vLimitPop = computePopulation(vibLevel, g, energy);
+          state->setPopulation(vLimitPop);
+        } else {
+          state->setPopulation(vLimitPop * vLimit / vibLevel);
+        }
+        norm += state->population();
+    }
+    for (auto *state : states)
+    {
+        state->setPopulation(state->population()/norm);
+    }
+}
+
 inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
                                      const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -420,6 +492,8 @@ inline void callByName(const std::string &name, const std::vector<Gas::State *> 
         boltzmannPopulationRotationalCutoff(states, arguments, type);
     else if (name == "treanorPopulation")
         treanorPopulation(states, arguments, type);
+    else if (name == "treanorGordietsPopulation")
+        treanorGordietsPopulation(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
     else if (name == "morseOscillatorEnergy")
