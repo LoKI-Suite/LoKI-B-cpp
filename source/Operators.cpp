@@ -419,7 +419,6 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
 }
 
 InelasticOperator::InelasticOperator(const Grid& grid)
-: hasSuperelastics(false)
 {
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
@@ -428,10 +427,6 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 {
     const Grid::Index cellNumber = grid.nCells();
     inelasticMatrix.setZero();
-    /** \todo the following line seems to be missing. See the notes in the
-     *  class declaration of this member
-     */
-    // hasSuperelastics = false;
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -501,9 +496,6 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                         if (productDensity == 0)
                             continue;
-
-                        if (numThreshold != 1)
-                            hasSuperelastics = true;
 
                         if (grid.isUniform())
                         {
