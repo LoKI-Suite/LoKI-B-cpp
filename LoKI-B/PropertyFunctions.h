@@ -142,6 +142,43 @@ inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *>
     }
 }
 
+inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
+                                                 StatePropertyType type)
+{
+    if (type != StatePropertyType::population)
+        Log<WrongPropertyError>::Error("boltzmannPopulationRotationalCutoff");
+
+    if (arguments.size() != 2)
+        Log<NumArgumentsError>::Error("boltzmannPopulationRotationalCutoff");
+
+    const double &temp = arguments[0];
+    const double &jMax = arguments[1];
+    double norm = 0.;
+
+    for (auto *state : states)
+    {
+        double rotLevel;
+
+        if (state->type != StateType::rotational)
+            Log<Message>::Error("Trying to assign a Boltzmann population with rotational cutoff to a non-rotational state.");
+
+        if (!Parse::getValue(state->J, rotLevel))
+            Log<Message>::Error("Non numerical rot level (" + state->v +
+                                ") when trying to assign Boltzmann population with rotational cutoff.");
+
+        if (rotLevel > jMax) {
+            state->setPopulation(0);
+        } else {
+            state->setPopulation(state->statisticalWeight * std::exp(-state->energy/(Constant::kBeV * temp)));
+            norm += state->population();
+        }
+    }
+    for (auto *state : states)
+    {
+        state->setPopulation(state->population()/norm);
+    }
+}
+
 inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states,
                                      const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -325,6 +362,8 @@ inline void callByName(const std::string &name, const std::vector<Gas::State *> 
         boltzmannPopulation(states, arguments, type);
     else if (name == "boltzmannPopulationVibrationalCutoff")
         boltzmannPopulationVibrationalCutoff(states, arguments, type);
+    else if (name == "boltzmannPopulationRotationalCutoff")
+        boltzmannPopulationRotationalCutoff(states, arguments, type);
     else if (name == "harmonicOscillatorEnergy")
         harmonicOscillatorEnergy(states, arguments, type);
     else if (name == "morseOscillatorEnergy")
