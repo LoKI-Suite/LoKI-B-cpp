@@ -181,6 +181,7 @@ public:
     EedfCollisionDataGas& get_data_for(const Gas& gas);
     const Vector& elasticCrossSection() const { return m_elasticCrossSection; }
     const Vector& totalCrossSection() const { return m_totalCrossSection; }
+    const Vector& totalCellCrossSection() const { return m_totalCellCrossSection; }
     /** \todo Add precise references to published sources for this function.
      *  The elastic cross section implemented here is related to the
      *  combination of equations 12 and equation 6b of \cite Tejero2019
@@ -227,6 +228,7 @@ private:
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
+    Vector m_totalCellCrossSection;
 };
 
 } // namespace loki

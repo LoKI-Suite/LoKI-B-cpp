@@ -1017,6 +1017,7 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
             }
         }
     }
+    interpolateNodalToCell(grid,m_totalCrossSection,m_totalCellCrossSection);
 }
 
 void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const Vector &eedf)

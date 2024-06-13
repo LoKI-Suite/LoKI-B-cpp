@@ -443,11 +443,8 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                 if (targetDensity != 0)
                 {
-                    Vector cellCrossSection(cellNumber);
+                    const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
                     Grid::Index numThreshold;
-
-                    for (Grid::Index i = 0; i < cellNumber; ++i)
-                        cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
 
                     if (grid.isUniform())
                     {
@@ -706,10 +703,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             const double delta = collision->getTarget()->delta();
             const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
 
-            Vector cellCrossSection(grid.nCells());
-
-            for (Grid::Index i = 0; i < grid.nCells(); ++i)
-                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+            const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
 
             switch (ionizationOperatorType)
             {
@@ -869,16 +863,12 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              */
             includeNonConservativeAttachment = true;
 
+            const double targetDensity = collision->getTarget()->delta();
+
             /** \todo Eliminate the cellCrossSection vector? This can be calculated on the fly
              *        in the two places where it is needed (one if the merger below can be done).
              */
-            Vector cellCrossSection(cellNumber);
-
-            const double targetDensity = collision->getTarget()->delta();
-
-            /// \todo Merge with the subsequent k-loop.
-            for (Grid::Index i = 0; i < cellNumber; ++i)
-                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+            const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
 
             // This is eq. 13c of \cite Manual_2_2_0
             for (Grid::Index k = 0; k < cellNumber; ++k)

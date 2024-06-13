@@ -268,6 +268,22 @@ class Grid
     Vector m_duCells;
 };
 
+inline void interpolateNodalToCell(const Grid& grid, const Vector& src, Vector& tgt)
+{
+    if (src.size()!=grid.getNodes().size())
+    {
+        throw std::runtime_error("interpolateNodalToCell: grid and source vector have incompatible sizes.");
+    }
+    tgt = (src.head(grid.nCells()) + src.tail(grid.nCells()))/2;
+}
+
+inline Vector interpolateNodalToCell(const Grid& grid, const Vector& src)
+{
+    Vector tgt;
+    interpolateNodalToCell(grid,src,tgt);
+    return tgt;
+}
+
 } // namespace loki
 
 #endif // LOKI_CPP_GRID_H
