@@ -30,6 +30,9 @@ target_link_libraries(compare_tables PRIVATE loki-b)
 add_executable(loki_test_gas_properties test_gas_properties.cpp)
 target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
 
+add_executable(loki_test_interpolation test_interpolation.cpp)
+target_link_libraries(loki_test_interpolation PRIVATE loki-b)
+
 add_executable(loki_test_offside_to_json test_offside_to_json.cpp)
 target_link_libraries(loki_test_offside_to_json PRIVATE loki-b)
 
@@ -100,6 +103,7 @@ target_add_test(test_ee_relaxation)
 target_add_test(test_events)
 target_add_test(test_grid)
 target_add_test(loki_test_integrals)
+target_add_test(loki_test_interpolation)
 target_add_test(test_linalg)
 target_add_test(test_lut)
 target_add_test(test_parser)
