@@ -81,6 +81,7 @@ inline void setStateProperty(Gas::State *state, const double &value, StateProper
     }
 }
 
+// Matlab user manual v2.2.0, equation 73.
 inline void boltzmannPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                 StatePropertyType type)
 {
@@ -104,6 +105,7 @@ inline void boltzmannPopulation(const std::vector<Gas::State *> &states, const s
     }
 }
 
+// Matlab user manual v2.2.0, equation 75.
 inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *> &states,
                                                  const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -145,6 +147,7 @@ inline void boltzmannPopulationVibrationalCutoff(const std::vector<Gas::State *>
     }
 }
 
+// Matlab user manual v2.2.0, equation 74.
 inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> &states,
                                                 const std::vector<double> &arguments, StatePropertyType type)
 {
@@ -186,6 +189,7 @@ inline void boltzmannPopulationRotationalCutoff(const std::vector<Gas::State *> 
     }
 }
 
+// Matlab user manual v2.2.0, equation 76.
 inline void treanorPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                               StatePropertyType type)
 {
@@ -245,6 +249,7 @@ inline void treanorPopulation(const std::vector<Gas::State *> &states, const std
     }
 }
 
+// Matlab user manual v2.2.0, equation 77.
 inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                       StatePropertyType type)
 {
@@ -330,6 +335,7 @@ inline void treanorGordietsPopulation(const std::vector<Gas::State *> &states, c
     }
 }
 
+// Matlab user manual v2.2.0, equation 67.
 inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                      StatePropertyType type)
 {
@@ -358,6 +364,7 @@ inline void harmonicOscillatorEnergy(const std::vector<Gas::State *> &states, co
     }
 }
 
+// Matlab user manual v2.2.0, equation 68.
 inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                   StatePropertyType type)
 {
@@ -391,6 +398,7 @@ inline void morseOscillatorEnergy(const std::vector<Gas::State *> &states, const
     }
 }
 
+// Matlab user manual v2.2.0, equation 69.
 inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                              StatePropertyType type)
 {
@@ -418,6 +426,7 @@ inline void rigidRotorEnergy(const std::vector<Gas::State *> &states, const std:
     }
 }
 
+// Matlab user manual v2.2.0, equation 72.
 inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                     StatePropertyType type)
 {
@@ -443,6 +452,7 @@ inline void rotationalDegeneracy_H2(const std::vector<Gas::State *> &states, con
     }
 }
 
+// Matlab user manual v2.2.0, equation 71.
 inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                     StatePropertyType type)
 {
@@ -468,6 +478,7 @@ inline void rotationalDegeneracy_N2(const std::vector<Gas::State *> &states, con
     }
 }
 
+// Matlab user manual v2.2.0, equation 70.
 inline void rotationalDegeneracy(const std::vector<Gas::State *> &states, const std::vector<double> &arguments,
                                  StatePropertyType type)
 {
