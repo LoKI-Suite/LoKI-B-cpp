@@ -268,6 +268,15 @@ class Grid
     Vector m_duCells;
 };
 
+/** Interpolate the values \a src that are defined on the faces of \a grid to the
+ *  cells, store the result in \a tgt. Argument \a tgt is resized if necessary.
+ *
+ *  If the size of \a src does not match the number of faces of \a grid, a
+ *  std::runtime_error is thrown.
+ *
+ *  \author Jan van Dijk
+ *  \date   13 June 2024
+ */
 inline void interpolateNodalToCell(const Grid& grid, const Vector& src, Vector& tgt)
 {
     if (src.size()!=grid.getNodes().size())
@@ -277,6 +286,14 @@ inline void interpolateNodalToCell(const Grid& grid, const Vector& src, Vector& 
     tgt = (src.head(grid.nCells()) + src.tail(grid.nCells()))/2;
 }
 
+/** Interpolate the values \a src that are defined on the faces of \a grid to the
+ *  cells, return the result. This is implemented by calling the three-argument
+ *  overload of this function on a local vector, and returning the result. See that
+ *  function for more information.
+ *
+ *  \author Jan van Dijk
+ *  \date   13 June 2024
+ */
 inline Vector interpolateNodalToCell(const Grid& grid, const Vector& src)
 {
     Vector tgt;
