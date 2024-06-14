@@ -1,6 +1,6 @@
 /** \file
  *
- *  A demonstration of function interpolateNodalToCell of the LoKI-B project.
+ *  A demonstration of function cellDerivative of the LoKI-B project.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -23,11 +23,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- *  Test function interpolateNodalToCell, which returns the result of
- *  interpolating a vector of face values to a vector of cell values.
+ *  Test function cellDerivative, which returns an approximation of a
+ *  field that is defined in the cells of a grid in (again) the cells.
  *
  *  \author Jan van Dijk
- *  \date   13 June 2024
+ *  \date   14 June 2024
  */
 
 #include "LoKI-B/Grid.h"
@@ -40,8 +40,9 @@ using namespace loki;
  */
 void test1(const Grid& grid)
 {
-    const Vector uC = interpolateNodalToCell(grid,grid.getNodes());
-    test_expr ( (uC-grid.getCells()).norm() < grid.uMax()*grid.nCells()*std::numeric_limits<double>::epsilon() );
+    const Vector uprime = cellDerivative(grid,grid.getCells());
+    Vector ones(grid.nCells()); ones.fill(1.0);
+    test_expr ( (uprime-ones).norm() < grid.nCells()*std::numeric_limits<double>::epsilon() );
 }
 
 int main()

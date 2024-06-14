@@ -30,6 +30,7 @@
 
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/StateEntry.h"

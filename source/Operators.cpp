@@ -29,6 +29,7 @@
 
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/GridOps.h"
 
 #include <cassert>
 

@@ -28,7 +28,7 @@
  */
 
 #include "LoKI-B/EedfUtilities.h"
-#include "LoKI-B/Integrals.h"
+#include "LoKI-B/GridOps.h"
 #include <cmath>
 
 namespace loki {

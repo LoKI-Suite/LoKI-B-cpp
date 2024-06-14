@@ -33,7 +33,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/Constant.h"
-#include "LoKI-B/Integrals.h"
+#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Operators.h"
 #include <iostream>
 
