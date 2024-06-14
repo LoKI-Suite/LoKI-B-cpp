@@ -1411,8 +1411,6 @@ void ElectronKineticsPrescribed::evaluatePower()
 
 void ElectronKineticsPrescribed::evaluateSwarmParameters()
 {
-    const Grid::Index n = grid().nCells();
-
     const Vector& cellCS(mixture.collision_data().totalCellCrossSection());
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
 
