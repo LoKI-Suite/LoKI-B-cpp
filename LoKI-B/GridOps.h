@@ -54,10 +54,10 @@ namespace loki {
         tgt = (src.head(grid.nCells()) + src.tail(grid.nCells()))/2;
     }
 
-    /** Interpolate the values \a src that are defined on the faces of \a grid to the
-     *  cells, return the result. This is implemented by calling the three-argument
-     *  overload of this function on a local vector, and returning the result. See that
-     *  function for more information.
+    /** Interpolate the values \a src that are defined on the faces of \a grid
+     *  to the cells, return the result. This is implemented by calling the
+     *  three-argument overload of this function on a local vector, and
+     *  returning the result. See that function for more information.
      *
      *  \author Jan van Dijk
      *  \date   13 June 2024
@@ -69,9 +69,10 @@ namespace loki {
         return tgt;
     }
 
-    /** Calculate and return an approximation of the derivative of the field
-     *  \a f. Both the field \a f and the resulting vactor are defined in the
-     *  cells of the \a grid.
+    /** Calculate and an approximation of the derivative of the field
+     *  \a f and store the results in \a fprime. Both the field \a f
+     *  and \a fprime are defined in the cells of the \a grid. Vector
+     *  \a fprime is esized if necessary.
      *
      *  \author Jan van Dijk
      *  \date   14 June 2024
@@ -100,6 +101,15 @@ namespace loki {
         }
     }
 
+    /** Calculate and return an approximation of the derivative of the field
+     *  \a f. Both the field \a f and the resulting vactor are defined in the
+     *  cells of the \a grid. This is implemented by calling the three-argument
+     *  overload of this function on a local vector, and returning the result.
+     *  See that function for more information.
+     *
+     *  \author Jan van Dijk
+     *  \date   14 June 2024
+     */
     inline Vector cellDerivative(const Grid& grid, const Vector& f)
     {
         Vector fprime;
