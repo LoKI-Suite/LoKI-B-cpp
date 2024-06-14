@@ -29,9 +29,10 @@
 
 #include "LoKI-B/OffSideToJSON.h"
 #include <fstream>
+#include <list>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <list>
 
 namespace loki
 {
@@ -43,18 +44,17 @@ namespace {
  *  which sets up a list of Line objects. Valid lines in LoKI-B
  *  input lines consist of a number of whitespace characters,
  *  stored in Line member 'indent', followed by
- *
- *    1) <key>: [value]
- *    2) - value.
- *
+ *  \verbatim
+      1) <key>: [value]
+      2) - value. \endverbatim
  *  A key, followed by a value represents a regular key-value pair;
  *  the value can be an integer or floating point number, a literal
  *  true of false or a string. Note that the value can contain whitespace,
- *  everything after <key>: is considered to be part of the value,
+ *  everything after "<key>:" is considered to be part of the value,
  *  but leading and trailing whitespace (and comments) are trimmed.
  *  As an example, the line
  *  \verbatim
-      pair:  A B % comment\endverbatim
+      pair:  A B % comment \endverbatim
  *  will result in value "A B".
  *  When [value] is omitted, a key-object pair will be inserted.
  *
@@ -237,7 +237,10 @@ void readSection(json_type& parent, Lines::const_iterator& it, Lines::const_iter
 			auto old = it++;
 			if (it==end || it->indent()==old->indent())
 			{
-				/// \todo should sec become an array or an object?
+				/** \todo If a section is empty, we cannot decide if it should
+				 *  become an empty object or an empty array. We leave it a nil
+				 *  value. This should be documented.
+				 */
 				// sec = json_type(R"([])");
 				continue;
 			}

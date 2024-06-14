@@ -32,8 +32,8 @@ include(FetchContent)
 # for every file being compiled.
 cmake_policy(SET CMP0092 NEW)
 
-option(ALL_WARNINGS "-DALL_WARNINGS=ON|OFF : Show all warnings" OFF)
-loki_constrain_configure_option(ALL_WARNINGS ON OFF)
+option(LOKIB_ALL_WARNINGS "-DLOKIB_ALL_WARNINGS=ON|OFF : Show all warnings" OFF)
+loki_constrain_configure_option(LOKIB_ALL_WARNINGS ON OFF)
 if (MSVC)
     message(STATUS "Using MSVC compiler")
 
@@ -44,7 +44,7 @@ if (MSVC)
 
     # warning level 4
     loki_msvc_cxxflags(/W4)
-    if(NOT ALL_WARNINGS)
+    if(NOT LOKIB_ALL_WARNINGS)
         #disable some valid, but perhaps not so interesting warnings
         #disable warning C4100: "unreferenced formal parameter"
         loki_msvc_cxxflags(/wd4100)
@@ -64,7 +64,7 @@ if (MSVC)
 else()
     # lots of warnings
     loki_ccxxflags(-Wall)
-    if(ALL_WARNINGS)
+    if(LOKIB_ALL_WARNINGS)
         loki_ccxxflags(-Wextra)
     else()
         #disable some valid, but perhaps not so interesting warnings
@@ -86,7 +86,6 @@ else()
     #loki_cxxflags(-Werror=unused-but-set-variable)
     loki_cxxflags(-Werror=unused-result)
     loki_cxxflags(-Werror=ignored-qualifiers)
-    loki_cxxflags(-Werror=zero-as-null-pointer-constant)
     loki_cxxflags(-Werror=misleading-indentation)
     loki_cxxflags(-Werror=reorder)
     # disabled, not supported by gcc 7.5.0:
@@ -95,6 +94,11 @@ else()
     loki_cxxflags(-Werror=missing-field-initializers)
     loki_cxxflags(-Werror=vla)
     loki_cxxflags(-Werror=invalid-pch)
+
+    if(NOT EMSCRIPTEN)
+        loki_cxxflags(-Werror=zero-as-null-pointer-constant)
+    endif()
+    
     # We treat APPLE as a subset of non MSVC
     if(APPLE)
         # Disabled because boost generates a lot of these warnings
@@ -102,7 +106,10 @@ else()
         add_link_options(LINKER:-undefined,error)
     else()
         loki_cxxflags(-Werror=undef)
-        add_link_options(LINKER:-no-undefined)
+
+        if(NOT EMSCRIPTEN)
+            add_link_options(LINKER:-no-undefined)
+        endif()
     endif()
 endif()
 loki_gcc_cxxflags(-Werror=shadow)
@@ -184,21 +191,21 @@ endif()
 #-Qiopenmp for Intel,  -fopenmp=libomp for Clang etc.). Most compilers come with
 #openmp support, but for some (e.g. Clang) you need to install additional
 #packages (e.g. libomp9-devel for clang9, or libomp-dev) 
-option(USE_OPENMP "Use OpenMP parallelization" ON)
-loki_constrain_configure_option(USE_OPENMP ON OFF)
-if(USE_OPENMP)
+option(LOKIB_USE_OPENMP "Use OpenMP parallelization" ON)
+loki_constrain_configure_option(LOKIB_USE_OPENMP ON OFF)
+if(LOKIB_USE_OPENMP)
 	find_package(OpenMP)
 	if(NOT OpenMP_CXX_FOUND)
-		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP package(s), or disable OpenMP support with -DUSE_OPENMP=OFF")
+		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP package(s), or disable OpenMP support with -DLOKIB_USE_OPENMP=OFF")
 	endif()
 endif()
 
 
 # --- nlohmann/json --- #
 
-option(USE_BUILTIN_NLOHMANN_JSON "Use the version of nlohmann/json that is shipped with loki-b" OFF)
+option(LOKIB_USE_BUILTIN_NLOHMANN_JSON "Use the version of nlohmann/json that is shipped with loki-b" OFF)
 
-if(USE_BUILTIN_NLOHMANN_JSON)
+if(LOKIB_USE_BUILTIN_NLOHMANN_JSON)
 	#Use built-in nlohmann/json from include/nlohmann-3.7.0
 	message(STATUS "Using built-in nlohmann_json")
 else()
@@ -210,9 +217,9 @@ endif()
 
 # --- Eigen3 --- #
 
-option(USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
+option(LOKIB_USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
 
-if(USE_BUILTIN_EIGEN)
+if(LOKIB_USE_BUILTIN_EIGEN)
 	#Use built-in Eigen from include/eigen-3.3.7/eigen3
 	message(STATUS "Using built-in Eigen")
 else()
@@ -224,14 +231,14 @@ endif()
 # --- OpenBLAS/MKL --- #
 
 # Specify the linear algebra backend to use (default is pure Eigen).
-option(USE_MKL "Use Intel MKL as backend for Eigen" OFF)
-option(USE_OPENBLAS "Use (Open)BLAS as backend for Eigen" OFF)
+option(LOKIB_USE_MKL "Use Intel MKL as backend for Eigen" OFF)
+option(LOKIB_USE_OPENBLAS "Use (Open)BLAS as backend for Eigen" OFF)
 
-if (USE_MKL AND USE_OPENBLAS)
+if (LOKIB_USE_MKL AND LOKIB_USE_OPENBLAS)
   message(SEND_ERROR "Multiple backends defined, please just select one.")
 endif()
 
-if(USE_MKL)
+if(LOKIB_USE_MKL)
   message(STATUS "Using Intel MKL")
   #This has only been tested with the Intel OneAPI toolkit, version 2021.3
   #According to documentation, version 2021.3 and higher should correctly 
@@ -239,7 +246,7 @@ if(USE_MKL)
   #https://www.intel.com/content/www/us/en/develop/documentation/onemkl-macos-developer-guide/top/getting-started/cmake-config-for-onemkl.html
   find_package(MKL CONFIG REQUIRED)
   message(STATUS "${MKL_IMPORTED_TARGETS}")
-elseif(USE_OPENBLAS)
+elseif(LOKIB_USE_OPENBLAS)
   message(STATUS "Using (Open)BLAS")
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)

@@ -85,6 +85,7 @@ void testFunctionCalls()
     testFunctionCallException("f)");
     testFunctionCallException("f(");
     testFunctionCallException("f(%)",1);
+    testFunctionCallException("f(1a)",1);
     testFunctionCallException("f(1 2)",2);
     testFunctionCallException("f(1,g())",2);
     // syntax OK, but wrong arity:

@@ -25,12 +25,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   21. May 2019
+ *  \date   21 May 2019
  */
 
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/Parse.h"
 #include "LoKI-B/StateEntry.h"
 
 #include <cassert>
@@ -96,10 +97,6 @@ EedfCollision::~EedfCollision()
 }
 
 const EedfCollision::EedfState *EedfCollision::getTarget() const
-{
-    return m_lhsHeavyStates.front();
-}
-EedfCollision::EedfState *EedfCollision::getTarget()
 {
     return m_lhsHeavyStates.front();
 }
@@ -283,7 +280,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
         {
             double w = OPBParameter;
 
-            if (w == 0)
+            if (w < 0)
                 w = crossSection->threshold();
 
             Vector TICS = Vector::Zero(grid->nCells());
@@ -408,16 +405,22 @@ std::string EedfCollision::typeAsString() const
     }
 }
 
-EedfCollisionDataGas::EedfCollisionDataGas(Gas &gas)
+EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const Gas &gas)
     : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
-      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)), m_OPBParameter(0.)
+      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
+      m_OPBParameter(gasProps.get("OPBParameter",gas.name(),-1.0,true))
 {
+    if (m_OPBParameter>0)
+    {
+        Log<Message>::Notify("Set OPB parameter for gas "
+                             + m_gas.name() + " to " + std::to_string(m_OPBParameter));
+    }
 }
 
 void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
 {
     // add to the state's list
-    State *target = collision->getTarget();
+    const State *target = collision->getTarget();
     (isExtra ? m_state_collisionsExtra[target] : m_state_collisions[target]).emplace_back(collision);
 
     // add to the gas' list
@@ -426,20 +429,21 @@ void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
         .emplace_back(collision);
 }
 
-void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *energyGrid)
+void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulation)
 {
     if (isDummy())
         return;
 
-    std::vector<State *> statesToUpdate = findStatesToUpdate();
+    std::vector<const State *> statesToUpdate = findStatesToUpdate();
 
     if (!statesToUpdate.empty())
     {
-        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid);
+        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid,effectivePopulation);
         std::vector<uint16_t> stoiCoeff{1, 1};
 
-        for (auto *state : statesToUpdate)
+        for (const auto *state : statesToUpdate)
         {
+            Log<Message>::Notify("Effective cross section: installing elastic cross section for state " + (std::stringstream{}<<*state).str());
             std::vector stateVector{electron, state};
             auto *collision =
                 new EedfCollision(CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
@@ -451,7 +455,7 @@ void EedfCollisionDataGas::checkElasticCollisions(State *electron, const Grid *e
     }
 }
 
-CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid *energyGrid)
+CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom)
 {
     /** \todo What happens / should happen if more than one effective collision
      *  is specified? Is that an input error? The code below only uses the first.
@@ -465,13 +469,15 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
 
     Vector rawEl = rawEff; // copy raw effective into raw elastic
 
-    if (m_effectivePopulations.empty())
+    EffectivePopulationsMap effectivePopulationsDefault;
+    if (effectivePopulationsCustom.empty())
     {
-        m_effectivePopulations.emplace(eff->getTarget(), 1.);
-        setDefaultEffPop(eff->getTarget());
+        effectivePopulationsDefault.emplace(eff->getTarget(), 1.);
+        setDefaultEffPop(eff->getTarget(),effectivePopulationsDefault);
     }
 
-    for (const auto &pair : m_effectivePopulations)
+    const EffectivePopulationsMap& effectivePopulations = effectivePopulationsCustom.empty() ? effectivePopulationsDefault : effectivePopulationsCustom;
+    for (const auto &pair : effectivePopulations)
     {
         for (const auto &collision : m_state_collisions[pair.first])
         {
@@ -487,8 +493,11 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
             {
                 collision->superElastic(rawEnergies, crossSection);
 
-                if (m_effectivePopulations.count(collision->m_rhsHeavyStates[0]) == 1)
-                    rawEl -= crossSection * m_effectivePopulations[collision->m_rhsHeavyStates[0]];
+                const auto pop = effectivePopulations.find(collision->m_rhsHeavyStates[0]);
+                if (pop != effectivePopulations.end())
+                {
+                    rawEl -= crossSection * pop->second;
+                }
             }
         }
     }
@@ -514,7 +523,7 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
  *  operation that does not depend on collisional data.
  *  \todo The 300 (K) should not be hardcoded.
  */
-void EedfCollisionDataGas::setDefaultEffPop(State *ground)
+void EedfCollisionDataGas::setDefaultEffPop(const State *ground, EffectivePopulationsMap& effectivePopulations) const
 {
     // ele ground to 1
     // vib children of ele ground to Boltzmann at 300K
@@ -540,19 +549,21 @@ void EedfCollisionDataGas::setDefaultEffPop(State *ground)
             }
             else if (child->energy < childGround->energy)
             {
+                /// \todo Explain the logic of this line. Also like this in MATLAB?
                 childGround = child;
             }
             double effPop = child->statisticalWeight * std::exp(-child->energy / (Constant::kBeV * 300));
+            /// \todo Explain that the ground state weight does not matter in view of the normalization below.
 
-            m_effectivePopulations.emplace(child, effPop);
+            effectivePopulations.emplace(child, effPop);
             norm += effPop;
         }
         for (auto *child : ground->children())
         {
-            m_effectivePopulations[child] /= (norm / m_effectivePopulations[ground]);
+            effectivePopulations[child] /= (norm / effectivePopulations[ground]);
         }
 
-        setDefaultEffPop(childGround);
+        setDefaultEffPop(childGround,effectivePopulations);
     }
 }
 
@@ -568,23 +579,92 @@ bool EedfCollisionDataGas::isDummy() const
     return true;
 }
 
-std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate()
+std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate() const
 {
-    std::vector<State *> statesToUpdate;
+#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 0
+#if NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
+
+    std::vector<const State *> statesToUpdate;
 
     /** \todo This seems wrong: an effective cross section for the neutrals will
      *  will also be used as a basis for the charged states' elastic cross section,
      *  it seems.
      */
-    for (auto *chargeState : m_gas.get_root().children())
+    const auto hasElastic = [this](const loki::Gas::State *state) -> bool {
+            const auto colls_it = m_state_collisions.find(state);
+            if (colls_it==m_state_collisions.end())
+            {
+                std::stringstream ss; ss << *state;
+                throw std::runtime_error("No state collisions found for state '" + ss.str() + "'.");
+            }
+            const auto &colls = colls_it->second;
+            auto it = find_if(colls.begin(), colls.end(),
+                              [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
+            return it != colls.end();
+    };
+
+    const std::function<bool(const loki::Gas::State *)> hasElasticRecursive = [hasElastic, &hasElasticRecursive](const loki::Gas::State *state) -> bool {
+        // Either the state has an elastic cross section, or all of its (grand)children with
+        // nonzero population have an elastic cross section.
+        if (!hasElastic(state)) {
+            if (state->children().empty()) {
+                return false;
+            }
+
+            // This assumes that at least one child state needs to have a nonzero population.
+            for (const auto * child : state->children()) {
+                if (child->population() > 0) {
+                    if (!hasElasticRecursive(child)) {
+                        return false;
+                    }
+                }
+            }
+
+            // All children have an elastic cross section.
+            return true;
+        } else {
+            return true;
+        }
+    };
+
+    for (const auto *chargeState : m_gas.get_root().children())
     {
-        for (auto *eleState : chargeState->children())
+        for (const auto *eleState : chargeState->children())
+        {
+            if (eleState->population() > 0 && !hasElasticRecursive(eleState))
+            {
+                statesToUpdate.emplace_back(eleState);
+            }
+        }
+    }
+
+    return statesToUpdate;
+
+#else
+
+    // the original implementation.
+
+    std::vector<const State *> statesToUpdate;
+
+    /** \todo This seems wrong: an effective cross section for the neutrals will
+     *  will also be used as a basis for the charged states' elastic cross section,
+     *  it seems.
+     */
+    for (const auto *chargeState : m_gas.get_root().children())
+    {
+        for (const auto *eleState : chargeState->children())
         {
             if (eleState->population() > 0)
             {
-                auto &colls = m_state_collisions[eleState];
-                auto it = find_if(colls.begin(), colls.end(),
-                                  [](EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
+                const auto colls_it = m_state_collisions.find(eleState);
+                if (colls_it==m_state_collisions.end())
+                {
+                    std::stringstream ss; ss << *eleState;
+                    throw std::runtime_error("No state collisions found for state '" + ss.str() + "'.");
+                }
+                const auto &colls = colls_it->second;
+                const auto it = find_if(colls.begin(), colls.end(),
+                                  [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
 
                 if (it == colls.end())
                     statesToUpdate.emplace_back(eleState);
@@ -593,6 +673,8 @@ std::vector<EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpd
     }
 
     return statesToUpdate;
+
+#endif // NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
 }
 
 const GasPower &EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
@@ -668,13 +750,13 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     {
         if (c.m_coll->is_same_as(*coll_uptr))
         {
-            Log<DoubleCollision>::Warning(*c.m_coll);
 //#define ALLOW_DUPLICATE_PROCESSES
 #ifdef ALLOW_DUPLICATE_PROCESSES
             // duplicates are allowed. The warning is emitted,
             // but no further action needed
+            Log<DoubleCollision>::Warning(*c.m_coll);
 #else
-            return nullptr;
+            Log<DoubleCollision>::Error(*c.m_coll);
 #endif
         }
     }
@@ -696,11 +778,11 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     return coll;
 }
 
-EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixture &composition, const StateEntry &entry)
+EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(const GasProperties& gasProps, GasMixture &composition, const StateEntry &entry)
 {
     // find the state in the composition object (and let that create it if it does not
     // yet exist)
-    State *state = composition.ensureState(entry);
+    State *state = composition.ensureState(gasProps,entry);
     // check that an entry exists in the for the state's gas in the m_data_per_gas
     // array; create such entry if that is not the case
     auto it = m_data_per_gas.begin();
@@ -713,24 +795,21 @@ EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(GasMixtur
     }
     if (it == m_data_per_gas.end())
     {
-        m_data_per_gas.emplace_back(state->gas());
+        m_data_per_gas.emplace_back(gasProps,state->gas());
     }
     return state;
 }
 
-void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid,
                                                      bool isExtra)
 {
     const std::regex reParam(R"(PARAM\.:)");
-    /** \todo Valid doubles like 1.57e1 are not matched, in which case the threshold
-     *        specification will be ignored and 0 will be assumed.
-     */
-    const std::regex reThreshold(R"(E = (\d*\.?\d*) eV)");
+    const std::regex reThreshold(R"(E = +(\S*) +eV)");
     const std::regex reProcess(R"(\[(.+?)(<->|->)(.+?), (\w+)\])");
     std::ifstream in(file);
     if (!in.is_open())
     {
-        Log<FileError>::Warning(file.generic_string());
+        Log<FileError>::Error(file.generic_string());
         return;
     }
 
@@ -757,9 +836,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
             double threshold = 0.0;
             if (std::regex_search(line, mThreshold, reThreshold))
             {
-                std::stringstream ss(mThreshold[1]);
-                if (!(ss >> threshold))
-                    Log<Message>::Error("Non numerical threshold value.");
+		            threshold = Parse::getValue(mThreshold[1]);
             }
             if (!std::getline(in, line) || !std::regex_search(line, mProcess, reProcess))
             {
@@ -786,15 +863,15 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 // 1. Create vectors of pointers to the states that appear
                 //    on the left and right-hand sides of the process.
                 //    Create the states when necessary.
-                std::vector<State *> lhsStates;
-                std::vector<State *> rhsStates;
+                std::vector<const State *> lhsStates;
+                std::vector<const State *> rhsStates;
                 for (auto &stateEntry : entry_lhsStates)
                 {
-                    lhsStates.emplace_back(ensureState(composition, stateEntry));
+                    lhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
                 for (auto &stateEntry : entry_rhsStates)
                 {
-                    rhsStates.emplace_back(ensureState(composition, stateEntry));
+                    rhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
                 Collision *coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
                                                reverseAlso, isExtra);
@@ -818,7 +895,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
     }
 }
 
-void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixture &composition, const Grid *energyGrid,
+void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const GasProperties& gasProps, GasMixture &composition, const Grid *energyGrid,
                                                   bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
@@ -826,7 +903,7 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixt
     // 1. read the states
     for (const auto &[key, value] : mcnf.at("states").items())
     {
-        ensureState(composition, entryFromJSON(key, value));
+        ensureState(gasProps, composition, entryFromJSON(key, value));
     }
     // 2. read the processes
     for (const auto &pcnf : mcnf.at("processes"))
@@ -839,8 +916,8 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, GasMixt
 
             // 1. Create vectors of pointers to the states that appear
             //    on the left and right-hand sides of the process.
-            std::vector<State *> lhsStates;
-            std::vector<State *> rhsStates;
+            std::vector<const State *> lhsStates;
+            std::vector<const State *> rhsStates;
             for (const auto &t : rcnf.at("lhs"))
             {
                 const std::string &stateName(t.at("state"));

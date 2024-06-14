@@ -1,12 +1,12 @@
 /** \file
  *
- *  Interface of LoKI-B's linear algebra facilities.
+ *  Interface of LoKI-B EEDF-related utility functions.
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -37,11 +37,12 @@ namespace loki {
 
 /** Calculate and return the mean energy in eV of particles that are distributed
  *  according an \a eedf that is defined on the cells of a \a grid. This is
- *  equal to the sum u_i^(3/2)f(u_i)du over the cells i.
+ *  equal to \f$ \int_0^\infty u^{3/2}f(u)du \f$ and approximated by the sum 
+ *  of \f$ u_i^(3/2)f(u_i)(\Delta u)_i \f$ over the cells i.
  */
 lokib_export double getMeanEnergy(const Vector& edf, const Grid& grid);
 
-/** Scale the elements of the edf such that the sum of sqrt(u_i)edf[i]du
+/** Scale the elements of the edf such that the sum of sqrt(u_i)edf[i](Delta u)_i
  *  equals unity.
  */
 lokib_export void normalizeEDF(Vector& edf, const Grid& grid);

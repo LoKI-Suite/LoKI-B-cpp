@@ -1,0 +1,52 @@
+name: Web deployment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
+
+jobs:
+  Build:
+    if: github.event.pull_request.draft == false
+
+    runs-on: ubuntu-22.04
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+      cancel-in-progress: true
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v25
+    - name: Build web deployment
+      run: nix build .#loki-web
+    - name: Upload GitHub pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: "./result/share/loki-web"
+
+  Deploy:
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: deploy
+      cancel-in-progress: true
+
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

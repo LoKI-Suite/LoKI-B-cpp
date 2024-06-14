@@ -1,9 +1,36 @@
-//
-// Created by daan on 21-5-19.
-//
+/** \file
+ *
+ *  Implementation of a class that managed the properties of a mixture.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   21 May 2019
+ */
 
 #include "LoKI-B/EedfMixture.h"
+#include "LoKI-B/GasProperties.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/LegacyToJSON.h"
 
 #include <stdexcept>
 
@@ -12,20 +39,20 @@ namespace loki
 
 EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid, const json_type &cnf, const WorkingConditions *workingConditions)
 {
+    const GasProperties gasProps(basePath, cnf.at("gasProperties"));
     if (cnf.contains("mixture"))
     {
-        m_collision_data.loadCollisionsJSON(cnf.at("mixture"), m_composition, grid, false);
+        m_collision_data.loadCollisionsJSON(cnf.at("mixture"), gasProps, m_composition, grid, false);
     }
     if (cnf.contains("LXCatFiles"))
     {
-        loadCollisions(basePath, cnf.at("LXCatFiles").get<std::vector<std::string>>(), grid);
+        loadCollisions(basePath, cnf.at("LXCatFiles").get<std::vector<std::string>>(), gasProps, grid);
     }
     if (cnf.contains("LXCatFilesExtra"))
     {
-        loadCollisions(basePath, cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), grid, true);
+        loadCollisions(basePath, cnf.at("LXCatFilesExtra").get<std::vector<std::string>>(), gasProps, grid, true);
     }
 
-    this->loadGasProperties(basePath, cnf.at("gasProperties"));
     for (auto &gas : composition().gases())
     {
         gas->propagateFraction();
@@ -38,14 +65,19 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
         throw std::runtime_error("No electron species has been found in the process list.");
     }
     /// \todo See the comments about the population in the other overload
-    composition().loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
-    composition().evaluateReducedDensities();
+    m_composition.loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
+    m_composition.evaluateReducedDensities();
 
+    EffectivePopulationsMap effectivePopulations;
+    if (cnf.contains("effectiveCrossSectionPopulations"))
+    {
+        readEffectivePopulations(basePath,cnf.at("effectiveCrossSectionPopulations"),effectivePopulations);
+    }
     for (auto &cd : m_collision_data.data_per_gas())
     {
         if (!cd.isDummy())
         {
-            cd.checkElasticCollisions(electron, grid);
+            cd.checkElasticCollisions(electron, grid, effectivePopulations);
         }
     }
     if (cnf.contains("CARgases"))
@@ -59,7 +91,72 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     //        this->evaluateTotalAndElasticCS();
 }
 
-void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const Grid *energyGrid, bool isExtra)
+void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath, const json_type& effPop, EffectivePopulationsMap& effectivePopulations) const
+{
+    if (effPop.contains("states"))
+    {
+        for (const auto& e : effPop.at("states").items())
+        {
+            /// \todo How to handle wildcards?
+            /// \todo Add a constant overload of GasMixture::findStateById
+            const Gas::State* state = const_cast<GasMixture&>(composition()).findStateById(e.key());
+            if (effectivePopulations.count(state))
+            {
+                throw std::runtime_error("Duplicate specification for state '"
+                    + e.key() + "' found.");
+            }
+            if (e.value().at("type")=="constant")
+            {
+                effectivePopulations[state] = e.value().at("value");
+                std::cout << "readEffectivePopulations: setting effective cross section "
+        		"population of state '" << e.key() << " to "
+                        << e.value().at("value").dump(2) << "'." << std::endl;
+            }
+            else
+            {
+                throw std::runtime_error("readEffectivePopulations for state '"
+                    + e.key() + "': only type 'Constant' is supported.");
+            }
+            /// \todo Should we also support functions here?
+        }
+    }
+    if (effPop.contains("files"))
+    {
+        for (const auto& f : effPop.at("files"))
+        {
+            try {
+                std::cout << "readEffectivePopulations: handling file '" + f.get<std::string>() + "'." << std::endl;
+                readEffectivePopulations(basePath,f.get<std::string>(),effectivePopulations);
+            }
+            catch(std::exception& exc)
+            {
+                throw std::runtime_error("While reading '" + f.get<std::string>() + ": " + exc.what());
+            }
+        }
+    }
+}
+
+void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath, const std::string& f, EffectivePopulationsMap& effectivePopulations) const
+{
+    std::filesystem::path fileName(f);
+
+    if (fileName.is_relative()) {
+        fileName = basePath.parent_path() / fileName;
+    }
+
+    json_type effPop;
+    if (fileName.has_extension() && fileName.extension() == ".json")
+    {
+        effPop = read_json_from_file(fileName);
+    }
+    else
+    {
+        effPop = readLegacyStatePropertyFile(fileName);
+    }
+    readEffectivePopulations(basePath,effPop,effectivePopulations);
+}
+
+void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const std::vector<std::string> &files, const GasProperties& gasProps, const Grid *energyGrid, bool isExtra)
 {
     Log<Message>::Notify("Started loading collisions.");
 
@@ -74,21 +171,14 @@ void EedfMixture::loadCollisions(const std::filesystem::path &basePath, const st
         if (fileName.has_extension() && fileName.extension() == ".json")
         {
             const json_type cnf = read_json_from_file(fileName);
-            m_collision_data.loadCollisionsJSON(cnf, m_composition, energyGrid, isExtra);
+            m_collision_data.loadCollisionsJSON(cnf, gasProps, m_composition, energyGrid, isExtra);
         }
         else
         {
-            m_collision_data.loadCollisionsClassic(fileName, m_composition, energyGrid, isExtra);
+            m_collision_data.loadCollisionsClassic(fileName, gasProps, m_composition, energyGrid, isExtra);
         }
     }
     Log<Message>::Notify("Finished loading collisions.");
-}
-
-void EedfMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)
-{
-    composition().loadGasProperties(basePath, cnf);
-    readGasProperty(basePath, composition().gases(), cnf, "OPBParameter", false,
-        [this](Gas& gas, double value) { this->collision_data().get_data_for(gas).setOPBParameter(value); } );
 }
 
 void EedfMixture::addCARGas(const std::string& gasName)

@@ -1,7 +1,5 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
-#include "LoKI-B/StandardPaths.h"
 #include <fstream>
 #include <regex>
 #include <stdexcept>
@@ -358,45 +356,6 @@ StateEntry propertyStateFromString(const std::string &propertyString)
         stateType = rotational;
     }
     return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
-}
-
-void statePropertyFile(const std::filesystem::path &fileName, std::vector<std::pair<StateEntry, double>> &entries)
-{
-    /** \bug 'S 1.2.3' will be accepted by this regex. Subsequently,
-     *        getValue will result in the value 1.2, since that does
-     *        not care about trailing characters.
-     */
-    static const std::regex expr(R"((.*?)\s+([\d\.e+-]+)\s*(?:\n|$))");
-
-    std::string fileBuffer;
-    if (!Parse::stringBufferFromFile(fileName, fileBuffer))
-    {
-        Log<Message>::Error("Could not open state property file '" + fileName.generic_string() + "' for reading.");
-    }
-    std::stringstream ss{fileBuffer};
-    std::string line;
-    while (std::getline(ss, line))
-    {
-        if (line.size() < 3)
-        {
-            continue;
-        }
-        std::smatch m;
-        if (!std::regex_search(line, m, expr))
-        {
-            throw std::runtime_error("Syntax error in file '" + fileName.generic_string() + "', line '" + line +
-                                     "': expected a state name and a numeric argument.");
-        }
-        const std::string stateString = m.str(1);
-        const std::string valueString = m.str(2);
-        double value;
-        if (!Parse::getValue(valueString, value))
-        {
-            throw std::runtime_error("Syntax error in file '" + fileName.generic_string() + "', line '" + line +
-                                     "': could not convert argument '" + valueString + "' to a number.");
-        }
-        entries.emplace_back(propertyStateFromString(stateString), value);
-    }
 }
 
 } // namespace loki

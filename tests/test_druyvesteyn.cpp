@@ -195,7 +195,7 @@ int main(int argc, char **argv)
         /// \todo the json literal above is still 'old JSON'. patch it.
 	json = loki::legacyToJSON(json);
         std::unique_ptr<loki::Simulation> simulation(new loki::Simulation(".", json));
-        simulation->m_obtainedResults.addListener(checkRMSE);
+        simulation->obtainedResults().addListener(checkRMSE);
         simulation->run();
     }
     catch (const std::exception &e)

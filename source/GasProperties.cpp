@@ -24,13 +24,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Jan van Dijk
- *  \date   2. May 2024
+ *  \date   2 May 2024
  */
 
 #include "LoKI-B/GasProperties.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
 
 #include <string>
 
@@ -38,11 +38,8 @@ namespace loki {
 
 GasProperties::GasProperties()
 {
-    // If not yet available, add the "mass" property of "e", the electron.
-    if (!has("mass","e"))
-    {
-        set("mass","e",Constant::electronMass);
-    }
+    // Add the "mass" property of "e", the electron.
+    set("mass","e",Constant::electronMass);
 }
 
 GasProperties::GasProperties(const std::filesystem::path &basePath, const json_type& pnode)
@@ -58,7 +55,14 @@ GasProperties::GasProperties(const std::filesystem::path &basePath, const json_t
             {
                 path = basePath.parent_path() / path;
             }
-            m_data[p.key()] = readGasPropertyFile(path);
+            if (path.extension()==".json")
+            {
+                m_data[p.key()] = read_json_from_file(path);
+            }
+            else
+            {
+                m_data[p.key()] = readLegacyGasPropertyFile(path);
+            }
         }
         else if (p.value().type() == json_type::value_t::object)
         {
@@ -76,36 +80,6 @@ GasProperties::GasProperties(const std::filesystem::path &basePath, const json_t
     {
         set("mass","e",Constant::electronMass);
     }
-}
-
-json_type GasProperties::readGasPropertyFile(const std::filesystem::path& fname) const
-{
-    if (fname.extension()==".json")
-    {
-        return read_json_from_file(fname);
-    }
-    json_type result;
-    std::string str;
-    if (!Parse::stringBufferFromFile(fname,str))
-    {
-        throw std::runtime_error("Error opening/reading file '"
-            + fname.generic_string() + "'.");
-    }
-    std::stringstream ss;
-    ss << str;
-    while (!ss.eof())
-    {
-        std::string gas;
-        double value;
-        ss >> gas >> value;
-        if (ss.fail())
-        {
-            throw std::runtime_error("Bad data in file '"
-                + fname.generic_string() + "'.");
-        }
-        result[gas] = value;
-    }
-    return result;
 }
 
 bool GasProperties::has(const std::string& propertyName) const

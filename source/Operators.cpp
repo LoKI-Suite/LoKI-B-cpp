@@ -1,3 +1,32 @@
+/** \file
+ *
+ *  Implementations of classes that represent terms in the Boltzmann equation.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Jan van Dijk, Daan Boer and Jop Hendrikx
+ *  \date   September 2022
+ */
+
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
 
@@ -208,22 +237,23 @@ FieldOperator::FieldOperator(const Grid& grid)
 {
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
 {
     assert(g.size()==grid.getNodes().size());
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
+        const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
         g[i] = (EoN * EoN / 3) * grid.getNode(i) /
-          (totalCS[i] + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*totalCS[i]));
+          (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,EoN,WoN);
+    evaluate(grid,totalCS,EoN,WoN,CIEff);
 
     if (grid.isUniform())
     {
@@ -389,7 +419,6 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
 }
 
 InelasticOperator::InelasticOperator(const Grid& grid)
-: hasSuperelastics(false)
 {
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
@@ -398,10 +427,6 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 {
     const Grid::Index cellNumber = grid.nCells();
     inelasticMatrix.setZero();
-    /** \todo the following line seems to be missing. See the notes in the
-     *  class declaration of this member
-     */
-    // hasSuperelastics = false;
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -471,14 +496,6 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                         if (productDensity == 0)
                             continue;
-
-                        /** \todo see the comments about superElasticThresholds in the ElectronKinetics.h.
-                        if (numThreshold > 1)
-                            superElasticThresholds.emplace_back(numThreshold);
-                        */
-
-                        if (numThreshold != 1)
-                            hasSuperelastics = true;
 
                         if (grid.isUniform())
                         {
@@ -615,14 +632,21 @@ void ElectronElectronOperator::update_g_ee_AB(const Grid& grid, const Vector& ee
     m_B = m_g_ee * (m_a.transpose() * eedf);
 }
 
-void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
+void ElectronElectronOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& net, double& gain, double& loss) const
 {
-    /*  One du() comes from the integration, together with eedf).
-     *  The other is the energy gain of an electron moving up one cell,
-     *  I (JvD) believe. Make sure this is explained well in the docs.
-     */
-    power = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
-    //std::cout << "EE POWER: " << power << std::endl;
+    net = (-SI::gamma * grid.du() * grid.du()) * (m_A - m_B).dot(eedf);
+    Vector Cu(grid.nCells());
+    //Vector Cd(grid.nCells());
+    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+    {
+        const double Akm1 = k==              0 ? 0 : m_A(k-1);
+        const double Bkp1 = k==grid.nCells()-1 ? 0 : m_B(k+1);
+        Cu(k) = (Bkp1 + m_A(k) - (m_B(k)+Akm1))/2;
+        //Cd(k) = (Bkp1 - m_A(k) + (m_B(k)-Akm1))/2;
+    }
+    gain = (+SI::gamma * grid.du() * grid.du()) * Cu.dot(eedf);
+    //loss = (-SI::gamma * grid.du() * grid.du()) * Cd.dot(eedf);
+    loss = net - gain;
 }
 
 void ElectronElectronOperator::discretizeTerm(Matrix& M, const Grid& grid) const
@@ -677,7 +701,6 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
             if (threshold > grid.getNode(grid.nCells()))
                 continue;
-
             hasValidCollisions = true;
 
             const double delta = collision->getTarget()->delta();

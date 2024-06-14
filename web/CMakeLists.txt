@@ -10,16 +10,17 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
   -s ALLOW_MEMORY_GROWTH=1 \
   -s MODULARIZE=1 \
   -s EXPORT_NAME=create_module \
-  -s EXPORTED_RUNTIME_METHODS=FS,run \
+  -s EXPORTED_RUNTIME_METHODS=[FS,run] \
+  -s NO_DISABLE_EXCEPTION_CATCHING \
   --bind \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_LXCat.json@JSON/N2/ \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_rot_LXCat.json@JSON/N2/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/masses.txt@input/Databases/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/harmonicFrequencies.txt@input/Databases/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/rotationalConstants.txt@input/Databases/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/OPBParameter.txt@input/Databases/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/quadrupoleMoment.txt@input/Databases/ \
-  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/anharmonicFrequencies.txt@input/Databases/")
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/masses.txt@Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/harmonicFrequencies.txt@Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/rotationalConstants.txt@Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/OPBParameter.txt@Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/quadrupoleMoment.txt@Databases/ \
+  --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/anharmonicFrequencies.txt@Databases/")
 
 # FIXME: The generated files should be placed in `web/wasm`. However, this is
 # currently not possible due to a bug in emscripten

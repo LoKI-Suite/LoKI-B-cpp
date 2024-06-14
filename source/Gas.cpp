@@ -1,3 +1,32 @@
+/** \file
+ *
+ *  Implementation of the Gas class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
+ */
+
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/Log.h"
 #include <algorithm>
@@ -8,7 +37,7 @@
 namespace loki
 {
 
-Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
+Gas::State::State(const StateEntry &entry, const Gas *gas, const State &parent)
     : m_gas(gas), m_parent(&parent), type(static_cast<StateType>(parent.type + 1)),
       charge(type == StateType::charge ? entry.m_charge : parent.charge),
       e(type == StateType::electronic ? entry.m_e : parent.e), v(type == StateType::vibrational ? entry.m_v : parent.v),
@@ -50,7 +79,7 @@ Gas::State::State(const StateEntry &entry, Gas *gas, State &parent)
 #endif
 }
 
-Gas::State::State(Gas *gas)
+Gas::State::State(const Gas *gas)
     : m_gas(gas), m_parent(nullptr), type(StateType::root), charge(std::string{}), e(std::string{}),
       v(std::string{}), J(std::string{}), energy(-1), statisticalWeight(-1), m_population(0), m_delta(0)
 {
@@ -158,7 +187,7 @@ void Gas::State::printChildren(std::ostream &os) const
     for (uint8_t i = electronic; i < type; ++i)
         space.append("  ");
 
-    for (auto state : m_children)
+    for (auto state : children())
     {
         if (state != nullptr)
         {
@@ -170,12 +199,12 @@ void Gas::State::printChildren(std::ostream &os) const
 
 void Gas::State::checkPopulations() const
 {
-    if (m_children.empty())
+    if (children().empty())
         return;
 
     double totalPopulation = 0.;
 
-    for (auto *state : m_children)
+    for (auto *state : children())
     {
         totalPopulation += state->population();
         state->checkPopulations();
@@ -203,7 +232,7 @@ void Gas::State::evaluateReducedDensities()
     else
         m_delta = population() * parent()->delta();
 
-    for (auto *state : m_children)
+    for (auto *state : children())
     {
         state->evaluateReducedDensities();
     }
@@ -212,13 +241,20 @@ void Gas::State::evaluateReducedDensities()
 Gas::State *Gas::State::find(const StateEntry &entry)
 {
     auto it =
-        std::find_if(m_children.begin(), m_children.end(), [&entry](State *child) { return *child >= entry; });
-    return it == m_children.end() ? nullptr : *it;
+        std::find_if(children().begin(), children().end(), [&entry](State *child) { return *child >= entry; });
+    return it == children().end() ? nullptr : *it;
 }
 
-Gas::Gas(std::string name)
-    : m_root(new State(this)), m_name{name}, mass{-1}, harmonicFrequency{-1}, anharmonicFrequency{-1},
-      rotationalConstant{-1}, electricDipoleMoment{-1}, electricQuadrupoleMoment{-1}, polarizability{-1}, fraction{0}
+Gas::Gas(const GasProperties& gasProps, std::string name)
+    : m_root(new State(this)), m_name{name},
+      mass{gasProps.get("mass",name)},
+      harmonicFrequency{gasProps.get("harmonicFrequency",name,-1)},
+      anharmonicFrequency{gasProps.get("anharmonicFrequency",name,-1)},
+      rotationalConstant{gasProps.get("rotationalConstant",name,-1)},
+      //electricDipoleMoment{gasProps.get("electricDipoleMoment",name,-1)},
+      electricQuadrupoleMoment{gasProps.get("electricQuadrupoleMoment",name,-1)},
+      //polarizability{gasProps.get("polarizability",name,-1)},
+      fraction{gasProps.get("fraction",name,0)}
 {
 }
 
@@ -271,10 +307,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_e == "*" && entry.m_level == electronic)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find electronic state.
@@ -289,10 +325,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_v == "*" && entry.m_level == vibrational)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find vibrational state.
@@ -307,10 +343,10 @@ Gas::State *Gas::findState(const StateEntry &entry)
 
     if (entry.m_J == "*" && entry.m_level == rotational)
     {
-        if (state->m_children.empty())
+        if (state->children().empty())
             return nullptr;
 
-        return state->m_children[0];
+        return state->children()[0];
     }
 
     // Find rotational state

@@ -1,10 +1,16 @@
 {
-  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11"; };
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    pin-emscripten_3-1-15.url =
+      "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+  };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, pin-emscripten_3-1-15 }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      emscripten_3-1-15 =
+        pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
@@ -42,6 +48,9 @@
             # Needed to make clang-tools not complain.
             llvmPackages.openmp
 
+            # WebAssembly compilation
+            emscripten_3-1-15
+
             # Plotting
             gnuplot
 
@@ -51,6 +60,7 @@
             # LaTeX
             latex
           ]);
+          EM_CACHE = "./.cache/emscripten";
         };
         ci = gccEnv.mkDerivation {
           name = "loki-b-ci";
@@ -70,7 +80,50 @@
 
           cmakeFlags =
             [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
-          ninjaFlags = [ "loki" ];
+          ninjaFlags = [ "loki" "loki_legacytojson" "loki_offsidetojson" ];
+        };
+        loki-web = gccEnv.mkDerivation {
+          pname = "loki-web";
+          version = "0.0.1";
+
+          src = ./.;
+
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            eigen
+            nlohmann_json
+            emscripten_3-1-15
+            python3
+          ];
+
+          EM_CACHE = "./.cache/emscripten";
+
+          ninjaFlags = [ "-C build" "loki_bindings" ];
+
+          configurePhase = ''
+            # Create the cache directory.
+            mkdir -p build/$EM_CACHE
+
+            # Copy the prebuilt emscripten cache.
+            cp -r ${emscripten_3-1-15}/share/emscripten/cache/* build/$EM_CACHE
+
+            # Set correct permissions for cache.
+            chmod u+rwX -R build/$EM_CACHE
+
+            # Configure using emscripten.
+            emcmake cmake \
+              -GNinja \
+              -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
+              -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
+              -DLOKIB_USE_OPENMP=OFF \
+              -B build
+          '';
+
+          installPhase = ''
+            mkdir -p $out/share/loki-web
+            mv web/*.{html,js,wasm,data} $out/share/loki-web
+          '';
         };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";

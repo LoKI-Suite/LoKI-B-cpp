@@ -1,10 +1,38 @@
+/** \file
+ *
+ *  Implementation of the GasMixture class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
+ */
+
 #include "LoKI-B/GasMixture.h"
+#include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/Log.h"
-#include "LoKI-B/Parse.h"
 #include "LoKI-B/PropertyFunctions.h"
 
 #include <filesystem>
-#include <regex>
 
 namespace loki
 {
@@ -13,33 +41,33 @@ GasMixture::~GasMixture()
 {
 }
 
-Gas *GasMixture::addGas(const std::string& name)
+Gas *GasMixture::addGas(const GasProperties& gasProps, const std::string& name)
 {
     if (findGas(name))
     {
         throw std::logic_error("Attempt to register gas with name '" + name + "' twice.");
     }
-    return m_gases.emplace_back(new Gas(name)).get();
+    return m_gases.emplace_back(new Gas(gasProps,name)).get();
 }
 
-Gas *GasMixture::ensureGas(const std::string &name)
+Gas *GasMixture::ensureGas(const GasProperties& gasProps, const std::string &name)
 {
     Gas *gas = findGas(name);
     if (!gas)
     {
-        gas = addGas(name);
+        gas = addGas(gasProps,name);
     }
     return gas;
 }
 
-Gas::State *GasMixture::ensureState(const StateEntry &entry)
+Gas::State *GasMixture::ensureState(const GasProperties& gasProps, const StateEntry &entry)
 {
     typename StateMap::iterator it = m_states.find(entry.m_id);
     if (it != m_states.end())
     {
         return it->second;
     }
-    Gas::State *state = ensureGas(entry.m_gasName)->ensureState(entry);
+    Gas::State *state = ensureGas(gasProps,entry.m_gasName)->ensureState(entry);
     m_states[entry.m_id] = state;
     return state;
 }
@@ -58,7 +86,7 @@ void GasMixture::print(std::ostream &os)
     }
 }
 
-void GasMixture::checkGasFractions()
+void GasMixture::checkGasFractions() const
 {
     double norm = 0;
 
@@ -71,10 +99,17 @@ void GasMixture::checkGasFractions()
         Log<Message>::Error("Gas fractions are not properly normalized.");
 }
 
-void GasMixture::checkPopulations()
+void GasMixture::checkPopulations() const
 {
     for (auto &gas : m_gases)
         gas->checkPopulations();
+}
+
+const Gas *GasMixture::findGas(const std::string &name) const
+{
+    auto it = std::find_if(m_gases.begin(), m_gases.end(),
+                           [&name](const std::unique_ptr<Gas> &gas) { return gas->name() == name; });
+    return it == m_gases.end() ? nullptr : it->get();
 }
 
 Gas *GasMixture::findGas(const std::string &name)
@@ -97,124 +132,106 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
     return (!state) ? ChildContainer{} : entry.hasWildCard() ? state->siblings() : ChildContainer{ state };
 }
 
-void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
+void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-
-    for (const auto &line : entryVector)
+    std::cout << "loadStatePropertyEntry: handling states " << state_id << ":\n" << propEntry.dump(2) << std::endl;
+    // 1. Find the state(s) for which the property must be set.
+    const StateEntry entry = propertyStateFromString(state_id);
+    /** \todo Should this be part of propertyStateFromString?
+     *        Is there a reason to accept a 'none'-result?
+     */
+    if (entry.m_level == none)
     {
-        // look for a line of the form "S = E"
-        static const std::regex reProperty(R"((\S+)\s+=\s+(\S+)\s*$)");
-        std::smatch m;
-        if (std::regex_search(line, m, reProperty))
+        throw std::runtime_error("loadStateProperty: illegal "
+                        "state identifier '" + propEntry.at("states").get<std::string>() + "'.");
+    }
+    Gas::State::ChildContainer states = findStates(entry);
+    if (states.empty())
+    {
+        throw std::runtime_error("loadStateProperty: could not find "
+                        "state or state group '" + propEntry.at("states").get<std::string>() + "'.");
+    }
+
+    // 2. Now apply the expression.
+    if (propEntry.at("type")=="constant")
+    {
+        PropertyFunctions::constantValue(states, propEntry["value"], propertyType);
+    }
+    else if (propEntry.at("type")=="function")
+    {
+        const std::string functionName = propEntry.at("name");
+        // create an argument list for the function (possibly empty)
+        std::vector<double> arguments;
+        if (propEntry.contains("arguments"))
         {
-            // Found. E can be a literal value, or a function with arguments.
-            // value or function
-            const std::string state_id = m.str(1);
-            const std::string expr = m.str(2);
-
-            // 1. get the state or state group that the expression will
-            //    be applied to.
-            const StateEntry entry = propertyStateFromString(state_id);
-            /** \todo Should this be part of propertyStateFromString?
-             *        Is there a reason to accept a 'none'-result?
-             */
-            if (entry.m_level == none)
+            for (const auto& arg : propEntry.at("arguments"))
             {
-                throw std::runtime_error("loadStateProperty: illegal "
-                                "state identifier '" + line + "'.");
-            }
-            Gas::State::ChildContainer states = findStates(entry);
-            if (states.empty())
-            {
-                throw std::runtime_error("loadStateProperty: could not find "
-                                "state or state group '" + line + "'.");
-            }
-
-            // 2. Now apply the expression.
-            // Try to parse expr as a number first...
-            double value;
-            if (Parse::getValue(expr, value))
-            {
-                // expr is a number, now parsed into value.
-                PropertyFunctions::constantValue(states, value, propertyType);
-            }
-            else
-            {
-                // expr is not a number. We treat is a function (maybe with arguments).
-                static const std::regex reFuncArgs(R"(\s*(\w+)@?(.*))");
-                std::smatch fm;
-                if (!std::regex_match(expr, fm, reFuncArgs))
+                double pvalue;
+                if (arg.is_number())
                 {
-                    throw std::runtime_error("Could not parse function "
-                        "name and argument list from string '"
-                        + expr + "'.");
+                    pvalue = arg;
                 }
-                const std::string functionName = fm.str(1);
-                const std::string argumentString = fm.str(2);
-
-                // create an argument list for the function (possibly empty)
-                std::vector<double> arguments;
-                static const std::regex reArgList(R"(\s*([\w\.]+)\s*(?:[,\]]|$))");
-                for (auto it = std::sregex_iterator(argumentString.begin(), argumentString.end(), reArgList);
-                     it != std::sregex_iterator(); ++it)
+                else if (arg.is_string())
                 {
-                    const std::string arg{it->str(1)};
-                    double pvalue;
-                    if (Parse::getValue(arg, pvalue))
-                    {
-                        // pvalue set by getValue
-                    }
-                    else if (workingConditions->findParameter(arg))
-                    {
-                        pvalue = workingConditions->getParameter(arg);
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Argument '" + arg + "' is neither a numerical "
-                                    "pvalue, nor a known parameter name.");
-                    }
-                    arguments.emplace_back(pvalue);
+                    pvalue = workingConditions->getParameter(arg);
                 }
-                PropertyFunctions::callByName(functionName, states, arguments, propertyType);
+                else
+                {
+                    throw std::runtime_error("Argument '" + arg.dump(2) + "' is neither a numerical "
+                                "value, nor a parameter name.");
+                }
+                arguments.emplace_back(pvalue);
             }
         }
-        else
-        {
-            std::vector<std::pair<StateEntry, double>> entries;
-            // const std::string fileName = line;
-            std::filesystem::path fileName(line);
+        PropertyFunctions::callByName(functionName, states, arguments, propertyType);
+    }
+    else
+    {
+        throw std::runtime_error("Unknown property type '" + propEntry.at("type").get<std::string>() + "'.");
+    }
+}
 
-            if (fileName.is_relative()) {
+void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const json_type& stateProp,
+                                   StatePropertyType propertyType, const WorkingConditions *workingConditions)
+{
+    if (stateProp.contains("states"))
+    {
+        for (const auto& propEntry : stateProp["states"].items())
+        {
+            loadStatePropertyEntry(propEntry.key(),propEntry.value(), propertyType, workingConditions);
+        }
+    }
+    if (stateProp.contains("files"))
+    {
+        for (const auto &propEntry : stateProp["files"])
+        {
+            std::cout << "loadStateProperty: handling: " << propEntry.dump() << std::endl;
+            std::filesystem::path fileName(propEntry);
+            if (fileName.is_relative())
+            {
                 fileName = basePath.parent_path() / fileName;
             }
-
             try
             {
-                statePropertyFile(fileName, entries);
+                // call this function recursively for each specified file.
+                if (fileName.extension()==".json")
+                {
+                    const json_type entries = read_json_from_file(fileName);
+                    loadStateProperty(basePath, entries, propertyType, workingConditions);
+                }
+                else
+                {
+                    // support for legacy (".in") files.
+                    const json_type entries = readLegacyStatePropertyFile(fileName);
+                    loadStateProperty(basePath, entries, propertyType, workingConditions);
+                }
             }
             catch (std::exception& exc)
             {
                 throw std::runtime_error("Error configuring state property '"
                                         + statePropertyName(propertyType) + "': "
                                         + std::string{exc.what()} );
-            }
-
-            /** \todo Also in case we read a property file, the expression type could be a function.
-             *        It would be nice if the external file case behaves the same as the inline case.
-             *        This could be achieved by first assembling a collection of tasks (either from
-             *        the settings node or from file), then execute these tasks. That will be more
-             *        general and simplify this function at the same time.
-             */
-            for (auto &entry : entries)
-            {
-                Gas::State::ChildContainer states = findStates(entry.first);
-                if (states.empty())
-                {
-                    throw std::runtime_error("loadStateProperty: could not find "
-                                    "state or state group '" + entry.first.m_id + "'.");
-                }
-                PropertyFunctions::constantValue(states, entry.second, propertyType);
             }
         }
     }
@@ -230,38 +247,18 @@ void GasMixture::evaluateReducedDensities()
 
 void GasMixture::loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, const WorkingConditions *workingConditions)
 {
-
-    loadStateProperty(basePath, cnf.at("energy"), StatePropertyType::energy, workingConditions);
-    loadStateProperty(basePath, cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+    if (cnf.contains("energy"))
+    {
+        loadStateProperty(basePath, cnf.at("energy"), StatePropertyType::energy, workingConditions);
+    }
+    if (cnf.contains("statisticalWeight"))
+    {
+        loadStateProperty(basePath, cnf.at("statisticalWeight"), StatePropertyType::statisticalWeight, workingConditions);
+    }
+    // the population section is mandatory
     loadStateProperty(basePath, cnf.at("population"), StatePropertyType::population, workingConditions);
 
     checkPopulations();
-}
-
-void GasMixture::loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf)
-{
-    readGasProperty(basePath, m_gases, cnf, "mass", true,
-        [](Gas& gas, double value) { gas.mass=value; } );
-    readGasProperty(basePath, m_gases, cnf, "harmonicFrequency", false,
-        [](Gas& gas, double value) { gas.harmonicFrequency=value; } );
-    readGasProperty(basePath, m_gases, cnf, "anharmonicFrequency", false,
-        [](Gas& gas, double value) { gas.anharmonicFrequency=value; } );
-    readGasProperty(basePath, m_gases, cnf, "electricQuadrupoleMoment", false,
-        [](Gas& gas, double value) { gas.electricQuadrupoleMoment=value; } );
-    readGasProperty(basePath, m_gases, cnf, "rotationalConstant", false,
-        [](Gas& gas, double value) { gas.rotationalConstant=value; } );
-
-    for (const auto& entry : cnf.at("fraction").items())
-    {
-        // entry: { key, value } = { gasname, fraction }
-        Gas* gas = findGas(entry.key());
-        if (!gas)
-        {
-            Log<Message>::Error("Trying to set fraction for non-existent gas: " + entry.key() + '.');
-        }
-        gas->fraction = entry.value();
-    }
-    checkGasFractions();
 }
 
 } // namespace loki

@@ -1,9 +1,39 @@
+/** \file
+ *
+ *  Declaration of the Gas class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
+ */
+
 #ifndef LOKI_CPP_GASBASE_H
 #define LOKI_CPP_GASBASE_H
 
 #include "LoKI-B/Enumeration.h"
-#include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Exports.h"
+#include "LoKI-B/GasProperties.h"
+#include "LoKI-B/StateEntry.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -18,32 +48,21 @@ class lokib_export Gas
     {
       public:
         using ChildContainer = std::vector<State *>;
-        State(const StateEntry &entry, Gas *gas, State &parent);
-        State(Gas *gas);
+        State(const StateEntry &entry, const Gas *gas, const State &parent);
+        State(const Gas *gas);
         State(const State&) = delete;
         State(State&&) = default;
         State& operator=(const State&) = delete;
         State& operator=(State&&) = delete;
 	virtual ~State();
-
         const Gas &gas() const
         {
             return *m_gas;
         }
-        Gas &gas()
-        {
-            return *m_gas;
-        }
-
         const State *parent() const
         {
             return m_parent;
         }
-        State *parent()
-        {
-            return m_parent;
-        }
-
         const ChildContainer &children() const
         {
             return m_children;
@@ -106,17 +125,6 @@ class lokib_export Gas
             return state;
         }
 
-      private:
-
-        /// \todo Make const?
-        Gas *m_gas;
-        /// \todo Make const?
-        State *m_parent;
-
-      public:
-        /// \todo make private
-        ChildContainer m_children;
-
         double population() const { return m_population; }
         void setPopulation(double population) { m_population = population; }
         /** The reduced density is the density of this state, divided by the
@@ -131,7 +139,12 @@ class lokib_export Gas
          *  are initialized to zero.
          */
         double delta() const { return m_delta; }
+      private:
+        const Gas *m_gas;
+        const State *m_parent;
+        ChildContainer m_children;
       public:
+        /// \todo Make the following members private, provide accessors if necessary
         const StateType type;
         const std::string charge, e, v, J;
         double energy;
@@ -143,9 +156,7 @@ class lokib_export Gas
 	// vector of unique_ptr<const State>.
 	std::vector<std::unique_ptr<const State>> m_state_deleter;
     };
-    /// \todo Get rid of State, use State exclusively here and elsewhere.
-    using State = State;
-    explicit Gas(std::string name);
+    Gas(const GasProperties& gasProps, std::string name);
     virtual ~Gas();
     /** Prints the (first non-ionic then ionic) electronic states and their
      *  children.
@@ -199,14 +210,14 @@ class lokib_export Gas
 
     const std::string m_name;
   public:
-    double mass;
-    double harmonicFrequency;
-    double anharmonicFrequency;
-    double rotationalConstant;
-    double electricDipoleMoment;
-    double electricQuadrupoleMoment;
-    double polarizability;
-    double fraction;
+    const double mass;
+    const double harmonicFrequency;
+    const double anharmonicFrequency;
+    const double rotationalConstant;
+    //const double electricDipoleMoment;
+    const double electricQuadrupoleMoment;
+    //const double polarizability;
+    const double fraction;
 };
 
 lokib_export std::ostream &operator<<(std::ostream &os, const Gas::State &state);

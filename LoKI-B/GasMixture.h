@@ -1,163 +1,80 @@
-#ifndef LOKI_CPP_GASMIXTUREBASE_H
-#define LOKI_CPP_GASMIXTUREBASE_H
+/** \file
+ *
+ *  Declaration of the GasMixture class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
+ */
 
+#ifndef LOKI_CPP_GASMIXTURE_H
+#define LOKI_CPP_GASMIXTURE_H
+
+#include "LoKI-B/Exports.h"
 #include "LoKI-B/Gas.h"
+#include "LoKI-B/GasProperties.h"
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/json.h"
-#include "LoKI-B/Parse.h"
-#include "LoKI-B/Log.h"
 
+#include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
+#include <iostream>
+#include <string>
 #include <vector>
-#include <regex>
 
 namespace loki
 {
 
-/** This define accepts the name of a gas property (e.g. mass) and will try load the corresponding database
- *  file. If this fails it will output a warning (but nothing more). If the file is succesfully loaded, it
- *  will then try to set the property for all gases in the mixture. This version will not throw an error
- *  in any case, and can therefore be used for gas properties that are not mandatory for every gas (e.g.
- *  atomic gases do not have a harmonicFrequency).
- *
- *  It assumes that the passed property has the same name in the Gas and GasPropertiesSetup structures.
- *  Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
- *
- *  \todo For now, the electron gas (name=="e") is skipped. Decide how to handle electron properties.
- *  \todo Error reporting should be fixed. The file name is not displayed, the field instead.
- *  \todo Update comments. There is no GasPropertiesSetup structure, only a local fileBuffer.
- */
-template <typename GasListType, typename HandlerType>
-void readGasPropertyFile(const std::filesystem::path &basePath, 
-                    const GasListType& gasList,
-                    const std::string& fileName,
-                    const std::string& propertyName,
-                    bool required,
-                    HandlerType handler)
-{
-    std::filesystem::path path(fileName);
-
-    if (path.is_relative()) {
-        path = basePath.parent_path() / path;
-    }
-
-    std::string fileBuffer;
-    if (!path.empty() && Parse::stringBufferFromFile(path, fileBuffer))
-    {
-        Log<Message>::Notify("Configuring gas property '", propertyName,
-              "', using file '", path,  "'.");
-        for (auto &gas : gasList)
-        {
-            if (gas->name() == "e")
-                continue;
-            double value;
-            const std::regex r(R"((?:^|\n))" + gas->name() + R"(\s+(\S*)\s*)");
-            std::smatch m;
-            if (std::regex_search(fileBuffer, m, r) && Parse::getValue(m[1],value))
-            {
-                handler(*gas,value);
-            }
-            else
-            {
-                if (required)
-                    Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name());
-                else
-                    Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name());
-            }
-        }
-    }
-    else
-    {
-        if (required)
-            Log<FileError>::Error(propertyName);
-        else
-            Log<FileError>::Warning(propertyName);
-    }
-}
-
-/** This define accepts the name of a gas property (e.g. mass) and will try to parse the json object.
- *  If this fails it will output a warning (but nothing more). If the json is succesfully loaded, it
- *  will then try to set the property for all gases in the mixture. This version will not throw an error
- *  in any case, and can therefore be used for gas properties that are not mandatory for every gas (e.g.
- *  atomic gases do not have a harmonicFrequency).
- *
- *  It assumes that the passed property has the same name in the Gas and GasPropertiesSetup structures.
- *  Furthermore, it assumes that a std::string fileBuffer has been declared beforehand.
- *
- *  \todo For now, the electron gas (name=="e") is skipped. Decide how to handle electron properties.
- */
-template <typename GasListType, typename HandlerType>
-void readGasPropertyJson(const GasListType& gasList,
-                    const json_type& cnf,
-                    const std::string& propertyName,
-                    bool required,
-                    HandlerType handler)
-{
-
-    Log<Message>::Notify("Configuring gas property '" + propertyName + "'.");
-    for (auto &gas : gasList)
-    {
-        if (gas->name() == "e")
-            continue;
-	bool found = false;
-        if (cnf.contains(gas->name()))
-	{
-            found = true;
-            handler(*gas, cnf.at(gas->name()).template get<double>());
-        }
-        if (!found)
-        {
-            if (required)
-                Log<GasPropertyError>::Error(propertyName + " in gas " + gas->name());
-            else
-                Log<GasPropertyError>::Warning(propertyName + " in gas " + gas->name());
-        }
-    }
-}
-
-/// \todo Error reporting should be fixed. The file name is not displayed, the field instead.
-template <typename GasListType, typename HandlerType>
-void readGasProperty(const std::filesystem::path &basePath,
-                     const GasListType& gasList,
-                     const json_type& cnf,
-                     const std::string& propertyName,
-                     bool required,
-                     HandlerType handler)
-{
-    if (cnf.contains(propertyName) && cnf.at(propertyName).is_object())
-    {
-        readGasPropertyJson(gasList,cnf.at(propertyName),propertyName,required,handler);
-    }
-    else
-    {
-        const auto fileName = cnf.contains(propertyName)
-            ? cnf.at(propertyName).get<std::string>() : std::string{};
-        readGasPropertyFile(basePath,gasList,fileName,propertyName,required,handler);
-    }
-}
-
 /** Gas mixture base class...
  */
-class GasMixture
+class lokib_export GasMixture
 {
   public:
     using Gases = std::vector<std::unique_ptr<Gas>>;
+    GasMixture() = default;
+    GasMixture(const GasMixture& other) = delete;
+    GasMixture(GasMixture&& other) = delete;
+    const GasMixture& operator=(const GasMixture& other) = delete;
     ~GasMixture();
     void print(std::ostream &os);
     /** Checks whether the sum of the gas fractions is equal to 1.
      */
-    void checkGasFractions();
-    void checkPopulations();
+    void checkGasFractions() const;
+    void checkPopulations() const;
     // Vector of pointers to all the gases in the mixture.
     const Gases &gases() const { return m_gases; }
     /** Tries to add a new gas based on a given name and returns a pointer to it. If a
      *  gas with the same name already exists it returns a pointer to that gas.
      */
-    Gas *ensureGas(const std::string &name);
+    Gas *ensureGas(const GasProperties& gasProps, const std::string &name);
     /** Tries to find a gas in the gas mixture specified by a supplied name. If the
      *  gas is present, a pointer to this gas is returned, otherwise a nullptr is
      *  returned.
+     */
+    const Gas *findGas(const std::string &name) const;
+    /** See the non-constant overload of this member.
      */
     Gas *findGas(const std::string &name);
     /** Tries to find a state in the gas mixture specified by a supplied name. If the
@@ -173,38 +90,15 @@ class GasMixture
      *  \todo reconsider all the state accessors. Which interfaces do we really need.
      */
     Gas::State::ChildContainer findStates(const StateEntry &entry);
-    /** Loads the data concerning a single property of the states (energy, statistical
-     *  weight, or population) from a vector of entries as supplied by the setup object.
-     *  First it determines whether the current entry requires loading by direct value,
-     *  file or function, then it acts accordingly. The property that needs to be set
-     *  is defined by the propertyType variable. Furthermore, it also needs a pointer
-     *  to the WorkingConditions structure to access the argument map (which maps its
-     *  member variables to names by which they are addressed in the input files).
-     */
-    void loadStateProperty(const std::filesystem::path &basePath, const std::vector<std::string> &entryVector, 
-                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Evaluates the densities of all states in the state tree. \todo Explain. All states of all gases?
      */
     void evaluateReducedDensities();
-    /** Loads the state properties as specified in the input file. It also calls
-     *  checkPopulations.
+    /** Loads the state properties energy, statisticalWeight and population
+     *  as specified in subsections "energy", "statisticalWeight" and "population"
+     *  of \a cnf. Each is handled by a call to private member loadStateProperty.
      */
     void loadStateProperties(const std::filesystem::path &basePath, const json_type &cnf, 
                              const WorkingConditions *workingConditions);
-    /** Loads the gas properties from the database files specified in the main input
-     *  file.
-     *
-     *  \todo It will be easier to implement this in the Gas class. The
-     *        fact that we will then need to open and query the properties file
-     *        a few times is no problem, since even in a very complex mixture
-     *        there will be only a few gases. The advantage is that we can then
-     *        (in the derived mixture class, instead of here) take special measures
-     *        for special gases (CAR gases, the electron), which need more or fewer
-     *        configuration data. Some properties can then be stored in a property
-     *        map that is stored in the (deived) mixture class, instead of in the
-     *        Gas class, where not all properties are always relevant.
-     */
-    void loadGasProperties(const std::filesystem::path &basePath, const json_type &cnf);
 
     using StateMap = std::map<std::string, Gas::State *>;
     /** This overload accepts only a reference to a StateEntry object. This is the main
@@ -216,14 +110,75 @@ class GasMixture
      *  Note that this container only contains states that are actually present in the
      *  mixture, not their parents that are crated implicitly.
      */
-    Gas::State *ensureState(const StateEntry &entry);
+    Gas::State *ensureState(const GasProperties& gasProps, const StateEntry &entry);
     Gas::State *findStateById(const std::string &stateId);
   private:
-    Gas *addGas(const std::string& name);
+    /** propEntry should be an object that can contain:
+     *  \verbatim
+           {
+             "<stateID>": {
+               "type": "constant",
+               "value": <value>
+             }
+           } \endverbatim
+
+     *  or
+     *  \verbatim
+           {
+             "<stateID>": {
+               "type": "function",
+               "name": <funcname>,
+               "arguments": [ <arguments> ]
+             }
+           } \endverbatim
+     *     "<arguments>" is an array. Each argument is either a parameter name
+     *     (a string) or a direct value (a double). It can be empty or be
+     *     emitted entirely is the function has no arguments.
+     *
+     *  First it determines whether the current entry requires loading by direct value,
+     *  file or function, then it acts accordingly. The property that needs to be set
+     *  is defined by the propertyType variable. Furthermore, it also needs a pointer
+     *  to the WorkingConditions structure to access the argument map (which maps its
+     *  member variables to names by which they are addressed in the input files).
+     */
+    void loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
+                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
+    /** Sets a property (energy, statistical weight, population) of selected states
+     *  as specified in json array \a stateProp. The  members of this array must be
+     *  objects of the form "{ "files": [ <filenames>] }", or of the form that is
+     *  expected for the propEntry argument of member \c loadStatePropertyEntry.
+     *
+     *  If files specification is found, a JSON object with the same structure
+     *  as argument \a stateProp is created for each file, and loadStateProperty
+     *  is called recursively with that JSON object as argument (as if that file
+     *  were included in the place of the { "files: <filenames> } member). If the
+     *  filename has extension ".json", it will be used as is. For other files
+     *  the JSON object is created via a call to to readLegacyStatePropertyFile,
+     *  which converts the legacy LoKI-B "*.in" file format to JSON.
+     *
+     *  For every "value" or "function" node, loadStatePropertyEntry is called to
+     *  set the values of the property of the selected states.
+     *
+     *  Argument \a basePath is needed to resolve the location of included files with
+     *  a relative path name. Argument \a propertyType indices which property (data
+     *  member) of the states is being configures, the \a workingConditions are needed
+     *  to translate parameter names (that can be used as function arguments) into their
+     *  numerical values.
+     *
+     *  \sa loadStatePropertyEntry
+     *  \sa loadStateProperties
+     *  \sa statePropertyFile
+     *
+     *  \todo There is the risk of infinite recursion if a file refers to that
+     *        same file (possibly indirectly).
+     */
+    void loadStateProperty(const std::filesystem::path &basePath, const json_type& stateProp,
+                           StatePropertyType propertyType, const WorkingConditions *workingConditions);
+    Gas *addGas(const GasProperties& gasProps, const std::string& name);
     Gases m_gases;
     StateMap m_states;
 };
 
 } // namespace loki
 
-#endif // LOKI_CPP_GASMIXTUREBASE_H
+#endif // LOKI_CPP_GASMIXTURE_H

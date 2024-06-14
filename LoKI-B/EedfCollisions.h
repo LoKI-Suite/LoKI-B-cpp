@@ -7,7 +7,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -25,7 +25,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   21. May 2019
+ *  \date   21 May 2019
  */
 
 #ifndef LOKI_CPP_EEDFCOLLISIONS_H
@@ -49,6 +49,8 @@
 namespace loki
 {
 
+using EffectivePopulationsMap = std::map<const Gas::State *, double>;
+
 class EedfCollision : public Collision
 {
 public:
@@ -58,7 +60,6 @@ public:
                   const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse);
     ~EedfCollision();
     const EedfState *getTarget() const;
-    EedfState *getTarget();
     void superElastic(const Vector &energyData, Vector &result) const;
     PowerTerm evaluateConservativePower(const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
@@ -94,12 +95,12 @@ public:
     using State = Gas::State;
     using CollisionVector = std::vector<std::unique_ptr<EedfCollision>>;
     using CollisionsType = std::vector<CollisionVector>;
-    explicit EedfCollisionDataGas(Gas& gas);
-    EedfCollisionDataGas(const Gas&) = delete;
+    EedfCollisionDataGas(const GasProperties& gasProps, const Gas& gas);
+    EedfCollisionDataGas(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas(EedfCollisionDataGas&&) = default;
     EedfCollisionDataGas& operator=(const EedfCollisionDataGas&) = delete;
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
-    ~EedfCollisionDataGas() {}
+    ~EedfCollisionDataGas() = default;
 
     // We need to store the collisions per Gas since we need to calculate
     // the mass ratio when evaluating the total and elastic cross-sections.
@@ -107,7 +108,7 @@ public:
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
     void addCollision(EedfCollision *collision, bool isExtra);
-    void checkElasticCollisions(State *electron, const Grid *energyGrid);
+    void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
     bool isDummy() const;
     const GasPower &getPower() const;
     /** \todo Non-constant because m_power is changed. See if m_power must managed here.
@@ -115,25 +116,23 @@ public:
      */
     const GasPower& evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
     double OPBParameter() const { return m_OPBParameter; }
-    void setOPBParameter(double value) { m_OPBParameter = value; }
     const Gas& gas() const { return m_gas; }
 private:
     /* the following three members are used (only) for Effective -> Elastic,
      * (together with the public checkElasticCollisions).
      */
-    void setDefaultEffPop(State *ground);
-    CrossSection *elasticCrossSectionFromEffective(const Grid *energyGrid);
-    std::vector<State *> findStatesToUpdate();
+    void setDefaultEffPop(const State *ground, EffectivePopulationsMap& effectivePopulation) const;
+    CrossSection *elasticCrossSectionFromEffective(const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
+    std::vector<const State *> findStatesToUpdate() const;
     // two helpers for evaluating power terms
     PowerTerm evaluateConservativePower(const CollisionVector &collisionVector, const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const CollisionVector &collisionVector, const IonizationOperatorType ionType,
                                        const Vector &eedf) const;
-    Gas& m_gas;
+    const Gas& m_gas;
     CollisionsType m_collisions;
     CollisionsType m_collisionsExtra;
     std::map<const State *, std::vector<EedfCollision *>> m_state_collisions;
     std::map<const State *, std::vector<EedfCollision *>> m_state_collisionsExtra;
-    std::map<const State *, double> m_effectivePopulations;
     GasPower m_power;
     double m_OPBParameter;
 };
@@ -159,7 +158,7 @@ public:
      *  storage of the collisions.
      *  \todo Explain isExtra.
      */
-    void loadCollisionsClassic(const std::filesystem::path &file, GasMixture& composition, const Grid *energyGrid, bool isExtra);
+    void loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     /** Loads the collisions from a json mixture section. Such section must contain two
      *  subsections: an object "states" that consists of key-value pairs that represent
@@ -173,7 +172,7 @@ public:
      *  \todo The meta information in the set objects ("_id", "complete", "description",
      *  "contributor" etc. are ignored so far.
      */
-    void loadCollisionsJSON(const json_type &mcnf, GasMixture& composition, const Grid *energyGrid, bool isExtra);
+    void loadCollisionsJSON(const json_type &mcnf, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
     const EedfCollisionDataGasArray& data_per_gas() const { return m_data_per_gas; }
     EedfCollisionDataGasArray& data_per_gas() { return m_data_per_gas; }
@@ -223,7 +222,7 @@ private:
         const Collision::StateVector &lhsStates, const Collision::CoeffVector &lhsCoeffs,
         const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
         bool reverseAlso, bool isExtra);
-    State *ensureState(GasMixture& composition, const StateEntry &entry);
+    State *ensureState(const GasProperties& gasProps, GasMixture& composition, const StateEntry &entry);
     EedfCollisionDataGasArray m_data_per_gas;
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
     Vector m_elasticCrossSection;

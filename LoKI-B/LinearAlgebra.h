@@ -6,7 +6,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2020 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
@@ -24,26 +24,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *  \author Daan Boer and Jan van Dijk (C++ version)
- *  \date   15. May 2019
+ *  \date   15 May 2019
  */
 
 #ifndef LOKI_CPP_LINEARALGEBRA_H
 #define LOKI_CPP_LINEARALGEBRA_H
 
-/** \todo Should this define be done in CMakeLists? (Done)
- *  \todo Does USE_OPENMP have a meaning for the compiler? Or is it just
- *        used by LoKI-B to enable/disable OpenMP statements. In the latter
- *        case, it may be more clear to use LOKIB_USE_OPENMP.
- *  \todo If enabling OpenMP is controlled by the makefile (CMakeLists),
- *        USE_OPENMP is not needed, the pragma statements can be made
- *        unconditional. Depending on the flags that are passed to the compiler,
- *        OpenMP will then be active (e.g. -fopenmp for gcc).
- */
-//Moved to CMakeLists
-//#define USE_OPENMP
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <utility>
 
 namespace loki {
 
@@ -82,6 +71,48 @@ using SparseMatrix = Eigen::SparseMatrix<double>;
  */
 double maxRelDiff(const Vector& v1, const Vector& v2);
 
+/** Calculates and returns the lower and upper bandwidths of matrix \a m
+ *  (m does not need to be square).
+ *
+ *  Let diagonal 'd' indicate the collection of elements m(r,c), with c=r+d.
+ *  As an example, d=0 is the main diagonal, d=-1 the subdiagonal and d=1 the
+ *  superdiagonal. The members first and second of the return value of this
+ *  function return the (signed) lower and upper bandwidths, which are defined
+ *  as the lowest and highest values of d such that diagonal d contains at least
+ *  one non-zero element.
+ *
+ *  As an example, for a diagonal matrix the return value is {0,0}, for a
+ *  tridiagonal matrix it is {-1,1}. For an strictly lower triangular matrix
+ *  with R rows and C columns we get {-(R-1),01} and for an upper Hessenberg
+ *  matrix the return value is {-1,C-1}. These cases have been visualized
+ *  below.
+  \verbatim
+    X000
+    0X00  {0,0}
+    00X0
+  
+    XX00
+    XXX0 {-1,1}
+    0XXX
+    00XX
+  
+    000000
+    X00000 {-3,0}
+    XX0000
+    XXX000
+  
+    XXXXX
+    XXXXX {-1,4}
+    0XXXX
+    00XXX
+    000XX
+    0000X \endverbatim
+ *
+ *  \author Jan van Dijk
+ *  \date   May 2024
+ */
+std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m);
+
 } // namespace loki
 
 namespace loki {
@@ -115,6 +146,25 @@ struct HessenbergWorkspace
     Vector v;
 };
 
+namespace impl {
+
+/** This appears to implement a Givens rotation (simplified form).
+ *  \todo Document the details of this function, explain its role in the
+ *  Hessenberg implementation, provide a reference. Note that a full
+ *  Givens rotation has a slightly different (more complex) interface,
+ *  see for example https://en.wikipedia.org/wiki/Givens_rotation
+ *
+ *  This function is only used in the mplementation of hessenberg. The
+ *  reason for exposing it in this header file that it is also used by
+ *  the permuting hessenberg implementation in ideas/HessenbergExtra.cpp.
+ *
+ *  \author Daan Boer
+ *  \date   15 May 2019
+ */
+void givens(double a, double b, double &c, double &s);
+
+}
+
 /** Solve the matrix-vector equation Ax=b for an upper-Hessenberg matrix.
  *  Argument \a A is a pointer a dense matrix and must use column-major
  *  storage order. On input, \a b must point to the first element of the
@@ -126,7 +176,7 @@ struct HessenbergWorkspace
  *  indeed an upper-Hessenberg matrix.
  *
  *  \author Daan Boer
- *  \date   15. May 2019
+ *  \date   15 May 2019
  */
 double *hessenberg(const double *A, double *b, uint32_t n);
 
@@ -142,6 +192,41 @@ double *hessenberg(const double *A, double *b, uint32_t n);
  *  \date   November 2020
  */
 double *hessenberg(const double *A, double *b, uint32_t n, HessenbergWorkspace& hws);
+
+/** The TDMA (Tri-Diagonal Matrix Algorithm) or 'Thomas algorithm' solves a
+ *  system Ax=b for a tridiagonal matrix A. For an explanation, see for example
+ *  https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+ *
+ *  Since non-zero entries of A appear only on the diagonal and the first
+ *  subdiagonal and superdiagonal, the i'th equation takes the form
+    \verbatim
+      i=0:                       A(i,i)x(i) + A(i,i+1)x(i) = b(i),
+      0<i<n-1: A(i,i-1)*x(i-1) + A(i,i)x(i) + A(i,i+1)x(i) = b(i),
+      i=n-1:   A(i,i-1)*x(i-1) + A(i,i)x(i)                = b(i). \endverbatim
+ *
+ *  Other elements of \a A are ignored: on return, \a x will be the solution of
+ *  Ax=b only if A is indeed tridiaogonal. That must be ensured by the caller.
+ *  If the matrix is singular, a runtime_error will be thrown.
+ *
+ *  \author Jan van Dijk
+ *  \date   25 May 2024
+ */
+void solveTDMA(const Matrix& A, const Vector& b, Vector& x);
+
+/** Solve Ax=b for a tridiagonal matrix A.
+ *  This overload of solveTDMA expects that on entry the argument \a bx contains
+ *  the right-hand side b. On return, this has been overwritten by the solution
+ *  vector x. See the three-argument overload for more information.
+ *
+ *  This function calls the three-argument overload by passing \a bx for both
+ *  x and b. That is possible because the algorithm consists of two parts: b is
+ *  used only in the first part, to obtain the values of an auxiliary vector,
+ *  x is calculated in the second part, that no longer depends on b.
+ *
+ *  \author Jan van Dijk
+ *  \date   25 May 2024
+ */
+void solveTDMA(const Matrix& A, Vector& bx);
 
 } // namespace LinAlg
 } // namespace loki
