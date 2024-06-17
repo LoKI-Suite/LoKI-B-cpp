@@ -27,8 +27,14 @@ target_link_libraries(bolsig_extract PRIVATE loki-b)
 add_executable(compare_tables compare_tables.cpp)
 target_link_libraries(compare_tables PRIVATE loki-b)
 
+add_executable(loki_test_derivatives test_derivatives.cpp)
+target_link_libraries(loki_test_derivatives PRIVATE loki-b)
+
 add_executable(loki_test_gas_properties test_gas_properties.cpp)
 target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
+
+add_executable(loki_test_interpolation test_interpolation.cpp)
+target_link_libraries(loki_test_interpolation PRIVATE loki-b)
 
 add_executable(loki_test_offside_to_json test_offside_to_json.cpp)
 target_link_libraries(loki_test_offside_to_json PRIVATE loki-b)
@@ -94,12 +100,14 @@ add_executable(test_nonuniform_operator_distribution test_nonuniform_operator_di
 target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki-b)
 
 target_add_test(loki_test_offside_to_json)
+target_add_test(loki_test_derivatives)
 target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
 target_add_test(test_events)
 target_add_test(test_grid)
 target_add_test(loki_test_integrals)
+target_add_test(loki_test_interpolation)
 target_add_test(test_linalg)
 target_add_test(test_lut)
 target_add_test(test_parser)

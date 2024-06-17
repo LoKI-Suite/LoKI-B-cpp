@@ -1,6 +1,7 @@
 /** \file
  *
- *  Declarations of functions for evaluating integrals.
+ *  Declarations of functions that implement grid operations (interpolation,
+ *  differentiation, integration).
  *
  *  LoKI-B solves a time and space independent form of the two-term
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
@@ -27,14 +28,94 @@
  *  \date   June 2024
  */
 
-#ifndef LOKI_CPP_INTEGRALS_H
-#define LOKI_CPP_INTEGRALS_H
+#ifndef LOKI_CPP_GRIDOPS_H
+#define LOKI_CPP_GRIDOPS_H
 
 #include "LoKI-B/Grid.h"
 #include <stdexcept>
 
 namespace loki {
 
+    /** Interpolate the values \a src that are defined on the faces of \a grid to the
+     *  cells, store the result in \a tgt. Argument \a tgt is resized if necessary.
+     *
+     *  If the size of \a src does not match the number of faces of \a grid, a
+     *  std::runtime_error is thrown.
+     *
+     *  \author Jan van Dijk
+     *  \date   13 June 2024
+     */
+    inline void interpolateNodalToCell(const Grid& grid, const Vector& src, Vector& tgt)
+    {
+        if (src.size()!=grid.getNodes().size())
+        {
+            throw std::runtime_error("interpolateNodalToCell: grid and source vector have incompatible sizes.");
+        }
+        tgt = (src.head(grid.nCells()) + src.tail(grid.nCells()))/2;
+    }
+
+    /** Interpolate the values \a src that are defined on the faces of \a grid
+     *  to the cells, return the result. This is implemented by calling the
+     *  three-argument overload of this function on a local vector, and
+     *  returning the result. See that function for more information.
+     *
+     *  \author Jan van Dijk
+     *  \date   13 June 2024
+     */
+    inline Vector interpolateNodalToCell(const Grid& grid, const Vector& src)
+    {
+        Vector tgt;
+        interpolateNodalToCell(grid,src,tgt);
+        return tgt;
+    }
+
+    /** Calculate and an approximation of the derivative of the field
+     *  \a f and store the results in \a fprime. Both the field \a f
+     *  and \a fprime are defined in the cells of the \a grid. Vector
+     *  \a fprime is esized if necessary.
+     *
+     *  \author Jan van Dijk
+     *  \date   14 June 2024
+     */
+    inline void cellDerivative(Vector& fprime, const Grid& grid, const Vector& f)
+    {
+        const Grid::Index n = grid.nCells();
+        if (f.size()!=n)
+        {
+            throw std::runtime_error("cellToNodalDerivative: "
+                                     "field has wrong size.");
+        }
+        fprime.resize(n);
+        if (grid.isUniform())
+        {
+            fprime[0] = (f[1] - f[0]) / grid.du();
+            fprime[n - 1] = (f[n - 1] - f[n - 2]) / grid.du();
+            fprime.segment(1, n - 2) = (f.segment(2, n - 2) - f.segment(0, n - 2)) / (2 * grid.du());
+        }
+        else
+        {
+            fprime[0] = (f[1] - f[0]) / grid.duNode(1);
+            fprime[n - 1] = (f[n - 1] - f[n - 2]) / grid.duNode(n-1);
+            fprime.segment(1, n - 2) = (f.segment(2, n - 2) - f.segment(0, n - 2))
+                .cwiseQuotient(grid.duNodes().segment(1, n - 2) + grid.duNodes().segment(2, n - 2));
+        }
+    }
+
+    /** Calculate and return an approximation of the derivative of the field
+     *  \a f. Both the field \a f and the resulting vactor are defined in the
+     *  cells of the \a grid. This is implemented by calling the three-argument
+     *  overload of this function on a local vector, and returning the result.
+     *  See that function for more information.
+     *
+     *  \author Jan van Dijk
+     *  \date   14 June 2024
+     */
+    inline Vector cellDerivative(const Grid& grid, const Vector& f)
+    {
+        Vector fprime;
+        cellDerivative(fprime,grid,f);
+        return fprime;
+    }
 
     /** Calculate and return an approximation of \f$ \gamma\int_0^{u_max} f(u)g(u)du \f$.
      *  Arguments \a f and \a g must be defined in the cells of the \a grid.
@@ -137,5 +218,5 @@ namespace loki {
 
 } // namespace loki
 
-#endif // LOKI_CPP_INTEGRALS_H
+#endif // LOKI_CPP_GRIDOPS_H
 

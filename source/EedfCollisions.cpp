@@ -30,6 +30,7 @@
 
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
 #include "LoKI-B/StateEntry.h"
@@ -1017,6 +1018,7 @@ void EedfCollisionDataMixture::evaluateTotalAndElasticCS(const Grid &grid)
             }
         }
     }
+    interpolateNodalToCell(grid,m_totalCrossSection,m_totalCellCrossSection);
 }
 
 void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const Vector &eedf)

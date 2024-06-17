@@ -31,7 +31,7 @@
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
-#include "LoKI-B/Integrals.h"
+#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include <chrono>
 #include <cmath>
@@ -366,12 +366,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
 
-    Vector cellTotalCrossSection(grid().nCells());
-
-    for (Grid::Index i = 0; i < grid().nCells(); ++i)
-    {
-        cellTotalCrossSection[i] = .5 * (mixture.collision_data().totalCrossSection()[i] + mixture.collision_data().totalCrossSection()[i + 1]);
-    }
+    const Vector& cellTotalCrossSection(mixture.collision_data().totalCellCrossSection());
     boltzmannMatrix
         = elasticMatrix
         + fieldMatrix
@@ -1020,22 +1015,12 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
-    const Grid::Index n = grid().nCells();
 
     // 1. First fill firstAnisotropy with df/du.
-    if (grid().isUniform())
-    {
-        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().du();
-        firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().du();
-        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)) / (2 * grid().du());
-    } else
-    {
-        firstAnisotropy[0] = (eedf[1] - eedf[0]) / grid().duNode(1);
-        firstAnisotropy[n - 1] = (eedf[n - 1] - eedf[n - 2]) / grid().duNode(n-1);
-        firstAnisotropy.segment(1, n - 2) = (eedf.segment(2, n - 2) - eedf.segment(0, n - 2)).cwiseQuotient(grid().duNodes().segment(1, n - 2) + grid().duNodes().segment(2, n - 2));
-    }
+    cellDerivative(firstAnisotropy,grid(),eedf);
 
-    Vector cellCrossSection = (mixture.collision_data().totalCrossSection().segment(0, n) + mixture.collision_data().totalCrossSection().segment(1, n)) / 2.;
+    // make a copy. Below we add an ionization/attachment contribution
+    Vector cellCrossSection(mixture.collision_data().totalCellCrossSection());
 
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
     {
@@ -1205,13 +1190,19 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 
     const bool nonConservative = (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment);
 
+    // make a copy: an ionization term is added to this function.
     Vector tCS(mixture.collision_data().totalCrossSection());
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
         /// \todo Is tCS[0] updated? That appears to be used below (when writing tCS.head(n))
+        /** \todo NOTE that this is singular for u=0, but later a multiplication with u is happening
+         *  (when calculating D0). This seems to be a real bug. It appears that this can be fixed
+         *  by calculating u*tCS, instead of tCS, adjusting that, and multiplying with u afterwards.
+         */
         tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
     }
+    /// \todo see above: it appears that interpolation is done of a field that is not completely updated.
     const Vector cellCS((tCS.head(n) + tCS.tail(n))/2);
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
 
@@ -1223,6 +1214,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     const double WoN = m_workingConditions->reducedExcFreqSI();
     if (WoN>0.0)
     {
+        /// \todo See above: calculate u*Omega{C,PT} here?
         const Vector OmegaC = cellCS.array() + CIEff / (SI::gamma*grid().getCells().array().sqrt());
         const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getCells().cwiseProduct(OmegaC)).cwiseInverse();
         double muHFRe = -SI::gamma / 3. * fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseQuotient(OmegaPT),eedf);
@@ -1419,11 +1411,7 @@ void ElectronKineticsPrescribed::evaluatePower()
 
 void ElectronKineticsPrescribed::evaluateSwarmParameters()
 {
-    const Grid::Index n = grid().nCells();
-
-    Vector tCS(mixture.collision_data().totalCrossSection());
-
-    const Vector cellCS((tCS.head(n) + tCS.tail(n))/2);
+    const Vector& cellCS(mixture.collision_data().totalCellCrossSection());
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
