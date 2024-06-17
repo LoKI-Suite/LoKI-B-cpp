@@ -686,10 +686,8 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
     if (ionizationOperatorType != IonizationOperatorType::conservative)
         ionizationMatrix.setZero();
-    /** \todo the following line seems to be missing. See the notes in the
-     *  class declaration of this member
-     */
-    //includeNonConservativeIonization = false;
+
+    includeNonConservativeIonization = false;
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -842,6 +840,8 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
     attachmentMatrix.setZero();
     attachmentConservativeMatrix.setZero();
 
+    includeNonConservativeAttachment = false;
+
     const Grid::Index cellNumber = grid.nCells();
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
@@ -858,9 +858,6 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              * in (other) places where this is now used?
              * Answer: no, this depends on uMax(), which may change for a smart grid. But it
              * could be done as an action when that changes.
-             */
-            /** \bug This should be reset to false at the beginning of this function
-             *       because the results may change when uMax is changed.
              */
             includeNonConservativeAttachment = true;
 
