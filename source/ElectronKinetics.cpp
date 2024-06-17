@@ -1186,24 +1186,24 @@ void ElectronKineticsBoltzmann::evaluatePower()
 
 void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 {
-    const Grid::Index n = grid().nCells();
+    const bool nonConservative = ionizationOperator.includeNonConservativeIonization
+                              || attachmentOperator.includeNonConservativeAttachment;
 
-    const bool nonConservative = (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment);
-
-    // make a copy: an ionization term is added to this function.
-    Vector tCS(mixture.collision_data().totalCrossSection());
+    /* First we calculate the DC mobilities and diffusion coefficients. These
+     * are based on Omega_SST (spatial growth) or Omega_c (temporal growth)
+     * (manual v2.2 eqns. 46a,b). From eqns. 11a,b) we learn that Omega_SST is
+     * just sigma_c; for temporal growth we calculate Omega_c by adding the
+     * ionization term.
+     */
+    /** \todo For spatial growth (or no growth), the copy is not needed; we
+     *  could use totalCellCrossSection() directly.
+     */
+    Vector cellCS(mixture.collision_data().totalCellCrossSection());
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
-        /// \todo Is tCS[0] updated? That appears to be used below (when writing tCS.head(n))
-        /** \todo NOTE that this is singular for u=0, but later a multiplication with u is happening
-         *  (when calculating D0). This seems to be a real bug. It appears that this can be fixed
-         *  by calculating u*tCS, instead of tCS, adjusting that, and multiplying with u afterwards.
-         */
-        tCS.tail(grid().nCells()).array() += (CIEff/SI::gamma) / grid().getNodes().tail(n).cwiseSqrt().array();
+        cellCS.array() += (CIEff/SI::gamma) / grid().getCells().cwiseSqrt().array();
     }
-    /// \todo see above: it appears that interpolation is done of a field that is not completely updated.
-    const Vector cellCS((tCS.head(n) + tCS.tail(n))/2);
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
@@ -1211,11 +1211,16 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     swarmParameters.redMobCoeff = -SI::gamma*fgPrimeEnergyIntegral(grid(),D0,eedf);
     swarmParameters.redMobilityEnergy = -SI::gamma*fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
 
+    /* If WoN !=0, we also calculate the HF mobility (real and imaginary parts).
+     * Note that WoN implies the temporal growth case, so cellCS represents
+     * Omega_c (we just added the ionization term). First we construct Omega_PT
+     * by copying Omega_c a and adding the WoN term (eq. 11a). Next we calculate
+     * Re{mu_HF} and Im{mu_HF} from Omega_PT and Omega_c using eqns. 49a,b).
+     */
     const double WoN = m_workingConditions->reducedExcFreqSI();
     if (WoN>0.0)
     {
-        /// \todo See above: calculate u*Omega{C,PT} here?
-        const Vector OmegaC = cellCS.array() + CIEff / (SI::gamma*grid().getCells().array().sqrt());
+        const Vector& OmegaC = cellCS;
         const Vector OmegaPT = OmegaC + ( WoN * WoN / (SI::gamma*SI::gamma)) * (grid().getCells().cwiseProduct(OmegaC)).cwiseInverse();
         double muHFRe = -SI::gamma / 3. * fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseQuotient(OmegaPT),eedf);
         double muHFIm = (+SI::gamma / 3. * WoN/SI::gamma) *
@@ -1230,6 +1235,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     }
     else
     {
+        /// \todo Does this make sense in case of a HF field?
         swarmParameters.driftVelocity = swarmParameters.redMobCoeff * m_workingConditions->reducedFieldSI();
     }
 
