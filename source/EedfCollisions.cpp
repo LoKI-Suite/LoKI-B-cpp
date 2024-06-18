@@ -420,14 +420,17 @@ EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const 
 
 void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
 {
-    // add to the state's list
     const State *target = collision->getTarget();
-    (isExtra ? m_state_collisionsExtra[target] : m_state_collisions[target]).emplace_back(collision);
-
-    // add to the gas' list
-    (isExtra ? this->m_collisionsExtra[static_cast<uint8_t>(collision->type())]
-             : this->m_collisions[static_cast<uint8_t>(collision->type())])
-        .emplace_back(collision);
+    if (isExtra)
+    {
+        m_state_collisionsExtra[target].emplace_back(collision);
+        m_collisionsExtra[static_cast<uint8_t>(collision->type())].emplace_back(collision);
+    }
+    else
+    {
+        m_state_collisions[target].emplace_back(collision);
+        m_collisions[static_cast<uint8_t>(collision->type())].emplace_back(collision);
+    }
 }
 
 void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulation)
