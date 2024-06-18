@@ -303,12 +303,12 @@ std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double 
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd)
+std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin)
 {
     std::vector<std::tuple<int, double>> alpha;
-    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetEnd));
+    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
     alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
-    alpha.push_back(std::make_tuple(targetEnd, alphaMinPlus[1]));
+    alpha.push_back(std::make_tuple(targetBegin + 1, alphaMinPlus[1]));
     return alpha;
 }
 
@@ -381,7 +381,7 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
         alpha = distributeOneCell(grid, targetCell, targetBegin);
     } else if (targetEnd - targetBegin == 2)
     {
-        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
+        alpha = distributeTwoCells(grid, targetCell, targetBegin);
     } else
     {
         alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
@@ -437,7 +437,7 @@ std::vector<std::tuple<int, double>> oneTakesAllDistribution(const Grid& grid, i
         alpha = distributeOneCell(grid, targetCell, targetBegin);
     } else if (targetEnd - targetBegin == 2)
     {
-        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
+        alpha = distributeTwoCells(grid, targetCell, targetBegin);
     } else
     {
         alpha = distributeNCellsIonization(grid, targetCell, targetBegin, targetEnd, sourceidx);

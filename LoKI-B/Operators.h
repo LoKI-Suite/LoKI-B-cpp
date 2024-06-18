@@ -187,8 +187,7 @@ namespace loki {
 
     std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int targetBegin);
 
-    std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, 
-                                                            int targetEnd);
+    std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin);
 
     std::vector<std::tuple<int, double>> distributeNCells(const Grid &grid, double targetCell, int targetBegin,
                                                           int targetEnd, Grid::Index origin, double threshold,
