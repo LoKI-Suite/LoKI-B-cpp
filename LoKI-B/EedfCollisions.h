@@ -107,7 +107,6 @@ public:
     const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
-    void addCollision(EedfCollision *collision, bool isExtra);
     void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
     bool isDummy() const;
     const GasPower &getPower() const;
@@ -117,6 +116,10 @@ public:
     const GasPower& evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
     double OPBParameter() const { return m_OPBParameter; }
     const Gas& gas() const { return m_gas; }
+    /** Add \a collision to the process container for the gas for which we keep
+     *  data, and to the process container that stores the processes per state.
+     */
+    void addCollision(EedfCollision *collision, bool isExtra);
 private:
     /* the following three members are used (only) for Effective -> Elastic,
      * (together with the public checkElasticCollisions).
