@@ -747,21 +747,13 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     std::unique_ptr<EedfCollision> coll_uptr{
         new Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
     Log<Message>::Notify(*coll_uptr);
-    // 2. See if we already have a collision of the same type with the same lhs and rhs.
-    //    If we do, issue a warning and return nullptr.
-    //    NOTE: coll_uptr is a unique_ptr and will delete the collision object.
+    // 2. See if we already have a collision of the same type with the same
+    //    lhs and rhs. If we do, a runtime_error is thrown.
     for (const auto &c : m_collisions)
     {
         if (c.m_coll->is_same_as(*coll_uptr))
         {
-//#define ALLOW_DUPLICATE_PROCESSES
-#ifdef ALLOW_DUPLICATE_PROCESSES
-            // duplicates are allowed. The warning is emitted,
-            // but no further action needed
-            Log<DoubleCollision>::Warning(*c.m_coll);
-#else
             Log<DoubleCollision>::Error(*c.m_coll);
-#endif
         }
     }
     // 3. Release the collision object, store the released pointer in coll.
