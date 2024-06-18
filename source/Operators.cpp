@@ -272,7 +272,7 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& 
     power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum();
 }
 
-std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.)
+std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac)
 {
     std::array<double, 2> alpha;
     alpha[0] = frac*(uPlus - targetCell) / (uPlus - uMin);
@@ -314,7 +314,7 @@ std::vector<std::tuple<Grid::Index, double>> distributeTwoCells(const Grid& grid
 }
 
 std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, double targetCell, Grid::Index targetBegin, Grid::Index targetEnd, 
-                                                     Grid::Index origin, double threshold, bool reverse = false, double frac = 1.0)
+                                                     Grid::Index origin, double threshold, bool reverse, double frac)
 {
     double targetMiddleLeft;
     double targetMiddleRight;
@@ -373,7 +373,7 @@ Grid::Index getUpperBound(const Grid& grid, double energy) {
 
 
 std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, Grid::Index sourceidx, 
-                                                             bool reverse = false, double frac = 1.0)
+                                                             bool reverse, double frac)
 {
     double targetCell;
     int targetBegin;

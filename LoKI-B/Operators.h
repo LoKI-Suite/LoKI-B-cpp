@@ -183,7 +183,7 @@ namespace loki {
         bool includeNonConservativeAttachment;
     };
 
-    std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac);
+    std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.0);
 
     std::vector<std::tuple<Grid::Index, double>> distributeOneCell(const Grid& grid, double targetCell, Grid::Index targetBegin);
 
@@ -191,10 +191,10 @@ namespace loki {
 
     std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid &grid, double targetCell, Grid::Index targetBegin,
                                                           Grid::Index targetEnd, Grid::Index origin, double threshold,
-                                                          bool reverse, double frac);
+                                                          bool reverse = false, double frac = 1.0);
 
     std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid &grid, double threshold, double source,
-                                                                 Grid::Index sourceidx, bool reverse, double frac);
+                                                                 Grid::Index sourceidx, bool reverse = false, double frac = 1.0);
 
     std::vector<std::tuple<Grid::Index, double>> distributeNCellsIonization(const Grid& grid, double targetCell, Grid::Index targetBegin,
                                                                      Grid::Index targetEnd, Grid::Index origin);
