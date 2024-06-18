@@ -849,12 +849,12 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 //  4: "Elastic"
 
                 std::vector<StateEntry> entry_lhsStates, entry_rhsStates;
-                std::vector<uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
+                std::vector<uint16_t> lhsCoeffs, rhsCoeffs;
 
-                entriesFromString(mProcess[1].str(), entry_lhsStates, &entry_lhsCoeffs);
+                entriesFromString(mProcess[1].str(), entry_lhsStates, &lhsCoeffs);
                 const bool reverseAlso = (mProcess[2].str()[0] == '<');
-                entriesFromString(mProcess[3].str(), entry_rhsStates, &entry_rhsCoeffs);
-                const CollisionType entry_type = getCollisionType(mProcess[4].str());
+                entriesFromString(mProcess[3].str(), entry_rhsStates, &rhsCoeffs);
+                const CollisionType type = getCollisionType(mProcess[4].str());
 
                 // 1. Create vectors of pointers to the states that appear
                 //    on the left and right-hand sides of the process.
@@ -869,7 +869,7 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 {
                     rhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
-                Collision &coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
+                Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs,
                                                reverseAlso, isExtra);
                 const bool isElasticOrEffective =
                     (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);

@@ -78,17 +78,16 @@ private:
     const CoeffVector m_lhsHeavyCoeffs;
 public:
     /// \todo Make private
-    StateVector m_rhsHeavyStates;
+    const StateVector m_rhsHeavyStates;
 private:
-    CoeffVector m_rhsHeavyCoeffs;
+    const CoeffVector m_rhsHeavyCoeffs;
     double m_ineRateCoeff;
     double m_supRateCoeff;
 public:
-    std::unique_ptr<CrossSection> crossSection;
+    std::unique_ptr<const CrossSection> crossSection;
 
 };
 
-// TODO: Allow loading of effective populations from a file.
 class EedfCollisionDataGas
 {
 public:
@@ -110,8 +109,8 @@ public:
     void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
     bool isDummy() const;
     const GasPower &getPower() const;
-    /** \todo Non-constant because m_power is changed. See if m_power must managed here.
-     *  The name updatePower would make more clear that this modifies the object.
+    /** Update the power terms for collisions with the gas and return a
+     *  reference to the result.
      */
     const GasPower& evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
     double OPBParameter() const { return m_OPBParameter; }
@@ -149,11 +148,6 @@ public:
     using State = Gas::State;
     using Collision = EedfCollision;
     using EedfCollisionDataGasArray = std::vector<EedfCollisionDataGas>;
-    struct CollisionEntry
-    {
-        Collision* m_coll;
-        const bool m_isExtra;
-    };
     EedfCollisionDataMixture();
     /** Loads the collisions from the \a file that is provided as first argument.
      *  It also needs a pointer to the \a energyGrid and a boolean \a isExtra to
@@ -179,7 +173,6 @@ public:
 
     const EedfCollisionDataGasArray& data_per_gas() const { return m_data_per_gas; }
     EedfCollisionDataGasArray& data_per_gas() { return m_data_per_gas; }
-    std::vector<CollisionEntry> m_collisions;
     const EedfCollisionDataGas& get_data_for(const Gas& gas) const;
     EedfCollisionDataGas& get_data_for(const Gas& gas);
     const Vector& elasticCrossSection() const { return m_elasticCrossSection; }
@@ -233,6 +226,12 @@ private:
         const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
         bool reverseAlso, bool isExtra);
     State *ensureState(const GasProperties& gasProps, GasMixture& composition, const StateEntry &entry);
+    struct CollisionEntry
+    {
+        Collision* m_coll;
+        const bool m_isExtra;
+    };
+    std::vector<CollisionEntry> m_collisions;
     EedfCollisionDataGasArray m_data_per_gas;
     /// \todo This only initializes the first element of m_hasCollisions to false?
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
