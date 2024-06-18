@@ -1014,24 +1014,6 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
 {
     m_rateCoefficients.clear();
     m_rateCoefficientsExtra.clear();
-//#define NEW_RATE_COEFFICIENT_OUTPUT
-#ifdef NEW_RATE_COEFFICIENT_OUTPUT
-    /* The m_collisions member has been changed to store pairs
-     * representing the collision pointer and the isExtra field.
-     * that allows us to simply iterate over the elements of
-     * m_collisions to populate the rate coefficient arrays.
-     * The only difference is that the rate coefficient arrays
-     * are no longer grouped by gas: the coefficients appear
-     * in the order in which the processes were read from file.
-     * personally I (JvD) think that this should not matter,
-     * and makes the code a LOT easier (not just the code below).
-     */
-    for (auto &c : m_collisions)
-    {
-        std::vector<RateCoefficient> &rcVector = c.m_isExtra ? m_rateCoefficientsExtra : m_rateCoefficients;
-        rcVector.emplace_back(c.m_coll->evaluateRateCoefficient(eedf));
-    }
-#else
     for (const auto &cd : data_per_gas())
     {
         for (auto &collVec : cd.collisions())
@@ -1057,7 +1039,6 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
             }
         }
     }
-#endif
 }
 
 } // namespace loki
