@@ -217,13 +217,24 @@ public:
      */
     void evaluateRateCoefficients(const Grid& grid, const Vector &eedf);
 private:
-    /// \todo Document me more precisely: returns nullptr for a duplicate proccess
-    EedfCollision* addCollision(CollisionType type,
+    /** Create a collision pointer based on the given input. If a process of the
+     *  given \a type and with the same reaction format already exists, a
+     *  runtime error exception is thrown. Otherwise, the process is registered
+     *  in the m_collisions container and the per-gas process container
+     *  m_data_per_gas, and m_hasCollisions is set to true for the process type.
+     *  This function does not set up a cross section for the process, that is
+     *  up to the caller. (The reason is that this function is used by both the
+     *  legacy and the JSON based constructors, that have separate codes for
+     *  creating cross sections.) The caller should call coll.crossSection.reset
+     *  in the collision reference that is returned by this function.
+     */
+    EedfCollision& addCollision(CollisionType type,
         const Collision::StateVector &lhsStates, const Collision::CoeffVector &lhsCoeffs,
         const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
         bool reverseAlso, bool isExtra);
     State *ensureState(const GasProperties& gasProps, GasMixture& composition, const StateEntry &entry);
     EedfCollisionDataGasArray m_data_per_gas;
+    /// \todo This only initializes the first element of m_hasCollisions to false?
     bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;

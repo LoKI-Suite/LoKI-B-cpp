@@ -736,7 +736,7 @@ EedfCollisionDataMixture::EedfCollisionDataMixture()
 {
 }
 
-EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
+EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
                                                       const Collision::CoeffVector &lhsCoeffs,
                                                       const Collision::StateVector &rhsStates,
                                                       const Collision::CoeffVector &rhsCoeffs, bool reverseAlso,
@@ -771,7 +771,7 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     get_data_for(coll->getTarget()->gas()).addCollision(coll, isExtra);
     m_collisions.emplace_back(CollisionEntry{coll, isExtra});
     m_hasCollisions[static_cast<uint8_t>(coll->type())] = true;
-    return coll;
+    return *coll;
 }
 
 EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(const GasProperties& gasProps, GasMixture &composition, const StateEntry &entry)
@@ -869,14 +869,11 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 {
                     rhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
-                Collision *coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
+                Collision &coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
                                                reverseAlso, isExtra);
-                if (coll)
-                {
-                    const bool isElasticOrEffective =
-                        (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
-                    coll->crossSection.reset(new CrossSection(threshold, energyGrid, isElasticOrEffective, in));
-                }
+                const bool isElasticOrEffective =
+                    (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
+                coll.crossSection.reset(new CrossSection(threshold, energyGrid, isElasticOrEffective, in));
             }
             catch (std::exception &exc)
             {
@@ -940,13 +937,10 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const G
             const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
             const bool reverseAlso = rcnf.at("reversible");
 
-            Collision *coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
-            if (coll)
-            {
-                const bool isElasticOrEffective =
-                    (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
-                coll->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
-            }
+            Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
+            const bool isElasticOrEffective =
+                (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
+            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
         }
         catch (std::exception &exc)
         {
