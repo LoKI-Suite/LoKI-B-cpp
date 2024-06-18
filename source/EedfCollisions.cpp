@@ -201,8 +201,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 
             if (grid->getNode(i + 1) + threshold < grid->getCell(grid->nCells() - 1))
             {
-                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
-                        grid->getCell(i), i, true, 1.0);
+                const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(i), i, true, 1.0);
 
                 for (int k = 0; k < int(alpha.size()); k++)
                 {
@@ -235,8 +234,7 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
             {
                 if (grid->getNode(i) > threshold)
                 {
-                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
-                            grid->getCell(i), i, false, 1.0);
+                    const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(i), i, false, 1.0);
                     
                     for (int k = 0; k < int(alpha.size()); k++)
                     {
@@ -335,8 +333,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 {
                     if (grid->getNode(k+1) + threshold < grid->getCell(grid->nCells() - 1))
                     {
-                        std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(*grid, threshold,
-                                grid->getCell(k), k, true, 1.0);
+                        const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(k), k, true, 1.0);
 
                         for (int i = 0; i < int(alpha.size()); i++)
                         {
@@ -347,7 +344,7 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
                     sum -= grid->getCell(k) * cellCrossSection(k) * eedf[k] * grid->duCell(k) * grid->getCell(k);
 
-                    std::vector<std::tuple<int, double>> alpha = oneTakesAllDistribution(*grid, k);
+                    const auto alpha = oneTakesAllDistribution(*grid, k);
 
                     for (int i = 0; i < int(alpha.size()); i++)
                     {
