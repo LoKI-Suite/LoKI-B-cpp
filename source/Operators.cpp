@@ -1,5 +1,6 @@
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
 
 #include <cassert>
 
@@ -352,6 +353,23 @@ std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, 
     return alpha;
 }
 
+Grid::Index getLowerBound(const Grid& grid, double energy) {
+    assert(energy > 0);
+
+    for (Grid::Index i = 1; i < grid.nCells() + 1; ++i) {
+        if (grid.getNode(i) > energy) return i - 1;
+    }
+
+    Log<Message>::Error("Cannot find lower bound, as ", energy, " is higher than the maximum node energy ", grid.getNode(grid.nCells()));
+}
+
+Grid::Index getUpperBound(const Grid& grid, double energy) {
+    for (Grid::Index i = grid.nCells() - 1; i >= 0; --i) {
+        if (grid.getNode(i) < energy) return i + 1;
+    }
+
+    Log<Message>::Error("Cannot find upper bound, as ", energy, " is lower than the minimum node energy ", grid.getNode(0));
+}
 
 
 std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, Grid::Index sourceidx, 
@@ -363,13 +381,17 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
     if (reverse)
     {
         targetCell = frac * source + threshold;
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) + threshold) - 
-            grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) + threshold) -
-            grid.getNodes().begin() - 1;
+        targetBegin = getLowerBound(grid, grid.getNode(sourceidx) + threshold);
+        targetEnd = getUpperBound(grid, grid.getNode(sourceidx + 1) + threshold);
+        // targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) + threshold) - 
+        //     grid.getNodes().begin() - 1;
+        // targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) + threshold) -
+        //     grid.getNodes().begin() - 1;
     } else
     {
         targetCell = frac * source - threshold;
+        targetBegin = getLowerBound(grid, grid.getNode(sourceidx) - threshold);
+        targetEnd = getUpperBound(grid, grid.getNode(sourceidx + 1) - threshold);
         targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) - threshold) - 
             grid.getNodes().begin() - 1;
         targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) - threshold) -
