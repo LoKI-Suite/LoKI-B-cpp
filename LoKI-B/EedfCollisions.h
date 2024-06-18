@@ -199,18 +199,14 @@ public:
      *  matrix contributions, zero-valued terms may be added (if only *extra* collisions
      *  of that type were loaded).
      *  \todo Should hasCollisions be recalculated when uMax() is changed?
-     *  (smartGrid)? In that case process types may coma and go if they
+     *  (smartGrid)? In that case process types may come and go if they
      *  have threshold above uMax().
      */
     bool hasCollisions(CollisionType type) const { return m_hasCollisions[static_cast<uint8_t>(type)]; }
     /// \todo make private, provide const accessors?
     std::vector<RateCoefficient> m_rateCoefficients;
     std::vector<RateCoefficient> m_rateCoefficientsExtra;
-    /** \bug This ADDS rate coefficients to the previously calulated ones in
-     *       rateCoefficients and rateCoefficientsExtra. Every time a case is run,
-     *       the list grows. This is obviously wrong, but before changing this, let's
-     *       see what the MATLAB version of LoKI-B does exactly.
-     *  \todo Should processes with a too-high threshold be skipped, as is done now?
+    /** \todo Should processes with a too-high threshold be skipped, as is done now?
      *        This may result in tables with different sizes when multiple cases are run.
      *        It may be better to just produce zero-values entries in such case.
      *  \todo Also the rate coefficient for the effective cross section is produced.
