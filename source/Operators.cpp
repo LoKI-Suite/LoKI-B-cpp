@@ -376,10 +376,10 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
     }
 
     std::vector<std::tuple<int, double>> alpha;
-    if (targetBegin == targetEnd)
+    if (targetEnd - targetBegin == 1)
     {
         alpha = distributeOneCell(grid, targetCell, targetBegin);
-    } else if (targetEnd - targetBegin == 1)
+    } else if (targetEnd - targetBegin == 2)
     {
         alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
     } else
@@ -432,10 +432,10 @@ std::vector<std::tuple<int, double>> oneTakesAllDistribution(const Grid& grid, i
     }
 
     std::vector<std::tuple<int, double>> alpha;
-    if (targetBegin == targetEnd)
+    if (targetEnd - targetBegin == 1)
     {
         alpha = distributeOneCell(grid, targetCell, targetBegin);
-    } else if (targetEnd - targetBegin == 1)
+    } else if (targetEnd - targetBegin == 2)
     {
         alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
     } else
