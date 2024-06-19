@@ -29,4 +29,66 @@
 
 #include "LoKI-B/Power.h"
 
-/// \todo This file is empty at present. Remove?
+namespace loki
+{
+
+PowerTerm::PowerTerm()
+: forward{0.0}, backward{0.0}
+{
+}
+
+PowerTerm& PowerTerm::operator+=(const PowerTerm& term)
+{
+    forward += term.forward;
+    backward += term.backward;
+    return *this;
+}
+
+GasPower::GasPower()
+{
+}
+
+GasPower& GasPower::operator+=(const GasPower& term)
+{
+    excitation += term.excitation;
+    vibrational += term.vibrational;
+    rotational += term.rotational;
+    ionization += term.ionization;
+    attachment += term.attachment;
+    return *this;
+}
+
+Power::Power()
+{
+    clear();
+}
+
+void Power::clear()
+{
+    field = 0.0;
+    elasticNet = 0.0;
+    elasticGain = 0.0;
+    elasticLoss = 0.0;
+    carNet = 0.0;
+    carGain = 0.0;
+    carLoss = 0.0;
+
+    inelastic = 0.0;
+    superelastic = 0.0;
+    eDensGrowth = 0.0;
+    electronElectronNet = 0.0;
+    electronElectronGain = 0.0;
+    electronElectronLoss = 0.0;
+    balance = 0.0;
+    relativeBalance = 0.0;
+    reference = 0.0;
+}
+
+Power& Power::operator+=(const GasPower &gasPower)
+{
+    // invoke += on our base class
+    GasPower::operator+=(gasPower);
+    return *this;
+}
+
+} // namespace loki
