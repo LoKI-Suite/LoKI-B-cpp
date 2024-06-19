@@ -30,6 +30,9 @@ target_link_libraries(compare_tables PRIVATE loki-b)
 add_executable(loki_test_derivatives test_derivatives.cpp)
 target_link_libraries(loki_test_derivatives PRIVATE loki-b)
 
+add_executable(loki_test_eedf_utilities test_eedf_utilities.cpp)
+target_link_libraries(loki_test_eedf_utilities PRIVATE loki-b)
+
 add_executable(loki_test_gas_properties test_gas_properties.cpp)
 target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
 
@@ -101,6 +104,7 @@ target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki-b)
 
 target_add_test(loki_test_offside_to_json)
 target_add_test(loki_test_derivatives)
+target_add_test(loki_test_eedf_utilities)
 target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
