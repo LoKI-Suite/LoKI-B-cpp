@@ -323,9 +323,9 @@ std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, 
     if (reverse)
     {
         targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) + threshold) / 2.;
-        targetMiddleRight = (grid.getNode(targetEnd) + frac * grid.getNode(origin + 1) + threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd - 1) + frac * grid.getNode(origin + 1) + threshold) / 2.;
         fractionLeft = (grid.getNode(targetBegin + 1) - (frac * grid.getNode(origin) + threshold)) / grid.duCell(origin);
-        fractionRight = (frac * grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+        fractionRight = (frac * grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd - 1)) / grid.duCell(origin);
     } else
     {
         targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) - threshold) / 2.;
@@ -334,21 +334,22 @@ std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, 
         fractionRight = (frac * grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
     }
 
-    double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
-    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd)) / 2.;
+    double alphaMiddle = (grid.getNode(targetEnd - 1) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd - 1)) / 2.;
 
     const auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(targetBegin), targetMiddleCenter, fractionLeft);
     alphaMiddle += alphaMin[1];
-    const auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd), fractionRight);
+    const auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd - 1), fractionRight);
     alphaMiddle += alphaPlus[0];
 
     std::vector<std::tuple<Grid::Index, double>> alpha;
     alpha.push_back(std::make_tuple(targetBegin, alphaMin[0]));
-    for (Grid::Index i = targetBegin + 1; i < targetEnd; i++)
+    for (Grid::Index i = targetBegin + 1; i < targetEnd - 1; i++)
     {
-        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) * alphaMiddle));
+        // TODO: This is the same as `grid.duCell(i) / grid.duCell(origin)`?
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd - 1) - grid.getNode(targetBegin + 1)) * alphaMiddle));
     }
-    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
+    alpha.push_back(std::make_tuple(targetEnd - 1, alphaPlus[1]));
 
     return alpha;
 }
