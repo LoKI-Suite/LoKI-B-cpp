@@ -393,10 +393,10 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
         targetCell = frac * source - threshold;
         targetBegin = getLowerBound(grid, grid.getNode(sourceidx) - threshold);
         targetEnd = getUpperBound(grid, grid.getNode(sourceidx + 1) - threshold);
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) - threshold) - 
-            grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) - threshold) -
-            grid.getNodes().begin() - 1;
+        // targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) - threshold) -
+        //     grid.getNodes().begin() - 1;
+        // targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) - threshold) -
+        //     grid.getNodes().begin() - 1;
     }
 
     std::vector<std::tuple<Grid::Index, double>> alpha;
