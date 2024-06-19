@@ -40,6 +40,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Power.h"
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <map>
@@ -64,7 +65,13 @@ public:
     PowerTerm evaluateConservativePower(const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
                                            const double OPBParameter) const;
-    /// \todo non-constant because ineRateCoeff, supRateCoeff are modified
+    /** Update ineRateCoeff and supRateCoeff, return a RateCoefficient object
+     *  that is formed by a pointer to this collision and the updated values
+     *  of ineRateCoeff and supRateCoeff.
+     *  If the threshold energy of the cross section exceeds the uMax of the
+     *  energy grid, the calculation is bypassed and both values are set to
+     *  0.0.
+     */
     RateCoefficient evaluateRateCoefficient(const Vector &eedf);
     std::string typeAsString() const;
     friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
@@ -72,8 +79,6 @@ public:
     double ineRateCoeff() const { return m_ineRateCoeff; }
     double supRateCoeff() const { return m_supRateCoeff; }
 private:
-    // The raw cross section data and threshold is stored in
-    // the CrossSection object
     const StateVector m_lhsHeavyStates;
     const CoeffVector m_lhsHeavyCoeffs;
 public:
@@ -101,8 +106,6 @@ public:
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
     ~EedfCollisionDataGas() = default;
 
-    // We need to store the collisions per Gas since we need to calculate
-    // the mass ratio when evaluating the total and elastic cross-sections.
     const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
@@ -139,9 +142,6 @@ private:
     double m_OPBParameter;
 };
 
-/** \todo See if we can somehow separate settings (fixed) and mutable
- *  output data in this class (and its members).
- */
 class EedfCollisionDataMixture
 {
 public:
@@ -183,25 +183,20 @@ public:
      *  combination of equations 12 and equation 6b of \cite Tejero2019
      *  and the definitions just below 6d in that paper. It appears that
      *  the exact expressions implemented in this function are not
-     *  explicitly stated in the text. Not a problem per se, but we should
-     *  make sure to compensate for that by having detailed documentation here.
+     *  explicitly stated in the text.
      */
     void evaluateTotalAndElasticCS(const Grid& grid);
-    /** \bug The semantics of this member are not clear. Should this consider the 'extra'
+    /** \todo The semantics of this member are not clear. Should this consider the 'extra'
      *  collisions as well? At present, they are (in loadCollisions the true flag is set
      *  when a collision of a type is created). At the same time, hasCollisions is used
      *  in ElectronKinetics.cpp to decide whether to add particular terms to the Boltzmann
      *  matrix. If, subsequently, the collsions(that_type) vector is used to populate those
      *  matrix contributions, zero-valued terms may be added (if only *extra* collisions
      *  of that type were loaded).
-     *  \todo Should hasCollisions be recalculated when uMax() is changed?
-     *  (smartGrid)? In that case process types may come and go if they
-     *  have threshold above uMax().
      */
     bool hasCollisions(CollisionType type) const { return m_hasCollisions[static_cast<uint8_t>(type)]; }
-    /// \todo make private, provide const accessors?
-    std::vector<RateCoefficient> m_rateCoefficients;
-    std::vector<RateCoefficient> m_rateCoefficientsExtra;
+    const std::vector<RateCoefficient>& rateCoefficients() const { return m_rateCoefficients; }
+    const std::vector<RateCoefficient>& rateCoefficientsExtra() const { return m_rateCoefficientsExtra; }
     /** \todo Should processes with a too-high threshold be skipped, as is done now?
      *        This may result in tables with different sizes when multiple cases are run.
      *        It may be better to just produce zero-values entries in such case.
@@ -234,10 +229,12 @@ private:
     std::vector<CollisionEntry> m_collisions;
     EedfCollisionDataGasArray m_data_per_gas;
     /// \todo This only initializes the first element of m_hasCollisions to false?
-    bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
+    std::array<bool,static_cast<uint8_t>(CollisionType::size)> m_hasCollisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
     Vector m_totalCellCrossSection;
+    std::vector<RateCoefficient> m_rateCoefficients;
+    std::vector<RateCoefficient> m_rateCoefficientsExtra;
 };
 
 } // namespace loki

@@ -72,7 +72,9 @@ EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, c
       m_lhsHeavyStates(remove_electron_entries(lhsStates, lhsStates)),
       m_lhsHeavyCoeffs(remove_electron_entries(lhsStates, lhsCoeffs)),
       m_rhsHeavyStates(remove_electron_entries(rhsStates, rhsStates)),
-      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates, rhsCoeffs)), m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
+      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates, rhsCoeffs)),
+      m_ineRateCoeff{0.0},
+      m_supRateCoeff{0.0}
 {
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
@@ -323,6 +325,8 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const Grid *grid = crossSection->getGrid();
     if (crossSection->threshold() > grid->uMax())
     {
+        m_ineRateCoeff = 0.0;
+        m_supRateCoeff = 0.0;
         return {this, 0.0, 0.0};
     }
 
@@ -378,6 +382,10 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
                      grid->getCells().tail(nCells - lmin).dot(eedf.head(nCells - lmin)); 
         }
         
+    }
+    else
+    {
+        m_supRateCoeff = 0.0;
     }
 
     return {this, m_ineRateCoeff, m_supRateCoeff};
@@ -734,6 +742,7 @@ PowerTerm EedfCollisionDataGas::evaluateNonConservativePower(const CollisionVect
 
 EedfCollisionDataMixture::EedfCollisionDataMixture()
 {
+    m_hasCollisions.fill(false);
 }
 
 EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
