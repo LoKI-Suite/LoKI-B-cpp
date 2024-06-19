@@ -415,8 +415,8 @@ std::string EedfCollision::typeAsString() const
 }
 
 EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const Gas &gas)
-    : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
-      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
+    : m_gas(gas), m_collisions(to_underlying(CollisionType::size)),
+      m_collisionsExtra(to_underlying(CollisionType::size)),
       m_OPBParameter(gasProps.get("OPBParameter",gas.name(),-1.0,true))
 {
     if (m_OPBParameter>0)
@@ -432,12 +432,12 @@ void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
     if (isExtra)
     {
         m_state_collisionsExtra[target].emplace_back(collision);
-        m_collisionsExtra[static_cast<uint8_t>(collision->type())].emplace_back(collision);
+        m_collisionsExtra[to_underlying(collision->type())].emplace_back(collision);
     }
     else
     {
         m_state_collisions[target].emplace_back(collision);
-        m_collisions[static_cast<uint8_t>(collision->type())].emplace_back(collision);
+        m_collisions[to_underlying(collision->type())].emplace_back(collision);
     }
 }
 
@@ -779,7 +779,7 @@ EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const 
     //    by its member getTarget().
     get_data_for(coll->getTarget()->gas()).addCollision(coll, isExtra);
     m_collisions.emplace_back(CollisionEntry{coll, isExtra});
-    m_hasCollisions[static_cast<uint8_t>(coll->type())] = true;
+    m_hasCollisions[to_underlying(coll->type())] = true;
     return *coll;
 }
 

@@ -106,7 +106,7 @@ public:
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
     ~EedfCollisionDataGas() = default;
 
-    const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
+    const CollisionVector& collisions(CollisionType type) const { return m_collisions[to_underlying(type)]; }
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
     void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
@@ -194,7 +194,7 @@ public:
      *  matrix contributions, zero-valued terms may be added (if only *extra* collisions
      *  of that type were loaded).
      */
-    bool hasCollisions(CollisionType type) const { return m_hasCollisions[static_cast<uint8_t>(type)]; }
+    bool hasCollisions(CollisionType type) const { return m_hasCollisions[to_underlying(type)]; }
     const std::vector<RateCoefficient>& rateCoefficients() const { return m_rateCoefficients; }
     const std::vector<RateCoefficient>& rateCoefficientsExtra() const { return m_rateCoefficientsExtra; }
     /** \todo Should processes with a too-high threshold be skipped, as is done now?
@@ -229,7 +229,7 @@ private:
     std::vector<CollisionEntry> m_collisions;
     EedfCollisionDataGasArray m_data_per_gas;
     /// \todo This only initializes the first element of m_hasCollisions to false?
-    std::array<bool,static_cast<uint8_t>(CollisionType::size)> m_hasCollisions;
+    std::array<bool,to_underlying(CollisionType::size)> m_hasCollisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
     Vector m_totalCellCrossSection;
