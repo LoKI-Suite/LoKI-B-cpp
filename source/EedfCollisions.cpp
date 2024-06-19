@@ -176,10 +176,10 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
     int lmin;
     if (grid->isUniform())
     {
-        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+        lmin = static_cast<uint32_t>(threshold / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()) - 1;
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), threshold) - grid->getNodes().begin()) - 1;
     }
 
     double ineSum = 0;
@@ -199,9 +199,9 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         {
             ineSum -= eedf[i] * grid->getCell(i) * cellCrossSection[i] * grid->duCell(i) * grid->getCell(i);
 
-            if (grid->getNode(i + 1) + threshold < grid->getCell(grid->nCells() - 1))
+            if (grid->getNode(i + 1) + grid->getNode(lmin) < grid->getCell(grid->nCells() - 1))
             {
-                const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(i), i, true, 1.0);
+                const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin), grid->getCell(i), i, true, 1.0);
 
                 for (int k = 0; k < int(alpha.size()); k++)
                 {
