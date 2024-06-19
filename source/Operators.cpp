@@ -529,9 +529,9 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                         for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
-                            if (grid.getNode(k+1) + threshold < grid.getCell(grid.nCells() - 1))\
+                            if (grid.getNode(k+1) + grid.getNode(numThreshold) < grid.getCell(grid.nCells() - 1))
                             {
-                                const auto alpha = getOperatorDistribution(grid, threshold, grid.getCell(k), k, true, 1.0);
+                                const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
 
                                 for (int i = 0; i < int(alpha.size()); i++)
                                 {
