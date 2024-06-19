@@ -519,7 +519,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             if (k < cellNumber - numThreshold)
                                 inelasticMatrix(k, k + numThreshold) +=
-                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
                             /** \todo Clarify. See the comments on the (conserving) attachment operator.
                              */
@@ -536,7 +536,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                 for (int i = 0; i < int(alpha.size()); i++)
                                 {
                                      inelasticMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
-                                        targetDensity * grid.getCells()[std::get<0>(alpha[i])] * cellCrossSection[std::get<0>(alpha[i])];
+                                        targetDensity * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
                                 }
                             }
                             inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
