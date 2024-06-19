@@ -41,8 +41,6 @@
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/Operators.h"
 
-// TODO: comment ElectronKinetics class
-
 namespace loki
 {
 
