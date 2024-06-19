@@ -187,12 +187,15 @@ public:
      */
     void evaluateTotalAndElasticCS(const Grid& grid);
     /** \todo The semantics of this member are not clear. Should this consider the 'extra'
-     *  collisions as well? At present, they are (in loadCollisions the true flag is set
-     *  when a collision of a type is created). At the same time, hasCollisions is used
-     *  in ElectronKinetics.cpp to decide whether to add particular terms to the Boltzmann
-     *  matrix. If, subsequently, the collsions(that_type) vector is used to populate those
-     *  matrix contributions, zero-valued terms may be added (if only *extra* collisions
-     *  of that type were loaded).
+     *  collisions as well? At present, it does (in loadCollisions the true flag is set
+     *  when a collision of a type is created).
+     *  But hasCollisions is only used in ElectronKinetics.cpp to decide whether to add
+     *  particular terms to the Boltzmann matrix. But the evaluate members of the operators
+     *  do not consider the extra collisions. This means that zero-valued terms will be
+     *  added if only *extra* collisions of a type are loaded.
+     *  Let's see if this can be made a bit more clear. It is probably better to let
+     *  hasCollisions only consider the non-extra collisions. The extra collisions then
+     *  affect only the workings of evaluateRateCoefficients.
      */
     bool hasCollisions(CollisionType type) const { return m_hasCollisions[to_underlying(type)]; }
     const std::vector<RateCoefficient>& rateCoefficients() const { return m_rateCoefficients; }
@@ -228,7 +231,6 @@ private:
     };
     std::vector<CollisionEntry> m_collisions;
     EedfCollisionDataGasArray m_data_per_gas;
-    /// \todo This only initializes the first element of m_hasCollisions to false?
     std::array<bool,to_underlying(CollisionType::size)> m_hasCollisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
