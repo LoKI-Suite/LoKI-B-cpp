@@ -146,7 +146,7 @@ void FileOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 
 void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/swarm_parameters.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/swarmParameters.txt");
     writeTerm(os, "Reduced electric field", "Td", m_workingConditions->reducedField());
     writeTerm(os, "Reduced diffusion coefficient", "1/(ms)", swarmParameters.redDiffCoeff);
     writeTerm(os, "Reduced mobility coefficient", "1/(msV)", swarmParameters.redMobCoeff);
@@ -170,7 +170,7 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 
 void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture &collData) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/power_balance.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/powerBalance.txt");
     writeTerm(os, "Field", "eVm3/s", power.field);
     writeTerm(os, "Elastic collisions (gain)", "eVm3/s", power.elasticGain);
     writeTerm(os, "Elastic collisions (loss)", "eVm3/s", power.elasticLoss);
@@ -250,7 +250,7 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture &
 void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                        const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/rate_coefficients.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/rateCoefficients.txt");
     os << "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description" << std::endl;
     for (const auto &rateCoeff : rateCoefficients)
     {
@@ -353,7 +353,7 @@ void FileOutput::writeLookuptable(const Power &power,
     rc_lut << std::endl;
 
 
-    std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    std::ofstream os(m_folder + "/lookUpTableSwarm.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     if (isBoltzmann())
     {
         if (m_initTable)
