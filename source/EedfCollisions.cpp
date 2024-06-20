@@ -331,9 +331,9 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
             {
                 for (uint32_t k = 0; k < n; ++k)
                 {
-                    if (grid->getNode(k+1) + threshold < grid->getCell(grid->nCells() - 1))
+                    if (grid->getNode(k+1) + grid->getNode(lmin) < grid->getCell(grid->nCells() - 1))
                     {
-                        const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(k), k, true, 1.0);
+                        const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin), grid->getCell(k), k, true, 1.0);
 
                         for (int i = 0; i < int(alpha.size()); i++)
                         {
