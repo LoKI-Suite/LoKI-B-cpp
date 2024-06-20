@@ -816,4 +816,227 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                               power.relativeBalance * 100});
 }
 
+#ifdef LOKIB_USE_HIGHFIVE
+
+HDF5Output::HDF5Output(const std::filesystem::path& fileName, const json_type &cnf, const WorkingConditions *workingConditions)
+ : Output(cnf,workingConditions),
+   m_file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate),
+   m_active_path("/")
+{
+#if 0
+
+    /// \todo copy the settings into the HDF5 file, somewhere
+    m_root["setup"] = cnf;
+#endif
+}
+
+void HDF5Output::setDestination(const std::string& subFolder)
+{
+    /// \todo See how to set the destination of data in HDF5
+    m_active_path = "/" + subFolder;
+}
+
+#if 0
+/// \todo See if we need s function similar to this one.
+json_type HDF5Output::makeQuantity(const std::string& name, double value, const std::string unit)
+{
+    return { { name, { { "value", value }, { "unit", unit } } } };
+}
+#endif
+
+void HDF5Output::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
+{
+#if 0
+    json_type& out = (*m_active)["eedf"];
+    if (firstAnisotropy)
+    {
+        out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
+        out["units"] = { "eV", "eV^-(3/2)", "1"};
+    }
+    else
+    {
+        out["labels"] = { "Energy", "EEDF"};
+        out["units"] = { "eV", "eV^-(3/2)"};
+    }
+    json_type& data = out["data"];
+    for (Vector::Index i = 0; i < energies.size(); ++i)
+    {
+        if (firstAnisotropy)
+        {
+            data.push_back(json_type{energies[i], eedf[i], (*firstAnisotropy)[i]});
+        }
+        else
+        {
+            data.push_back(json_type{energies[i], eedf[i]});
+        }
+    }
+#endif
+    //Set compression level. 0 = no compression, 9 = max compression
+    //Compression significantly slows down writes, but results in smaller filesize
+    constexpr int compression_level = 0;
+
+    std::string path_energy = m_active_path + "/energy";
+    HighFive::DataSet ds_energy = H5Easy::dump(m_file,path_energy,energies,H5Easy::DumpOptions(H5Easy::Compression(compression_level)));
+    ds_energy.createAttribute("unit", "eV");
+    ds_energy.createAttribute("name", "energy");
+    ds_energy.createAttribute("size", energies.size());
+
+    std::string path_eedf = m_active_path + "/eedf";
+    HighFive::DataSet ds_eedf = H5Easy::dump(m_file,path_eedf,eedf,H5Easy::DumpOptions(H5Easy::Compression(compression_level)));
+    ds_eedf.createAttribute("unit", "eV^-(3/2)");
+    ds_eedf.createAttribute("name", "eedf");
+    ds_eedf.createAttribute("size", eedf.size());
+}
+
+void HDF5Output::writeSwarm(const SwarmParameters &swarmParameters) const
+{
+#if 0
+    json_type& out = (*m_active)["swarm_parameters"];
+    out.push_back( makeQuantity("Reduced electric field", m_workingConditions->reducedField(), "Td") );
+    out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
+    out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
+    out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
+    out.push_back( makeQuantity("Reduced attachment coefficient", swarmParameters.redAttCoeff, "m^2") );
+    out.push_back( makeQuantity("Mean energy", swarmParameters.meanEnergy, "eV") );
+    out.push_back( makeQuantity("Characteristic energy", swarmParameters.characEnergy, "eV") );
+    out.push_back( makeQuantity("Electron temperature", swarmParameters.Te, "eV") );
+    out.push_back( makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s") );
+#endif
+}
+
+void HDF5Output::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
+{
+#if 0
+    json_type& out = (*m_active)["power_balance"];
+    out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
+    //out.push_back( { "Field", "eV*m^3/s", power.field });
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Ionization collisions", power.ionization.forward, "eV*m^3/s") ); // no recombination
+    out.push_back( makeQuantity("Attachment collisions", power.attachment.forward, "eV*m^3/s") ); // no detachment
+    out.push_back( makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Power Balance", power.balance, "eV*m^3/s") );
+    out.push_back( makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%") );
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("CAR (net)", power.carNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Excitation collisions (net)", power.excitation.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrational.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Rotational collisions (net)", power.rotational.net(), "eV*m^3/s") );
+
+    for (const auto &cd : collData.data_per_gas())
+    {
+        const GasPower &gasPower = cd.getPower();
+	json_type gas_out;
+        gas_out.push_back( { { "name", cd.gas().name() } } );
+        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionization.forward, "eV*m^3/s") ); // no recombination
+        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachment.forward, "eV*m^3/s") ); // no detachment
+
+        out.push_back( { "gas", gas_out } );
+    }
+#endif
+}
+
+void HDF5Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                   const std::vector<RateCoefficient> &extraRateCoefficients) const
+{
+#if 0
+    if (rateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : rateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+    /** \todo See if we can merge this or re-use code: the code block is identical
+     *        to that above, except for extraRateCoefficients instead of rateCoefficients.
+     */
+    if (extraRateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients_extra"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : extraRateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+#endif
+}
+
+void HDF5Output::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+{
+#if 0
+    json_type* out = m_root.contains("lookup_table")
+                ? &m_root["lookup_table"]
+                : nullptr;
+    if (!out)
+    {
+        // make the section, and set up the labels and units
+        out = &m_root["lookup_table"];
+        /// \todo It would be nice to be able to add the quantities and units as pairs.
+        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow" "RedAtt","MeanE", "CharE", "EleTemp",
+                      "DriftVelocity", "RelativePowerBalance" };
+        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2" "m^2", "eV", "eV", "eV", "m/s", "1" };
+    }
+    assert(out);
+
+    (*out)["data"].push_back( {
+            m_workingConditions->reducedField(),
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
+            power.relativeBalance * 100
+    } );
+#endif
+}
+
+#endif // LOKIB_USE_HIGHFIVE
+
 } // namespace loki

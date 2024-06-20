@@ -166,6 +166,15 @@ try
             output.emplace_back(
                 new loki::JsonOutput(*json_output_data, cnf, &simulation.workingConditions()));
         }
+#ifdef LOKIB_USE_HIGHFIVE
+        // Write HDF5 (to the console, at the end) only when asked for: when key 'writeHDF5' exists
+        // AND the value is true.
+        if (cnf.at("output").contains("writeHDF5")==true && cnf.at("output").at("writeHDF5"))
+        {
+            output.emplace_back(
+                new loki::HDF5Output(cnf.at("output").at("HDF5File"), cnf, &simulation.m_workingConditions));
+        }
+#endif // LOKIB_USE_HIGHFIVE
     }
     // register all output producers with the simulation's obtainedResults event
     for (const auto& out : output)
