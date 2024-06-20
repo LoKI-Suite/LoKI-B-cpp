@@ -348,8 +348,8 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
                     for (int i = 0; i < int(alpha.size()); i++)
                     {
-                        sum += std::get<1>(alpha[i]) * grid->getCell(std::get<0>(alpha[i])) * cellCrossSection(std::get<0>(alpha[i])) * 
-                                 eedf[std::get<0>(alpha[i])] * grid->duCell(k) * grid->getCell(k);
+                        sum += std::get<1>(alpha[i]) * grid->getCell(k) * cellCrossSection(k) *
+                                 eedf[k] * grid->duCell(std::get<0>(alpha[i])) * grid->getCell(std::get<0>(alpha[i]));
                     }
                 }
                 collPower.forward = SI::gamma * getTarget()->delta() * sum;
