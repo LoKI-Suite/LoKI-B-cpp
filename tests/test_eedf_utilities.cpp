@@ -31,7 +31,7 @@ int main()
     const double TeV  = 1;  // eV
     const double uMax = 10; // eV
 
-    // emperical value for the given nCells.
+    // empirical value for the given nCells.
     const double tolerance = 1e-3;
 
     const Grid grid1(nCells, uMax);
