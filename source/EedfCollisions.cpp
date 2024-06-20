@@ -1029,10 +1029,6 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid.uMax())
-                {
-                    continue;
-                }
                 m_rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }
@@ -1040,10 +1036,6 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid.uMax())
-                {
-                    continue;
-                }
                 m_rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }

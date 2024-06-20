@@ -201,9 +201,9 @@ public:
     bool hasCollisions(CollisionType type) const { return m_hasCollisions[to_underlying(type)]; }
     const std::vector<RateCoefficient>& rateCoefficients() const { return m_rateCoefficients; }
     const std::vector<RateCoefficient>& rateCoefficientsExtra() const { return m_rateCoefficientsExtra; }
-    /** \todo Should processes with a too-high threshold be skipped, as is done now?
-     *        This may result in tables with different sizes when multiple cases are run.
-     *        It may be better to just produce zero-values entries in such case.
+    /** Evaluate all rate coefficients and store the results in members
+     *  m_rateCoefficients and m_rateCoefficientsExtra.
+     *
      *  \todo Also the rate coefficient for the effective cross section is produced.
      *        Is that a meaningful value?
      */
