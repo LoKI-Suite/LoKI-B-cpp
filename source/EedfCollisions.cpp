@@ -280,10 +280,10 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
     int lmin;
     if (grid->isUniform())
     {
-        lmin = static_cast<uint32_t>(crossSection->threshold() / grid->du());
+        lmin = static_cast<uint32_t>(threshold / grid->du());
     } else
     {
-        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), crossSection->threshold()) - grid->getNodes().begin()-1);
+        lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), threshold) - grid->getNodes().begin()-1);
     }
 
     if (type() == CollisionType::ionization)
