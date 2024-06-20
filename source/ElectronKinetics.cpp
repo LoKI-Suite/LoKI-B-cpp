@@ -606,55 +606,43 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             {
                 fieldMatrixSpatGrowth.coeffRef(k, k) = 0;
                 ionSpatialGrowthD.coeffRef(k, k) = 0;
-                ionSpatialGrowthU.coeffRef(k, k) = 0;
+                ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
 
 #define USE_D0_FOR_ionSpatialGrowthU 1
                 if (k > 0)
                 {
                     Amin = grid().duCell(k-1) / grid().duNode(k) / 2;
                     fieldMatrixSpatGrowth.coeffRef(k, k) += - g_fieldSpatialGrowth[k]*Amin/grid().duCell(k);
-                    ionSpatialGrowthD.coeffRef(k, k) += -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k] * Amin;
-                    ionSpatialGrowthU.coeffRef(k, k) += -1./2. * alphaRedEffNew * EoN* D0[k] / grid().duNode(k);
-
-
 
                     Bmin = grid().duCell(k) / grid().duNode(k) / 2;
                     fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k]*Bmin/ (grid().duCell(k));
-                    ionSpatialGrowthD.coeffRef(k, k - 1) = -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k] * Bmin;
+                    // ionSpatialGrowthD.coeffRef(k, k - 1) = -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k] * Bmin;
 #if USE_D0_FOR_ionSpatialGrowthU
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k]/ (2 * grid().duNode(k));
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (grid().duNode(k) + grid().duNode(k + 1));
 #else
                     ionSpatialGrowthU.coeffRef(k, k - 1) = alphaRedEffNew * U0inf[k - 1];
 #endif
                     boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixSpatGrowth.coeff(k, k - 1) +
-                                                                        ionSpatialGrowthU.coeff(k, k - 1) +
-                                                                        ionSpatialGrowthD.coeff(k, k - 1);
+                                                                        ionSpatialGrowthU.coeff(k, k - 1);
                 }
                 if (k < grid().nCells() - 1)
                 {
                     Bplus = grid().duCell(k+1) / grid().duNode(k+1) / 2;
                     fieldMatrixSpatGrowth.coeffRef(k, k) += g_fieldSpatialGrowth[k + 1]*Bplus/grid().duCell(k);
-                    ionSpatialGrowthD.coeffRef(k, k) +=  -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k + 1] * Bplus;
-                    ionSpatialGrowthU.coeffRef(k, k) -= -1./2. * alphaRedEffNew * EoN * D0[k + 1] / grid().duNode(k + 1);
-
-
-
 
                     Aplus = grid().duCell(k) / grid().duNode(k+1) / 2;
                     fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1]*Aplus / (grid().duCell(k));
-                    ionSpatialGrowthD.coeffRef(k, k + 1) = -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k + 1] * Aplus;
+                    // ionSpatialGrowthD.coeffRef(k, k + 1) = -1./2. * alphaRedEffNew * alphaRedEffNew * D0[k + 1] * Aplus;
 #if USE_D0_FOR_ionSpatialGrowthU
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2 * grid().duNode(k + 1));
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (grid().duNode(k) + grid().duNode(k + 1));
 #else
                     ionSpatialGrowthU.coeffRef(k, k + 1) = alphaRedEffNew * U0sup[k + 1];
 #endif
                     boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixSpatGrowth.coeff(k, k + 1) +
-                                                                        ionSpatialGrowthU.coeff(k, k + 1) +
-                                                                        ionSpatialGrowthD.coeff(k, k + 1);
+                                                                        ionSpatialGrowthU.coeff(k, k + 1);
                 }
                 boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixSpatGrowth.coeff(k, k) +
-                                                            ionSpatialGrowthD.coeff(k, k) +
-                                                            ionSpatialGrowthU.coeff(k, k);
+                                                            ionSpatialGrowthD.coeff(k, k);
             }
         }
         Vector eedfNew = eedf;
