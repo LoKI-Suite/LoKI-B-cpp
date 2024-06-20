@@ -172,7 +172,7 @@ try
         if (cnf.at("output").contains("writeHDF5")==true && cnf.at("output").at("writeHDF5"))
         {
             output.emplace_back(
-                new loki::HDF5Output(cnf.at("output").at("HDF5File"), cnf, &simulation.m_workingConditions));
+                new loki::HDF5Output(cnf.at("output").at("HDF5File"), cnf, &simulation.workingConditions()));
         }
 #endif // LOKIB_USE_HIGHFIVE
     }
