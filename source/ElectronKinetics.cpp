@@ -1215,9 +1215,18 @@ void ElectronKineticsBoltzmann::evaluatePower()
                     powerDiffusion += grid().getNode(k) * grid().getNode(k) * (eedf[k - 1] * grid().duCell(k) + eedf[k] * grid().duCell(k - 1)) / 2;
                 }
                 power.field += SI::gamma * correction;
-                power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma / 3. * powerDiffusion +
-                                    SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 3.) * 
-                                    (grid().getNode(0) * grid().getNode(0) * eedf[0] / cellCrossSection[0] + powerMobility);
+                // Vector gECell(g_fieldSpatialGrowth.size());
+                // interpolateNodalToCell(grid(), g_fieldSpatialGrowth, gECell);
+                // correction = -fgPrimeEnergyIntegral(grid(), grid().getCells(), gECell.cwiseProduct(eedf));
+                // power.field += SI::gamma * correction;
+
+                powerMobility = - fgPrimeEnergyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+                powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+                power.eDensGrowth = - alphaRedEff * SI::gamma / 3. * 
+                                    (powerMobility * m_workingConditions->reducedFieldSI() - powerDiffusion * alphaRedEff);
+                // power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma / 3. * powerDiffusion +
+                //                     SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 3.) * 
+                //                     (grid().getNode(0) * grid().getNode(0) * eedf[0] / cellCrossSection[0] + powerMobility);
             }
         }
     }
