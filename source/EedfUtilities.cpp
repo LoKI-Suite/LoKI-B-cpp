@@ -43,28 +43,27 @@ void normalizeEDF(Vector& edf, const Grid& grid)
     edf /= energyIntegral(grid,grid.getCells().cwiseSqrt(),edf);
 }
 
-void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV)
+void makePrescribedEDF(Vector& edf, const Grid& grid, double s, double T_eV, bool normalize)
 {
     edf.resize(grid.nCells());
-    const double gamma_3_2g = std::tgamma(3/(2*g));
-    const double gamma_5_2g = std::tgamma(5/(2*g));
-    /** \todo This follows the MATLAB code. But the prefactors can be removed,
-     *  since this is normalized afterwards anyway.
-     *  \todo The risk of underflows should be investigated. (And diagnosed?)
-     */
+    const double gamma_3_2s = std::tgamma(3/(2*s));
+    const double gamma_5_2s = std::tgamma(5/(2*s));
+    const double factor = s*std::pow(gamma_5_2s,1.5) * std::pow(gamma_3_2s,-2.5) * std::pow(2/(3*T_eV),1.5);
     for (Grid::Index k = 0; k != grid.nCells(); ++k)
     {
         const double energy = grid.getCell(k);
-        edf(k) = std::pow(gamma_5_2g,1.5) * std::pow(gamma_3_2g,-2.5) * std::pow(2/(3*T_eV),1.5)
-            *std::exp(-std::pow(energy*gamma_5_2g*2/(gamma_3_2g*3*T_eV),g));
+        edf(k) = factor * std::exp(-std::pow(energy*gamma_5_2s*2/(gamma_3_2s*3*T_eV),s));
     }
-    normalizeEDF(edf,grid);
+    if (normalize)
+    {
+        normalizeEDF(edf,grid);
+    }
 }
 
-Vector makePrescribedEDF(const Grid& grid, double g, double T_eV)
+Vector makePrescribedEDF(const Grid& grid, double s, double T_eV, bool normalize)
 {
     Vector edf(grid.nCells());
-    makePrescribedEDF(edf,grid,g,T_eV);
+    makePrescribedEDF(edf,grid,s,T_eV,normalize);
     return edf;
 }
 

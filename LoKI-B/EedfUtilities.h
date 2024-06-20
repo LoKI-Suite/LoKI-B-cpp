@@ -37,7 +37,7 @@ namespace loki {
 
 /** Calculate and return the mean energy in eV of particles that are distributed
  *  according an \a eedf that is defined on the cells of a \a grid. This is
- *  equal to \f$ \int_0^\infty u^{3/2}f(u)du \f$ and approximated by the sum 
+ *  equal to \f$ \int_0^\infty u^{3/2}f(u)du \f$ and approximated by the sum
  *  of \f$ u_i^(3/2)f(u_i)(\Delta u)_i \f$ over the cells i.
  */
 lokib_export double getMeanEnergy(const Vector& edf, const Grid& grid);
@@ -47,25 +47,34 @@ lokib_export double getMeanEnergy(const Vector& edf, const Grid& grid);
  */
 lokib_export void normalizeEDF(Vector& edf, const Grid& grid);
 
-/** Sample the prescribed EDF with shape factor \a g and temperature T_eV (in eV)
- *  on the cells of the provided \a grid and write the results in \a edf. Before
- *  returning, the resulting EDF is normalized by calling normalizeEDF(edf,grid).
+/** Sample the prescribed EDF with shape factor \a s and temperature T_eV (in
+ *  eV) on the cells of the provided \a grid and write the results in \a edf.
+ *  See \cite Nam2008 (eq. 3) for the version implemented here. This function
+ *  also appears in the earlier work of \cite Amemiya1997 (eq. 13), in a
+ *  slightly different form.
  *
  *  The vector \a edf is resized to the number of grid cells by this function.
+ *  If \a normalize is true (the default), the resulting EDF is normalized by
+ *  calling normalizeEDF(edf,grid). Note that the sampled values of the EEDF
+ *  will deviate from the analytical EEDF function by a constant factor when
+ *  normalization is enabled, whereas the computed approximation of the integral
+ *  of \f$ \sqrt{u}f(u) \f$ over the grid's energy range will be unity.
  *
- *  \note For g=1, a Maxwell EDF is obtained, for, g=2 a Druyvesteyn EDF.
+ *  \note For s=1 a Maxwell EDF is obtained, for s=2 a Druyvesteyn EDF.
  *  \note The mean energy of the resulting edf will not be exactly equal to
  *        (3/2)*T_eV because of discretisation errors. The normalization fixes
  *        the integral chance of finding a particle (==1), not the mean energy
  *        of the distribution.
+ *
+ *  \todo The risk of underflows should be investigated. (And diagnosed?)
  */
-lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV);
+lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV, bool normalize=true);
 
 /** See the overload of this function that accepts an edf parameter. The present
  *  function creates an edf vector, calls that overload to set the values and
  *  returns the result.
  */
-lokib_export Vector makePrescribedEDF(const Grid& grid, double g, double T_eV);
+lokib_export Vector makePrescribedEDF(const Grid& grid, double g, double T_eV, bool normalize=true);
 
 } // namespace loki
 
