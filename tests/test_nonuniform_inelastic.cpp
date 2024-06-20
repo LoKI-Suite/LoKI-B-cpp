@@ -449,8 +449,6 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     return j;
 }
 
-#include <cstdlib>
-
 int main()
 {
     using namespace loki;
@@ -458,17 +456,17 @@ int main()
     {
         auto i = singleDeltaPeak(nTot, fraction);
         std::unique_ptr<loki::Simulation> simulationSingle(new loki::Simulation("", i));
-        simulationSingle->m_obtainedResults.addListener(checkSinglePeak);
+        simulationSingle->obtainedResults().addListener(checkSinglePeak);
         simulationSingle->run();
 
         auto j = twoSingleDeltaPeaks(nTot, fraction);
         std::unique_ptr<loki::Simulation> simulationTwoSingle(new loki::Simulation("", j));
-        simulationTwoSingle->m_obtainedResults.addListener(checkTwoSinglePeak);
+        simulationTwoSingle->obtainedResults().addListener(checkTwoSinglePeak);
         simulationTwoSingle->run();
 
         auto m = doubleDeltaPeaks(nTot, fraction);
         // std::unique_ptr<loki::Simulation> simulationDouble(new loki::Simulation(m));
-        // simulationDouble->m_obtainedResults.addListener(checkDoublePeak);
+        // simulationDouble->obtainedResults().addListener(checkDoublePeak);
         // simulationDouble->run();
     }
     catch (const std::exception &exc)

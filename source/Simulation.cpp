@@ -50,7 +50,7 @@ Simulation::Simulation(const std::filesystem::path &basePath,const json_type &cn
                 m_electronKinetics = std::make_unique<ElectronKineticsPrescribed>(basePath, cnf.at("electronKinetics"), &m_workingConditions);
             break;
         }
-        m_electronKinetics->obtainedNewEedf.addListener(&ResultEvent::emit, &m_obtainedResults);
+        m_electronKinetics->obtainedNewEedf.addListener(&ElectronKinetics::ResultEvent::emit, &m_obtainedResults);
     }
     Log<Message>::Notify("Simulation has been set up", ", number of parameters = ", m_jobManager.dimension(),
                          ", number of jobs = ", m_jobManager.njobs());
@@ -67,10 +67,6 @@ void Simulation::run()
             m_electronKinetics->solve();
         } while (m_jobManager.prepareNextJob());
     }
-}
-
-Simulation::~Simulation()
-{
 }
 
 void Simulation::initializeJobs(const json_type &cnf, bool useReducedFieldParameter)

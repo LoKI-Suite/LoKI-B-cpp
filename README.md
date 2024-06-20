@@ -25,7 +25,7 @@ A Clang format style file is present at the root of this repository (`.clang-for
 
 ### Linux
 1. run: `cmake -DCMAKE_BUILD_TYPE=Release -D<BACKEND_FLAG>=ON ..`
-    - where `<BACKEND_FLAG>=USE_MKL/USE_OPENBLAS`, specifying the backend to supply to Eigen
+    - where `<BACKEND_FLAG>=LOKIB_USE_MKL/LOKIB_USE_OPENBLAS`, specifying the backend to supply to Eigen
     - this flag can also be omitted to build with pure Eigen
     - LoKI-B assumes that Eigen is available in the directory /usr/include/eigen3. To specify
       another path, run cmake with an additional option like -DEIGEN_PATH=/opt/include/eigen3
@@ -61,10 +61,21 @@ A Clang format style file is present at the root of this repository (`.clang-for
    ```bash
    nix shell github:loki-suite/loki-b
    ```
+
+   Additionally, the web version (using WebAssembly) can be built using the
+   `loki-web` package.
+   ```bash
+   nix build github:loki-suite/loki-b#loki-web
+   ```
+
+   To serve the pages you can then e.g. use the python http server.
+   ```bash
+   python -m http.server -d result/share/loki-web
+   ```
     
 ### Windows
 1. run: `cmake -D<BACKEND_FLAG>=ON ..`
-    - where `<BACKEND_FLAG>=USE_MKL/USE_OPENBLAS`, specifying the backend to supply to Eigen
+    - where `<BACKEND_FLAG>=LOKIB_USE_MKL/LOKIB_USE_OPENBLAS`, specifying the backend to supply to Eigen
     - this flag can also be omitted to build with pure Eigen
 1. run: `cmake --build . --config Release -j <NUM_JOBS>`
     - where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when compiling; just use the number of physical cores in your system. Omit this flag to use the default settings.

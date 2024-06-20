@@ -1,5 +1,34 @@
-#ifndef LOKI_CPP_GASMIXTUREBASE_H
-#define LOKI_CPP_GASMIXTUREBASE_H
+/** \file
+ *
+ *  Declaration of the GasMixture class.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Daan Boer and Jan van Dijk (C++ version)
+ *  \date   May 2019
+ */
+
+#ifndef LOKI_CPP_GASMIXTURE_H
+#define LOKI_CPP_GASMIXTURE_H
 
 #include "LoKI-B/Exports.h"
 #include "LoKI-B/Gas.h"
@@ -87,22 +116,24 @@ class lokib_export GasMixture
     /** propEntry should be an object that can contain:
      *  \verbatim
            {
-             "states": <stateID>,
-             "value": <value>
+             "<stateID>": {
+               "type": "constant",
+               "value": <value>
+             }
            } \endverbatim
 
      *  or
      *  \verbatim
            {
-             "states": <stateID>,
-             "function":
-             {
+             "<stateID>": {
+               "type": "function",
                "name": <funcname>,
-               "arguments": <arguments>
+               "arguments": [ <arguments> ]
              }
            } \endverbatim
      *     "<arguments>" is an array. Each argument is either a parameter name
-     *     (a string) or a direct value (a double).
+     *     (a string) or a direct value (a double). It can be empty or be
+     *     emitted entirely is the function has no arguments.
      *
      *  First it determines whether the current entry requires loading by direct value,
      *  file or function, then it acts accordingly. The property that needs to be set
@@ -110,17 +141,17 @@ class lokib_export GasMixture
      *  to the WorkingConditions structure to access the argument map (which maps its
      *  member variables to names by which they are addressed in the input files).
      */
-    void loadStatePropertyEntry(const json_type& propEntry,
+    void loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                            StatePropertyType propertyType, const WorkingConditions *workingConditions);
     /** Sets a property (energy, statistical weight, population) of selected states
      *  as specified in json array \a stateProp. The  members of this array must be
-     *  objects of the form "{ "file": <filename> }", or of the form that is expected
-     *  for the propEntry argument of member \c loadStatePropertyEntry.
+     *  objects of the form "{ "files": [ <filenames>] }", or of the form that is
+     *  expected for the propEntry argument of member \c loadStatePropertyEntry.
      *
-     *  If a file specification is found, a JSON object with the same structure
-     *  as argument \a stateProp is created, and loadStateProperty is called
-     *  recursively with that JSON object as argument (as if that file were
-     *  included in the place of the { "file: <filename> } object). If the
+     *  If files specification is found, a JSON object with the same structure
+     *  as argument \a stateProp is created for each file, and loadStateProperty
+     *  is called recursively with that JSON object as argument (as if that file
+     *  were included in the place of the { "files: <filenames> } member). If the
      *  filename has extension ".json", it will be used as is. For other files
      *  the JSON object is created via a call to to readLegacyStatePropertyFile,
      *  which converts the legacy LoKI-B "*.in" file format to JSON.
@@ -150,4 +181,4 @@ class lokib_export GasMixture
 
 } // namespace loki
 
-#endif // LOKI_CPP_GASMIXTUREBASE_H
+#endif // LOKI_CPP_GASMIXTURE_H

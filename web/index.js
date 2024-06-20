@@ -3,11 +3,14 @@ import { handleJsonOutput } from "./json_output.js";
 
 export let module;
 let file = "";
+let token = "";
 let global_input = {};
 let results = {};
+let totalData = [];
 
 const file_input = document.getElementById("file-input");
 const run_button = document.getElementById("run-button");
+const token_input = document.getElementById("token-input");
 const dl_button = document.getElementById("dl-button");
 const ref_button = document.getElementById("ref-button");
 
@@ -19,9 +22,14 @@ file_input.addEventListener("change", (event) => {
   file = event.target.files[0];
 });
 
+token_input.addEventListener("change", (event) => {
+  token = event.target.value;
+});
+
 worker.onmessage = ({ data }) => {
   if (data.type === "DATA") {
-    plot(data.results);
+    totalData = totalData.concat(data.results);
+    plot(totalData);
   }
   if (data.type === "DONE") {
     // handleJsonOutput(data.results);
@@ -40,10 +48,12 @@ run_button.addEventListener("click", (_event) => {
   file
     .text()
     .then((input) => {
+      totalData = [];
       global_input = JSON.parse(input);
       worker.postMessage({
         type: "COMPUTE",
         input,
+        token
       });
     })
     .catch((err) => console.log(err));
@@ -53,14 +63,22 @@ dl_button.addEventListener("click", (_event) => {
   download("results.json", results, "text/json");
 });
 
-ref_button.addEventListener("click", (_event) => {
+ref_button.addEventListener("click", async (_event) => {
   let references = "";
   for (const file of global_input.electronKinetics.LXCatFiles) {
     if (file.substr(0, 5) == "http:") {
-      const http = new XMLHttpRequest();
-      http.open("GET", file, false);
-      http.send(null);
-      const lxcat_input = JSON.parse(http.responseText);
+      const response = await fetch(
+        file, 
+        {
+          cache: "no-cache", 
+          credentials: "include", 
+          headers: {
+            "Content-Type": "application/json", 
+            "Authorization": `Bearer ${token}`
+          },
+        }
+      )
+      const lxcat_input = await response.json();
       for (const id in lxcat_input.references) {
         references += lxcat_input.references[id];
       }

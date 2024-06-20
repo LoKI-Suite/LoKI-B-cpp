@@ -20,3 +20,6 @@ target_link_libraries(loki_steps PRIVATE loki-b)
 add_executable(loki_test_statecontainer test_statecontainer.cpp)
 target_link_libraries(loki_test_statecontainer PRIVATE loki-b)
 target_add_test(loki_test_statecontainer)
+
+add_executable(loki_example_hessenberg_extra example_hessenberg_extra.cpp HessenbergExtra.cpp)
+target_link_libraries(loki_example_hessenberg_extra PRIVATE loki-b)

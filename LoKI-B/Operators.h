@@ -1,3 +1,32 @@
+/** \file
+ *
+ *  Declarations of classes that represent terms in the Boltzmann equation.
+ *
+ *  LoKI-B solves a time and space independent form of the two-term
+ *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
+ *  low-temperature plasmas excited by DC/HF electric fields from
+ *  different gases or gas mixtures.
+ *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
+ *  L. L. Alves
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  \author Jan van Dijk, Daan Boer and Jop Hendrikx
+ *  \date   September 2022
+ */
+
 #ifndef LOKI_CPP_OPERATORS_H
 #define LOKI_CPP_OPERATORS_H
 
@@ -69,9 +98,9 @@ namespace loki {
     public:
         FieldOperator(const Grid& grid);
         /// updates member g
-        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g, then the field matrix \a mat
-        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, SparseMatrix& mat);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat);
         /** \todo This expression returns the power that is absorbed from the field
          *  in the case that no temporal or spatial growth terms are present. We have
          *  to see where/when to handle the various growth scenarios.
@@ -91,14 +120,6 @@ namespace loki {
          */
         void evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture);
         Matrix inelasticMatrix;
-        /* NOTE: the following is not a configuration parameter, but the
-         * result of introspection of the reaction lists. The results also depend
-         * on uMax.
-         * \bug It seems that the value is not always reset to false before making
-         *      it conditionally true during introspection. (That is needed when uMax
-         *      changes.)
-         */
-        bool hasSuperelastics;
     };
 
     class ElectronElectronOperator
@@ -120,7 +141,8 @@ namespace loki {
          *  -(1/N*gamma)*dG_ee/du to matrix \a M.
          */
         void discretizeTerm(Matrix& M, const Grid& grid) const;
-        void evaluatePower(const Grid& grid, const Vector& eedf, double& power) const;
+        /// Net should be zero, loss = net - gain, should be - gain.
+	void evaluatePower(const Grid& grid, const Vector& eedf, double& net, double& gain, double& loss) const;
         double g_ee() const { return m_g_ee; }
         const Matrix& a() const { return m_a; }
         const Vector& A() const { return m_A; }
@@ -149,9 +171,6 @@ namespace loki {
         /* NOTE: the following is not a configuration parameter, but the
          * result of introspection of the reaction lists. The results also depend
          * on uMax.
-         * \bug It seems that the value is not always reset to false before making
-         *      it conditionally true during introspection. (That is needed when uMax
-         *      changes.)
          */
         bool includeNonConservativeIonization;
     };
@@ -176,9 +195,6 @@ namespace loki {
         /* NOTE: the following is not a configuration parameter, but the
          * result of introspection of the reaction lists. The results also depend
          * on uMax.
-         * \bug It seems that the value is not always reset to false before making
-         *      it conditionally true during introspection. (That is needed when uMax
-         *      changes.)
          */
         bool includeNonConservativeAttachment;
     };
