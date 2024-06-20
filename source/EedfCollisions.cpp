@@ -593,7 +593,7 @@ bool EedfCollisionDataGas::isDummy() const
 
 std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate() const
 {
-#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 0
+#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 1
 #if NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
 
     std::vector<const State *> statesToUpdate;
@@ -606,8 +606,7 @@ std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findState
             const auto colls_it = m_state_collisions.find(state);
             if (colls_it==m_state_collisions.end())
             {
-                std::stringstream ss; ss << *state;
-                throw std::runtime_error("No state collisions found for state '" + ss.str() + "'.");
+                return false;
             }
             const auto &colls = colls_it->second;
             auto it = find_if(colls.begin(), colls.end(),
