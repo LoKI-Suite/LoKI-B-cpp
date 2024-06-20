@@ -150,10 +150,11 @@ public:
     using EedfCollisionDataGasArray = std::vector<EedfCollisionDataGas>;
     EedfCollisionDataMixture();
     /** Loads the collisions from the \a file that is provided as first argument.
-     *  It also needs a pointer to the \a energyGrid and a boolean \a isExtra to
-     *  indicate whether the collisions are extra, for correct initialization and
-     *  storage of the collisions.
-     *  \todo Explain isExtra.
+     *  It also needs a pointer to the \a energyGrid and a boolean \a isExtra.
+     *  When the latter is true, the processes will not be considered in the
+     *  calculation of the EEDF, but rate coefficients will be produced for
+     *  these processes based on the resut EEDF (in principle, this is not
+     *  consistent, obviously).
      */
     void loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
