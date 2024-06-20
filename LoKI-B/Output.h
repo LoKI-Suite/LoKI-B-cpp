@@ -67,7 +67,10 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const=0;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
-    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const=0;
+    virtual void writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const=0;
     const WorkingConditions *m_workingConditions;
     bool isBoltzmann() const { return m_isBoltzmann; }
     bool isSimulationHF() const { return m_isSimulationHF; }
@@ -90,7 +93,10 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+    virtual void writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const;
 private:
     void createPath(const PathExistsHandler& handler);
     void writeTerm(std::ostream& os, const std::string& name, const std::string& unit, double value, bool plus=false) const;
@@ -110,7 +116,10 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+    virtual void writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const;
 private:
     /** This produces a member of the form: name: { "value": value, "unit": unit }.
      *  As an example, makeQuantity("Te", 2.0, "eV") produces and returns an object that contains
@@ -136,7 +145,10 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const;
+    virtual void writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const;
 private:
     /// \todo needed?
     static json_type makeQuantity(const std::string& name, double value, const std::string unit);

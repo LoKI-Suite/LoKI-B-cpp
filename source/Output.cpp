@@ -94,7 +94,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
     if (saveRates)
         writeRateCoefficients(collData.rateCoefficients(), collData.rateCoefficientsExtra());
     if (saveTable)
-        writeLookuptable(power, swarmParameters);
+        writeLookuptable(power, collData.rateCoefficients(), collData.rateCoefficientsExtra(), swarmParameters);
 }
 
 FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
@@ -279,9 +279,80 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
     }
 }
 
-void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+void FileOutput::writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
 {
-    /// \todo Write lookUpTablePower.txt and lookUpTableRateCoeff.txt
+    /// \todo Write lookUpTablePower.txt
+    std::ofstream rc_lut(m_folder + "/lookUpTableRateCoeff.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    unsigned id=1;
+    if (m_initTable)
+    {
+        for (const auto& rc : rateCoefficients)
+        {
+            rc_lut << "# R" << id++ << ": " << *rc.collision << std::endl;
+        }
+        if (extraRateCoefficients.size())
+        {
+            rc_lut << "#" << std::endl;
+            rc_lut << "# *** Extra rate coefficients ***" << std::endl;
+            rc_lut << "#" << std::endl;
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            rc_lut << "# R" << id++ << ": " << *rc.collision << std::endl;
+        }
+        if (isBoltzmann())
+        {
+            rc_lut << std::setw(23) << "RedField(Td)";
+        }
+        else
+        {
+            rc_lut << std::setw(23) << "EleTemp(eV)";
+        }
+        id=1;
+        for (const auto& rc : rateCoefficients)
+        {
+            rc_lut << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            rc_lut << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            ++id;
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            rc_lut << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            rc_lut << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            ++id;
+        }
+        rc_lut << std::endl;
+    }
+    if (isBoltzmann())
+    {
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << m_workingConditions->reducedField();
+    }
+    else
+    {
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << m_workingConditions->electronTemperature();
+    }
+    for (const auto& rc : rateCoefficients)
+    {
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.inelastic;
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.superelastic;
+    }
+    for (const auto& rc : extraRateCoefficients)
+    {
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.inelastic;
+        rc_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.superelastic;
+    }
+    rc_lut << std::endl;
+
+
     std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     if (isBoltzmann())
     {
@@ -744,7 +815,10 @@ void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
     }
 }
 
-void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+void JsonOutput::writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
 {
     /// \todo Handle isSimulationHF()
     json_type *out = m_root.contains("lookup_table") ? &m_root["lookup_table"] : nullptr;
@@ -1005,7 +1079,10 @@ void HDF5Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 #endif
 }
 
-void HDF5Output::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+void HDF5Output::writeLookuptable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
 {
 #if 0
     json_type* out = m_root.contains("lookup_table")
