@@ -72,7 +72,9 @@ EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, c
       m_lhsHeavyStates(remove_electron_entries(lhsStates, lhsStates)),
       m_lhsHeavyCoeffs(remove_electron_entries(lhsStates, lhsCoeffs)),
       m_rhsHeavyStates(remove_electron_entries(rhsStates, rhsStates)),
-      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates, rhsCoeffs)), m_ineRateCoeff{0.0}, m_supRateCoeff{0.0}
+      m_rhsHeavyCoeffs(remove_electron_entries(rhsStates, rhsCoeffs)),
+      m_ineRateCoeff{0.0},
+      m_supRateCoeff{0.0}
 {
     // for the left hand side we expect 'e + X' or 'X + e'.
     assert(lhsStates.size() == lhsCoeffs.size());
@@ -323,6 +325,8 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
     const Grid *grid = crossSection->getGrid();
     if (crossSection->threshold() > grid->uMax())
     {
+        m_ineRateCoeff = 0.0;
+        m_supRateCoeff = 0.0;
         return {this, 0.0, 0.0};
     }
 
@@ -379,6 +383,10 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
         }
         
     }
+    else
+    {
+        m_supRateCoeff = 0.0;
+    }
 
     return {this, m_ineRateCoeff, m_supRateCoeff};
 }
@@ -407,8 +415,8 @@ std::string EedfCollision::typeAsString() const
 }
 
 EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const Gas &gas)
-    : m_gas(gas), m_collisions(static_cast<uint8_t>(CollisionType::size)),
-      m_collisionsExtra(static_cast<uint8_t>(CollisionType::size)),
+    : m_gas(gas), m_collisions(to_underlying(CollisionType::size)),
+      m_collisionsExtra(to_underlying(CollisionType::size)),
       m_OPBParameter(gasProps.get("OPBParameter",gas.name(),-1.0,true))
 {
     if (m_OPBParameter>0)
@@ -420,14 +428,17 @@ EedfCollisionDataGas::EedfCollisionDataGas(const GasProperties& gasProps, const 
 
 void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
 {
-    // add to the state's list
     const State *target = collision->getTarget();
-    (isExtra ? m_state_collisionsExtra[target] : m_state_collisions[target]).emplace_back(collision);
-
-    // add to the gas' list
-    (isExtra ? this->m_collisionsExtra[static_cast<uint8_t>(collision->type())]
-             : this->m_collisions[static_cast<uint8_t>(collision->type())])
-        .emplace_back(collision);
+    if (isExtra)
+    {
+        m_state_collisionsExtra[target].emplace_back(collision);
+        m_collisionsExtra[to_underlying(collision->type())].emplace_back(collision);
+    }
+    else
+    {
+        m_state_collisions[target].emplace_back(collision);
+        m_collisions[to_underlying(collision->type())].emplace_back(collision);
+    }
 }
 
 void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulation)
@@ -731,9 +742,10 @@ PowerTerm EedfCollisionDataGas::evaluateNonConservativePower(const CollisionVect
 
 EedfCollisionDataMixture::EedfCollisionDataMixture()
 {
+    m_hasCollisions.fill(false);
 }
 
-EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
+EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const Collision::StateVector &lhsStates,
                                                       const Collision::CoeffVector &lhsCoeffs,
                                                       const Collision::StateVector &rhsStates,
                                                       const Collision::CoeffVector &rhsCoeffs, bool reverseAlso,
@@ -744,21 +756,13 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     std::unique_ptr<EedfCollision> coll_uptr{
         new Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
     Log<Message>::Notify(*coll_uptr);
-    // 2. See if we already have a collision of the same type with the same lhs and rhs.
-    //    If we do, issue a warning and return nullptr.
-    //    NOTE: coll_uptr is a unique_ptr and will delete the collision object.
+    // 2. See if we already have a collision of the same type with the same
+    //    lhs and rhs. If we do, a runtime_error is thrown.
     for (const auto &c : m_collisions)
     {
         if (c.m_coll->is_same_as(*coll_uptr))
         {
-//#define ALLOW_DUPLICATE_PROCESSES
-#ifdef ALLOW_DUPLICATE_PROCESSES
-            // duplicates are allowed. The warning is emitted,
-            // but no further action needed
-            Log<DoubleCollision>::Warning(*c.m_coll);
-#else
             Log<DoubleCollision>::Error(*c.m_coll);
-#endif
         }
     }
     // 3. Release the collision object, store the released pointer in coll.
@@ -775,8 +779,8 @@ EedfCollision *EedfCollisionDataMixture::addCollision(CollisionType type, const 
     //    by its member getTarget().
     get_data_for(coll->getTarget()->gas()).addCollision(coll, isExtra);
     m_collisions.emplace_back(CollisionEntry{coll, isExtra});
-    m_hasCollisions[static_cast<uint8_t>(coll->type())] = true;
-    return coll;
+    m_hasCollisions[to_underlying(coll->type())] = true;
+    return *coll;
 }
 
 EedfCollisionDataMixture::State *EedfCollisionDataMixture::ensureState(const GasProperties& gasProps, GasMixture &composition, const StateEntry &entry)
@@ -854,12 +858,12 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 //  4: "Elastic"
 
                 std::vector<StateEntry> entry_lhsStates, entry_rhsStates;
-                std::vector<uint16_t> entry_lhsCoeffs, entry_rhsCoeffs;
+                std::vector<uint16_t> lhsCoeffs, rhsCoeffs;
 
-                entriesFromString(mProcess[1].str(), entry_lhsStates, &entry_lhsCoeffs);
+                entriesFromString(mProcess[1].str(), entry_lhsStates, &lhsCoeffs);
                 const bool reverseAlso = (mProcess[2].str()[0] == '<');
-                entriesFromString(mProcess[3].str(), entry_rhsStates, &entry_rhsCoeffs);
-                const CollisionType entry_type = getCollisionType(mProcess[4].str());
+                entriesFromString(mProcess[3].str(), entry_rhsStates, &rhsCoeffs);
+                const CollisionType type = getCollisionType(mProcess[4].str());
 
                 // 1. Create vectors of pointers to the states that appear
                 //    on the left and right-hand sides of the process.
@@ -874,14 +878,11 @@ void EedfCollisionDataMixture::loadCollisionsClassic(const std::filesystem::path
                 {
                     rhsStates.emplace_back(ensureState(gasProps, composition, stateEntry));
                 }
-                Collision *coll = addCollision(entry_type, lhsStates, entry_lhsCoeffs, rhsStates, entry_rhsCoeffs,
+                Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs,
                                                reverseAlso, isExtra);
-                if (coll)
-                {
-                    const bool isElasticOrEffective =
-                        (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
-                    coll->crossSection.reset(new CrossSection(threshold, energyGrid, isElasticOrEffective, in));
-                }
+                const bool isElasticOrEffective =
+                    (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
+                coll.crossSection.reset(new CrossSection(threshold, energyGrid, isElasticOrEffective, in));
             }
             catch (std::exception &exc)
             {
@@ -945,13 +946,10 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const G
             const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
             const bool reverseAlso = rcnf.at("reversible");
 
-            Collision *coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
-            if (coll)
-            {
-                const bool isElasticOrEffective =
-                    (coll->type() == CollisionType::effective || coll->type() == CollisionType::elastic);
-                coll->crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
-            }
+            Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
+            const bool isElasticOrEffective =
+                (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
+            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
         }
         catch (std::exception &exc)
         {
@@ -1025,34 +1023,12 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
 {
     m_rateCoefficients.clear();
     m_rateCoefficientsExtra.clear();
-//#define NEW_RATE_COEFFICIENT_OUTPUT
-#ifdef NEW_RATE_COEFFICIENT_OUTPUT
-    /* The m_collisions member has been changed to store pairs
-     * representing the collision pointer and the isExtra field.
-     * that allows us to simply iterate over the elements of
-     * m_collisions to populate the rate coefficient arrays.
-     * The only difference is that the rate coefficient arrays
-     * are no longer grouped by gas: the coefficients appear
-     * in the order in which the processes were read from file.
-     * personally I (JvD) think that this should not matter,
-     * and makes the code a LOT easier (not just the code below).
-     */
-    for (auto &c : m_collisions)
-    {
-        std::vector<RateCoefficient> &rcVector = c.m_isExtra ? m_rateCoefficientsExtra : m_rateCoefficients;
-        rcVector.emplace_back(c.m_coll->evaluateRateCoefficient(eedf));
-    }
-#else
     for (const auto &cd : data_per_gas())
     {
         for (auto &collVec : cd.collisions())
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid.uMax())
-                {
-                    continue;
-                }
                 m_rateCoefficients.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }
@@ -1060,15 +1036,10 @@ void EedfCollisionDataMixture::evaluateRateCoefficients(const Grid &grid, const 
         {
             for (auto &collision : collVec)
             {
-                if (collision->crossSection->threshold() > grid.uMax())
-                {
-                    continue;
-                }
                 m_rateCoefficientsExtra.emplace_back(collision->evaluateRateCoefficient(eedf));
             }
         }
     }
-#endif
 }
 
 } // namespace loki

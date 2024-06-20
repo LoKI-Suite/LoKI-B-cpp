@@ -40,6 +40,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/Power.h"
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <map>
@@ -64,7 +65,13 @@ public:
     PowerTerm evaluateConservativePower(const Vector &eedf) const;
     PowerTerm evaluateNonConservativePower(const Vector &eedf, const IonizationOperatorType ionizationOperatorType,
                                            const double OPBParameter) const;
-    /// \todo non-constant because ineRateCoeff, supRateCoeff are modified
+    /** Update ineRateCoeff and supRateCoeff, return a RateCoefficient object
+     *  that is formed by a pointer to this collision and the updated values
+     *  of ineRateCoeff and supRateCoeff.
+     *  If the threshold energy of the cross section exceeds the uMax of the
+     *  energy grid, the calculation is bypassed and both values are set to
+     *  0.0.
+     */
     RateCoefficient evaluateRateCoefficient(const Vector &eedf);
     std::string typeAsString() const;
     friend std::ostream &operator<<(std::ostream &os, const EedfCollision &collision);
@@ -72,23 +79,20 @@ public:
     double ineRateCoeff() const { return m_ineRateCoeff; }
     double supRateCoeff() const { return m_supRateCoeff; }
 private:
-    // The raw cross section data and threshold is stored in
-    // the CrossSection object
     const StateVector m_lhsHeavyStates;
     const CoeffVector m_lhsHeavyCoeffs;
 public:
     /// \todo Make private
-    StateVector m_rhsHeavyStates;
+    const StateVector m_rhsHeavyStates;
 private:
-    CoeffVector m_rhsHeavyCoeffs;
+    const CoeffVector m_rhsHeavyCoeffs;
     double m_ineRateCoeff;
     double m_supRateCoeff;
 public:
-    std::unique_ptr<CrossSection> crossSection;
+    std::unique_ptr<const CrossSection> crossSection;
 
 };
 
-// TODO: Allow loading of effective populations from a file.
 class EedfCollisionDataGas
 {
 public:
@@ -102,21 +106,22 @@ public:
     EedfCollisionDataGas& operator=(EedfCollisionDataGas&&) = delete;
     ~EedfCollisionDataGas() = default;
 
-    // We need to store the collisions per Gas since we need to calculate
-    // the mass ratio when evaluating the total and elastic cross-sections.
-    const CollisionVector& collisions(CollisionType type) const { return m_collisions[static_cast<uint8_t>(type)]; }
+    const CollisionVector& collisions(CollisionType type) const { return m_collisions[to_underlying(type)]; }
     const CollisionsType& collisions() const { return m_collisions; }
     const CollisionsType& collisionsExtra() const { return m_collisionsExtra; }
-    void addCollision(EedfCollision *collision, bool isExtra);
     void checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulationsCustom);
     bool isDummy() const;
     const GasPower &getPower() const;
-    /** \todo Non-constant because m_power is changed. See if m_power must managed here.
-     *  The name updatePower would make more clear that this modifies the object.
+    /** Update the power terms for collisions with the gas and return a
+     *  reference to the result.
      */
     const GasPower& evaluatePower(const IonizationOperatorType ionType, const Vector &eedf);
     double OPBParameter() const { return m_OPBParameter; }
     const Gas& gas() const { return m_gas; }
+    /** Add \a collision to the process container for the gas for which we keep
+     *  data, and to the process container that stores the processes per state.
+     */
+    void addCollision(EedfCollision *collision, bool isExtra);
 private:
     /* the following three members are used (only) for Effective -> Elastic,
      * (together with the public checkElasticCollisions).
@@ -137,26 +142,19 @@ private:
     double m_OPBParameter;
 };
 
-/** \todo See if we can somehow separate settings (fixed) and mutable
- *  output data in this class (and its members).
- */
 class EedfCollisionDataMixture
 {
 public:
     using State = Gas::State;
     using Collision = EedfCollision;
     using EedfCollisionDataGasArray = std::vector<EedfCollisionDataGas>;
-    struct CollisionEntry
-    {
-        Collision* m_coll;
-        const bool m_isExtra;
-    };
     EedfCollisionDataMixture();
     /** Loads the collisions from the \a file that is provided as first argument.
-     *  It also needs a pointer to the \a energyGrid and a boolean \a isExtra to
-     *  indicate whether the collisions are extra, for correct initialization and
-     *  storage of the collisions.
-     *  \todo Explain isExtra.
+     *  It also needs a pointer to the \a energyGrid and a boolean \a isExtra.
+     *  When the latter is true, the processes will not be considered in the
+     *  calculation of the EEDF, but rate coefficients will be produced for
+     *  these processes based on the resut EEDF (in principle, this is not
+     *  consistent, obviously).
      */
     void loadCollisionsClassic(const std::filesystem::path &file, const GasProperties& gasProps, GasMixture& composition, const Grid *energyGrid, bool isExtra);
 
@@ -176,7 +174,6 @@ public:
 
     const EedfCollisionDataGasArray& data_per_gas() const { return m_data_per_gas; }
     EedfCollisionDataGasArray& data_per_gas() { return m_data_per_gas; }
-    std::vector<CollisionEntry> m_collisions;
     const EedfCollisionDataGas& get_data_for(const Gas& gas) const;
     EedfCollisionDataGas& get_data_for(const Gas& gas);
     const Vector& elasticCrossSection() const { return m_elasticCrossSection; }
@@ -187,48 +184,60 @@ public:
      *  combination of equations 12 and equation 6b of \cite Tejero2019
      *  and the definitions just below 6d in that paper. It appears that
      *  the exact expressions implemented in this function are not
-     *  explicitly stated in the text. Not a problem per se, but we should
-     *  make sure to compensate for that by having detailed documentation here.
+     *  explicitly stated in the text.
      */
     void evaluateTotalAndElasticCS(const Grid& grid);
-    /** \bug The semantics of this member are not clear. Should this consider the 'extra'
-     *  collisions as well? At present, they are (in loadCollisions the true flag is set
-     *  when a collision of a type is created). At the same time, hasCollisions is used
-     *  in ElectronKinetics.cpp to decide whether to add particular terms to the Boltzmann
-     *  matrix. If, subsequently, the collsions(that_type) vector is used to populate those
-     *  matrix contributions, zero-valued terms may be added (if only *extra* collisions
-     *  of that type were loaded).
-     *  \todo Should hasCollisions be recalculated when uMax() is changed?
-     *  (smartGrid)? In that case process types may coma and go if they
-     *  have threshold above uMax().
+    /** \todo The semantics of this member are not clear. Should this consider the 'extra'
+     *  collisions as well? At present, it does (in loadCollisions the true flag is set
+     *  when a collision of a type is created).
+     *  But hasCollisions is only used in ElectronKinetics.cpp to decide whether to add
+     *  particular terms to the Boltzmann matrix. But the evaluate members of the operators
+     *  do not consider the extra collisions. This means that zero-valued terms will be
+     *  added if only *extra* collisions of a type are loaded.
+     *  Let's see if this can be made a bit more clear. It is probably better to let
+     *  hasCollisions only consider the non-extra collisions. The extra collisions then
+     *  affect only the workings of evaluateRateCoefficients.
      */
-    bool hasCollisions(CollisionType type) const { return m_hasCollisions[static_cast<uint8_t>(type)]; }
-    /// \todo make private, provide const accessors?
-    std::vector<RateCoefficient> m_rateCoefficients;
-    std::vector<RateCoefficient> m_rateCoefficientsExtra;
-    /** \bug This ADDS rate coefficients to the previously calulated ones in
-     *       rateCoefficients and rateCoefficientsExtra. Every time a case is run,
-     *       the list grows. This is obviously wrong, but before changing this, let's
-     *       see what the MATLAB version of LoKI-B does exactly.
-     *  \todo Should processes with a too-high threshold be skipped, as is done now?
-     *        This may result in tables with different sizes when multiple cases are run.
-     *        It may be better to just produce zero-values entries in such case.
+    bool hasCollisions(CollisionType type) const { return m_hasCollisions[to_underlying(type)]; }
+    const std::vector<RateCoefficient>& rateCoefficients() const { return m_rateCoefficients; }
+    const std::vector<RateCoefficient>& rateCoefficientsExtra() const { return m_rateCoefficientsExtra; }
+    /** Evaluate all rate coefficients and store the results in members
+     *  m_rateCoefficients and m_rateCoefficientsExtra.
+     *
      *  \todo Also the rate coefficient for the effective cross section is produced.
      *        Is that a meaningful value?
      */
     void evaluateRateCoefficients(const Grid& grid, const Vector &eedf);
 private:
-    /// \todo Document me more precisely: returns nullptr for a duplicate proccess
-    EedfCollision* addCollision(CollisionType type,
+    /** Create a collision pointer based on the given input. If a process of the
+     *  given \a type and with the same reaction format already exists, a
+     *  runtime error exception is thrown. Otherwise, the process is registered
+     *  in the m_collisions container and the per-gas process container
+     *  m_data_per_gas, and m_hasCollisions is set to true for the process type.
+     *  This function does not set up a cross section for the process, that is
+     *  up to the caller. (The reason is that this function is used by both the
+     *  legacy and the JSON based constructors, that have separate codes for
+     *  creating cross sections.) The caller should call coll.crossSection.reset
+     *  in the collision reference that is returned by this function.
+     */
+    EedfCollision& addCollision(CollisionType type,
         const Collision::StateVector &lhsStates, const Collision::CoeffVector &lhsCoeffs,
         const Collision::StateVector &rhsStates, const Collision::CoeffVector &rhsCoeffs,
         bool reverseAlso, bool isExtra);
     State *ensureState(const GasProperties& gasProps, GasMixture& composition, const StateEntry &entry);
+    struct CollisionEntry
+    {
+        Collision* m_coll;
+        const bool m_isExtra;
+    };
+    std::vector<CollisionEntry> m_collisions;
     EedfCollisionDataGasArray m_data_per_gas;
-    bool m_hasCollisions[static_cast<uint8_t>(CollisionType::size)]{false};
+    std::array<bool,to_underlying(CollisionType::size)> m_hasCollisions;
     Vector m_elasticCrossSection;
     Vector m_totalCrossSection;
     Vector m_totalCellCrossSection;
+    std::vector<RateCoefficient> m_rateCoefficients;
+    std::vector<RateCoefficient> m_rateCoefficientsExtra;
 };
 
 } // namespace loki

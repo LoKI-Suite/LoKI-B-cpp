@@ -92,7 +92,7 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
     if (savePower)
         writePower(power, collData);
     if (saveRates)
-        writeRateCoefficients(collData.m_rateCoefficients, collData.m_rateCoefficientsExtra);
+        writeRateCoefficients(collData.rateCoefficients(), collData.rateCoefficientsExtra());
     if (saveTable)
         writeLookuptable(power, swarmParameters);
 }

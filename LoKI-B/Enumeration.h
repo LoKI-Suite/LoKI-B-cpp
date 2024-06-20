@@ -35,6 +35,7 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include <utility>
 
 namespace loki
 {
@@ -118,6 +119,26 @@ enum class CollisionType : uint8_t
 };
 CollisionType getCollisionType(const std::string &str);
 CollisionType getCollisionTypeFromTypeTagArray(const json_type &type_tags);
+
+#ifdef __cpp_lib_to_underlying
+
+// make std::to_underlying (from <utility> available in the loki namespace
+using std::to_underlying;
+
+#else
+
+/** Provide to_underlying for enum-values in case std::to_underlying is not
+ *  available. See https://en.cppreference.com/w/cpp/utility/to_underlying
+ *  for std::to_underlying, https://stackoverflow.com/questions/8357240
+ *  (the comment trail) for this alternative implementation.
+ */
+template <typename E>
+constexpr auto to_underlying(E e) noexcept
+{
+    return static_cast<std::underlying_type_t<E>>(e);
+}
+
+#endif
 
 } // namespace loki
 
