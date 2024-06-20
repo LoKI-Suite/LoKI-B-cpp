@@ -768,10 +768,18 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             const double delta = collision->getTarget()->delta();
 
             Vector cellCrossSection(grid.nCells());
-            collision->crossSection->interpolate(grid.getCells(), cellCrossSection);
-            int numThreshold1 = static_cast<uint32_t>(std::upper_bound(grid.getCells().begin(),grid.getCells().end(), threshold) - grid.getCells().begin() - 1);
-            int numThreshold2 = numThreshold1 + 1;
-            int numThreshold = std::abs(threshold - grid.getCell(numThreshold1)) < std::abs(threshold - grid.getCell(numThreshold2)) ? numThreshold1 : numThreshold2;
+            Grid::Index numThreshold;
+            for (Grid::Index i = 0; i < grid.nCells(); ++i)
+                cellCrossSection[i] = 0.5 * ((*collision->crossSection)[i] + (*collision->crossSection)[i + 1]);
+
+
+            if (grid.isUniform())
+            {
+                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            } else
+            {
+                numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
+            }
            
             switch (ionizationOperatorType)
             {
