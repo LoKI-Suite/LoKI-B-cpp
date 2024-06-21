@@ -208,7 +208,7 @@ try
               << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
               << "mus" << std::endl;
 
-    // if data wer harvested (also) in JSON form, print the JSON output object to screen.
+    // If data were harvested (also) in JSON form, save the JSON output object to disk.
     if (json_output_data)
     {
         const std::string fname(cnf.at("output").at("JSONFile"));
