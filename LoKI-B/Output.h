@@ -67,7 +67,7 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const=0;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const=0;
-    virtual void writeLookuptable(const Power &power,
+    virtual void writeLookupTable(const Power &power,
                                   const std::vector<RateCoefficient> &rateCoefficients,
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const=0;
@@ -93,13 +93,17 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture &collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power,
+    virtual void writeLookupTable(const Power &power,
                                   const std::vector<RateCoefficient> &rateCoefficients,
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const;
 private:
-    // called by writeLookuptable
-    void writeLookuptablePower(const Power &power) const;
+    // called by writeLookupTable
+    void writeLookupTablePower(const Power &power) const;
+    void writeLookupTableRC(const std::vector<RateCoefficient> &rateCoefficients,
+                            const std::vector<RateCoefficient> &extraRateCoefficients) const;
+    void writeLookupTableSwarmParams(const SwarmParameters &swarmParameters,
+                                     const Power &power) const;
     void createPath(const PathExistsHandler& handler);
     void writeTerm(std::ostream& os, const std::string& name, const std::string& unit, double value, bool plus=false) const;
     std::string m_folder;
@@ -118,7 +122,7 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power,
+    virtual void writeLookupTable(const Power &power,
                                   const std::vector<RateCoefficient> &rateCoefficients,
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const;
@@ -147,7 +151,7 @@ protected:
     virtual void writePower(const Power &power, const EedfCollisionDataMixture& collData) const;
     virtual void writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                const std::vector<RateCoefficient> &extraRateCoefficients) const;
-    virtual void writeLookuptable(const Power &power,
+    virtual void writeLookupTable(const Power &power,
                                   const std::vector<RateCoefficient> &rateCoefficients,
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const;
