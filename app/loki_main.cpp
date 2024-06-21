@@ -34,6 +34,7 @@
 #include "LoKI-B/Output.h"
 #include <chrono>
 #include <exception>
+#include <fstream>
 #include <iostream>
 
 //#define LOKIB_ENABLE_FPU_EXCEPTIONS
@@ -94,8 +95,10 @@ try
 
     /* The target for JSON output. This will be initialized if JSON output
      * is asked for (see the cnf.at("output") bit below). In that case this
-     * object will be written to console at the end of the simulation (not
-     * yet to file). Note that support is incomplete, see Output.cpp.
+     * object will be written to file at the end of the simulation, see
+     * input file elements 'writeJSON' and 'JSONFile'.
+     * Note that support is incomplete and the file structure is going to
+     * change in the future. See class JsonOutput in Output.cpp.
      */
     std::unique_ptr<loki::json_type> json_output_data;
 
@@ -162,6 +165,21 @@ try
         // AND the value is true.
         if (cnf.at("output").contains("writeJSON")==true && cnf.at("output").at("writeJSON"))
         {
+            /* 1. open/truncate/create the file that will later be used to write
+             * the JSON object to. We will not use it at this moment, but want
+             * to make sure that we will be able to write to this file at the
+             * end of a lengthy simulation.
+             */
+            const std::string fname(cnf.at("output").at("JSONFile"));
+            std::ofstream ofs(fname);
+            if (!ofs)
+            {
+                throw std::runtime_error("Error opening JSON output file '" + fname + "'.");
+            }
+
+            /* 2. initialize the variable that will hold the json output data and
+             * register the JSON output task.
+             */
             json_output_data.reset(new loki::json_type);
             output.emplace_back(
                 new loki::JsonOutput(*json_output_data, cnf, &simulation.workingConditions()));
@@ -190,11 +208,17 @@ try
               << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
               << "mus" << std::endl;
 
-    // if data wer harvested (also) in JSON form, print the JSON output object to screen.
+    // If data were harvested (also) in JSON form, save the JSON output object to disk.
     if (json_output_data)
     {
-        std::cout << "Output data (JSON format):" << std::endl;
-        std::cout << json_output_data->dump(2) << std::endl;
+        const std::string fname(cnf.at("output").at("JSONFile"));
+        std::ofstream ofs(fname);
+        if (!ofs)
+        {
+            throw std::runtime_error("Error opening JSON output file '" + fname + "'.");
+        }
+        std::cout << "Creating JSON output file '" << fname << "'." << std::endl;
+        ofs << json_output_data->dump(2) << std::endl;
     }
 
     return 0;
