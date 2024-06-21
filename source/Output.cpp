@@ -279,12 +279,81 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
     }
 }
 
+void FileOutput::writeLookuptablePower(const Power &power) const
+{
+    std::ofstream pow_lut(m_folder + "/lookUpTablePower.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    unsigned id=1;
+    if (m_initTable)
+    {
+        if (isBoltzmann())
+        {
+            pow_lut << std::setw(23) << "RedField(Td)";
+        }
+        else
+        {
+            pow_lut << std::setw(23) << "EleTemp(eV)";
+        }
+        pow_lut << std::setw(23) << "PowerField(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrElaGain(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrElaLoss(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrElaNet(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrCARGain(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrCARLoss(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrCARNet(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrEleGain(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrEleLoss(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrEleNet(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrVibGain(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrVibLoss(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrVibNet(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrRotGain(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrRotLoss(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrRotNet(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrIon(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrAtt(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrGrowth(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "PwrBalance(eVm^3s^-1)";
+        pow_lut << std::setw(23) << "RelPwrBalance";
+        pow_lut << std::endl;
+    }
+    if (isBoltzmann())
+    {
+        pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+    }
+    else
+    {
+        pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->electronTemperature();
+    }
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.field;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticGain;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticLoss;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticNet;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carGain;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carLoss;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carNet;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.backward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.forward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.net();
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.backward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.forward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.net();
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.backward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.forward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.net();
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.ionization.forward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.attachment.forward;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.eDensGrowth;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.balance;
+    pow_lut << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.relativeBalance*100;
+    pow_lut << std::endl;
+}
+
 void FileOutput::writeLookuptable(const Power &power,
                                   const std::vector<RateCoefficient> &rateCoefficients,
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const
 {
-    /// \todo Write lookUpTablePower.txt
+    writeLookuptablePower(power);
     std::ofstream rc_lut(m_folder + "/lookUpTableRateCoeff.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     unsigned id=1;
     if (m_initTable)

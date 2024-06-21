@@ -98,6 +98,8 @@ protected:
                                   const std::vector<RateCoefficient> &extraRateCoefficients,
                                   const SwarmParameters &swarmParameters) const;
 private:
+    // called by writeLookuptable
+    void writeLookuptablePower(const Power &power) const;
     void createPath(const PathExistsHandler& handler);
     void writeTerm(std::ostream& os, const std::string& name, const std::string& unit, double value, bool plus=false) const;
     std::string m_folder;
