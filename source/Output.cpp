@@ -282,7 +282,6 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 void FileOutput::writeLookupTablePower(const Power &power) const
 {
     std::ofstream os(m_folder + "/lookUpTablePower.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
-    unsigned id=1;
     if (m_initTable)
     {
         if (isBoltzmann())
@@ -352,9 +351,9 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
                                const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
     std::ofstream os(m_folder + "/lookUpTableRateCoeff.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
-    unsigned id=1;
     if (m_initTable)
     {
+        unsigned id=1;
         for (const auto& rc : rateCoefficients)
         {
             os << "# R" << id++ << ": " << *rc.collision << std::endl;
@@ -378,13 +377,13 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
             os << std::setw(23) << "EleTemp(eV)";
         }
         id=1;
-        for (const auto& rc : rateCoefficients)
+        for (std::size_t ndx=0; ndx!=rateCoefficients.size(); ++ndx)
         {
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
             ++id;
         }
-        for (const auto& rc : extraRateCoefficients)
+        for (std::size_t ndx=0; ndx!=extraRateCoefficients.size(); ++ndx)
         {
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
