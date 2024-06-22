@@ -904,7 +904,19 @@ void JsonOutput::writeLookupTable(const Power &power,
         // make the section, and set up the labels and units
         out = &m_root["lookup_table"];
         /// \todo It would be nice to be able to add the quantities and units as pairs.
-        (*out)["labels"] = {"RedField",
+        if (isBoltzmann())
+        {
+            (*out)["abscissa"]["labels"] = {"RedField" };
+            (*out)["abscissa"]["units"] = {"Td" };
+        }
+        else
+        {
+            // prescribed EEDF
+            (*out)["abscissa"]["labels"] = {"EleTemp" };
+            (*out)["abscissa"]["units"] = {"eV" };
+        }
+
+        (*out)["swarm"]["labels"] = {
                             "RedDif",
                             "RedMob",
                             "RedTow",
@@ -912,7 +924,10 @@ void JsonOutput::writeLookupTable(const Power &power,
                             "MeanE",
                             "CharE",
                             "EleTemp",
-                            "DriftVelocity",
+                            "DriftVelocity"};
+        (*out)["swarm"]["units"] = {"1/(m*s)", "1/(m*s*V)", "m^2", "m^2", "eV", "eV", "eV", "m/s"};
+
+        (*out)["power"]["labels"] = {
                             "ElasticPowerLoss",
                             "ElasticPowerGain",
                             "FieldPowerGain",
@@ -931,14 +946,45 @@ void JsonOutput::writeLookupTable(const Power &power,
                             "EEPowerLoss",
                             "ReferencePower",
                             "RelativePowerBalance"};
-        (*out)["units"] = {"Td",       "1/(m*s)",  "1/(m*s*V)", "m^2",      "m^2",      "eV",       "eV",
-                           "eV",       "m/s",      "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
-                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
-                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "1"};
+        (*out)["power"]["units"] = {
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "1"};
+
+        json_type& rc_labels = (*out)["rate_coefficients"]["labels"];
+        json_type& rc_units  = (*out)["rate_coefficients"]["units"];
+        unsigned id=1;
+        /// \todo At present we write all 'superelastic' terms, also for processes like Effective and Elastic
+        for (const auto& rc : rateCoefficients)
+        {
+            std::stringstream ss; ss << *rc.collision;
+            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (inelastic)");
+            rc_units.push_back("m^3/s");
+            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (superelastic)");
+            rc_units.push_back("m^3/s");
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            std::stringstream ss; ss << *rc.collision;
+            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (inelastic)");
+            rc_units.push_back("m^3/s");
+            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (superelastic)");
+            rc_units.push_back("m^3/s");
+        }
     }
     assert(out);
 
-    (*out)["data"].push_back({m_workingConditions->reducedField(),
+    if (isBoltzmann())
+    {
+        (*out)["abscissa"]["data"].push_back(m_workingConditions->reducedField());
+    }
+    else
+    {
+        (*out)["abscissa"]["data"].push_back(m_workingConditions->electronTemperature());
+    }
+
+    (*out)["swarm"]["data"].push_back({
                               swarmParameters.redDiffCoeff,
                               swarmParameters.redMobCoeff,
                               swarmParameters.redTownsendCoeff,
@@ -946,7 +992,9 @@ void JsonOutput::writeLookupTable(const Power &power,
                               swarmParameters.meanEnergy,
                               swarmParameters.characEnergy,
                               swarmParameters.Te,
-                              swarmParameters.driftVelocity,
+                              swarmParameters.driftVelocity});
+
+    (*out)["power"]["data"].push_back({
                               power.elasticLoss,
                               power.elasticGain,
                               power.field,
@@ -965,6 +1013,18 @@ void JsonOutput::writeLookupTable(const Power &power,
                               power.electronElectronLoss,
                               power.reference,
                               power.relativeBalance * 100});
+
+        json_type& rc_data  = (*out)["rate_coefficients"]["data"];
+        for (const auto& rc : rateCoefficients)
+        {
+            rc_data.push_back(rc.inelastic);
+            rc_data.push_back(rc.superelastic);
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            rc_data.push_back(rc.inelastic);
+            rc_data.push_back(rc.superelastic);
+        }
 }
 
 #ifdef LOKIB_USE_HIGHFIVE
