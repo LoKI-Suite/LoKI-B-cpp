@@ -377,16 +377,22 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
             os << std::setw(23) << "EleTemp(eV)";
         }
         id=1;
-        for (std::size_t ndx=0; ndx!=rateCoefficients.size(); ++ndx)
+        for (const auto& rc : rateCoefficients)
         {
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
-            os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            if (rc.collision->isReverse())
+            {
+                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            }
             ++id;
         }
-        for (std::size_t ndx=0; ndx!=extraRateCoefficients.size(); ++ndx)
+        for (const auto& rc : extraRateCoefficients)
         {
             os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
-            os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            if (rc.collision->isReverse())
+            {
+                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            }
             ++id;
         }
         os << std::endl;
@@ -405,15 +411,21 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
     {
         os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
            << rc.inelastic;
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << rc.superelastic;
+        if (rc.collision->isReverse())
+        {
+            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+               << rc.superelastic;
+        }
     }
     for (const auto& rc : extraRateCoefficients)
     {
         os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
            << rc.inelastic;
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << rc.superelastic;
+        if (rc.collision->isReverse())
+        {
+            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+               << rc.superelastic;
+        }
     }
     os << std::endl;
 }
@@ -462,7 +474,6 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
                << "EEPowerLoss(eVm3/s)         "
                << "ReferencePower(eVm3/s)      "
                << "RelativePowerBalance" << std::endl;
-            m_initTable = false;
         }
         os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
            << m_workingConditions->reducedField();
@@ -601,7 +612,6 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
                << "EEPowerLoss(eVm3/s)         "
                << "ReferencePower(eVm3/s)      "
                << "RelativePowerBalance" << std::endl;
-            m_initTable = false;
         }
         os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
         os << ' ';
@@ -704,6 +714,7 @@ void FileOutput::writeLookupTable(const Power &power,
     writeLookupTablePower(power);
     writeLookupTableRC(rateCoefficients,extraRateCoefficients);
     writeLookupTableSwarmParams(swarmParameters,power);
+    m_initTable = false;
 }
 
 void FileOutput::createPath(const PathExistsHandler &handler)
@@ -959,18 +970,26 @@ void JsonOutput::writeLookupTable(const Power &power,
         for (const auto& rc : rateCoefficients)
         {
             std::stringstream ss; ss << *rc.collision;
-            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (inelastic)");
+            rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (inelastic)");
             rc_units.push_back("m^3/s");
-            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (superelastic)");
-            rc_units.push_back("m^3/s");
+            if (rc.collision->isReverse())
+            {
+                rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (superelastic)");
+                rc_units.push_back("m^3/s");
+            }
+            ++id;
         }
         for (const auto& rc : extraRateCoefficients)
         {
             std::stringstream ss; ss << *rc.collision;
-            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (inelastic)");
+            rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (inelastic)");
             rc_units.push_back("m^3/s");
-            rc_labels.push_back("R" + std::to_string(id++) + ": " + ss.str() + " (superelastic)");
-            rc_units.push_back("m^3/s");
+            if (rc.collision->isReverse())
+            {
+                rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (superelastic)");
+                rc_units.push_back("m^3/s");
+            }
+            ++id;
         }
     }
     assert(out);
@@ -1018,12 +1037,18 @@ void JsonOutput::writeLookupTable(const Power &power,
         for (const auto& rc : rateCoefficients)
         {
             rc_data.push_back(rc.inelastic);
-            rc_data.push_back(rc.superelastic);
+            if (rc.collision->isReverse())
+            {
+                rc_data.push_back(rc.superelastic);
+            }
         }
         for (const auto& rc : extraRateCoefficients)
         {
             rc_data.push_back(rc.inelastic);
-            rc_data.push_back(rc.superelastic);
+            if (rc.collision->isReverse())
+            {
+                rc_data.push_back(rc.superelastic);
+            }
         }
 }
 
