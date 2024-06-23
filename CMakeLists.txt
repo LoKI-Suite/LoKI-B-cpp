@@ -76,6 +76,7 @@ else()
     loki_cxxflags(-Wall)
     # disabled because of sloppiness in Eigen-3.4.0 and SuperLU:
     # loki_cxxflags(-Werror=unused-but-set-parameter)
+    # no-array-bounds: see https://github.com/nlohmann/json/issues/3808
     loki_cxxflags(-Wno-array-bounds)
     loki_cxxflags(-Werror=return-type)
     loki_cxxflags(-Werror=ignored-attributes)
