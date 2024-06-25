@@ -1089,37 +1089,20 @@ void ElectronKineticsBoltzmann::evaluatePower()
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
-            // now calculate the additional terms
-            double correction = 0., powerDiffusion = 0., powerMobility = 0.;
-            Vector cellCrossSection(grid().nCells());
-            for (Grid::Index k = 0; k < grid().nCells(); ++k)
-            {
-                correction -= eedf[k] * (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2;
-
-                // Diffusion and Mobility contributions
-                cellCrossSection[k] = .5 * (mixture.collision_data().totalCrossSection()[k] + mixture.collision_data().totalCrossSection()[k + 1]);
-                powerDiffusion += grid().getCell(k) * grid().getCell(k) * eedf[k] / cellCrossSection[k];
-
-                if (k > 0 && k < grid().nCells() - 1)
-                {
-                    powerMobility +=
-                        grid().getCell(k) * grid().getCell(k) * (eedf[k + 1] - eedf[k - 1]) / cellCrossSection[k];
-                }
-            }
-
             /** \todo field and correction are both of the form 'eedf*g'.
              *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
              *  have different dimensions (factor energy).
              */
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
-            power.field += SI::gamma * grid().du() * correction;
-            power.eDensGrowth = alphaRedEff * alphaRedEff * SI::gamma * grid().du() / 3. * powerDiffusion +
-                                SI::gamma * alphaRedEff * (m_workingConditions->reducedFieldSI() / 6.) *
-                                    (grid().getCell(0) * grid().getCell(0) * eedf[1] / cellCrossSection[0] -
-                                    grid().getCell(grid().nCells() - 1) * grid().getCell(grid().nCells() - 1) *
-                                        eedf[grid().nCells() - 2] / cellCrossSection[grid().nCells() - 1] +
-                                    powerMobility);
+            const double correction = energyIntegral(grid(), interpolateNodalToCell(grid(), g_fieldSpatialGrowth), eedf);
+            const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
+            power.field -= SI::gamma * correction;
+
+            const double powerMobility = - fgPrimeEnergyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+            const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+            power.eDensGrowth = - alphaRedEff * SI::gamma / 3. *
+                                (powerMobility * m_workingConditions->reducedFieldSI() - powerDiffusion * alphaRedEff);
         }
     }
 
