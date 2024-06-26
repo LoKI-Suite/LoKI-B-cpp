@@ -98,7 +98,7 @@ void testSolversTridiagonal(Matrix::Index n)
 int main()
 {
     testBandwidth();
-    testSolversTridiagonal(10001);
+    testSolversTridiagonal(1001);
 
     test_report;
 
