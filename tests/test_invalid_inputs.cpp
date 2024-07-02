@@ -57,7 +57,15 @@ void should_throw(const std::string &test_name, const std::string &expected_erro
 
 int main()
 {
-    should_throw("incomplete-populations", "N2(X)\n");
+    const fs::path base_dir = loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR");
+
+    for (const auto &dir : fs::directory_iterator(base_dir / "invalid-inputs"))
+    {
+        if (dir.is_directory() && fs::exists(dir.path() / "input.in"))
+        {
+            should_throw(dir.path().filename(), "N2(X)\n");
+        }
+    }
 
     test_report;
     return nerrors;
