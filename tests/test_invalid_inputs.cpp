@@ -31,8 +31,6 @@ void restore_output()
 
 void should_throw(const std::string &test_name, const std::string &expected_error)
 {
-    std::cout << test_name << std::endl;
-
     fs::path input_path(loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR"));
     input_path = input_path / "invalid-inputs" / test_name / "input.in";
 
@@ -59,10 +57,13 @@ int main()
 {
     const fs::path base_dir = loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR");
 
+    unsigned counter = 1;
+
     for (const auto &dir : fs::directory_iterator(base_dir / "invalid-inputs"))
     {
         if (dir.is_directory() && fs::exists(dir.path() / "input.in"))
         {
+            std::cout << counter++ << ". " << dir.path().filename().c_str() << std::endl;
             should_throw(dir.path().filename(), "N2(X)\n");
         }
     }
