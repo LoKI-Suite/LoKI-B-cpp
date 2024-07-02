@@ -26,15 +26,19 @@ void restore_output()
     std::cerr.clear();
 }
 
-void should_throw(const std::filesystem::path &test_path, const std::string &expected_error)
+void should_throw(const std::string &test_name, const std::string &expected_error)
 {
-    std::cout << test_path << std::endl;
+    std::cout << test_name << std::endl;
+
+    std::filesystem::path input_path(loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR"));
+    input_path = input_path / "invalid-inputs" / test_name / "input.in";
+    
     disable_output();
 
-    const auto input = loki::legacyToJSON(test_path);
+    const auto input = loki::legacyToJSON(input_path);
     try
     {
-        loki::Simulation test_sim(test_path, input);
+        loki::Simulation test_sim(input_path, input);
         test_sim.run();
     }
     catch (const std::exception &error)
@@ -48,18 +52,9 @@ void should_throw(const std::filesystem::path &test_path, const std::string &exp
     test_expr(false);
 }
 
-void test1()
-{
-    const std::string fname = loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR") + "/invalid-inputs/incomplete-populations/input.in";
-    std::cout << fname << std::endl;
-    std::filesystem::path input_path("/home/daan/git/loki-b/tests/invalid-inputs/incomplete-populations/input.in");
-    std::string error("N2(X)\n");
-    should_throw(input_path, error);
-}
-
 int main()
 {
-    test1();
+    should_throw("incomplete-populations", "N2(X)\n");
 
     test_report;
     return nerrors;
