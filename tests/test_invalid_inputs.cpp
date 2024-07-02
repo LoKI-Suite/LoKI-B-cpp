@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 
 namespace fs = std::filesystem;
@@ -29,10 +30,15 @@ void restore_output()
     std::cerr.clear();
 }
 
-void should_throw(const std::string &test_name, const std::string &expected_error)
+std::string load_error(const std::string &error_file) {
+    std::ifstream file(error_file);
+    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+}
+
+void should_throw(const fs::path &test_dir)
 {
-    fs::path input_path(loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR"));
-    input_path = input_path / "invalid-inputs" / test_name / "input.in";
+    const auto input_path = test_dir / "input.in";
+    const auto expected_error = load_error(test_dir / "error.out");
 
     disable_output();
 
@@ -61,10 +67,10 @@ int main()
 
     for (const auto &dir : fs::directory_iterator(base_dir / "invalid-inputs"))
     {
-        if (dir.is_directory() && fs::exists(dir.path() / "input.in"))
+        if (dir.is_directory() && fs::exists(dir.path() / "input.in") && fs::exists(dir.path() / "error.out"))
         {
             std::cout << counter++ << ". " << dir.path().filename().c_str() << std::endl;
-            should_throw(dir.path().filename(), "N2(X)\n");
+            should_throw(dir.path());
         }
     }
 
