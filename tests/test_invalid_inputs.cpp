@@ -10,9 +10,12 @@
 #include "LoKI-B/LegacyToJSON.h"
 #include "LoKI-B/Simulation.h"
 #include "tests/TestUtilities.h"
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+
+namespace fs = std::filesystem;
 
 void disable_output()
 {
@@ -30,9 +33,9 @@ void should_throw(const std::string &test_name, const std::string &expected_erro
 {
     std::cout << test_name << std::endl;
 
-    std::filesystem::path input_path(loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR"));
+    fs::path input_path(loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR"));
     input_path = input_path / "invalid-inputs" / test_name / "input.in";
-    
+
     disable_output();
 
     const auto input = loki::legacyToJSON(input_path);
