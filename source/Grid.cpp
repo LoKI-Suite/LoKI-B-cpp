@@ -28,9 +28,12 @@
  */
 
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/Gnuplot.h"
+#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/JobSystem.h"
 #include "LoKI-B/EedfMixture.h"
+#include <numeric>
 
 namespace loki
 {
@@ -158,6 +161,49 @@ void Grid::updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture)
     Log<Message>::Warning("Combining the smart grid feature with a nonuniform grid is not yet handled correctly.");
 
     updateMaxEnergy(uMax);
+    updatedMaxEnergy.emit();
+}
+
+void Grid::sizingFieldRefinement(const Vector &eedf) {
+    Log<Message>::Notify("Refining...");
+
+    // TODO: Our goal is to construct a sizing field vector using the derivative
+    // of the eedf. Subsequently, we use this sizing field vector to
+    // redistribute our grid nodes and reinterpolate the cross sections.
+
+    Vector sizingField(nCells() + 1);
+
+    sizingField[0] = 0.0;
+    sizingField.tail(nCells()) = (1 + cellDerivative(*this, eedf).array().abs().pow(1./8.)).cwiseInverse().cwiseSqrt();
+
+    sizingField /= sizingField.sum();
+
+    std::partial_sum(sizingField.begin(), sizingField.end(), sizingField.begin());
+
+    Log<Message>::Notify(du());
+    Log<Message>::Notify(sizingField * uMax());
+
+    sizingField *= uMax();
+    const auto newCells = (sizingField.tail(nCells()) + sizingField.head(nCells())).array() / 2.;
+    const auto newDuCells = sizingField.tail(nCells()) - sizingField.head(nCells());
+    writeGnuplot(std::cout, "", "", "", newCells, sizingField.tail(nCells()) - sizingField.head(nCells()));
+
+    Log<Message>::Notify(sizingField.tail(nCells()) - sizingField.head(nCells()));
+
+    m_nodes = sizingField;
+    m_cells = newCells;
+    m_duCells = newDuCells;
+
+    /* the first node (==face) size is the energy difference between the
+     * grid boundary and the adjacent internal cell.
+     */
+    m_duNodes[0] = m_cells[0] - 0.;
+    m_duNodes[m_nodes.size()-1] = uMax() - m_cells[m_cells.size()-1];
+    // for internal nodes, du is the difference between the energies of the adjacent cells.
+    m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
+
+    m_isUniform = false;
+    
     updatedMaxEnergy.emit();
 }
 } // namespace loki

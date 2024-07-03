@@ -224,6 +224,8 @@ class Grid
 
     void updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture);
 
+    void sizingFieldRefinement(const Vector &eedf);
+
     /** Event. This is mutable, so a new listener can be added to a constant
      *  grid object.
      */

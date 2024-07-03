@@ -70,6 +70,8 @@ public:
 
     /// \todo make private, add accessor
     ResultEvent obtainedNewEedf;
+
+    Event<const Vector&> refineGrid;
 protected:
     /** Calls updateMaxEnergy(uMax) on the grid. This function allows us to
      *  keep the grid member private and expose only a non-constant reference

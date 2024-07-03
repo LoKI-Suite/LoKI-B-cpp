@@ -59,6 +59,8 @@ ElectronKinetics::ElectronKinetics(const std::filesystem::path &basePath, const 
     carOperator(mixture.CARGases().empty() ? nullptr : new CAROperator(mixture.CARGases())),
     eedf(grid().nCells())
 {
+    // TODO: Make grid listen to `refineGrid` event.
+    refineGrid.addListener(&Grid::sizingFieldRefinement, &m_grid);
 }
 
 void ElectronKinetics::updateMaxEnergy(double uMax)
@@ -575,6 +577,9 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         }
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
+
+        // TODO: Apply sizing field-based adaptive grid generation.
+        refineGrid.emit(eedf);
 
         ++iter;
     }
