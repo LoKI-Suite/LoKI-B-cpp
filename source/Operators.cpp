@@ -445,7 +445,7 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
         alpha = distributeTwoCells(grid, targetCell, targetBegin);
     } else
     {
-        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
+        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse, frac);
     }
 
     return alpha;
@@ -482,15 +482,7 @@ std::vector<std::tuple<Grid::Index, double>> oneTakesAllDistribution(const Grid&
     int targetEnd;
     targetCell = grid.getCell(sourceidx) - grid.getNode(sourceidx);
     targetBegin = 0;
-    targetEnd = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx + 1) - grid.getNode(sourceidx)) -
-        grid.getNodes().begin() - 1;
-
-    if (targetEnd == 0)
-    {
-        std::vector<std::tuple<Grid::Index, double>> alpha;
-        alpha.push_back(std::make_tuple(0, 1.));
-        return alpha;
-    }
+    targetEnd = getUpperBound(grid, grid.duCell(sourceidx));
 
     std::vector<std::tuple<Grid::Index, double>> alpha;
     if (targetEnd - targetBegin == 1)
@@ -569,6 +561,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                         targetDensity * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
                                 }
                             }
+
                             inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                         }
                     }
@@ -871,9 +864,9 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                     {
                         ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
 
-                        if (grid.getNode(k+1) < (grid.getCell(grid.nCells() - 1) - threshold) / 2)
+                        if (grid.getNode(k+1) < (grid.getCell(grid.nCells() - 1) - grid.getNode(numThreshold)) / 2)
                         {
-                            const auto alpha = getOperatorDistribution(grid, threshold,
+                            const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
                                     grid.getCell(k), k, true, 2.0);
                             for (int i = 0; i < int(alpha.size()); i++)
                             {

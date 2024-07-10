@@ -167,10 +167,16 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 
     Vector cellCrossSection(n);
 
-    for (uint32_t i = 0; i < n; ++i)
+    if (threshold <= grid->getCell(0) || threshold > grid->getNode(n))
     {
-        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+        collPower.forward = 0.0;
+        collPower.backward = 0.0;
+        return collPower;
     }
+
+    for (uint32_t i = 0; i < n; i++)
+        cellCrossSection[i] = .5 * ((*crossSection)[i] + (*crossSection)[i + 1]);
+
     int lmin;
     if (grid->isUniform())
     {
@@ -179,7 +185,6 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
     {
         lmin = static_cast<uint32_t>(std::upper_bound(grid->getNodes().begin(),grid->getNodes().end(), threshold) - grid->getNodes().begin()) - 1;
     }
-
     double ineSum = 0;
 
     if (grid->isUniform())
@@ -230,9 +235,9 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
         {
             for (uint32_t i = 0; i < n; ++i)
             {
-                if (grid->getNode(i) > threshold)
+                if (grid->getNode(i) > grid->getNode(lmin))
                 {
-                    const auto alpha = getOperatorDistribution(*grid, threshold, grid->getCell(i), i, false, 1.0);
+                    const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin), grid->getCell(i), i, false, 1.0);
                     
                     for (int k = 0; k < int(alpha.size()); k++)
                     {
@@ -242,10 +247,10 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
                     }
                 }
 
-                if (grid->getCell(i) + threshold < grid->getCell(n - 1))
+                if (grid->getCell(i) + grid->getNode(lmin) < grid->getCell(n - 1))
                 {
                     int j = std::upper_bound(grid->getCells().begin(), grid->getCells().end(), grid->getCell(i) + 
-                            threshold) - grid->getCells().begin() - 1;
+                            grid->getNode(lmin)) - grid->getCells().begin() - 1;
                     supSum -= grid->getCell(j) * cellCrossSection[j] * grid->getCell(i) * grid->duCell(i) * eedf[i];
                 }
             }
@@ -289,29 +294,47 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
 
         if (ionizationOperatorType == IonizationOperatorType::equalSharing)
         {
-            double sumOne = 0., sumTwo = 0., sumThree = 0.;
-
-            for (uint32_t i = lmin - 1; i < n; ++i)
-            {
-                sumOne += grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * eedf[i];
-            }
-
-            for (uint32_t i = 1 + lmin; i < n; i += 2)
-            {
-                const double term = grid->getCell(i) * cellCrossSection[i] * eedf[i];
-
-                sumTwo += term;
-                sumThree += grid->getCell(i) * term;
-            }
-
             if (grid->isUniform())
             {
+                double sumOne = 0., sumTwo = 0., sumThree = 0.;
+
+                for (uint32_t i = lmin - 1; i < n; ++i)
+                {
+                    sumOne += grid->getCell(i) * grid->getCell(i) * cellCrossSection[i] * eedf[i];
+                }
+
+                for (uint32_t i = 1 + lmin; i < n; i += 2)
+                {
+                    const double term = grid->getCell(i) * cellCrossSection[i] * eedf[i];
+
+                    sumTwo += term;
+                    sumThree += grid->getCell(i) * term;
+                }
+
                 collPower.forward = -SI::gamma * getTarget()->delta() * grid->du() *
                                     (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
-            } else 
+            } else
             {
-                collPower.forward = -SI::gamma * getTarget()->delta() * grid->duCell(lmin) *
-                                    (sumOne + 2 * grid->getCell(lmin) * sumTwo - 2 * sumThree);
+                double sum1 = 0., sum2 = 0.;
+
+                for (uint32_t i = 0; i < n; ++i)
+                {
+                    sum1 -= grid->getCell(i) * cellCrossSection[i] * eedf[i] * grid->getCell(i) * grid->duCell(i);
+
+                    if (grid->getNode(i+1) < (grid->getCell(n - 1) - grid->getCell(lmin)) / 2)
+                    {
+                        const auto alpha = getOperatorDistribution(*grid, grid->getCell(lmin),
+                                grid->getCell(i), i, true, 2.0);
+                        for (int k = 0; k < int(alpha.size()); k++)
+                        {
+                            sum2 += 4 * std::get<1>(alpha[k]) *
+                                grid->getCell(std::get<0>(alpha[k])) * cellCrossSection[std::get<0>(alpha[k])]
+                                * eedf[std::get<0>(alpha[k])] * grid->getCell(i) * grid->duCell(i);
+                        }
+                    }
+
+                    collPower.forward = SI::gamma * getTarget()->delta() * (sum1 + sum2);
+                }
             }
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
