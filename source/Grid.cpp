@@ -64,12 +64,12 @@ Grid::Grid(unsigned nCells, double maxEnergy, SmartGridParameters *smartGridPara
     }
 }
 
-Grid::Grid(const Vector& nodeDistribution, double maxEnergy)
-   : Grid(nodeDistribution,maxEnergy,false)
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy, SmartGridParameters *smartGridParameters)
+   : Grid(nodeDistribution, maxEnergy, false, smartGridParameters)
 {
 }
 
-Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform)
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform, SmartGridParameters *smartGridParameters)
  : m_nCells(nodeDistribution.size()-1),
    m_du(isUniform ? maxEnergy/(nodeDistribution.size()-1) : 0.0),
    m_nodes(nodeDistribution*maxEnergy),
@@ -85,6 +85,10 @@ Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform)
     m_duNodes[m_nodes.size()-1] = maxEnergy - m_cells[m_cells.size()-1];
     // for internal nodes, du is the difference between the energies of the adjacent cells.
     m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
+
+    if (smartGridParameters != nullptr) {
+        m_smartGrid.reset(smartGridParameters);
+    }
 #if 0
 	std::cout << "nCells = " << m_nCells << std::endl;
 	std::cout << "faces = " << m_nodes << std::endl;
@@ -96,21 +100,24 @@ Grid Grid::fromConfig(const json_type &cnf)
 {
     if (cnf.contains("nonuniformGrid"))
     {   
+        Vector nodeDistribution;
         if (cnf.at("nonuniformGrid").at("nodeDistribution").is_object())
         {
             auto range = Range::create(cnf.at("nonuniformGrid").at("nodeDistribution"));
-            Vector nodeDistribution(range->size());
+            nodeDistribution = Vector(range->size());
             for (Range::size_type i=0; i<range->size(); i++)
-            {
                 nodeDistribution[i] = range->value(i);
-            }
-            return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
         } else
         {
             auto nodes = cnf.at("nonuniformGrid").at("nodeDistribution").get<std::vector<double>>();
-            Vector nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
-            return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>());
+            nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
         }
+
+        SmartGridParameters *parameters = nullptr;
+        if (cnf.contains("smartGrid")) {
+            parameters = new SmartGridParameters(cnf.at("smartGrid"));
+        }
+        return Grid(nodeDistribution, cnf.at("nonuniformGrid").at("maxEnergy").get<double>(), parameters);
     } else
     {
         if (cnf.contains("smartGrid")) {
@@ -151,10 +158,11 @@ void Grid::updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture)
     // TODO: Build new nonuniform energy grid.
     // m_nodes = fnc() * uMax;
 
-    m_nodes = makeGridFromMixture(mixture, uMax, 1e-9, 1.5);
+    const double uMaxRatio = uMax / this->uMax();
+    m_nodes *= uMaxRatio;
+
     m_cells = .5*(m_nodes.tail(m_nodes.size() - 1) + m_nodes.head(m_nodes.size() - 1));
     m_duCells = m_nodes.tail(m_nodes.size() - 1) - m_nodes.head(m_nodes.size() - 1);
-    m_duNodes.resize(m_nodes.size());
     m_duNodes[0] = m_cells[0] - 0.;
     m_duNodes[m_nodes.size()-1] = uMax - m_cells[m_cells.size()-1];
     m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
