@@ -1003,7 +1003,14 @@ void ElectronKineticsBoltzmann::solveSmartGrid()
 
     while (decades < smartGrid.minEedfDecay)
     {
-        updateMaxEnergy(grid().uMax() * (1 + smartGrid.updateFactor));
+        if (grid().isUniform())
+        {
+            updateMaxEnergy(grid().uMax() * (1 + smartGrid.updateFactor));
+        } else
+        {
+            // updateMaxEnergyNonuniform(grid().uMax() * (1 + smartGrid.updateFactor));
+            updateMaxEnergy(grid().uMax() * (1 + smartGrid.updateFactor));
+        }
         solveSingle();
         decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
         //std::cout << "decades: " << decades << ", uMax: " << grid().uMax() << std::endl;
@@ -1011,7 +1018,14 @@ void ElectronKineticsBoltzmann::solveSmartGrid()
 
     while (decades > smartGrid.maxEedfDecay)
     {
-        updateMaxEnergy(grid().uMax() / (1 + smartGrid.updateFactor));
+        if (grid().isUniform())
+        {
+            updateMaxEnergy(grid().uMax() / (1 + smartGrid.updateFactor));
+        } else
+        {
+            updateMaxEnergy(grid().uMax() / (1 + smartGrid.updateFactor));
+            // updateMaxEnergyNonuniform(grid().uMax() / (1 + smartGrid.updateFactor));
+        }
         solveSingle();
         decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
         //std::cout << "decades: " << decades << ", uMax: " << grid().uMax() << std::endl;
@@ -1039,7 +1053,14 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
         while (decades<smartGrid.minEedfDecay)
         {
             uP *= 2;
-            updateMaxEnergy(uP);
+            if (grid().isUniform())
+            {
+                updateMaxEnergy(uP);
+            } else
+            {
+                updateMaxEnergy(uP);
+                // updateMaxEnergyNonuniform(uP);
+            }
             solveSingle();
             decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
             std::cout << "uMax = " << grid().uMax() << ", decades = " << decades << std::endl;
@@ -1052,7 +1073,14 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
         while (decades>smartGrid.maxEedfDecay)
         {
             uM /= 2;
-            updateMaxEnergy(uM);
+            if (grid().isUniform())
+            {
+                updateMaxEnergy(uM);
+            } else
+            {
+                updateMaxEnergy(uM);
+                // updateMaxEnergyNonuniform(uM);
+            }
             solveSingle();
             decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
             std::cout << "uMax = " << grid().uMax() << ", decades = " << decades << std::endl;
@@ -1074,7 +1102,15 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
     while (decades<smartGrid.minEedfDecay || decades>smartGrid.maxEedfDecay)
     {
         // bisection step
-        updateMaxEnergy((uP+uM)/2);
+        if (grid().isUniform())
+        {
+            updateMaxEnergy((uP+uM)/2);
+        } else
+        {
+            updateMaxEnergy((uP+uM)/2);
+            // updateMaxEnergyNonuniform((uP+uM)/2);
+        }
+        
         solveSingle();
         decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
         std::cout << "uMax = " << grid().uMax() << ", decades = " << decades << std::endl;
