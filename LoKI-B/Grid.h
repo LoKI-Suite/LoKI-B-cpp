@@ -138,14 +138,14 @@ class Grid
      * The physical energy values of the nodes can be calculated by multiplying
      * the maxEnergy and the nodeDistribution function.
      */
-    Grid(const Vector &nodeDistribution, double maxEnergy);
+    Grid(const Vector &nodeDistribution, double maxEnergy, SmartGridParameters *smartGridParameters = nullptr);
     /** Construct a Grid from the parameters "maxEnergy" (double)
      *  and "cellNumber" (unsigned) in the json object \a cnf.
      *  When an element "smartGrid" is present, a SmartGridParameters
      *  object will be created, see smartGrid().
      */
     explicit Grid(const json_type &cnf);
-    Grid(const Vector &nodeDistribution, double maxEnergy, bool isUniform);
+    Grid(const Vector &nodeDistribution, double maxEnergy, bool isUniform, SmartGridParameters *smartGridParameters = nullptr);
     /// Grids canot be copied.
     Grid(const Grid &other) = delete;
 
