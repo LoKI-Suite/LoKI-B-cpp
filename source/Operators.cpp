@@ -995,7 +995,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                                 2*grid.getCell(k) + grid.getCell(numThreshold)) - grid.getNodes().begin() - 1;
                         for (Grid::Index i = idx1; i < grid.nCells(); ++i)
                         {
-                            ionizationMatrix(k, i) += delta * grid.duCell() * grid.getCell(i) * cellCrossSection[i] /
+                            ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
                                                     (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
                                                     (W + std::pow(grid.getCell(k), 2) / W));
                             /* See the note above about the optical differences with equation 63
