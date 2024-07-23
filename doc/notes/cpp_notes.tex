@@ -30,6 +30,8 @@
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\sgn}{sgn}
 \DeclareMathOperator{\Inf}{Inf}
+%\DeclareMathOperator{\Pe}{Pe}
+\newcommand{\Pe}[0]{{\ensuremath{{\cal P}}}}
 
 
 \bibliographystyle{unsrt}
@@ -437,9 +439,9 @@ higher degrees of ionization, the source terms that are represented by $C_v^0(u)
 are due to binary collisions of electrons and the background gas. As a result
 these sources are linear in both $n_e$ and $N$, and it is convenient to
 introduce a new symbol
-$\tilde{C}_u(u)$,
+$\tilde{C}(u)$,
 \begin{equation}
-	\tilde{C}^0(u) = 2\pi\gamma^3\frac{C_u^0(u)\sqrt{u}}{Nn_e},
+	\tilde{C}^0(u) = 2\pi\gamma^3\frac{C_v^0(u)\sqrt{u}}{Nn_e},
 	\label{eq:Ctilde0}
 \end{equation}
 This symbol also appears in \cite[eq. 14]{Hagelaar2005}.
@@ -662,22 +664,28 @@ is the choice for temporal/spatial usually docuented? Then that should be respec
 obviously. Is that actually what people do?
 \end{framed}
 
-\subsection{Temporal Growth}
-The {\em Temporal Growth} model assumes, in addition, that the electron density depends
-only on time, yielding
+In the subsequent sections, we will work out the widely used models that are based on
+the assumption that the electron density depends only on time (the {\em temperal growth model})
+or on the space coordinate (the {\em spatial growth model}).
+
+\section{The Temporal Growth Model}
+\label{sec:theory:temp-growth}
+
+Our starting point is the set of equations \eqref{eq:ebe-2term-f-u0(u)} and
+\eqref{eq:ebe-2term-f-u1(u)}. The {\em Temporal Growth Model} is based on the
+additional asumption that the electron density depends only on time, yielding
 \begin{align}
 	&\sqrt{u}f^0_u\frac{1}{n_e}\PDEV{n_e}{t}
 	- \frac{\gamma}{3}E\PDEV{u f^1}{u}
 	=  N\tilde{C}^0,
-	\nonumber \\
+	\\
 	&f^1_u\frac{1}{n_e}\PDEV{n_e}{t}
 	- E\gamma \sqrt{u}\PDEV{f^0_u}{u}
 	= -\nu_m(u)f^1_u.
-	\nonumber
 \end{align}
-For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e}
-tell us that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\text{eff}}}$. This allows the second equation
-to be rewritten as
+For this case, equations \eqref{eq:particle-balance} and \eqref{eq:S_e} tell us
+that $\dd{n_e}/\dd{t}=n_eN\MEAN{K_{\text{eff}}}$. This allows the second
+equation to be rewritten as
 \begin{align}
 	&f^1_u(u)
 	= \frac{E}{N}\frac{1}{\Omega_{pt}(u)}\PDEV{f^0_u}{u},
@@ -720,13 +728,14 @@ the equation for $f^0(u)$ is defined to be $-\tilde{R}_{pt}$, where
 $\tilde{R}_{pt}$ is called the `growth renormalization term',
 \begin{equation}
 	\tilde{R}_{pt}(u) = -\sqrt{u}f^0_u\MEAN{K_{\text{eff}}}.
+	\label{eq:R_pt}
 \end{equation}
 Bringing this to the right-hand side of the equation, that takes the form that is also
 found in \cite[eq. 25]{Hagelaar2005},
 \begin{equation}
 	\DERIV{H_{E,pt}}{u} = \tilde{C}^0(u) + \tilde{R}_{pt}(u).
+	\label{eq:EBE-temp-growth}
 \end{equation}
-
 
 When solving this equation, iterations are needed until the value of
 $\MEAN{K_{\text{eff}}}$ is consistent with the eedf $f^0(u)$. Note that
@@ -750,8 +759,36 @@ The expression for $\mu_eN$ is given in \cite[eq. 46b]{Manual_2_2_0}.
 Note that LoKI-B has an additional minus sign in these two equations to make $\mu_e$ positive,
 see section \ref{sec:compatibility} for details.
 
-Repeating these steps, but multiplying with $\frac{1}{3}\gamma u^2 n_e$ this time,
-yields an expression for the electron {\em energy} flux density,
+For later purposes we provide an alternative expression for the mobility. Firstly,
+we define the auxialiary quantity
+\begin{equation}
+	H_{E,x}^0(u) = - \gamma{\cal D}_{x}^0(u)\PDEV{f^0_u}{u},
+	\label{eq:H_E,x^0}
+\end{equation}
+so equation \eqref{eq:H_E,x} can be written as
+\begin{equation}
+	H_{E,x}(u) = \left(\frac{E}{N}\right)^2H_{E,x}^0(u).
+\end{equation}
+In terms of this quantity, \eqref{eq:mueN} takes the form
+\begin{equation}
+	\mu_eN = -\int\limits_0^\infty H_{E,x}^0(u) \dd{u}.
+\end{equation}
+This can be manipulated as follows:
+\begin{equation}
+	\mu_eN
+	= -\int\limits_0^\infty H_{E,x}^0(u) \DERIV{u}{u} \dd{u}
+	= -\int\limits_0^\infty \left(\DERIV{uH_{E,x}^0(u)}{u} - u\DERIV{H_{E,x}^0(u)}{u}\right)\dd{u}
+	= +\int\limits_0^\infty u\DERIV{H_{E,x}^0(u)}{u}\dd{u}.
+	\label{eq:mueN-alt}
+\end{equation}
+Here we have used the fact that $uH_{E,x}^0(u)$ vanishes for $u=0$ and for
+$u\rightarrow\infty$. (TODO: announce that the discrete form of this equation
+is consistent with the discretization of $\dd{H_{E,x}^0(u)}/\d{u}$ that is
+ussed in the solution of the Boltzmann equation.
+
+Repeating the steps that resulted in equation \eqref{eq:Gamma_e-temp}, but multiplying
+with $\frac{1}{3}\gamma u^2 n_e$ this time, yields an expression for the electron
+{\em energy} flux density,
 \begin{equation}
 	\Gamma_u = (\mu_uN\MEAN{u})(E/N)n_e = \mu_uE n_e\MEAN{u} = \mu_uE n_u.
 	\label{eq:Gamma_u-temp}
@@ -781,7 +818,34 @@ The expression for LoKI-B's $\mu_uN$ is given in \cite[eq. 48b]{Manual_2_2_0}.
 Note that again LoKI-B has an additional minus sign in these two equations to make $\mu_u$
 positive, see section \ref{sec:compatibility} for details.
 
-TODO: energy balance for the temporal growth model.
+{\bf TODO: discuss the energy balance for the temporal growth model, and discuss the
+epresions below.}
+By multiplying equation \eqref{eq:EBE-temp-growth} with $u$, integrating over
+all energies and using \eqref{eq:R_pt} we get
+\begin{equation}
+	P_{E,pt}
+	:= \int\limits_0^\infty u\DERIV{H_{E,pt}}{u} \dd{u}
+	= \int\limits_0^\infty u\tilde{C}^0(u) \dd{u}
+	+ \int\limits_0^\infty u\tilde{R}_{pt}(u) \dd{u}
+	= \int\limits_0^\infty u\tilde{C}^0(u) \dd{u}
+	- \MEAN{u}\MEAN{K_{\text{eff}}}.
+\end{equation}
+There are a few ways to rewrite this expression. Firstly, using
+\eqref{eq:S_u} this becomes
+\begin{equation}
+	\int\limits_0^\infty u\DERIV{H_{E,pt}}{u} \dd{u}
+	= S_u/(n_eN)
+	- \MEAN{u}\MEAN{K_{\text{eff}}}.
+\end{equation}
+Secondly, using
+\eqref{eq:K_eff} this becomes
+\begin{equation}
+	\int\limits_0^\infty u\DERIV{H_{E,pt}}{u} \dd{u}
+	= \int\limits_0^\infty (u-\MEAN{u})\tilde{C}^0(u) \dd{u}.
+\end{equation}
+Left-hand side: using \eqref{eq:mueN-alt} this is equal to
+$(E/N)^2(\mu_eN)$. (TODO: check signs)
+
 
 \subsection{Temporal Growth for HF Fields}
 
@@ -807,8 +871,13 @@ Summary of the consequences of the HF mode:
 	order to express everything in terms of $E_{rms}$.
 \end{itemize}
 
-\subsection{Spatial Growth}
-The {\em Spatial Growth} model allows only {\em spatial} variations of $n_e$, yielding
+\section{The Spatial Growth Model}
+\label{sec:theory:spat-growth}
+
+Our starting point is again the set of equations \eqref{eq:ebe-2term-f-u0(u)}
+and \eqref{eq:ebe-2term-f-u1(u)}. The {\em Spatial Growth Model} is based on the
+additional asumption that the electron density depends only on the space
+coordinate, yielding
 \begin{align}
 	&
 	  \frac{\gamma}{3}uf^1_u\frac{1}{n_e}\PDEV{n_e}{z}
@@ -860,10 +929,11 @@ using the definition of ${\cal D}_x^0(u)$ from equation \eqref{eq:D0} we obtain
 	= \mu_e E - D_e\alpha_{\text{eff}}.
 	\label{eq:ebe-2term-f-u1(u)-spat-v_z}
 \end{equation}
-Here we have used expression \eqref{eq:mueN} for the reduced electron diffusion coefficient
-$D_eN$, and introduced the (reduced) electron diffusion coefficient,
+Here we have used expression \eqref{eq:mueN} for the reduced electron mobility
+$\mu_eN$, and introduced the (reduced) electron diffusion coefficient,
 \begin{equation}
-	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \label{eq:DeN}
+	D_eN   = \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}.
+	\label{eq:DeN}
 \end{equation}
 The expression for $D_eN$ is given in \cite[eq. 46a]{Manual_2_2_0}.
 
@@ -920,8 +990,49 @@ has been introduced, which is now given by
 	\right].
 	\label{eq:Rsst-orig}
 \end{equation}
+The LoKI-B code is based on \eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and
+expression \eqref{eq:Rsst-orig} for the growth renormalization term (after
+$E\rightarrow -E$, as explained in section \ref{sec:compatibility}).
 \begin{framed}
-A small intermezzo: let's verify the integral of this equation over energy:
+  The LoKI-B code deviates from the manual \cite[eq. 8a--b,
+  29--30c,32]{Manual_2_2_0}, where essentially equation
+  \eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented: the field
+  operator is modified to also describe part of the growth effects.
+\end{framed}
+
+We can rewrite equation \eqref{eq:Rsst-orig} by expanding the derivative of the
+product ${\cal D}_m^0(u)f^0_u$ and reordering terms,
+\begin{equation}
+	\tilde{R}_{sst}(u)
+	  =-\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)\left(2\frac{E}{N}\PDEV{f^0_u}{u}
+        - \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
+	+ \frac{E}{N}f^0_u\PDEV{{\cal D}_m^0(u)}{u}
+	\right].
+	\label{eq:Rsst-alts}
+\end{equation}
+This equation is what you find in the BOLSIG+ paper \cite[eq. 19]{Hagelaar2005}
+(after changing $\alpha_{\text{eff}}\rightarrow -\alpha_{\text{eff}}$).
+
+\subsection{Notes and Questions}
+Reference \cite{Blevin1984} may contain answers to some of the questions below
+(thanks to Nuno Pinh\~ao and Lu\'is Alves for providing this reference).
+\begin{itemize}
+\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
+	Why should the second solution of the equation for $\alpha_{\text{eff}}$ be rejected?
+\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
+	velocities are equal (but opposite). Then definition \eqref{eq:alpha_eff}
+	of $\alpha_{\text{eff}}$ fails. How can we fix this?
+	In case $\MEAN{v_z}=0$, should we adopt $\alpha_{\text{eff}}=0$? We
+	also want $\alpha_{\text{eff}}=0$ if $\MEAN{\nu_{\text{eff}}}=0$.
+	What if the velocity and frequency are {\em both} zero?
+\item Why should complex roots (if any) be ignored/patched? Physically
+	these would result in oscillatory $n_e(z)$. Is that wrong per se?
+	Are these in conflict with any prior assumption? Then that should be
+	explained.
+\end{itemize}
+
+\begin{framed}
+A small intermezzo: let's verify the integral of equation \eqref{eq:Rsst-orig} over energy:
 \begin{align*}
 	\int\limits_0^\infty \tilde{R}_{sst}(u)\dd{u}
 	=
@@ -941,147 +1052,36 @@ After multiplication with $N$ this can be written as
 	0 = \MEAN{\nu_{\text{eff}}} -\alpha_{\text{eff}}\mu_eE +\alpha_{\text{eff}}^2D_e.
 \end{equation}
 which is again the equation for $\alpha_{\text{eff}}$. Good.
-TODO: verify that also the discrete form is conistent.
-\end{framed}
+TODO: verify that also the discrete form is consistent.
 
-
-We can rewrite equation \eqref{eq:Rsst-orig} by expanding the derivative of the
-product ${\cal D}_m^0(u)f^0_u$ and reordering terms,
+Additional note: the first term on the right-hand side can be expressed in terms of
+$H_{E,x}(u)$ (see equation \eqref{eq:H_E,x}):
 \begin{align}
-	\tilde{R}_{sst}(u)
-	  &=-\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)\left(2\frac{E}{N}\PDEV{f^0_u}{u}
-        - \frac{\alpha_{\text{eff}}}{N}f^0_u\right)
-	+ \frac{E}{N}f^0_u\PDEV{{\cal D}_m^0(u)}{u}
+	&  -\gamma\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\int\limits_0^\infty{\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
+	\nonumber \\
+	&= -\frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\gamma\left(\frac{E}{N}\right)^2\int\limits_0^\infty{\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
+	\nonumber \\
+	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,x}\dd{u}.
+\end{align}
+Using a partial integration, and using the fact that $uH_{E,x}(u)$ vanishes for $u=0$ and for $u\rightarrow\infty$,
+this can be written as
+\begin{align}
+	\ldots
+	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,x}\PDEV{u}{u}\dd{u}.
+	\nonumber \\
+	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\left[
+		\left. \vphantom{\int\limits_0^\infty} u H_{E,x}\right|_0^\infty
+		- \int\limits_0^\infty u\PDEV{H_{E,x}}{u}\dd{u}
 	\right]
 	\nonumber \\
-	  &= -\gamma\frac{\alpha_{\text{eff}}}{N}\left[{\cal D}_m^0(u)2\frac{E}{N}\PDEV{f^0_u}{u}
-	+ \left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u}-\frac{\alpha_{\text{eff}}}{N}{\cal D}_m^0(u)\right)f^0_u
-	\right].
-	\label{eq:Rsst-alts}
+	&= -\frac{\alpha_{\text{eff}}}{N}\frac{N}{E}
+		\int\limits_0^\infty u\PDEV{H_{E,x}}{u}\dd{u}
 \end{align}
-The first form of this equation is what you find in the BOLSIG+ paper \cite[eq. 19]{Hagelaar2005}
-(after changing $\alpha_{\text{eff}}\rightarrow -\alpha_{\text{eff}}$).
-In the last step, the terms involving $f^0_u$ and its derivative have been separated,
-which is more convenient when the terms are discretized.
-On the other hand, we can use ${\cal D}_m^0(u)\dd{f^0_u}/\dd{u} = \dd{{\cal D}_m^0(u)f^0_u}/\dd{u} - f^0_u\dd{{\cal D}_m^0(u)}/\dd{u}$
-to obtain
-\begin{align}
-	\tilde{R}_{sst}(u)
-	= \gamma\frac{\alpha_{\text{eff}}}{N}\left[
-	  f^0_u(u)\left(\frac{E}{N}\PDEV{{\cal D}_m^0(u)}{u} + \frac{\alpha_{\text{eff}}}{N}{\cal D}_m^0(u)\right)
-	- 2\frac{E}{N}\PDEV{{\cal D}_m^0(u)f^0_u}{u}
-	\right].
-\end{align}
-
-\noindent {\bf Which Form is Discretized in LoKI-B?}
-\begin{itemize}
-\item In the LoKI-B {\em manual} \cite[eq. 8a--b,
-	29--30c,32]{Manual_2_2_0}, essentially equation
-	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
-	operator is modified to also describe part of the growth effects.
-\item This is {\em not} what is in the LoKI-B code. That is based on
-	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and expression
-	\eqref{eq:Rsst-orig} for the growth renormalization term
-	(after $E\rightarrow -E$):
-	\begin{itemize}
-		\item \SRC{fieldOperator} is reused; it provides the term that is also present in the absence of growth.
-		\item \SRC{fieldMatrixSpatGrowth} provides
-		\[
-			\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
-		\]
-		which corresponds to the additional contribution to the field term --- the last term of
-		equation \eqref{eq:Rsst-orig}. Together, these field terms correspond
-		to equation (30) of the manual.
-		\begin{framed}
-			On boundary points, only one of the two terms that form the discrete
-			approximation of this derivative is handled. The problem is similar
-			that in the discretization of \SRC{ionSpatialGrowthU} and the diffusion
-			coefficient and mobility of the electrons (see below).
-		\end{framed}
-		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0f^0(u)$:
-			the second term on the right-hand side of eqiation \eqref{eq:Rsst-orig},
-			the first term of equation (29) of the manual.
-		\item The remaining first term of requation \eqref{eq:Rsst-orig} is
-			$\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
-			and is provided by \SRC{ionSpatialGrowthU}.
-			For the internal cells, a central-difference scheme for the derivative of $f(u)$ yields the approximation
-			\begin{equation}
-				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
-				\doteq
-				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u}
-				:=
-				C_k\frac{f_{k+1}-f_{k-1}}{2\Delta u},
-			\end{equation}
-			This corresponds to the second term of equation (29) in the manual.
-
-			The manual does not explain how to handle the first and last cells,
-			but for those the derivatives can of course be approximated with the
-			asymmetric approximations $(f_1-f_0)/\Delta u$ and
-			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
-
-			In the original code, $C_k$ is expressed in terms of \SRC{U0sup} and \SRC{U0inf},
-                        which makes the expression a bit more difficult to grasp. To understand the
-			expressions in the original code, note that
-			\begin{lstlisting}[language=C++]
-alphaRedEffNew*U0inf[k-1] == alphaRedEffNew*(-EoN /(2.*grid().du())*D0[k]) (= -C_k/(2*du))
-alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C_k/(2*du))
-			\end{lstlisting}
-\begin{framed}
-			At the boundary points, the discretization seems wrong. The problem
-			is the same as that in the evaluation of $\mu_eE$, see \ref{sec:muD-eval}.
 \end{framed}
 
-\begin{framed}
-			It is important that the same coefficients (here called $C_k$) are used in
-			the discretization of the growth operator as in the evaluation of the
-			mobility. This means that also the mobility must use the expression involving
-			the derivative if the EEDF, instead of the more convenient expression that
-			is based on a partial integration of the integrand.
-\end{framed}
-	\end{itemize}
-\item Confusion is caused in the code by the fact that the
-	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
-	of the \SRC{fieldMatrixSpatGrowth}, has a division by 6,
-	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
-	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
-	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
-	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$ in equation
-	\ref{eq:-dGdu/Ngamma-discrete}).
 
-	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
-	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
-	instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
-	with the $G_x(u)$ exposition. We also had to add the division by 2 in the
-	interpolation code
-	\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
-	the only other location where the array is used (which also makes it easier
-	understand that an interpolation to a cell value is happening in that code).
-	In MATLAB (version 2.2.0) that last code can be found in
-	\SRC{Boltzmann.m} line 1512.
-\item It appears that the MATLAB version of the growth codes has been revised
-	significantly since the C++ version was created from the 1.0.0 MATLAB code.
-	Various issues that were reported in the (C++) source code may have
-	been resolved, maybe not. A full comparison of the C++ code and current MATLAB
-	version is due.
-\end{itemize}
 
-\noindent {\bf Notes and Questions --- Theory:}
-\begin{itemize}
-\item Why don't the BOLSIG+ and LoKI-B documents address the existence and significance of a second root?
-	Why should the second solution of the equation for $\alpha_{\text{eff}}$ be rejected?
-\item The physical significance of $\MEAN{v_z}=0$ is that the drift and diffusion
-	velocities are equal (but opposite). Then the above definition fails. How
-	can we fix this?
-	In case $\MEAN{v_z}=0$, should we adopt $\alpha_{\text{eff}}=0$? We
-	also want $\alpha_{\text{eff}}=0$ if $\MEAN{\nu_{\text{eff}}}=0$.
-	What if the velocity and frequency are {\em both} zero?
-\item Why should complex roots (if any) be ignored/patched? Physically
-	these would result in oscillatory $n_e(z)$. Is that wrong per se?
-	Are these in conflict with any prior assumption? Then that should be
-	explained.
-\end{itemize}
-
-\subsubsection{Energy Balance}
+\subsection{Energy Balance}
 
 Multiplying equation \eqref{eq:ebe-2term-f-u0(u)-spat} with $Nu$ and integration over $u$
 yields the energy balance for the spatial growth case. After multiplication with $n_e$
@@ -1173,226 +1173,6 @@ This is confusing in the BOLSIG+ manual (or maybe an error, it depends on the de
 which suggests that the field power with growth term {\em and} the growth power
 as stated here are part of the power balance (in the NB just before item 24 on page 19).
 \end{framed}
-
-\section{The evaluation of $D_eN$ and $\mu_eN$}
-\label{sec:muD-eval}
-
-The expressions for $D_eN$ and $D_uN$ are given by equation \eqref{eq:DeN} and \eqref{eq:DuN},
-\begin{align*}
-	D_eN &= \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \\
-	D_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{x}^0(u)f(u)\dd{u}.
-\end{align*}
-The approximation of $D_N$ and $D_uN$ is straightforward:
-\begin{align}
-	D_eN &\doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u,
-	\label{eq:DeN-disc} \\
-	D_eN &\doteq \frac{\gamma}{\MEAN{u}} \sum_k u_k{\cal D}^0_kf_k\Delta u,
-	\label{eq:DuN-disc}
-\end{align}
-and this is also what you find in the code.
-
-The expressions for $\mu_eN$ and $\mu_uN$ are given in equation \eqref{eq:mueN}
-and \eqref{eq:muuN},
-\begin{align*}
-	\mu_eN &= \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}, \\
-	\mu_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
-\end{align*}
-
-
-\subsection*{Method 1}
-The expression for $\mu_eN$ can be approximated as
-\[
-	\mu_eN \doteq \gamma\sum\limits_{k=0}^{{\cal N}-1}{\cal D}^0(u_k)\left[\DERIV{f}{u}\right]_k\Delta u.
-\]
-In internal cells, the derivative can be approximated as
-\[
-	\left[\DERIV{f}{u}\right]_k = \frac{f_{k+1}-f_{k-1}}{2\Delta u},
-\]
-whereas for left and right boundary cells we can use the asymmetric expressions
-\[
-	\left[\DERIV{f}{u}\right]_0 = \frac{f_{1}-f_{0}}{\Delta u}
-	\quad
-	\quad
-	\left[\DERIV{f}{u}\right]_{{\cal N}-1} = \frac{f_{{\cal N}-1}-f_{{\cal N}-2}}{\Delta u}.
-\]
-For any ${\cal N} \geq 2$, the resulting expression can be written as
-\begin{equation}
-	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k.
-\end{equation}
-For ${\cal N} = 2$ we get
-\begin{align*}
-	\frac{\mu_eN}{\gamma}
-	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + {\cal D}_{pt}^0(u_{1})(f_{1}-f_{0}) \\
-	&= \left(-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1})\right)f_{0} + \left({\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1})\right)f_{1},
-\end{align*}
-so
-\begin{equation}
-	C_k = +\gamma\begin{cases}
-			-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1}) & k=0, \\
-			+{\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1}) & k=1.
-	\end{cases}
-\end{equation}
-For ${\cal N} = 3$ we get
-\begin{align*}
-	\frac{\mu_eN}{\gamma}
-	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + \frac{1}{2}{\cal D}_{pt}^0(u_1)(f_{2}-f_{0}) + {\cal D}_{pt}^0(u_{2})(f_{2}-f_{1}) \\
-	&=	  \left( -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) \right)f_{0}
-		+ \left( +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) \vphantom{\frac{1}{2}})\right)f_{1}
-		+ \left( +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) \right)f_{2}
-\end{align*}
-so
-\begin{equation}
-	C_k = +\gamma\begin{cases}
-			 -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) & k=0, \\
-			 +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) & k=1, \\
-			 +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) & k=2.
-	\end{cases}
-\end{equation}
-Finally, for ${\cal N} \geq 4$ we have
-\begin{align*}
-	\frac{\mu_eN}{\gamma}
-	&=
-		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
-		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)(f_{k+1}-f_{k-1})
-		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
-	\\
-	&=
-		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
-		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k+1}
-		- \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k-1}
-		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
-	\\
-	&=
-		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
-		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
-		- \frac{1}{2}\sum\limits_{k=0}^{{\cal N}-3}{\cal D}_{pt}^0(u_{k+1})f_{k}
-		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
-	\\
-	&=
-		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
-		- \frac{1}{2}\sum\limits_{k=0}^{1}{\cal D}_{pt}^0(u_{k+1})f_{k}
-	\\
-	&
-		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k}
-		\\
-	&
-		+ \frac{1}{2}\sum\limits_{k={{\cal N}-2}}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
-		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
-	\\
-	&=	  \left(-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)\right)f_{0}
-			+\left( {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)\right)f_{1} \\
-		&+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k} \\
-		&+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-2}
-			+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-1},
-\end{align*}
-so
-\begin{equation}
-	C_k = +\gamma\begin{cases}
-			-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)          & k=0, \\
-			 {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)          & k=1, \\
-			 \frac{1}{2}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)  & 2\leq k \leq {{\cal N}-3}, \\
-			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-2}, \\
-			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-1}.
-	\end{cases}
-\end{equation}
-
-\subsection*{Method 2}
-The expression for $\mu_eN$ can be expressed in terms of $f(u)$. A partial integration yields
-\[
-	\mu_eN
-		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
-		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
-		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
-\]
-This can be approximated as
-\[
-	\mu_eN \doteq -\gamma\sum\limits_{k=0}^{{\cal N}-1}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k\Delta u.
-\]
-In the internal cells, the derivative can be approximated as
-\[
-	\left[\DERIV{{\cal D}^0}{u}\right]_k = \frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
-\]
-In the left and right boundary cells we can use
-\[
-	\left[\DERIV{{\cal D}^0}{u}\right]_0 = \frac{{\cal D}^0_{1}-{\cal D}^0_{0}}{\Delta u},
-	\quad
-	\quad
-	\left[\DERIV{{\cal D}^0}{u}\right]_{\cal N} = \frac{{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2}}{\Delta u}.
-\]
-The result can be written as
-\begin{equation}
-	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k,
-\end{equation}
-with
-\begin{equation}
-	C_k = -\gamma\begin{cases}
-			{\cal D}^0_{1}-{\cal D}^0_{0} & k=0, \\
-			\frac{1}{2}({\cal D}^0_{k+1}-{\cal D}^0_{k-1}) & 1\leq k \leq {{\cal N}-2}, \\
-			{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2} & k={{\cal N}-1},
-	\end{cases}
-\end{equation}
-Alternatively, we may use the fact that ${\cal D}^0(u=0)=0$, and approximate the derivative as
-$({\cal D}^0_{0}-{\cal D}^0(u=0))/(\Delta u/2) ={\cal D}^0_{0}/(\Delta u/2)=2{\cal D}^0_{0}/\Delta u$,
-which results in the same expression, except
-\[
-	C_0 = -\gamma 2{\cal D}^0_{0}.
-\]
-In either case, this equation reults in simpler coefficient expressions, but has the disadvantage that
-is is not consistent with the discretization of the term that results in \SRC{ionSpatialGrowthU}. We
-will therefore adopt Method 1 in the code.
-
-TODO: the expression for $\mu_uN$. This is very simular: replace $\gamma -> \gamma/\MEAN{u}$ and $D^0_k->u_kD^0_k$.
-
-
-\subsection*{What is at present in LoKI-B}
-
-In the code we have
-\begin{align}
-	\mu_eE
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
-		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
-		&= +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
-			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}f_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u \nonumber \\
-		&\doteq +\gamma \frac{E}{N}\left(
-			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
-			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k
-			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u.
-\end{align}
-In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated,
-rather than the mobility. To that end, the code defines four arrays on the cell
-domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
-\begin{align}
-	{\cal D}^0_k &= \frac{u_k}{3\Omega_k}, \\
-	{\cal U}^-_k &= +\frac{E}{N}\begin{cases}
-				0 & k=0 \\
-				{\cal D}^0_{k-1}/(2\Delta u), & 0<k<{\cal N}\\
-			\end{cases} \\
-	{\cal U}^+_k &= -\frac{E}{N}\begin{cases}
-				{\cal D}^0_{k+1}/(2\Delta u), & 0\leq k<{\cal N}-1\\
-				0 & k={\cal N}-1 \\
-			\end{cases} \\
-	{\cal U} &= {\cal U}^+ + {\cal U}^-.
-\end{align}
-I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
-\[
-	\mu_eN
-		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
-		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
-		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
-\]
-since ${\cal D}^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
-We now see that the approximation makes sense ... except for the first and last cell, where we have
-${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
-Such fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course,
-but note that those are also used in the assembly of one of the spatial growth discretisation
-matrices.
-\begin{framed}
-  This problem is tested by \SRC{tests/test_trans_coefs.cpp}.
-\end{framed}
-
-
 
 \chapter{Collisional Source Terms}
 \label{ch:sources}
@@ -1800,10 +1580,16 @@ Observations:
 
 \section{Final Form}
 
+We have seen that in general the source $ \tilde{C}^0(u)$ is comprised of six
+terms: the elastic, CAR and electron-electron operators, which can be written
+in flux-divergence form as $-\dd{H_x}/\dd{u}$, and the inelastic, ionization
+and attachment operators:
 \begin{equation}
-	\tilde{C}^0(u) = -\sum\limits_{x=el,car,ee}\DERIV{H_x}{u} + \sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+	\tilde{C}^0(u) = -\sum\limits_{x=el,car,ee}\DERIV{H_x}{u} + \sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u).
 \end{equation}
-and combination with the field term and with a growth term yields
+Substitution in equation \eqref{eq:EBE-temp-growth} (temporal growth) or
+\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} (spatial growth) yields an
+expression of the form
 \begin{equation}
 	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
 	=
@@ -1818,18 +1604,27 @@ NOTES: here are some good reasons for presenting the equations this way:
 	\item The convective and diffusive parts of the functions $H_x(u)$
 	can be combined if (e.g.) the exponential scheme is used.
 \end{itemize}
-BUT: the new `transport terms' are still sources, really. Also the
-growth term is a bit confusing the way it is written, since the
-$\dd{}/\dd{t}$ terms are normally expected on th LHS.
 
 TODO:
 \begin{itemize}
 	\item In LoKI-B (MATLAB, original C++), all terms are moved to the
 		right-hand side. The matrix that is assembled appears to
-		be {\em negative}-semidefinite (before applying the normalization
+		be {\em negative} semidefinite (before applying the normalization
 		constraint to the first row).
 		Can that hurt performance of any solver?
 \end{itemize}
+
+Each term in equation \eqref{eq:EBE-final} corresponds to a term in the {\em power balance}.
+That can be obtained by multiplying this equation with $u$ and integrating over the energy grid;
+the result is
+\begin{equation}
+	\sum\limits_{x=el,car,ee,E_g}\int\limits_0^\infty u\DERIV{H_x}{u}\dd{u}
+	=
+	\sum\limits_{x=inel,ion,att}\int\limits_0^\infty u\tilde{C}^0_{x}(u)\dd{u}
+	+
+	\int\limits_0^\infty u\tilde{R}^0_g(u)\dd{u}.
+	\label{eq:EBE-power-balance}
+\end{equation}
 
 
 \chapter{Discretization}
@@ -1853,15 +1648,64 @@ The terms on the left-hand side of equation \eqref{eq:EBE-final-avg} can be
 rewritten as
 \begin{equation}
 	\MEAN{\DERIV{H_x}{u}}_k
-	= \frac{1}{\Delta u}\int\limits_{\mhalf{k}}^{\phalf{k}}\DERIV{H_x}{u}\dd{u}
-	= \frac{H_{x,\phalf{k}}-H_{x,\mhalf{k}}}{\Delta u}.
+	= \frac{1}{(\Delta u)_k}\int\limits_{\mhalf{k}}^{\phalf{k}}\DERIV{H_x}{u}\dd{u}
+	= \frac{H_{x,\phalf{k}}-H_{x,\mhalf{k}}}{(\Delta u)_k}.
 	\label{eq:mean-dH/du_k}
 \end{equation}
-
 
 This form is used in LoKI-B as starting point for the discretization of the
 equation. In this chapter we will discuss the discrete approximations of the
 terms that appear in equation \eqref{eq:EBE-final-avg}.
+
+The result of that
+discretization process is that every term is cast as the product of a matrix
+and the vector of cell values of the EEDF. The discrete form of equation
+\eqref{eq:EBE-final-avg} then takes the form\footnote{In the LoKI-B code, all
+terms are brought to the {\em right}-hand side; the resulting matrices then
+have an additional minus sign.}
+\begin{equation}
+	\sum\limits_{x=el,car,ee,E_g}\bmat{M}_x\bvec{f}
+	=
+	-\sum\limits_{x=inel,ion,att}\bmat{M}_x\bvec{f}
+	-\bmat{M}_g\bvec{f}
+	\iff
+	\sum\limits_{\substack{x=el,car,ee,E_g,\\inel,ion,att,g}}\bmat{M}_x\bvec{f}
+	=\bvec{0},
+\end{equation}
+or
+\begin{equation}
+	\bmat{M}(\bvec{f})\bvec{f}=\bvec{0},
+\end{equation}
+where
+\begin{equation}
+	\bmat{M}(\bvec{f}) = \sum\limits_{\substack{x=el,car,ee,E_g,\\inel,ion,att,g}}\bmat{M}_x.
+\end{equation}
+The power balance has been presented in equation \eqref{eq:EBE-power-balance}.
+Every term ${\cal T}_x(\bvec{f})[\bvec{f}]$ in the Boltzmann equation can be discretized as
+\begin{equation}
+	\int\limits_0^\infty u{\cal T}_x(\bvec{f})[\bvec{f}]\dd{u}
+	\doteq
+	\sum\limits_{i=0}^{{\cal N}-1}u_i [{\cal T}_x(\bvec{f})[\bvec{f}]]_i (\Delta u)_f
+	\doteq
+	\sum\limits_{i=0}^{{\cal N}-1}u_i [\bmat{M}_x\bvec{f}]_i (\Delta u)_i
+	= (\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}_x\bvec{f}
+	:= \bmat{M}_{u,x}\bvec{f}.
+	\label{eq:EBE-power-term}
+\end{equation}
+When discretized this way, the power balance is satisfied if
+the Boltzmann equation itself is satisfied, since
+\begin{equation}
+	\bmat{M}(\bvec{f})\bvec{f} = \bvec{0}
+	\iff
+	(\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}(\bvec{f})\bvec{f}
+	=
+	(\bvec{\Delta u})^T\diag(\bvec{u})\bvec{0} = 0.
+\end{equation}
+We therefore propose to implement the power terms to be consistent with
+the discretization of the terms in the Boltzmann equation. If there is the
+need to distinguish `up- and downfluxes`, a term can be split, but that
+must be done such that $\bmat{M}_{x,down}+\bmat{M}_{x,up} = \bmat{M}_x$
+to ensure this consistency.
 
 \section{Discretization of the Flux-Divergence Terms}
 
@@ -1944,17 +1788,18 @@ This is true not only for the central difference scheme, but also for any other,
 such as the Scharfetter-Gummel (`exponential') scheme. It is also useful to write
 the coefficients as
 \begin{align*}
-    {\cal B}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1-\frac{P_{\phalf{k}}}{2}\right), \\
-    {\cal A}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1+\frac{P_{\phalf{k}}}{2}\right),
+    {\cal B}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1-\frac{\Pe_{\phalf{k}}}{2}\right), \\
+    {\cal A}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1+\frac{\Pe_{\phalf{k}}}{2}\right),
 \end{align*}
-where the {\em grid P\'eclet number} $P$ has been introduced,
+where the {\em grid P\'eclet number} $\Pe$ has been introduced,
 \begin{equation}
-	P_{\phalf{k}} = \frac{d_x\Delta u}{c_x}.
+	\Pe_{\phalf{k}} = \frac{d_x\Delta u}{c_x}.
 \end{equation}
 This notation brings the code closer to the introduction of the exponential scheme,
 if that is deemed desirable. (But note that such scheme should applied to the sum of
 $H_x$-terms, not to the terms individually.
 \end{framed}
+
 
 \section{Discretisation of the Electron-Electron Operator}
 
@@ -2162,6 +2007,682 @@ Some comments on the MATLAB code and documentation:
 \end{itemize}
 \end{framed}
 
+\section{The evaluation of $D_eN$ and $\mu_eN$}
+\label{sec:muD-eval}
+
+TODO: discuss somewhere that we should rather use \eqref{eq:mueN-alt} for
+the mobility, and express that in terms of $\bmat{M}_E$. The recommended method
+below is consistent with that.
+
+
+The expressions for $D_eN$ and $D_uN$ are given by equation \eqref{eq:DeN} and \eqref{eq:DuN},
+\begin{align*}
+	D_eN &= \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \\
+	D_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{x}^0(u)f(u)\dd{u}.
+\end{align*}
+The approximation of $D_N$ and $D_uN$ is straightforward:
+\begin{align}
+	D_eN &\doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u,
+	\label{eq:DeN-disc} \\
+	D_eN &\doteq \frac{\gamma}{\MEAN{u}} \sum_k u_k{\cal D}^0_kf_k\Delta u,
+	\label{eq:DuN-disc}
+\end{align}
+and this is also what you find in the code.
+
+The expressions for $\mu_eN$ and $\mu_uN$ are given in equation \eqref{eq:mueN}
+and \eqref{eq:muuN},
+\begin{align*}
+	\mu_eN &= \gamma\int\limits_0^\infty {\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}, \\
+	\mu_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{pt}^0(u)\DERIV{f}{u}\dd{u}.
+\end{align*}
+
+
+\subsection*{Method 1}
+The expression for $\mu_eN$ can be approximated as
+\[
+	\mu_eN \doteq \gamma\sum\limits_{k=0}^{{\cal N}-1}{\cal D}^0(u_k)\left[\DERIV{f}{u}\right]_k\Delta u.
+\]
+In internal cells, the derivative can be approximated as
+\[
+	\left[\DERIV{f}{u}\right]_k = \frac{f_{k+1}-f_{k-1}}{2\Delta u},
+\]
+whereas for left and right boundary cells we can use the asymmetric expressions
+\[
+	\left[\DERIV{f}{u}\right]_0 = \frac{f_{1}-f_{0}}{\Delta u}
+	\quad
+	\quad
+	\left[\DERIV{f}{u}\right]_{{\cal N}-1} = \frac{f_{{\cal N}-1}-f_{{\cal N}-2}}{\Delta u}.
+\]
+For any ${\cal N} \geq 2$, the resulting expression can be written as
+\begin{equation}
+	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k.
+\end{equation}
+For ${\cal N} = 2$ we get
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + {\cal D}_{pt}^0(u_{1})(f_{1}-f_{0}) \\
+	&= \left(-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1})\right)f_{0} + \left({\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1})\right)f_{1},
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			-{\cal D}_{pt}^0(u_0)-{\cal D}_{pt}^0(u_{1}) & k=0, \\
+			+{\cal D}_{pt}^0(u_0)+{\cal D}_{pt}^0(u_{1}) & k=1.
+	\end{cases}
+\end{equation}
+For ${\cal N} = 3$ we get
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&= {\cal D}_{pt}^0(u_0)(f_{1}-f_{0}) + \frac{1}{2}{\cal D}_{pt}^0(u_1)(f_{2}-f_{0}) + {\cal D}_{pt}^0(u_{2})(f_{2}-f_{1}) \\
+	&=	  \left( -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) \right)f_{0}
+		+ \left( +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) \vphantom{\frac{1}{2}})\right)f_{1}
+		+ \left( +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) \right)f_{2}
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			 -           {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_{1}) & k=0, \\
+			 +           {\cal D}_{pt}^0(u_0) -            {\cal D}_{pt}^0(u_{2}) & k=1, \\
+			 +\frac{1}{2}{\cal D}_{pt}^0(u_1) +            {\cal D}_{pt}^0(u_{2}) & k=2.
+	\end{cases}
+\end{equation}
+Finally, for ${\cal N} \geq 4$ we have
+\begin{align*}
+	\frac{\mu_eN}{\gamma}
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)(f_{k+1}-f_{k-1})
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k+1}
+		- \frac{1}{2}\sum\limits_{k=1}^{{\cal N}-2}{\cal D}_{pt}^0(u_k)f_{k-1}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
+		- \frac{1}{2}\sum\limits_{k=0}^{{\cal N}-3}{\cal D}_{pt}^0(u_{k+1})f_{k}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=
+		{\cal D}_{pt}^0(u_0)(f_{1}-f_{0})
+		- \frac{1}{2}\sum\limits_{k=0}^{1}{\cal D}_{pt}^0(u_{k+1})f_{k}
+	\\
+	&
+		+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k}
+		\\
+	&
+		+ \frac{1}{2}\sum\limits_{k={{\cal N}-2}}^{{\cal N}-1}{\cal D}_{pt}^0(u_{k-1})f_{k}
+		+ {\cal D}_{pt}^0(u_{{\cal N}-1})(f_{{\cal N}-1}-f_{{\cal N}-2})
+	\\
+	&=	  \left(-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)\right)f_{0}
+			+\left( {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)\right)f_{1} \\
+		&+ \frac{1}{2}\sum\limits_{k=2}^{{\cal N}-3}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)f_{k} \\
+		&+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-2}
+			+\left( \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1})\right)f_{{\cal N}-1},
+\end{align*}
+so
+\begin{equation}
+	C_k = +\gamma\begin{cases}
+			-{\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_1)          & k=0, \\
+			 {\cal D}_{pt}^0(u_0) - \frac{1}{2}{\cal D}_{pt}^0(u_2)          & k=1, \\
+			 \frac{1}{2}\left({\cal D}_{pt}^0(u_{k-1}) - {\cal D}_{pt}^0(u_{k+1})\right)  & 2\leq k \leq {{\cal N}-3}, \\
+			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-3}) - {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-2}, \\
+			 \frac{1}{2}{\cal D}_{pt}^0(u_{{\cal N}-2}) + {\cal D}_{pt}^0(u_{{\cal N}-1}) & k={{\cal N}-1}.
+	\end{cases}
+\end{equation}
+
+\subsection*{Method 2}
+The expression for $\mu_eN$ can be expressed in terms of $f(u)$. A partial integration yields
+\[
+	\mu_eN
+		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
+		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
+		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
+\]
+This can be approximated as
+\[
+	\mu_eN \doteq -\gamma\sum\limits_{k=0}^{{\cal N}-1}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k\Delta u.
+\]
+In the internal cells, the derivative can be approximated as
+\[
+	\left[\DERIV{{\cal D}^0}{u}\right]_k = \frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}
+\]
+In the left and right boundary cells we can use
+\[
+	\left[\DERIV{{\cal D}^0}{u}\right]_0 = \frac{{\cal D}^0_{1}-{\cal D}^0_{0}}{\Delta u},
+	\quad
+	\quad
+	\left[\DERIV{{\cal D}^0}{u}\right]_{\cal N} = \frac{{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2}}{\Delta u}.
+\]
+The result can be written as
+\begin{equation}
+	\mu_eN = \sum\limits_{k=0}^{{\cal N}-1}C_kf_k,
+\end{equation}
+with
+\begin{equation}
+	C_k = -\gamma\begin{cases}
+			{\cal D}^0_{1}-{\cal D}^0_{0} & k=0, \\
+			\frac{1}{2}({\cal D}^0_{k+1}-{\cal D}^0_{k-1}) & 1\leq k \leq {{\cal N}-2}, \\
+			{\cal D}^0_{{\cal N}-1}-{\cal D}^0_{{\cal N}-2} & k={{\cal N}-1},
+	\end{cases}
+\end{equation}
+Alternatively, we may use the fact that ${\cal D}^0(u=0)=0$, and approximate the derivative as
+$({\cal D}^0_{0}-{\cal D}^0(u=0))/(\Delta u/2) ={\cal D}^0_{0}/(\Delta u/2)=2{\cal D}^0_{0}/\Delta u$,
+which results in the same expression, except
+\[
+	C_0 = -\gamma 2{\cal D}^0_{0}.
+\]
+In either case, this equation reults in simpler coefficient expressions, but has the disadvantage that
+is is not consistent with the discretization of the term that results in \SRC{ionSpatialGrowthU}. We
+will therefore adopt Method 1 in the code.
+
+TODO: the expression for $\mu_uN$. This is very simular: replace $\gamma -> \gamma/\MEAN{u}$ and $D^0_k->u_kD^0_k$.
+
+
+\subsection*{What is at present in LoKI-B}
+
+In the code we have
+\begin{align}
+	\mu_eE
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} {\cal U}_kf_k\Delta u \nonumber \\
+		&= -\gamma \sum\limits_{k=0}^{{\cal N}-1} ({\cal U}^+_k + {\cal U}^-_k)f_k\Delta u \nonumber \\
+		&= +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\frac{{\cal D}^0_{k+1}-{\cal D}^0_{k-1}}{2\Delta u}f_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u \nonumber \\
+		&\doteq +\gamma \frac{E}{N}\left(
+			\frac{{\cal D}^0_{1}}{2\Delta u}f_0
+			+ \sum\limits_{k=1}^{{\cal N}-2}\left[\DERIV{{\cal D}^0}{u}\right]_kf_k
+			-\frac{{\cal D}^0_{{\cal N}-2}}{2\Delta u}f_{{\cal N}-1}\right)\Delta u.
+\end{align}
+In the code, the drift velocity $v_d=-\mu_eE=-(\mu_eN) \times (E/N)$ is evaluated,
+rather than the mobility. To that end, the code defines four arrays on the cell
+domain ($0\leq k<{\cal N}$) (in \SRC{solveSpatialGrowthMatrix}):
+\begin{align}
+	{\cal D}^0_k &= \frac{u_k}{3\Omega_k}, \\
+	{\cal U}^-_k &= +\frac{E}{N}\begin{cases}
+				0 & k=0 \\
+				{\cal D}^0_{k-1}/(2\Delta u), & 0<k<{\cal N}\\
+			\end{cases} \\
+	{\cal U}^+_k &= -\frac{E}{N}\begin{cases}
+				{\cal D}^0_{k+1}/(2\Delta u), & 0\leq k<{\cal N}-1\\
+				0 & k={\cal N}-1 \\
+			\end{cases} \\
+	{\cal U} &= {\cal U}^+ + {\cal U}^-.
+\end{align}
+I (JvD) can {\em almost} understand this by doing a partial integration of the expression for $\mu_eN$, yielding
+\[
+	\mu_eN
+		= \gamma\int\limits_0^\infty {\cal D}^0 \DERIV{f}{u}\dd{u}
+		= \left. {\cal D}^0(u)f(u)\right|_0^\infty - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u}
+		=  - \gamma\int\limits_0^\infty \DERIV{{\cal D}^0}{u} f(u)\dd{u},
+\]
+since ${\cal D}^0(0)=0$ and assuming that $\lim\limits_{u\rightarrow\infty}({\cal D}^0(u)f(u)) = 0$.
+We now see that the approximation makes sense ... except for the first and last cell, where we have
+${\cal D}^0_{k\pm 1}/(2\Delta u)$, instead of an approximation for the derivative of $D^k$ in $u_k$.
+Such fixes can be translated back in modifications of ${\cal U}^-$ and ${\cal U}^+$, of course,
+but note that those are also used in the assembly of one of the spatial growth discretisation
+matrices.
+\begin{framed}
+  This problem is tested by \SRC{tests/test_trans_coefs.cpp}.
+\end{framed}
+
+\section{Discretization of the Spatial Growth Terms}
+
+See section \ref{sec:theory:spat-growth} for a discussion of the spatial growth model.
+
+\begin{itemize}
+\item In the LoKI-B {\em manual} \cite[eq. 8a--b,
+	29--30c,32]{Manual_2_2_0}, essentially equation
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst} is presented --- the field
+	operator is modified to also describe part of the growth effects.
+\item This is {\em not} what is in the LoKI-B code. That is based on
+	\eqref{eq:ebe-2term-f-u0(u)-spat-subst-dH_E/du} and expression
+	\eqref{eq:Rsst-orig} for the growth renormalization term
+	(after $E\rightarrow -E$):
+	\begin{itemize}
+		\item \SRC{fieldOperator} is reused; it provides the term that is also present in the absence of growth.
+		\item \SRC{fieldMatrixSpatGrowth} provides
+		\[
+			\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\DERIV{{\cal D}^0f^0}{u},
+		\]
+		which corresponds to the additional contribution to the field term --- the last term of
+		equation \eqref{eq:Rsst-orig}. Together, these field terms correspond
+		to equation (30) of the manual.
+		\begin{framed}
+			On boundary points, only one of the two terms that form the discrete
+			approximation of this derivative is handled. The problem is similar
+			that in the discretization of \SRC{ionSpatialGrowthU} and the diffusion
+			coefficient and mobility of the electrons (see below).
+		\end{framed}
+		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0f^0(u)$:
+			the second term on the right-hand side of eqiation \eqref{eq:Rsst-orig},
+			the first term of equation (29) of the manual.
+		\item The remaining first term of requation \eqref{eq:Rsst-orig} is
+			$\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
+			and is provided by \SRC{ionSpatialGrowthU}.
+			For the internal cells, a central-difference scheme for the derivative of $f(u)$ yields the approximation
+			\begin{equation}
+				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u)\DERIV{f}{u}
+				\doteq
+				\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}_{sst}^0(u_k)\frac{f_{k+1}-f_{k-1}}{2\Delta u}
+				:=
+				C_k\frac{f_{k+1}-f_{k-1}}{2\Delta u},
+			\end{equation}
+			This corresponds to the second term of equation (29) in the manual.
+
+			The manual does not explain how to handle the first and last cells,
+			but for those the derivatives can of course be approximated with the
+			asymmetric approximations $(f_1-f_0)/\Delta u$ and
+			$(f_{{\cal N}-1}-f_{{\cal N}-2})/\Delta u$.
+
+			In the original code, $C_k$ is expressed in terms of \SRC{U0sup} and \SRC{U0inf},
+                        which makes the expression a bit more difficult to grasp. To understand the
+			expressions in the original code, note that
+			\begin{lstlisting}[language=C++]
+alphaRedEffNew*U0inf[k-1] == alphaRedEffNew*(-EoN /(2.*grid().du())*D0[k]) (= -C_k/(2*du))
+alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C_k/(2*du))
+			\end{lstlisting}
+\begin{framed}
+			At the boundary points, the discretization seems wrong. The problem
+			is the same as that in the evaluation of $\mu_eE$, see \ref{sec:muD-eval}.
+\end{framed}
+
+\begin{framed}
+			It is important that the same coefficients (here called $C_k$) are used in
+			the discretization of the growth operator as in the evaluation of the
+			mobility. This means that also the mobility must use the expression involving
+			the derivative if the EEDF, instead of the more convenient expression that
+			is based on a partial integration of the integrand.
+\end{framed}
+	\end{itemize}
+\item Confusion is caused in the code by the fact that the
+	helper array \SRC{g_eeSpatialGrowth}, which is used in the implementation
+	of the \SRC{fieldMatrixSpatGrowth}, has a division by 6,
+	instead of by 3 (\SRC{Boltzmann.m} line 1112 in version
+	2.2.0), because that array also absorbs the factor $1/2$ that comes from the
+	averaging $f_{n\pm\frachalf}=(f_n+f_{n\pm 1})/2$ in the discretization process of
+	$G_x(u_{k\pm\frachalf})$ (that is practically the factor $1/2$ in equation
+	\ref{eq:-dGdu/Ngamma-discrete}).
+
+	In the C++ code, \SRC{g_eeSpatialGrowth} is defined as in the documentation,
+	and the factor 2 is taken into account where it should be, by writing $2\Delta u$
+	instead of $\Delta u$ in the discretization of the Boltzmann matrix, consistent
+	with the $G_x(u)$ exposition. We also had to add the division by 2 in the
+	interpolation code
+	\SRC{(g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k])/2} in
+	the only other location where the array is used (which also makes it easier
+	understand that an interpolation to a cell value is happening in that code).
+	In MATLAB (version 2.2.0) that last code can be found in
+	\SRC{Boltzmann.m} line 1512.
+\item It appears that the MATLAB version of the growth codes has been revised
+	significantly since the C++ version was created from the 1.0.0 MATLAB code.
+	Various issues that were reported in the (C++) source code may have
+	been resolved, maybe not. A full comparison of the C++ code and current MATLAB
+	version is due.
+\end{itemize}
+
+
+
+\chapter{General Notes on Discretization}
+
+\label{ch:disc-general}
+
+Let us take another look at the final form of the Boltzmann equation as given
+by equation \eqref{eq:EBE-final},
+\[
+	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
+	=
+	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+	+
+	\tilde{R}^0_g(u).
+\]
+The flux densities that appear on the left-hand side of this equation are of the
+form
+\begin{equation}
+	H_x(u) = C_x(u)f - D_x(u)\DERIV{f}{u}.
+	\label{eq:disc:cd-flux}
+\end{equation}
+The Boltzmann equation can be written as
+\begin{equation}
+	\DERIV{H}{u} = S,
+	\label{eq:disc:be}
+\end{equation}
+where $S$ represents the terms that appear on the right-hand side of the
+Boltzmann equation (the ones that cannot be written in flux-divergence form),
+and the total flux is given by
+\begin{equation}
+	H(u)
+	= \sum\limits_{x}H_x(u)
+	= \left(\sum\limits_x C_x\right)f - \left(\sum\limits_x D_x\right)\DERIV{f}{u}
+	:= C(u)f - D(u)\DERIV{f}{u}.
+	\label{eq:disc:cd-flux-total}
+\end{equation}
+This expression states that the sum of the flux-divergence terms can itself be
+written as a single flux-divergence term. The convection coefficient $C$ and
+diffusion coefficient $D$ of this term are obtained by summing the coefficients
+of the individual terms.
+
+We will now discuss how the Boltzmann equation can be discretized and solved
+using the finitite volume method. We will then discuss how the individual
+terms can be evaluated in a consistent way.
+
+For a given finite volume $P$, the Boltzmann equation \eqref{eq:disc:be}
+can be integrated to
+\begin{equation}
+	H(u_e) - H(u_w) = \int\limits_{u_w}^{u_e}S(u)\dd{u},
+	\label{eq:disc:be-P-int}
+\end{equation}
+where $w$ and $e$ are the faces at the lower and upper boundary of finite
+volume $P$.  Note that this equation is still exact. The first approximation
+is to replace the source $S(u)$ with its value in the point $P$ in the center
+of the finite volume, resulting in the equation
+\begin{equation}
+	H(u_e) - H(u_w)
+	= S(u_P)(u_e-u_w)
+	= S(u_P)(\Delta u)_P
+	:= b_P.
+	\label{eq:disc:be-P}
+\end{equation}
+What remains is the derivation of a suitable expression for the fluxes at the
+faces $e$ and $w$ (east and west). This `flux approximation' is the key element in the
+derivation of a finite volume discretization scheme.
+
+TODO: $f$ is used in two different ways in the text below: face and field.
+We will be looking for flux expressions at faces that depend only on the
+values in the cells adjacent to the faces. For an {\em internal} face $f$
+we will call the cells at the lower and upper energy sides $L$ and $U$,
+respecively. We will demonstrate later that the resulting expression can be
+written as
+\begin{equation}
+	H(u_f) = B_ff_L - A_ff_H,
+	\label{eq:disc:H(B,A)}
+\end{equation}
+where the coefficients $B_f$ and $A_f$ (of the values {\em before} and {\em
+after} the face) depend on the coefficients $C$ and $D$ around the face, and
+on the choice for the {\em flux approximation} or {\em discretizaton scheme}.
+
+For face $f=l$ we have $L=W$ (the cell west of cell $P$) and $H=P$, for $f=h$
+we have $L=P$ and $H=E$ (the cell east of $P$). Substitution of expression
+\eqref{eq:disc:H(B,A)} for these faces in the left-hand side of balance
+equation \eqref{eq:disc:be-P} yields, for any internal cell $P$,
+\begin{equation}
+	{\cal T}_P
+	= (B_ef_P - A_ef_E) - (B_wf_W - A_wf_P)
+	= -B_wf_W + (A_w+B_e)f_P - A_ef_E
+	= [\mat{M}_{cd}\bvec{f}]_P.
+	\label{eq:disc:H-term-int}
+\end{equation}
+For a boundary face, equation \eqref{eq:disc:H(B,A)} cannot be used umodified:
+on the low-energy grid boundary cell $L$ is missing, on the high-energy
+boundary there is no cell $H$. Instead, on these faces the flux expressions
+follow from the boundary conditions. In the present case of the Boltzmann
+equation a suitable condition is that the boundary flux is zero at both ends
+of the grid. As an example, on the western boundary the discrete equation
+becomes
+\begin{equation}
+	{\cal T}_{P=0}
+	= (B_ef_P - A_ef_E) - 0
+	=  B_ef_P - A_ef_E
+	= [\mat{M}_{cd}\bvec{f}]_{P=0},
+	\label{eq:disc:H-term-bnd,w}
+\end{equation}
+and on the eastern boundary
+\begin{equation}
+	{\cal T}_{P={\cal N}-1}
+	= 0 - (B_wf_W - A_wf_P)
+	=  -B_wf_W + A_wf_P
+	= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
+	\label{eq:disc:H-term-bnd,e}
+\end{equation}
+The equations in all points can be summarized as the matrix-vector product
+\begin{equation}
+	\bvec{{\cal T}}
+	= \mat{M}_{cd}\bvec{f}.
+	\label{eq:disc:H-term}
+\end{equation}
+
+\section{The Discretization Scheme}
+
+Let us now focus on the calculation of the coefficients $B_f$ and $A_f$ that
+appear in the expression for the flux at interface $f$. These can be obtained
+in various ways.
+
+\subsection{The Central Difference Scheme}
+
+The simplest approach is to use the `central difference scheme'
+in which the values of the field and its derivative on the face are expressed in
+ters of the adjacent cell values using a first-order Taylor expansion. These
+values are then independent of the values of the coefficients $C$ and $D$ around
+that face. Firstly, we have
+\begin{equation}
+	f_f \doteq \frac{(u_H-u_f)f_l + (u_f-u_L)f_H}{u_H-u_L} = (1-c_f)f_L+c_ff_H,
+\end{equation}
+where $c$ is a relative energy coordinate, which is defined by the relation
+\begin{equation}
+	c(u) = \frac{u-u_L}{u_H-u_L}.
+	\label{eq:disc:c(u)}
+\end{equation}
+The face value is given by $c_f=c(u_f)$. Note that $c_f=\frac{1}{2}$ in the special
+case of a uniform mesh, in which case the faces lie in the middle between the centers
+of its adjacent cells.
+Secondly, for the derivative we use the approximation
+\begin{equation}
+	\left.\DERIV{f}{u}\right|_{f}
+	\doteq \frac{f_H-f_L}{u_H-u_L}
+	= \frac{f_H-f_L}{(\Delta u)_f}.
+\end{equation}
+Substitution in the expression for the flux density yields
+\begin{align}
+	H_f &= C_f((1-c_f)f_L+c_ff_H) - D_f\frac{f_H-f_L}{(\Delta u)_f} \nonumber \\
+	&= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right)f_L - \left(\frac{D_f}{(\Delta u)_f}-C_fc_f\right)f_H,
+\end{align}
+which is of the form \eqref{eq:disc:H(B,A)}, with
+\begin{align}
+	A_f &= \left(\frac{D_f}{(\Delta u)_f}-C_fc_f    \right), \label{eq:disc:A_f-cd(C,D)} \\
+	B_f &= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right). \label{eq:disc:B_f-cd(C,D)}
+\end{align}
+Following Patankar \cite{Patankar1980}, this can be written as
+\begin{align}
+	A_f &= \frac{D_f}{(\Delta u)_f}\left(1-P_fc_f    \right), \label{eq:disc:A_f-cd} \\
+	B_f &= \frac{D_f}{(\Delta u)_f}\left(1+P_f(1-c_f)\right). \label{eq:disc:B_f-cd}
+\end{align}
+Here we have introduced the {\em grid P\'eclet number} $\Pe_f$, that will
+come back in the further discussions of the discretization schemes, as
+\begin{equation}
+	\Pe_f = \frac{C_x(\Delta u)_f}{D_f}.
+	\label{eq:Peclet}
+\end{equation}
+In the special case of a uniform mesh, with $c_f=\frac{1}{2}$, these expressions for the
+coefficients reduce to
+\begin{align}
+	A_f &= \frac{D_f}{(\Delta u)_f}\left(1-\frac{\Pe_f}{2}\right), \label{eq:disc:A_f-cd-uniform} \\
+	B_f &= \frac{D_f}{(\Delta u)_f}\left(1+\frac{\Pe_f}{2}\right). \label{eq:disc:B_f-cd-uniform}
+\end{align}
+
+\subsection{The Scharfetter-Gummal (Exponential) Scheme}
+
+More sophisticated schemes are obtained by solving a simplified form of
+equations \eqref{eq:disc:be} and \eqref{eq:disc:cd-flux-total} for $f(u)$
+and $H(u)$ in the interval $[u_L,u_H]$. This local boundary value problem
+is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
+and the source $S(u)$. For a related discussion, see Patankar's textbook
+\cite[sec. 7.2--7]{Patankar1980}.
+
+The derivation starts with the introduction of a reduced flux density $H^*$.
+Using the reduced energy coordinate $c(u)$ that was introduced in equation
+\eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=\dd{}/(\Delta u)_f\dd{c})$, equation
+\eqref{eq:disc:cd-flux-total} can be written as
+\begin{equation}
+	H(u) = \frac{D(u)}{(\Delta u)_f}H^*(c(u)),
+\end{equation}
+where
+\begin{equation}
+	H^*(c) = \Pe(u(c))f-\DERIV{f}{c}
+\end{equation}
+and the local value of the P\'eclet number is defined by
+\begin{equation}
+	\Pe(u) = \frac{C(u)(\Delta u)_f}{D(u)}.
+\end{equation}
+In terms of these new quantities, and again using energy coordinate $c(u)$,
+equation \eqref{eq:disc:be} takes the form
+\begin{equation}
+	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c)).
+\end{equation}
+
+and assuming that the coefficients $C(u)$ and $D(u)$ assume constant values
+$C_f$ and $D_f$ in the interval, equation \eqref{eq:disc:be} can be written as
+\begin{equation}
+	\DERIV{H}{u} = \DERIV{}{u}\left(Cf - D\DERIV{f}{u}\right)=0
+\end{equation}
+In terms of the reduced energy coordinate $c(f)$ this can be written as
+\begin{equation}
+	\DERIV{}{c}\left(\Pe_ff - \DERIV{f}{c}\right)=0
+	\iff
+	\Pe_ff - \DERIV{f}{c}=K
+	\iff
+	-e^{\Pe c}\DERIV{}{c}\left(f(u)e^{-\Pe c}\right) = K,
+	\label{ch:disc:be-hom-flux}
+\end{equation}
+where $K$ is a constant value.
+As an auxiliary tool, we define the Bernoulli function ${\cal B}(P)$ as
+\begin{equation}
+	{\cal B}(P)
+	= \left[\int\limits_0^1 e^{Pc}\dd{c}\right]^{-1}
+	= \begin{cases}
+		P/(e^P-1) & P \neq 0, \\
+		1 & P=0.
+	\end{cases}
+	\label{eq:disc:bernoulli}
+\end{equation}
+It is easy to show that
+\begin{equation}
+	\int\limits_0^c e^{Pc'}\dd{c'} = c/{\cal B}(Pc),
+	\label{eq:disc:bernoulli-incomplete}
+\end{equation}
+that
+\begin{equation}
+	e^P{\cal B}(P) = {\cal B}(-P)
+	\label{eq:disc:e^PB(p)=B(-p)}
+\end{equation}
+and that also
+\begin{equation}
+	{\cal B}(P)+P = {\cal B}(-P).
+	\label{eq:disc:e^PB(p)=B(p)+P}
+\end{equation}
+
+By multiplying equation \eqref{ch:disc:be-hom-flux} with $-e^{-\Pe c}$, integrating over
+the interval $[0,c]$, mutiplying the result with $e^{\Pe c}$ and using equation
+\eqref{eq:disc:e^PB(p)=B(-p)}, we get
+\begin{equation}
+	f(u)e^{-Pc} - f_L = - K \frac{c}{{\cal B}(-\Pe c)}
+	\iff
+	f(u) = f_Le^{Pc} - K \frac{c}{{\cal B}(\Pe c)}.
+\end{equation}
+The constant $K$ can be epressed in terms of $f_H$, since setting $c=1$ yields
+\begin{equation}
+	f_H = f_Le^{\Pe} -\frac{K}{{\cal B}(\Pe)}
+	\iff
+	K = - {\cal B}(\Pe)\left(f_H - f_Le^{\Pe}\right).
+\end{equation}
+and combining these equatons to eliminate $K$ yields
+\begin{equation}
+	f(u(c))
+	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}
+\end{equation}
+Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$. Note that for
+$\Pe\neq 0$ we have
+\begin{align}
+	f(u(c))
+	&= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{e^{\Pe c}-1}{e^\Pe-1} \nonumber \\
+	&= f_Le^{\Pe c} + (f_H + f_L(1 - e^{\Pe}-1))\frac{\left(1-e^{\Pe c}\right)}{\left(1-e^{\Pe}\right)} \nonumber \\
+	&= f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}.
+\end{align}
+For the flux we find
+\begin{equation}
+	H(u)
+	= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- D\frac{\Pe}{(\Delta u)_f}\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}.
+	\label{eq:disc:H(C,D,P)}
+\end{equation}
+But since $DP/(\Delta u)_f=C$, this can be simplified to
+\begin{align}
+	H(u)
+	&= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- C\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}
+	\nonumber \\
+	&= C\left(f_L\left(\frac{1}{e^{\Pe}-1}+1\right) - f_H\frac{1}{e^{\Pe}-1}\right)
+	\nonumber \\
+	&= \frac{D}{(\Delta u)_f}\left(f_L\left(\frac{\Pe}{e^{\Pe}-1}+\Pe\right) - f_H\frac{\Pe}{e^{\Pe}-1}\right)
+	\nonumber \\
+	&= \frac{D}{(\Delta u)_f}\left(f_L\left({\cal B}(\Pe)+\Pe\right) - f_H{\cal B}(\Pe)\right).
+\end{align}
+The last form also gives the correct result for $\Pe=0$.
+This is again of the form \eqref{eq:disc:H(B,A)}, but this time with
+\begin{align}
+	B_f &= \frac{D}{(\Delta u)_f}\left({\cal B}(\Pe)+\Pe\right), \label{eq:disc:B_f-exp} \\
+	A_f &= \frac{D}{(\Delta u)_f}{\cal B}(\Pe). \label{eq:disc:A_f-exp}
+\end{align}
+Please note that the flux \eqref{eq:disc:H(C,D,P)} does not depend on $u$ (or, equivalently, $c(u)$),
+which is consistent with the local approximation $\dd{H}/\dd{u}=0$ that underlies the exponential
+scheme.
+
+Let us now look at the indivudual flux contributions $H_x(u)$. These are not required to solve the
+Boltzmann equations, but are needed to evaluate the individual terms of the power balance, the
+discrete form of \eqref{eq:EBE-power-balance}. Each flux contribution $H_x(u)$ depends on its own
+$C_x$ and $D_x$, and on the values of $f(u)$ and $\dd{f}/\dd{u}$ at the interface, which depend
+on $n_L$, $n_H$ and the P\'eclet number $\Pe$, which is calculated from the summed coefficients
+of {\em all} flux contributions. Using \eqref{eq:disc:H(C,D,P)} we get
+\begin{equation}
+	H_x(u)
+	= C_x\left(f(u_L) + (f(u_H)-f(u_L))\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- \frac{D_x}{(\Delta u)_f}\left(f(u_H)-f(u_L)\right)\frac{\Pe e^{\Pe c}}{e^{\Pe}-1}.
+	\label{eq:disc:Hx(Cx,Dx,P)}
+\end{equation}
+It easy to verify that summing this equation over $x$ and using the definitions of $\sum_xC_x=C$ and
+$\sum_xD_x=D$ that are part of equation \eqref{eq:disc:cd-flux-total} results in equation
+\eqref{eq:disc:H(C,D,P)} for the total flux. Note that this would {\em not} be the case if each flux
+$H_x(u)$ had been calculated based on its own P\'eclet number $\Pe_x:=C_x(\Delta u)_f/D_x$.
+
+Also note that, unlike the total flux $H$, the individual flux contributions $H_x(u)$ {\em do} depend on
+energy via the reduced energy coordinate $c(u)$. The interface flux depends on the energy $u_f$ (or the
+relative coordinate $c_f$) at the interface.
+
+Grouping the terms depending on $f_L$ and $f_H$, equation \eqref{eq:disc:Hx(Cx,Dx,P)} can be written as
+\begin{equation}
+	H_x = B_xf_L - A_xf_H,
+\end{equation}
+with
+\begin{align}
+	A_x &= \frac{D_x}{(\Delta u)_f}{\cal B}(\Pe)e^{\Pe c} - C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}, \\
+	B_x &= A_x + C_x.
+\end{align}
+A few notes about the evlauation follow. Firstly, let us assume that $D_x\neq 0$, so the
+first term on the right-hand side of the expression for $A_x$ must be considered. If
+$D_x\neq 0$, also $D\neq 0$, so the P\'eclet number $\Pe$ is finite. The term can be
+expressed in terms of the Bernoulli function to avoid the singularity for small $|\Pe|$.
+Only for large positive P\'eclet numbers there is the risk of an overflow-underflow combination,
+which can be avoided using equation \eqref{eq:disc:e^PB(p)=B(-p)} and writing, for (all)
+positive $\Pe$,
+\begin{align}
+	 {\cal B}(\Pe)e^{\Pe c}
+	={\cal B}(\Pe)e^{\Pe}e^{\Pe(c-1)}
+	={\cal B}(-\Pe)e^{-\Pe(1-c)}.
+\end{align}
+Next, consider the term related to $C_x$. The limit for $\Pe\rightarrow 0$ can be
+determined using l'H\^opital's rule, revealing the value $-C_xc$. For negative values
+of $\Pe$, the expression is well-behaved. In order to avoid overflows of the exponents
+for large positive $\Pe$, that can be rewritten for (all) positive $\Pe$ as
+\begin{equation}
+	- C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}
+	=
+	-C_xe^{-\Pe(1-c)}\frac{e^{-\Pe c}-1}{e^{-\Pe}-1}.
+\end{equation}
+In all cases, expressions of the form $e^x-1$ must be evaluated using \SRC{std::expm1(x)} to
+avoid cancellation errors for small $|\Pe|$.
 
 \chapter{Matrices \& Vectors}
 
@@ -3361,6 +3882,156 @@ the code, except that in the code also an additional factor $\gamma$ appears (se
 sections \eqref{sec:G_x,g_x} and \eqref{sec:gamma-constant}).
 In the code the parenthesized coefficients are called \SRC{auxHigh} and \SRC{auxLow}.
 
+\chapter{Notes on the Complete Flux Schemes}
+
+We consider the convection-diffusion equation in the interval $[u_L,u_H]$ and assume
+that $D(u)$ is non-zero in this interval
+and monotonic. We define
+\begin{equation}
+	P(u) = \int\limits_{u_f}^u \frac{C(u')}{D(u')}\dd{u},
+\end{equation}
+so
+\begin{equation}
+	P'(u) = \frac{C(u)}{D(u)}.
+\end{equation}
+%\eqref{eq:disc:c(u)}
+
+The flux can be written as
+\begin{equation}
+	H(u)
+	= C(u)f(u)-D(u)\DERIV{f}{u}
+	=-D(u)e^{P(u)}\DERIV{}{u}\left[f(u)e^{-P(u)}\right].
+\end{equation}
+Integration of the balance equation \eqref{eq:disc:be} over the interval $[u_f,u]$ gives
+\begin{equation}
+	H(u) - H_f
+	= -D(u)e^{P(u)}\DERIV{}{u}\left[f(u)e^{-P(u)}\right] - H_f
+	= \int\limits_{u_f}^u S(u')\dd{u'}
+\end{equation}
+or, after multiplication with $e^{-P(u)}/D(u)$ and reshuffling terms,
+\begin{equation}
+	H_f \frac{e^{-P(u)}}{D(u)}
+	=
+	- \DERIV{}{u}\left[f(u)e^{-P(u)}\right]
+	- \frac{e^{-P(u)}}{D(u)}\int\limits_{u_f}^u S(u')\dd{u'}.
+\end{equation}
+Integration over $[u_L,u_H]$
+\begin{equation}
+	H_f \int\limits_{u_L}^{u_H} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	=
+	- f(u_H)e^{-P(u_H)}
+	+ f(u_L)e^{-P(u_L)}
+	- \int\limits_{u_L}^{u_H} \frac{e^{-P(u'')}}{D(u'')}\int\limits_{u_f}^{u''} S(u')\dd{u'} \dd{u''}.
+\end{equation}
+The last term on the right-hand side can be rewritten as follows:
+\begin{align}
+	& - \int\limits_{u_L}^{u_H} \frac{e^{-P''}}{D(u'')}\int\limits_{u_f}^{u''} S(u')\dd{u'} \dd{u''}
+	  = \int\limits_{u_L}^{u_H} \int\limits_{P''}^{u_f} \frac{e^{-P''}}{D(u'')} S(u')\dd{u'} \dd{u''}
+	\nonumber \\
+	& = \int\limits_{u_L}^{u_H} \;\;\int\limits_{u'<u_f ? 0 : 1}^{u'} \frac{e^{-P''}}{D(u'')} \dd{u''} S(u') \dd{u'}
+	  = \int\limits_{u_L}^{u_H} G(u')S(u') \dd{u'},
+\end{align}
+where the Green's function $G(u)$ has been defined as
+\begin{equation}
+	G(u) = \int\limits_{u<u_f?0 : 1}^{u} \frac{e^{-P(u')}}{D(u')} \dd{u'}.
+\end{equation}
+Substitution and dividing by the integral factor that accompanies $H_f$ gives the final result
+\begin{equation}
+	H_f
+	=
+	\left[
+	- f(u_H)e^{-P(u_H)}
+	+ f(u_L)e^{-P(u_L)}
+	+ \int\limits_{u_L}^{u_H} G(u')S(u') \dd{u'}
+	\right]
+	\left[\;
+		\int\limits_{u_L}^{u_H} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	\right]^{-1}.
+\end{equation}
+Note that the only dependence on the face location is through the function $G(u)$.
+If the source term is ignored, $H_f$ does {\em not} depend on the face location.
+
+Let us take a closer look at the denominator of this expression for the
+special case that $C(u)$ is uniform in the interval $[u_L,u_H]$ and $D(u)$
+is piecewise uniform in the intervals $[u_L,u_f]$ and $[u_f,u_H]$. Then we have
+\begin{equation}
+	P(u) = \begin{cases}
+		(C/D_L)(u-u_f)	& u_L \leq u \leq u_f; \\
+		(C/D_H)(u-u_f)	& u_f < u \leq u_H.
+	\end{cases}
+\end{equation}
+Then, for $C=0$ we find
+\begin{align}
+	   \int\limits_{u_L}^{u_H} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	   = \frac{u_f-u_L}{D_L} + \frac{u_H-u_f}{D_H}
+	   = (u_H-u_L)\left[\frac{c_L}{D_L} + \frac{c_H}{D_H}\right]
+	   := \frac{u_H-u_L}{\tilde{D}}.
+\end{align}
+Then we find, for the homogeneous flux:
+\begin{equation}
+	H_f = \frac{\tilde{D}}{(\Delta u)_f}\left[
+		 f(u_L)
+		-f(u_H)
+	\right]
+\end{equation}
+
+For $C\neq0$ we find
+\begin{align}
+	   \int\limits_{u_L}^{u_H} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	&= \int\limits_{u_L}^{u_f} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	 + \int\limits_{u_f}^{u_H} \frac{e^{-P(u)}}{D(u)} \dd{u}
+	\nonumber \\
+	&= \int\limits_{u_L}^{u_f} \frac{e^{-(C/D_L)(u-u_f)}}{D_L} \dd{u}
+	 + \int\limits_{u_f}^{u_H} \frac{e^{-(C/D_H)(u-u_f)}}{D_H} \dd{u}
+	\nonumber \\
+	&= \frac{1}{C}\left[e^{+P_Lc_f} - 1 \right]
+	 - \frac{1}{C}\left[e^{-P_H(1-c_f)} - 1 \right]
+	\nonumber \\
+	&= \frac{1}{C}\left[e^{+P_Lc_f} - e^{-P_H(1-c_f)} \right].
+\end{align}
+Here $P_L = C_L(u_H-u_L)/D_L$ and $P_H = C_H(u_H-u_L)/D_H$.
+
+Then we find, for the homogeneous flux:
+
+\begin{align}
+	H_f
+	&=
+	C\frac{
+	- f(u_H)e^{-P_H(1-c_f)}
+	+ f(u_L)e^{+P_Lc_f}
+	}
+	{\displaystyle
+	     e^{+P_Lc_f} - e^{-P_H(1-c_f)}
+	}
+	\nonumber \\
+	&=
+	-C\frac{
+	f(u_H)
+	}
+	{\displaystyle
+	     e^{\tilde{P}} -1
+	}
+	-
+	C\frac{
+	f(u_L)
+	}
+	{\displaystyle
+	     e^{-\tilde{P}} -1
+	}
+	\nonumber \\
+	&=
+	\frac{C}{\tilde{P}}\left[
+		 f(u_L){\cal B}(-\tilde{P})
+		-f(u_H){\cal B}( \tilde{P})
+	\right]
+	\nonumber \\
+	&=
+	\frac{\tilde{D}}{(\Delta u)_f}\left[
+		 f(u_L){\cal B}(-\tilde{P})
+		-f(u_H){\cal B}( \tilde{P})
+	\right]
+\end{align}
+The final expression is also valid when $C=0$.
 
 
 \bibliography{doc/reflist}
