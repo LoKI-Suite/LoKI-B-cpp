@@ -273,7 +273,7 @@ int main()
     cd.update(grid);
 
     /* Next, set up the 'Boltzmann matrix' M, defined such that dH/du is
-     * approximated by M*eedf=0 (eedf and 0 are column vectors).
+     * approximated by M*eedf (eedf and 0 are column vectors).
      */
     SparseMatrix mat(grid.nCells(),grid.nCells());
     cd.discretize(mat,grid);
