@@ -212,7 +212,7 @@ private:
              * The expression is rewritten for positive P to avoid
              * an underflow-overflow combination for large positive P.
              */
-            A += P>0 ? (Dx/du)*bernoulli(P)*std::exp(P*c) : (Dx/du)*bernoulli(-P)*std::exp(P*(c-1));
+            A += P>0 ? (Dx/du)*bernoulli(-P)*std::exp(P*(c-1)) : (Dx/du)*bernoulli(P)*std::exp(P*c);
         }
         if (Cx!=0)
         {
