@@ -106,16 +106,10 @@ public:
             const Grid::Index fB = f-1;
             const Grid::Index fA = f;
             const double du = grid().duNode(f);
-            if (fB!=0)
-            {
-                mat.coeffRef(fB,fB) += -B/du;
-                mat.coeffRef(fB,fA) += +A/du;
-            }
-            if (fB!=grid().getNodes().size()-1)
-            {
-                mat.coeffRef(fA,fB) += +B/du;
-                mat.coeffRef(fA,fA) += -A/du;
-            }
+            mat.coeffRef(fB,fB) += -B/du;
+            mat.coeffRef(fB,fA) += +A/du;
+            mat.coeffRef(fA,fB) += +B/du;
+            mat.coeffRef(fA,fA) += -A/du;
         }
     }
     void discretize(SparseMatrix& mat, const ConvDiffOperator& cd_op, bool conv, bool diff) const
@@ -129,26 +123,21 @@ public:
             const Grid::Index fB = f-1;
             const Grid::Index fA = f;
             const double du = grid().duNode(f);
-            if (fB!=0)
-            {
-                mat.coeffRef(fB,fB) += -Bx/du;
-                mat.coeffRef(fB,fA) += +Ax/du;
-            }
-            if (fB!=grid().getNodes().size()-1)
-            {
-                mat.coeffRef(fA,fB) += +Bx/du;
-                mat.coeffRef(fA,fA) += -Ax/du;
-            }
+            mat.coeffRef(fB,fB) += -Bx/du;
+            mat.coeffRef(fB,fA) += +Ax/du;
+            mat.coeffRef(fA,fB) += +Bx/du;
+            mat.coeffRef(fA,fA) += -Ax/du;
         }
-#if 0
         /* use the ghost cell method to discretize the boundary flux for
          * this operator:
-            H_bnd=0 <=> B*f_L - A*f_H = 0 <=> f_H = f_L*(B/A).
-            Then
-            H_x,bnd = B_x*f_L - A_x*f_H = B_x*f_L - A_x f_L*(B/A) = (B_x - A_x*(B/A))*f_L
+         *  H_bnd=0 <=> B*f_L - A*f_H = 0 <=> f_H = f_L*(B/A).
+         *  Then
+         *  H_x,bnd = B_x*f_L - A_x*f_H = B_x*f_L - A_x f_L*(B/A) = (B_x - A_x*(B/A))*f_L
          */
-        /// \todo Check which du is (must be) used for calculating A,B, Ax, Bx.
         {
+            /** \todo Check which du is (best) used for calculating A,B, Ax, Bx.
+             *  when a ghost cell is used.
+             */
             Grid::Index f=grid().getNodes().size()-1;
             calculateAB(Ax,Bx,f,cd_op,conv,diff);
             double A,B;
@@ -156,10 +145,40 @@ public:
             // index of cell before the boundary face
             const Grid::Index fB = f-1;
             const double du = grid().duNode(f);
-            // std::cout << "MAT=" << mat.coeffRef(fB,fB) << ", DEL = " << (Bx-Ax*B/A)/du << std::endl;
             mat.coeffRef(fB,fB) += +(Bx-Ax*B/A)/du;
         }
-#endif
+    }
+    void calculate_flux_density(Vector& flux, const ConvDiffOperator& cd_op, const Vector& field, bool conv, bool diff) const
+    {
+        flux[0] = 0.0;
+        double Ax,Bx;
+        // skip both boundary faces
+        for (Grid::Index f=1; f!=grid().getNodes().size()-1; ++f)
+        {
+            calculateAB(Ax,Bx,f,cd_op,conv,diff);
+            // indices of cells before and after face f
+            const Grid::Index fB = f-1;
+            const Grid::Index fA = f;
+            flux[f] = Bx*field(fB) - Ax*field(fA);
+        }
+        /* use the ghost cell method to discretize the boundary flux for
+         * this operator:
+         *  H_bnd=0 <=> B*f_L - A*f_H = 0 <=> f_H = f_L*(B/A).
+         *  Then
+         *  H_x,bnd = B_x*f_L - A_x*f_H = B_x*f_L - A_x f_L*(B/A) = (B_x - A_x*(B/A))*f_L
+         */
+        {
+            /** \todo Check which du is (best) used for calculating A,B, Ax, Bx.
+             *  when a ghost cell is used.
+             */
+            Grid::Index f=grid().getNodes().size()-1;
+            calculateAB(Ax,Bx,f,cd_op,conv,diff);
+            double A,B;
+            calculateAB(A,B,f);
+            // index of cell before the boundary face
+            const Grid::Index fB = f-1;
+            flux[f] = (Bx-Ax*B/A)*field(fB);
+        }
     }
     const Vector& P() const { return m_P; }
     double calc_power(const ConvDiffOperator& op, const Vector& eedf, bool conv, bool diff) const
@@ -214,7 +233,7 @@ private:
      *  \a diff control if the convective and/or diffusive components are
      *  taken into account. This allows the discretization of only the
      *  'downflux' (convective) or 'upflux' (diffusive) parts of the flux,
-     *  which is used in power balance calculations.
+     *  which are used in power balance calculations.
      */
     void calculateAB(double& A, double& B, Grid::Index f, const ConvDiffOperator& cd_op, bool conv, bool diff) const
     {
@@ -227,6 +246,7 @@ private:
         const double P=m_P[f];
         // grid data:
         const double du = grid().duNode(f);
+        /// \todo make c a face-array in the grid class?
         const double c = (grid().getNode(f)-grid().getCell(f-1))/du;
         if (Dx!=0)
         {
@@ -256,7 +276,7 @@ private:
 int main()
 {
     using namespace loki;
-    Grid grid(1000,5);
+    const Grid grid(1000,5);
 
     /* select one of the two testcases. true: maxwell at Te=Tg=0.3*eV
      * (no field). false: Druyvesteyn (Tg=0, E_N=5e-21*Vm^2).
@@ -324,6 +344,22 @@ int main()
         cd.write_power(std::cout,*term,eedf);
     }
     cd.write_power(std::cout,cd.cd_total(),eedf);
+
+#if 1
+
+    Vector H_el(grid.getNodes().size());
+    Vector H_field(grid.getNodes().size());
+    cd.calculate_flux_density(H_el, op_el, eedf, true, true);
+    cd.calculate_flux_density(H_field, op_field, eedf, true, true);
+
+    std::cout << std::endl << std::endl;
+
+    for (Grid::Index f=0; f!=grid.getNodes().size(); ++f)
+    {
+        std::cout << grid.getNode(f) << '\t' << H_el[f] << '\t' << H_field[f] << std::endl;
+    }
+
+#endif
 
 #if 0
     /* Some noisy additional tests. First we calculate the individual
