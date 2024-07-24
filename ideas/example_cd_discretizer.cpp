@@ -1,6 +1,6 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfUtilities.h"
-#include "LoKI-B/LinearAlgebra.h"
+#include "LoKI-B/ElectronKinetics.h"
 #include <vector>
 
 namespace loki {
@@ -15,18 +15,17 @@ namespace loki {
 class ConvDiffOperator
 {
 public:
-    ConvDiffOperator()
+    ConvDiffOperator(const Grid& grid, const std::string& name)
+    : m_grid(grid), m_name(name)
     {
+        clear();
     }
-    ConvDiffOperator(const Grid& grid)
-    : m_C(grid.getNodes().size()),
-      m_D(grid.getNodes().size())
+    const Grid& grid() const { return m_grid; }
+    const std::string& name() const { return m_name; }
+    void clear()
     {
-    }
-    void clear(const Grid& grid)
-    {
-        m_C.resize(grid.getNodes().size());
-        m_D.resize(grid.getNodes().size());
+        m_C.resize(m_grid.getNodes().size());
+        m_D.resize(m_grid.getNodes().size());
         m_C.fill(0.0);
         m_D.fill(0.0);
     }
@@ -36,6 +35,10 @@ public:
         m_D += other.m_D;
         return *this;
     }
+private:
+    const Grid& m_grid;
+    const std::string m_name;
+public:
     Vector m_C;
     Vector m_D;
 };
@@ -66,67 +69,72 @@ class ConvDiffDiscretizer
 {
 public:
     using ConvDiffOperators = std::vector<const ConvDiffOperator*>;
+    ConvDiffDiscretizer(const Grid& grid)
+    : m_cd_total(grid, "combined_flux")
+    {
+    }
+    const Grid& grid() const { return m_cd_total.grid(); }
     void register_cd_operator(const ConvDiffOperator& op)
     {
         m_cd_ops.push_back(&op);
     }
-    void update(const Grid& grid)
+    void update()
     {
         /* recalculate C and D of m_cd_total, representing the sums of the
          * contributions' C and D.
          */
-        m_cd_total.clear(grid);
+        m_cd_total.clear();
         for (const auto& cd_op : m_cd_ops)
         {
             m_cd_total += *cd_op;
         }
-        m_P = m_cd_total.m_C.cwiseProduct(grid.duNodes()).cwiseQuotient(m_cd_total.m_D);
+        m_P = m_cd_total.m_C.cwiseProduct(grid().duNodes()).cwiseQuotient(m_cd_total.m_D);
     }
     /** For every cell [0,n), discretize the equation
      *  (H_{i+1/2}-H_{i_{i-1/2})/(du)_i. This is done by looping over the
      *  faces, rather than the cells to avoid visiting each face twice. The
      *  fluxes at the boundary faces are skipped (zero-flux boundary condition).
      */
-    void discretize(SparseMatrix& mat, const Grid& grid) const
+    void discretize(SparseMatrix& mat) const
     {
         double A,B;
         // skip both boundary faces
-        for (Grid::Index f=1; f!=grid.getNodes().size()-1; ++f)
+        for (Grid::Index f=1; f!=grid().getNodes().size()-1; ++f)
         {
-            calculateAB(A,B,grid,f);
+            calculateAB(A,B,f);
             // indices of cells before and after face f
             const Grid::Index fB = f-1;
             const Grid::Index fA = f;
-            const double du = grid.duNode(f);
+            const double du = grid().duNode(f);
             if (fB!=0)
             {
                 mat.coeffRef(fB,fB) += -B/du;
                 mat.coeffRef(fB,fA) += +A/du;
             }
-            if (fB!=grid.getNodes().size()-1)
+            if (fB!=grid().getNodes().size()-1)
             {
                 mat.coeffRef(fA,fB) += +B/du;
                 mat.coeffRef(fA,fA) += -A/du;
             }
         }
     }
-    void discretize(SparseMatrix& mat, const Grid& grid, const ConvDiffOperator& cd_op, bool conv, bool diff) const
+    void discretize(SparseMatrix& mat, const ConvDiffOperator& cd_op, bool conv, bool diff) const
     {
         double Ax,Bx;
         // skip both boundary faces
-        for (Grid::Index f=1; f!=grid.getNodes().size()-1; ++f)
+        for (Grid::Index f=1; f!=grid().getNodes().size()-1; ++f)
         {
-            calculateAB(Ax,Bx,grid,f,cd_op,conv,diff);
+            calculateAB(Ax,Bx,f,cd_op,conv,diff);
             // indices of cells before and after face f
             const Grid::Index fB = f-1;
             const Grid::Index fA = f;
-            const double du = grid.duNode(f);
+            const double du = grid().duNode(f);
             if (fB!=0)
             {
                 mat.coeffRef(fB,fB) += -Bx/du;
                 mat.coeffRef(fB,fA) += +Ax/du;
             }
-            if (fB!=grid.getNodes().size()-1)
+            if (fB!=grid().getNodes().size()-1)
             {
                 mat.coeffRef(fA,fB) += +Bx/du;
                 mat.coeffRef(fA,fA) += -Ax/du;
@@ -141,23 +149,37 @@ public:
          */
         /// \todo Check which du is (must be) used for calculating A,B, Ax, Bx.
         {
-            Grid::Index f=grid.getNodes().size()-1;
-            calculateAB(Ax,Bx,grid,f,cd_op,conv,diff);
+            Grid::Index f=grid().getNodes().size()-1;
+            calculateAB(Ax,Bx,f,cd_op,conv,diff);
             double A,B;
-            calculateAB(A,B,grid,f);
+            calculateAB(A,B,f);
             // index of cell before the boundary face
             const Grid::Index fB = f-1;
-            const double du = grid.duNode(f);
+            const double du = grid().duNode(f);
+            // std::cout << "MAT=" << mat.coeffRef(fB,fB) << ", DEL = " << (Bx-Ax*B/A)/du << std::endl;
             mat.coeffRef(fB,fB) += +(Bx-Ax*B/A)/du;
         }
 #endif
     }
     const Vector& P() const { return m_P; }
-    double calc_power(const Grid& grid, const ConvDiffOperator& op, const Vector& eedf, bool conv, bool diff) const
+    double calc_power(const ConvDiffOperator& op, const Vector& eedf, bool conv, bool diff) const
     {
-        SparseMatrix mat(grid.nCells(),grid.nCells());
-        discretize(mat,grid,op,conv,diff);
-        return grid.duCells().dot(grid.getCells().asDiagonal()*(mat*eedf));
+        SparseMatrix mat(grid().nCells(),grid().nCells());
+        discretize(mat,op,conv,diff);
+        return grid().duCells().dot(grid().getCells().asDiagonal()*(mat*eedf));
+    }
+    const ConvDiffOperators& cd_ops() const { return m_cd_ops; }
+    const ConvDiffOperator& cd_total() const { return m_cd_total; }
+    void write_power(std::ostream& os, const ConvDiffOperator& term, const Vector& eedf) const
+    {
+        const double conv = calc_power(term, eedf, true, false);
+        const double diff = calc_power(term, eedf, false, true);
+        // note: this should be equal to conv + diff
+        const double total = calc_power(term, eedf, true, true);
+        os << "#  " << term.name() << std::endl;
+        os << "#  " << std::right << std::setw(15) << "convective: " << conv << std::endl;
+        os << "#  " << std::right << std::setw(15) << "diffusive:  " << std::showpos << diff << std::endl;
+        os << "#  " << std::right << std::setw(15) << "total:      " << std::setw(30) << total << std::endl;
     }
 private:
     double bernoulli(double P) const
@@ -168,7 +190,7 @@ private:
     /** Calculate coefficients \a A and \a B such that the flux of a field
      *  at internal face \a f is given by H = B*field(f-1) - A*field(f).
      */
-    void calculateAB(double& A, double& B, const Grid& grid, Grid::Index f) const
+    void calculateAB(double& A, double& B, Grid::Index f) const
     {
         const double C=m_cd_total.m_C[f];
         const double D=m_cd_total.m_D[f];
@@ -178,7 +200,7 @@ private:
         }
         else
         {
-            const double du = grid.duNode(f);
+            const double du = grid().duNode(f);
             const double P=m_P[f];
             // exponential scheme:
             const double Ber = bernoulli(P);
@@ -194,7 +216,7 @@ private:
      *  'downflux' (convective) or 'upflux' (diffusive) parts of the flux,
      *  which is used in power balance calculations.
      */
-    void calculateAB(double& A, double& B, const Grid& grid, Grid::Index f, const ConvDiffOperator& cd_op, bool conv, bool diff) const
+    void calculateAB(double& A, double& B, Grid::Index f, const ConvDiffOperator& cd_op, bool conv, bool diff) const
     {
         A = 0.0;
         B = 0.0;
@@ -204,8 +226,8 @@ private:
         // for the combined terms:
         const double P=m_P[f];
         // grid data:
-        const double du = grid.duNode(f);
-        const double c = (grid.getNode(f)-grid.getCell(f-1))/du;
+        const double du = grid().duNode(f);
+        const double c = (grid().getNode(f)-grid().getCell(f-1))/du;
         if (Dx!=0)
         {
             /* if Dx!=0, also D!=0: P is finite
@@ -247,13 +269,13 @@ int main()
     const double E_N = maxwell ? 0 : 5e-21;
 
     // set up an elastic operator
-    ConvDiffOperator op_el(grid);
+    ConvDiffOperator op_el(grid, "elastic");
     const Vector g_el = grid.getNodes().array()*grid.getNodes().array()*sigma.array()*2.0*mass_ratio;
     op_el.m_C = -g_el;
     op_el.m_D = g_el*Tg_eV;
 
     // set up a field operator
-    ConvDiffOperator op_field(grid);
+    ConvDiffOperator op_field(grid, "field");
     Vector g_E = E_N*E_N*(1./3)*grid.getNodes().array()/sigma.array();
     op_field.m_C.fill(0.0);
     op_field.m_D = g_E;
@@ -261,7 +283,7 @@ int main()
     /* set up a convection-diffusion (cd) discretizer. Register the elastic and
      * field operators.
      */
-    ConvDiffDiscretizer cd;
+    ConvDiffDiscretizer cd(grid);
     cd.register_cd_operator(op_el);
     cd.register_cd_operator(op_field);
 
@@ -270,28 +292,20 @@ int main()
      * registered contributions. Subsequently, it updates the vector that holds
      * the grid Peclet numbers at the faces.
      */
-    cd.update(grid);
+    cd.update();
 
     /* Next, set up the 'Boltzmann matrix' M, defined such that dH/du is
      * approximated by M*eedf (eedf and 0 are column vectors).
      */
     SparseMatrix mat(grid.nCells(),grid.nCells());
-    cd.discretize(mat,grid);
+    cd.discretize(mat);
 
-    /* Copy the boltzmann matrix into A and replace the first equation with
-     * C*eedf[0] = C. Use C = A(1,1) to keep the matrix 'balanced'. After
-     * solving the equation, apply the correct scaling to normalize the eedf
-     * such that sum_i sqrt(u_i)*eedf(u_i) (du)_i = 1.
+    /* solveEEDF modifies its matrix argument. We let that operator on a copy
+     * in case we want to use the unmodified 'mat' later on.
      */
     Matrix A(mat);
-    A.row(0).setZero();
-    A(0,0)=A(1,1);
-    // include ghost point at upper boundary
     Vector eedf(grid.nCells());
-    eedf.fill(0);//.setZero();
-    eedf[0] = A(1,1);
-    LinAlg::solveTDMA(A,eedf);
-    normalizeEDF(eedf,grid);
+    loki::solveEEDF(eedf,A,grid);
 
     /* Calculate the mean energy and use that to construct the analytical
      * solution. Print lines containing f, f_anal and the relative error
@@ -304,17 +318,24 @@ int main()
         std::cout << grid.getCell(i) << '\t' << eedf[i] << '\t' << anal[i] << '\t' << (eedf[i]-anal[i])/anal[i] << std::endl;
     }
 
-    /* below we do some additional tests. First we calculate the individual
+    std::cout << "# power balance:" << std::endl;
+    for (const auto& term : cd.cd_ops())
+    {
+        cd.write_power(std::cout,*term,eedf);
+    }
+    cd.write_power(std::cout,cd.cd_total(),eedf);
+
+#if 0
+    /* Some noisy additional tests. First we calculate the individual
      * contributions of the elastic and field operators to the boltzmann
      * matrix. These should add up to M.
      */
 
     SparseMatrix mat_el(grid.nCells(),grid.nCells());
     SparseMatrix mat_field(grid.nCells(),grid.nCells());
-    cd.discretize(mat_el,grid,op_el,true,true);
-    cd.discretize(mat_field,grid,op_field,true,true);
+    cd.discretize(mat_el,op_el,true,true);
+    cd.discretize(mat_field,op_field,true,true);
 
-#if 0
     // print M, M_el and M_field, as well as the error (M-M_el-M_field)
     std::cout << "M =\n" << mat << std::endl;
     std::cout << "M_el =\n" << mat_el << std::endl;
@@ -322,26 +343,4 @@ int main()
     std::cout << "Del = " << (mat-mat_el-mat_field) << std::endl;
 #endif
 
-    /* The total elastic power, as determined from the elastic part mat_el of
-     * the Boltzmann matrix.
-     */
-    const double P_el = grid.duCells().dot(grid.getCells().asDiagonal()*(mat_el*eedf));
-    /* The total elastic power, downflux part, as determined from the convective
-     * part of the elastic part mat_el of the Boltzmann matrix.
-     */
-    const double P_el_conv = cd.calc_power(grid, op_el, eedf, true, false);
-    /* The total elastic power, upflux part, as determined from the diffusive
-     * part of the elastic part mat_el of the Boltzmann matrix.
-     */
-    const double P_el_diff = cd.calc_power(grid, op_el, eedf, false, true);
-    /* The total field power, as determined from the field part mat_field of
-     * the Boltzmann matrix.
-     */
-    const double P_field = grid.duCells().dot(grid.getCells().asDiagonal()*(mat_field*eedf));
-    /// Print the various power terms.
-    std::cout << "# el: conv = " << P_el_conv << ", diff = " << P_el_diff << ", tot = " << (P_el_conv +P_el_diff) << std::endl;
-    std::cout << "# P_field = " << P_field << std::endl;
-    std::cout << "# P_el    = " << P_el << std::endl;
-    std::cout << "# P_tot   = " << (P_field+P_el) << std::endl;
-    std::cout << "# P_tot from M  = " << (grid.duCells().dot(grid.getCells().asDiagonal()*(mat*eedf))) << std::endl;
 }
