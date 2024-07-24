@@ -147,10 +147,7 @@ private:
     /** solve the Boltzmann equation, taking into account only the linear terms.
      */
     void invertLinearMatrix();
-    /** solve matrix*eedf=b, with b=[0], subject to the constraint that
-     *  sum_i sqrt(u_i)*f[i]*du = 1.
-     *  Note: the incoming matrix is singular, the first equation (that is:
-     *  matrix(0,*) annd b[0] are used to encode the normalization constraint.
+    /** calls function solveEEDF, passing the eedf and grid member data and \a matrix.
      */
     void invertMatrix(Matrix &matrix);
     void solveSpatialGrowthMatrix();
