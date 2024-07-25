@@ -1711,7 +1711,7 @@ to ensure this consistency.
 
 \label{sec:dH/du-disc}
 
-Most flux functions $H_x(u)$ that appear in LoKI-B are of the advection-diffusion
+The flux functions $H_x(u)$ that appear in LoKI-B are of the advection-diffusion
 type and can be written as \cite[below 25a]{Manual_2_2_0}
 \begin{equation}
 	H_x(u) = -h_x(u)\left[d_xf^0(u) + c_x\DERIV{f^0}{u}\right],
@@ -2329,6 +2329,13 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 
 \chapter{General Notes on Discretization}
 
+TODO: the matrices that are presented in this chapter are based on the integral
+form of the Boltzmann equation (per cell). Elsewhere, a division by $(\Delta u)_P$
+is done and the terms represent {\em average} values (of $\dd{H}/\dd{u}$, for
+example). Also in \SRC{ideas/example_cd_discretizer.cpp} we have the latter
+form. Let us change the text and also use the `average' formulation in the
+present chapter instead, when merging with the previous one.
+
 \label{ch:disc-general}
 
 Let us take another look at the final form of the Boltzmann equation as given
@@ -2388,8 +2395,8 @@ of the finite volume, resulting in the equation
 	\label{eq:disc:be-P}
 \end{equation}
 What remains is the derivation of a suitable expression for the fluxes at the
-faces $e$ and $w$ (east and west). This `flux approximation' is the key element in the
-derivation of a finite volume discretization scheme.
+faces $e$ and $w$ (east and west). This `flux approximation' is the key element
+in the development of a finite volume discretization scheme.
 
 TODO: $f$ is used in two different ways in the text below: face and field.
 We will be looking for flux expressions at faces that depend only on the
@@ -2479,6 +2486,7 @@ Substitution in the expression for the flux density yields
 \begin{align}
 	H_f &= C_f((1-c_f)f_L+c_ff_H) - D_f\frac{f_H-f_L}{(\Delta u)_f} \nonumber \\
 	&= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right)f_L - \left(\frac{D_f}{(\Delta u)_f}-C_fc_f\right)f_H,
+	\label{eq:H_f:cd}
 \end{align}
 which is of the form \eqref{eq:disc:H(B,A)}, with
 \begin{align}
@@ -2503,6 +2511,13 @@ coefficients reduce to
 	B_f &= \frac{D_f}{(\Delta u)_f}\left(1+\frac{\Pe_f}{2}\right). \label{eq:disc:B_f-cd-uniform}
 \end{align}
 
+Equation \eqref{eq:H_f:cd} demonstrates that the expression for the flux is linear
+in the coefficients $C_f$ and $D_f$. As a result, the discretization matrix
+\eqref{eq:disc:H-term} is the sum of the discretization matrices that can be
+constructed for the individual flux contributions $H_x$. We will soon see that
+this is not true for other discretization schemes, such as the exponential
+scheme, which we will discuss next.
+
 \subsection{The Scharfetter-Gummal (Exponential) Scheme}
 
 More sophisticated schemes are obtained by solving a simplified form of
@@ -2511,6 +2526,8 @@ and $H(u)$ in the interval $[u_L,u_H]$. This local boundary value problem
 is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
 and the source $S(u)$. For a related discussion, see Patankar's textbook
 \cite[sec. 7.2--7]{Patankar1980}.
+
+\subsubsection{Expression for the Total Flux $H(u)$}
 
 The derivation starts with the introduction of a reduced flux density $H^*$.
 Using the reduced energy coordinate $c(u)$ that was introduced in equation
@@ -2530,9 +2547,8 @@ and the local value of the P\'eclet number is defined by
 In terms of these new quantities, and again using energy coordinate $c(u)$,
 equation \eqref{eq:disc:be} takes the form
 \begin{equation}
-	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c)).
+	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c))
 \end{equation}
-
 and assuming that the coefficients $C(u)$ and $D(u)$ assume constant values
 $C_f$ and $D_f$ in the interval, equation \eqref{eq:disc:be} can be written as
 \begin{equation}
@@ -2591,17 +2607,18 @@ The constant $K$ can be epressed in terms of $f_H$, since setting $c=1$ yields
 and combining these equatons to eliminate $K$ yields
 \begin{equation}
 	f(u(c))
-	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}
+	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}.
 \end{equation}
-Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$. Note that for
-$\Pe\neq 0$ we have
+Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$, but clobbers
+the expression somewhat. We will therefore first continue under the assumption that
+$\Pe\neq 0$. Then
 \begin{align}
 	f(u(c))
 	&= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{e^{\Pe c}-1}{e^\Pe-1} \nonumber \\
 	&= f_Le^{\Pe c} + (f_H + f_L(1 - e^{\Pe}-1))\frac{\left(1-e^{\Pe c}\right)}{\left(1-e^{\Pe}\right)} \nonumber \\
-	&= f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}.
+	&= f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1},
 \end{align}
-For the flux we find
+and for the flux we find
 \begin{equation}
 	H(u)
 	= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
@@ -2620,15 +2637,18 @@ But since $DP/(\Delta u)_f=C$, this can be simplified to
 	\nonumber \\
 	&= \frac{D}{(\Delta u)_f}\left(f_L\left({\cal B}(\Pe)+\Pe\right) - f_H{\cal B}(\Pe)\right).
 \end{align}
-The last form also gives the correct result for $\Pe=0$.
-This is again of the form \eqref{eq:disc:H(B,A)}, but this time with
+In the last expression we have reintroduced the Bernoulli function ${\cal B}(\Pe)$. That expression
+is also correct for $\Pe=0$. It is again of the form \eqref{eq:disc:H(B,A)}, but this time the
+flux discretization coefficients are given by
 \begin{align}
 	B_f &= \frac{D}{(\Delta u)_f}\left({\cal B}(\Pe)+\Pe\right), \label{eq:disc:B_f-exp} \\
 	A_f &= \frac{D}{(\Delta u)_f}{\cal B}(\Pe). \label{eq:disc:A_f-exp}
 \end{align}
-Please note that the flux \eqref{eq:disc:H(C,D,P)} does not depend on $u$ (or, equivalently, $c(u)$),
+Note that the flux \eqref{eq:disc:H(C,D,P)} does not depend on $u$ (or, equivalently, $c(u)$),
 which is consistent with the local approximation $\dd{H}/\dd{u}=0$ that underlies the exponential
 scheme.
+
+\subsubsection{Expressions for the Flux Contributions $H_x(u)$}
 
 Let us now look at the indivudual flux contributions $H_x(u)$. These are not required to solve the
 Boltzmann equations, but are needed to evaluate the individual terms of the power balance, the
@@ -2646,21 +2666,21 @@ It easy to verify that summing this equation over $x$ and using the definitions 
 $\sum_xD_x=D$ that are part of equation \eqref{eq:disc:cd-flux-total} results in equation
 \eqref{eq:disc:H(C,D,P)} for the total flux. Note that this would {\em not} be the case if each flux
 $H_x(u)$ had been calculated based on its own P\'eclet number $\Pe_x:=C_x(\Delta u)_f/D_x$.
-
 Also note that, unlike the total flux $H$, the individual flux contributions $H_x(u)$ {\em do} depend on
 energy via the reduced energy coordinate $c(u)$. The interface flux depends on the energy $u_f$ (or the
 relative coordinate $c_f$) at the interface.
 
-Grouping the terms depending on $f_L$ and $f_H$, equation \eqref{eq:disc:Hx(Cx,Dx,P)} can be written as
+Grouping the terms that depend on $f_L$ and $f_H$, equation \eqref{eq:disc:Hx(Cx,Dx,P)} can be written as
 \begin{equation}
 	H_x = B_xf_L - A_xf_H,
+	\label{eq:disc:H_x(B_x,A_x)}
 \end{equation}
 with
 \begin{align}
 	A_x &= \frac{D_x}{(\Delta u)_f}{\cal B}(\Pe)e^{\Pe c} - C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}, \\
 	B_x &= A_x + C_x.
 \end{align}
-A few notes about the evlauation follow. Firstly, let us assume that $D_x\neq 0$, so the
+A few notes about the evaluation follow. Firstly, let us assume that $D_x\neq 0$, so the
 first term on the right-hand side of the expression for $A_x$ must be considered. If
 $D_x\neq 0$, also $D\neq 0$, so the P\'eclet number $\Pe$ is finite. The term can be
 expressed in terms of the Bernoulli function to avoid the singularity for small $|\Pe|$.
