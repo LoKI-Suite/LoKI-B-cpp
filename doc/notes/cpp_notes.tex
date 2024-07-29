@@ -1188,31 +1188,15 @@ that some of these can be written in flux-divergence form,
 	\tilde{C}^0_x(u) = -\DERIV{H_x(u)}{u}.
 	\label{eq:Ctilde=-dH/du}
 \end{equation}
-The reason for introducing the minus sign here is that, as we shall soon see
-(equation \eqref{eq:H_x-expr}), the resulting expressions for the fluxes $H_x(u)$
-will be of the advection-diffusion type,
-\begin{equation}
-	H_x(u) = -h_x(u)\left(c_x(u) f^0(u) + d_x(u) f^0(u)\right)
-	       = -h_x(u)d_x(u) f^0(u) - h_x(u)c_x(u) f^0(u),
-	\label{eq:H_x(h_x,c_x,d_x)}
-\end{equation}
-with a {\em positive} diffusion coefficient $h_x(u)c_x(u)$.
-This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
-with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
-
-This notation follows the LoKI-B docs, which calls the convection coefficient
-$d_x$ and the diffusion coefficient $c_x$, instead of the other way around.
-For later purposes we will adopt a more standard notation for the flux,
+The reason for introducing the minus sign here is that the resulting
+expressions for the fluxes $H_x(u)$ will be of the advection-diffusion type,
 \begin{equation}
 	H_x(u) = C_x(u)f - D_x(u)\DERIV{f}{u},
 	\label{eq:cd-flux}
 \end{equation}
-with convection coefficient $C_x(u)$ and diffusion coefficient $D(u)$. Comparison
-with \eqref{eq:H_x(h_x,c_x,d_x)} reveals that
-\begin{align}
-	C_x(u) &= -h_x(u)d_x(u), \label{eq:C_x(h_x,d_x)} \\
-	D_x(u) &= +h_x(u)c_x(u), \label{eq:D_x(h_x,c_x)}.
-\end{align}
+with a {\em positive} diffusion coefficient $D_x(u)$.
+This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
+with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
 The convective and diffusive parts of the flux are given by
 \begin{equation}
 	H_{x,\text{conv}}(u) = C_x(u)f, \quad
@@ -1221,6 +1205,26 @@ The convective and diffusive parts of the flux are given by
 \end{equation}
 Among others, these individual components will be used in the analysis of the
 power balance, later on in this text.
+
+In the LoKI-B MATLAB code and documents \cite[below 25a]{Manual_2_2_0}, the
+flux is written in a different form, as
+\begin{equation}
+	H_x(u) = -h_x(u)\left(c_x(u) f^0(u) + d_x(u) f^0(u)\right)
+	       = -h_x(u)d_x(u) f^0(u) - h_x(u)c_x(u) f^0(u),
+	\label{eq:H_x(h_x,c_x,d_x)}
+\end{equation}
+A comparison with equation \eqref{eq:cd-flux} reveals that
+\begin{align}
+	C_x(u) &= -h_x(u)d_x(u), \label{eq:C_x(h_x,d_x)} \\
+	D_x(u) &= +h_x(u)c_x(u), \label{eq:D_x(h_x,c_x)}.
+\end{align}
+
+There are various reasons to prefer the notation in equation \eqref{eq:cd-flux}.
+Firstly, the symbols $d_x$ and $c_x$ are somewhat confusing, since $d_x$
+descibes the convective part, $c_x$ the diffusive part of the flux. Secondly,
+the expression for the electron-electron operator does not fit in this scheme,
+since the coefficients $d_x$ and $c_x$ cannot both be made $u$-independent.
+This way of writing also makes the addition of fluxes les straightforward.
 
 \section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
@@ -1651,7 +1655,7 @@ written in flux-divergence form),
 Then the Boltzmann equation can be written as
 \begin{equation}
 	\DERIV{H}{u} = S(u).
-	\label{eq:be:dHdu=S}
+	\label{eq:be:dH/du=S}
 \end{equation}
 This last expression is used in the discussion of the discretization scheme for the
 flux $H(u)$, see chapter \ref{ch:disc}.
@@ -1794,7 +1798,7 @@ we will make this clear by writing $\bmat{M}_x(\bvec{f})$.
 
 \section{Discretization of the Flux Terms}
 
-\subsection{Expressions for the Total Flux $H(u)$}
+\subsection{Expression for the Total Flux $H(u)$}
 
 Let us consider the terms \eqref{eq:mean-dH/du_P}. These can be summed to a
 single term
@@ -1830,8 +1834,8 @@ we have $L=P$ and $H=E$ (the cell east of $P$). Substitution of expression
 equation \eqref{eq:EBE-final-avg} yields, for any internal cell $P$,
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_P
-	= (B_ef_P - A_ef_E) - (B_wf_W - A_wf_P)
-	= -B_wf_W + (A_w+B_e)f_P - A_ef_E
+	= \frac{B_ef_P - A_ef_E}{(\Delta u)_P} - \frac{B_wf_W - A_wf_P}{(\Delta u)_P}
+	= -\frac{B_w}{(\Delta u)_P}f_W + \frac{A_w+B_e}{(\Delta u)_P}f_P - \frac{A_e}{(\Delta u)_P}f_E
 	= [\mat{M}_{cd}\bvec{f}]_P.
 	\label{eq:disc:H-term-int}
 \end{equation}
@@ -1845,16 +1849,16 @@ can simply be ignored. On the upper boundary, we will also impose the condition
 that the flux vanishes. Then the discrete equation on the western boundary becomes
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_{P=0}
-	= (B_ef_P - A_ef_E) - 0
-	=  B_ef_P - A_ef_E
+	= \frac{B_ef_P - A_ef_E}{(\Delta u)_P} - 0
+	=  \frac{B_ef_P - A_ef_E}{(\Delta u)_P}
 	= [\mat{M}_{cd}\bvec{f}]_{P=0},
 	\label{eq:disc:H-term-bnd,w}
 \end{equation}
 and on the eastern boundary we get
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
-	= 0 - (B_wf_W - A_wf_P)
-	=  -B_wf_W + A_wf_P
+	= 0 - \frac{B_wf_W - A_wf_P}{(\Delta u)_P}
+	=  -\frac{B_w}{(\Delta u)_P}f_W + \frac{A_w}{(\Delta u)_P}f_P
 	= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
 	\label{eq:disc:H-term-bnd,e}
 \end{equation}
@@ -1864,8 +1868,9 @@ The equations in all points can be summarized as the matrix-vector product
 	= \mat{M}_{cd}\bvec{f}.
 	\label{eq:disc:H-term}
 \end{equation}
+Note that the matrix $\mat{M}_{cd}$ is tridiagonal.
 
-\subsection{Expression for Flux Contributions $H_x(u)$}
+\subsection{Expressions for the Flux Contributions $H_x(u)$}
 
 Let us now consider the individual flux contributions $H_x(u)$. These are also
 described by equations of the form \eqref{eq:disc:H(B,A)}, for some coefficients
@@ -1901,9 +1906,9 @@ flux contribution $H_x$ yields, for the upper boundary face that
 For the eastern boundary cell we then get, instead of equation \eqref{eq:disc:H-term-bnd,e},
 \begin{align}
 	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
-	&= (B_{x,e} - A_{x,e}(B_e/A_e))f_P - (B_{x,w}f_W - A_{x,w}f_P)
+	&= \frac{(B_{x,e} - A_{x,e}(B_e/A_e))f_P}{(\Delta u)_P} - \frac{B_{x,w}f_W - A_{x,w}f_P}{(\Delta u)_P}
 	\nonumber \\
-	&=  - B_{x,w}f_W + (A_{x,w} + B_{x,e} - A_{x,e}(B_e/A_e) )f_P
+	&=  -\frac{B_{x,w}}{(\Delta u)_P}f_W + \frac{A_{x,w} + B_{x,e} - A_{x,e}(B_e/A_e)}{(\Delta u)_P}f_P
 	\nonumber \\
 	&= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
 	\label{eq:disc:Hx-term-bnd,e}
@@ -1915,21 +1920,16 @@ are zero. This is achieved by making the values of $g_x$ zero at the boundary fa
 \end{framed}
 
 
-\section{The Discretization Scheme}
-
-Let us now focus on the calculation of the coefficients $B_f$ and $A_f$ that
-appear in the expression for the flux at interface $f$. These can be obtained
-in various ways.
 
 \subsection{The Central Difference Scheme}
 
-\subsubsection{Expression for the Total Flux $H(u)$}
-
+Let us now focus on the calculation of the coefficients $B_f$ and $A_f$ that
+appear in the expression for the flux at interface $f$. These can be obtained
+in various ways. 
 The simplest approach is to use the `central difference scheme'
 in which the values of the field and its derivative on the face are expressed in
-ters of the adjacent cell values using a first-order Taylor expansion. These
-values are then independent of the values of the coefficients $C$ and $D$ around
-that face. Firstly, we have
+terms of the adjacent cell values using a first-order Taylor expansion.
+Firstly, we have
 \begin{equation}
 	f_f \doteq \frac{(u_H-u_f)f_l + (u_f-u_L)f_H}{u_H-u_L} = (1-c_f)f_L+c_ff_H,
 \end{equation}
@@ -1947,7 +1947,10 @@ Secondly, for the derivative we use the approximation
 	\doteq \frac{f_H-f_L}{u_H-u_L}
 	= \frac{f_H-f_L}{(\Delta u)_f}.
 \end{equation}
-Substitution in the expression for the flux density yields
+
+\subsubsection{Expression for the Total Flux $H(u)$}
+Substitution of these approximations for the value and derivative of $f$ at the face
+in the expression for the flux density yields
 \begin{align}
 	H_f &= C_f((1-c_f)f_L+c_ff_H) - D_f\frac{f_H-f_L}{(\Delta u)_f} \nonumber \\
 	&= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right)f_L - \left(\frac{D_f}{(\Delta u)_f}-C_fc_f\right)f_H,
@@ -1955,11 +1958,11 @@ Substitution in the expression for the flux density yields
 \end{align}
 which is of the form \eqref{eq:disc:H(B,A)}, with
 \begin{align}
-	A_f &= \left(\frac{D_f}{(\Delta u)_f}-C_fc_f    \right), \label{eq:disc:A_f-cd(C,D)} \\
-	B_f &= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right). \label{eq:disc:B_f-cd(C,D)}
+	A_f &= \frac{D_f}{(\Delta u)_f}-C_fc_f,     \label{eq:disc:A_f-cd(C,D)} \\
+	B_f &= \frac{D_f}{(\Delta u)_f}+C_f(1-c_f). \label{eq:disc:B_f-cd(C,D)}
 \end{align}
 
-\subsubsection{Expression for Flux Contributions $H_x(u)$}
+\subsubsection{Expressions for the Flux Contributions $H_x(u)$}
 
 Equations \eqref{eq:H_f:cd}--\eqref{eq:disc:B_f-cd(C,D)} are also valid for
 the individual flux contributions $H_x$ (when $A_{x,f}$ and $B_{x,f}$ are
@@ -1973,14 +1976,25 @@ As discussed before, the ghost cell method can be used to obtain an expression
 for the flux at the upper boundary face; see the discussion around equation
 \eqref{eq:disc:Hx-term-bnd,e}.
 
-TODO: specialize for $c_f=\frac{1}{2}$ and show that the LoKI-B (manual,paper)
-expressions are obtained when using $h_x$, $c_x$ and $d_x$ (covered also
-elsewhere in this text, except for the handling of the (upper) boundary face).
+\subsubsection{Relationship with the LoKI-B Coefficient Notation $H_x(u)$}
+
+Let us again consider the expressions \eqref{eq:disc:A_f-cd(C,D)} and
+\eqref{eq:disc:B_f-cd(C,D)}. In the case of a uniform mesh, so
+$c_f=\frac{1}{2}$, and using equations \eqref{eq:C_x(h_x,d_x)} and
+\eqref{eq:D_x(h_x,c_x)}, these become
+\begin{align}
+	A_{x,f} &= h_{x,f}\left(\frac{c_{x,f}(u)}{(\Delta u)_f}+\frac{d_{x,f}}{2} \right), \label{eq:disc:A_f-cd(hx,cx,dx)} \\
+	B_{x,f} &= h_{x,f}\left(\frac{c_{x,f}(u)}{(\Delta u)_f}-\frac{d_{x,f}}{2} \right). \label{eq:disc:B_f-cd(hx,cx,dx)}
+\end{align}
+For the discrete equation for internal points we get
+
+TODO: maybe reproduce one of the discrete equations, such as for $\bmat{M}_{E}$ in
+\cite[eq. 25b]{Manual_2_2_0}.
 
 \subsection{The Scharfetter-Gummel (Exponential) Scheme}
 
 More sophisticated schemes are obtained by solving a simplified form of
-equations \eqref{eq:be:dHdu=S} and \eqref{eq:cd-flux-total} for $f(u)$
+equations \eqref{eq:be:dH/du=S} and \eqref{eq:cd-flux-total} for $f(u)$
 and $H(u)$ in the interval $[u_L,u_H]$. This local boundary value problem
 is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
 and the source $S(u)$. For a related discussion, see Patankar's textbook
@@ -1988,10 +2002,11 @@ and the source $S(u)$. For a related discussion, see Patankar's textbook
 
 \subsubsection{Expression for the Total Flux $H(u)$}
 
+TODO: consider the relation with appendix \ref{ch:cf-scheme}.
 The derivation starts with the introduction of a reduced flux density $H^*$.
 Using the reduced energy coordinate $c(u)$ that was introduced in equation
 \eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=\dd{}/(\Delta u)_f\dd{c})$, equation
-\eqref{eq:disc:cd-flux-total} can be written as
+\eqref{eq:cd-flux-total} can be written as
 \begin{equation}
 	H(u) = \frac{D(u)}{(\Delta u)_f}H^*(c(u)),
 \end{equation}
@@ -2005,12 +2020,13 @@ and the grid P\'eclet number has been defined as
 	\label{eq:Peclet}
 \end{equation}
 In terms of these new quantities, and again using energy coordinate $c(u)$,
-equation \eqref{eq:disc:be} takes the form
+equation \eqref{eq:be:dH/du=S} takes the form
 \begin{equation}
 	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c))
 \end{equation}
 and assuming that the coefficients $C(u)$ and $D(u)$ assume constant values
-$C_f$ and $D_f$ in the interval, equation \eqref{eq:disc:be} can be written as
+$C_f$ and $D_f$ in the interval, and that the source term $S(u)$ vanishes,
+equation \eqref{eq:be:dH/du=S} can be written as
 \begin{equation}
 	\DERIV{H}{u} = \DERIV{}{u}\left(Cf - D\DERIV{f}{u}\right)=0
 \end{equation}
@@ -2123,7 +2139,7 @@ of {\em all} flux contributions. Using \eqref{eq:disc:H(C,D,P)} we get
 	\label{eq:disc:Hx(Cx,Dx,P)}
 \end{equation}
 It easy to verify that summing this equation over $x$ and using the definitions of $\sum_xC_x=C$ and
-$\sum_xD_x=D$ that are part of equation \eqref{eq:disc:cd-flux-total} results in equation
+$\sum_xD_x=D$ that are part of equation \eqref{eq:cd-flux-total} results in equation
 \eqref{eq:disc:H(C,D,P)} for the total flux. Note that this would {\em not} be the case if each flux
 $H_x(u)$ had been calculated based on its own P\'eclet number $\Pe_x:=C_x(\Delta u)_f/D_x$.
 Also note that, unlike the total flux $H$, the individual flux contributions $H_x(u)$ {\em do} depend on
@@ -2169,101 +2185,6 @@ for large positive $\Pe$, that can be rewritten for (all) positive $\Pe$ as
 \end{equation}
 In all cases, expressions of the form $e^x-1$ must be evaluated using \SRC{std::expm1(x)} to
 avoid cancellation errors for small $|\Pe|$.
-
-\section{Old version: Discretization of the Flux-Divergence Terms}
-
-TODO: merge some material from this section into the preceding section,
-most stuff here hasbecome obsolete.
-
-The flux functions $H_x(u)$ that appear in LoKI-B are of the advection-diffusion
-type and can be written as \cite[below 25a]{Manual_2_2_0}
-\begin{equation}
-	H_x(u) = -h_x(u)\left[d_xf^0(u) + c_x\DERIV{f^0}{u}\right],
-	\label{eq:H_x-expr}
-\end{equation}
-where the coefficients $c_x$ and $d_x$ are $u$-independent.
-Here we have followed the conventions that are used in the LoKI-B manual,
-the relation with the functions $G_x$ and $g_x$ that appear in the manual
-are $H_x=G_x/N$, $h_x=\gamma g_x$. Also note that the choice for the symbols
-$d_x$ and $c_x$ is very unfortunate, since $d_x$ descibes the convective
-part, $c_x$ the diffusive part of the flux. The expression for the
-electron-electron operator does not fit in this scheme, since the coefficients
-$d_x$ and $c_x$ cannot both be made $u$-independent. This way of writing also
-makes it difficult to add fluxes. That is: the sum of fluxes of this type
-cannot be written in terms of sums of the coefficients $h_x$, $c_x$ and $d_x$.
-That also makes it difficult to apply any other scheme than the central
-difference one.
-\begin{framed}
-TODO: for these reasons, reconsider format \eqref{eq:H_x-expr}.
-\end{framed}
-
-Using the notation $f_k:=f(u_{k})$, using linear interpolation for the face value of $f^0(u)$ and a central-difference
-approximation for its derivative of, the flux on an internal face $\phalf{k}$ is given by
-\begin{align}
-  H_x(u_{\phalf{k}})
-    &\doteq
-      - h_x(u_{\phalf{k}})\left(d_x\frac{f_{k+1}+f_k}{2}+c_x\frac{f_{k+1}-f_k}{\Delta u}\right)
-\nonumber \\
-    &=
-        h_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}-\frac{d_x}{2}\right)f_k
-      - h_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}+\frac{d_x}{2}\right)f_{k+1}
-\nonumber \\
-    &:=
-        {\cal B}_{x,\phalf{k}}f_k
-      - {\cal A}_{x,\phalf{k}}f_{k+1}.
-\end{align}
-Here we have defined the coefficients ${\cal B}_{\phalf{k}}$ and ${\cal A}_{\phalf{k}}$ that
-describe the weights of the cell values behind and ahead of the interface $\phalf{k}$ under study
-(see Patankar's seminal work on flux discretisation, \cite[eq. 5.37]{Patankar1980}, although
-in that work a {\em normalized} flux is considered). We find that
-\begin{align}
-    {\cal B}_{x,\phalf{k}} &= h_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}-\frac{d_x}{2}\right), \\
-    {\cal A}_{x,\phalf{k}} &= h_x(u_{\phalf{k}})\left(\frac{c_x}{\Delta u}+\frac{d_x}{2}\right).
-\end{align}
-
-The flux $H_x(u_{\mhalf{k}})$ is obtained by the substitution $k\rightarrow k-1$ in the
-previous expressions. Substitution of these flux approximations in equation \eqref{eq:mean-dH/du_P} results in
-\begin{equation}
-  \MEAN{\DERIV{H_x}{u}}_k
-       = \frac{1}{\Delta u}\left[-{\cal B}_{x,\mhalf{k}}f_{k-1}
-          +\left( {\cal A}_{x,\mhalf{k}} + {\cal B}_{x,\phalf{k}} \right) f_k
-          -{\cal A}_{x,\phalf{k}}f_{k+1}
-	\right].
-	\label{eq:dH/du-k}
-\end{equation}
-The boundary flux is zero at both ends of the grid. This condition can be incorporated
-by setting ${\cal A}_{x}={\cal B}_{x}=0$ for boundary faces and skipping terms in the
-equation above that involve a non-existing value $f(u_{-1})$ or $f(u_{\cal N})$.
-
-The resulting coefficients can be stored in the $k$'th row of a discretization matrix $M_x$,
-which allows us to write
-\begin{equation}
-  \MEAN{\DERIV{H_x}{u}}_k \doteq \sum\limits_{l=0}^{\cal N}M_{x,kl}f_l.
-	\label{eq:dH/du-discrete}
-\end{equation}
-Note that the discretization matrix is tridiagonal, it has non-zero elements only for $|k-l|\leq 1$.
-\begin{framed}
-There is a lot to be said about the coefficients ${\cal A}_{x}$ and ${\cal B}_{x}$.
-For example,
-\[
-	{\cal A}_{x,\pmhalf{k}} = {\cal B}_{x,\pmhalf{k}} + h_x(u_{\pmhalf{k}})d_x.
-\]
-This is true not only for the central difference scheme, but also for any other,
-such as the Scharfetter-Gummel (`exponential') scheme. It is also useful to write
-the coefficients as
-\begin{align*}
-    {\cal B}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1-\frac{\Pe_{\phalf{k}}}{2}\right), \\
-    {\cal A}_{x,\phalf{k}} &= \frac{h_x(u_{\phalf{k}})c_x}{\Delta u}\left(1+\frac{\Pe_{\phalf{k}}}{2}\right),
-\end{align*}
-where the {\em grid P\'eclet number} $\Pe$ has been introduced,
-\begin{equation}
-	\Pe_{\phalf{k}} = \frac{d_x\Delta u}{c_x}.
-\end{equation}
-This notation brings the code closer to the introduction of the exponential scheme,
-if that is deemed desirable. (But note that such scheme should applied to the sum of
-$H_x$-terms, not to the terms individually.
-\end{framed}
-
 
 \section{Discretisation of the Electron-Electron Operator}
 
@@ -2333,13 +2254,14 @@ And we find that
 	(see below). Nice side-project.
 	\item With these sign conventions and definitions, $A_n$ and $B_n$ are positive,
 	the diagonal of the discretization matrix is positive, the equation is
-	similar to \eqref{eq:dH/du-k}.
+	`compatible' with the terms on the left-hand side of \eqref{eq:EBE-final-avg}.
+	TODO: rewrite for the case that ghost cells are used.
 \end{itemize}
 \end{framed}
 
 Also in the case of the electron-electron operator we impose the boundary condition
 that the flux is zero at both ends of the grid. This condition can be incorporated
-as follows (see the discussion below \eqref{eq:dH/du-k}):
+as follows (TODO: rewrite for the case that ghost cells are used):
 \begin{itemize}
 	\item The flux at the lower boundary is obtained from equation \eqref{eq:ee:Gbelow}
 	for $n=0$. In this equation we need to skip the non-existing term $f_{n-1}$ and
@@ -3968,7 +3890,8 @@ $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
 		= -\left.uH_x(u)\right|_0^\infty + \int\limits_0^\infty H_x(u)\dd{u}
 		=   \int\limits_0^\infty H_x(u)\dd{u}.
 \end{equation}
-Using expression \eqref{eq:H_x-expr} for $H_x(u)$ gives
+TODO: check if the sign is (still) correct.
+Using expression \eqref{eq:H_x(h_x,c_x,d_x)} for $H_x(u)$ gives
 \begin{equation}
 	\Theta_x
 	= -\int\limits_0^\infty h_x(u)d_xf^0(u)\dd{u} - \int\limits_0^\infty h_x(u)c_x\DERIV{f^0}{u}\dd{u}
@@ -4024,6 +3947,7 @@ sections \eqref{sec:G_x,g_x} and \eqref{sec:gamma-constant}).
 In the code the parenthesized coefficients are called \SRC{auxHigh} and \SRC{auxLow}.
 
 \chapter{Notes on the Complete Flux Schemes}
+\label{ch:cf-scheme}
 
 We consider the convection-diffusion equation in the interval $[u_L,u_H]$ and assume
 that $D(u)$ is non-zero in this interval
@@ -4043,7 +3967,7 @@ The flux can be written as
 	= C(u)f(u)-D(u)\DERIV{f}{u}
 	=-D(u)e^{P(u)}\DERIV{}{u}\left[f(u)e^{-P(u)}\right].
 \end{equation}
-Integration of the balance equation \eqref{eq:disc:be} over the interval $[u_f,u]$ gives
+Integration of the balance equation \eqref{eq:be:dH/du=S} over the interval $[u_f,u]$ gives
 \begin{equation}
 	H(u) - H_f
 	= -D(u)e^{P(u)}\DERIV{}{u}\left[f(u)e^{-P(u)}\right] - H_f
