@@ -783,7 +783,7 @@ This can be manipulated as follows:
 \end{equation}
 Here we have used the fact that $uH_{E,x}^0(u)$ vanishes for $u=0$ and for
 $u\rightarrow\infty$. (TODO: announce that the discrete form of this equation
-is consistent with the discretization of $\dd{H_{E,x}^0(u)}/\d{u}$ that is
+is consistent with the discretization of $\dd{H_{E,x}^0(u)}/\dd{u}$ that is
 ussed in the solution of the Boltzmann equation.
 
 Repeating the steps that resulted in equation \eqref{eq:Gamma_e-temp}, but multiplying
@@ -823,7 +823,7 @@ epresions below.}
 By multiplying equation \eqref{eq:EBE-temp-growth} with $u$, integrating over
 all energies and using \eqref{eq:R_pt} we get
 \begin{equation}
-	P_{E,pt}
+	-\Theta_{E,pt}
 	:= \int\limits_0^\infty u\DERIV{H_{E,pt}}{u} \dd{u}
 	= \int\limits_0^\infty u\tilde{C}^0(u) \dd{u}
 	+ \int\limits_0^\infty u\tilde{R}_{pt}(u) \dd{u}
@@ -1118,6 +1118,9 @@ with $n_e$,
 \end{equation}
 The expression for $\Gamma_z$ can be used to evaluate the power that is absorbed per electron
 at unit background gas density by the field directly, the result can be written as
+TODO: Use $\Theta$ instead of $P$, check that $P_E$ is equal to $\Theta_E$; some suffix is
+probably needed to distinguish the various versions of the power terms. This seems to
+combine the mobility and growth terms.
 \begin{equation}
 	\frac{P_E}{N} := \frac{q_e}{e}\frac{\Gamma_zE}{n_eN} = \frac{q_e}{e}\left((\mu_eN) \frac{E}{N} - (D_eN)\frac{\alpha_{\text{eff}}}{N}\right)\frac{E}{N}.
 \end{equation}
@@ -1188,16 +1191,36 @@ that some of these can be written in flux-divergence form,
 The reason for introducing the minus sign here is that, as we shall soon see
 (equation \eqref{eq:H_x-expr}), the resulting expressions for the fluxes $H_x(u)$
 will be of the advection-diffusion type,
-\[
+\begin{equation}
 	H_x(u) = -h_x(u)\left(c_x(u) f^0(u) + d_x(u) f^0(u)\right)
-	       = -h_x(u)d_x(u) f^0(u) - h_xc_x(u) f^0(u),
-\]
+	       = -h_x(u)d_x(u) f^0(u) - h_x(u)c_x(u) f^0(u),
+	\label{eq:H_x(h_x,c_x,d_x)}
+\end{equation}
 with a {\em positive} diffusion coefficient $h_x(u)c_x(u)$.
 This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
 with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
-NOTE: Here we have followed the LoKI-B docs, which call the convection coefficient
-$d_x$ and the diffusion coefficient $c_x$ --- which is somewhat unfortunate ---
-also see section \ref{sec:dH/du-disc}.
+
+This notation follows the LoKI-B docs, which calls the convection coefficient
+$d_x$ and the diffusion coefficient $c_x$, instead of the other way around.
+For later purposes we will adopt a more standard notation for the flux,
+\begin{equation}
+	H_x(u) = C_x(u)f - D_x(u)\DERIV{f}{u},
+	\label{eq:cd-flux}
+\end{equation}
+with convection coefficient $C_x(u)$ and diffusion coefficient $D(u)$. Comparison
+with \eqref{eq:H_x(h_x,c_x,d_x)} reveals that
+\begin{align}
+	C_x(u) &= -h_x(u)d_x(u), \label{eq:C_x(h_x,d_x)} \\
+	D_x(u) &= +h_x(u)c_x(u), \label{eq:D_x(h_x,c_x)}.
+\end{align}
+The convective and diffusive parts of the flux are given by
+\begin{equation}
+	H_{x,\text{conv}}(u) = C_x(u)f, \quad
+	H_{x,\text{diff}}(u) = - D_x(u)\DERIV{f}{u}.
+	\label{eq:cd-flux-conv,diff}
+\end{equation}
+Among others, these individual components will be used in the analysis of the
+power balance, later on in this text.
 
 \section{Compatibility Notes}
 In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
@@ -1598,118 +1621,559 @@ expression of the form
 	\tilde{R}^0_g(u).
 	\label{eq:EBE-final}
 \end{equation}
-for $g=pt,sst$.
-NOTES: here are some good reasons for presenting the equations this way:
-\begin{itemize}
-	\item The convective and diffusive parts of the functions $H_x(u)$
-	can be combined if (e.g.) the exponential scheme is used.
-\end{itemize}
+where $g=pt,sst$ indicates the growth model.
 
-TODO:
-\begin{itemize}
-	\item In LoKI-B (MATLAB, original C++), all terms are moved to the
-		right-hand side. The matrix that is assembled appears to
-		be {\em negative} semidefinite (before applying the normalization
-		constraint to the first row).
-		Can that hurt performance of any solver?
-\end{itemize}
+Each flux contribution $H_x(u)$ can be written in the form \eqref{eq:cd-flux}, and
+the total flux $H(u)$ is defined as
+\begin{equation}
+	H(u)
+	:= \sum\limits_{x}H_x(u)
+	= \left(\sum\limits_x C_x\right)f - \left(\sum\limits_x D_x\right)\DERIV{f}{u}
+	:= C(u)f - D(u)\DERIV{f}{u}.
+	\label{eq:cd-flux-total}
+\end{equation}
+This expression states that the sum of the flux-divergence terms can itself be
+written as a single flux-divergence term. The convection coefficient $C$ and
+diffusion coefficient $D$ of this term are obtained by summing the coefficients
+of the individual terms.
+
+Finally, we introduce the symbol $S(u)$ for the sum of the terms that appear
+on the right-hand side of the Boltzmann equation (the ones that cannot be
+written in flux-divergence form),
+\begin{equation}
+	S(u)
+	:=
+	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
+	+
+	\tilde{R}^0_g(u).
+	\label{eq:EBE-S}
+\end{equation}
+Then the Boltzmann equation can be written as
+\begin{equation}
+	\DERIV{H}{u} = S(u).
+	\label{eq:be:dHdu=S}
+\end{equation}
+This last expression is used in the discussion of the discretization scheme for the
+flux $H(u)$, see chapter \ref{ch:disc}.
+
+\subsection{Power Balance}
 
 Each term in equation \eqref{eq:EBE-final} corresponds to a term in the {\em power balance}.
-That can be obtained by multiplying this equation with $u$ and integrating over the energy grid;
-the result is
+That can be obtained by multiplying this equation with $u$, integrating over the energy grid
+and bringing all terms to the right-hand side,
 \begin{equation}
-	\sum\limits_{x=el,car,ee,E_g}\int\limits_0^\infty u\DERIV{H_x}{u}\dd{u}
-	=
-	\sum\limits_{x=inel,ion,att}\int\limits_0^\infty u\tilde{C}^0_{x}(u)\dd{u}
+	  \sum\limits_{x=el,car,ee,E_g}\left[-\int\limits_0^\infty u\DERIV{H_x}{u}\dd{u}\right]
+	+ \sum\limits_{x=inel,ion,att}\int\limits_0^\infty u\tilde{C}^0_{x}(u)\dd{u}
 	+
-	\int\limits_0^\infty u\tilde{R}^0_g(u)\dd{u}.
+	\int\limits_0^\infty u\tilde{R}^0_g(u)\dd{u}
+	:= \sum\limits_{\substack{x=el,car,ee,E_g \\ inel,ion,at}} \Theta_x
+	=0.
 	\label{eq:EBE-power-balance}
 \end{equation}
+A positive $\Theta_x$ corresponds to a heating term.
 
+The flux terms $x=el,car,ee,E_g$ can be analyzed further. To that end we rewrite
+these terms as
+\begin{equation}
+	\Theta_x
+	= -\int\limits_0^\infty u\DERIV{H_{x}}{u}\dd{u}
+	= -\int\limits_0^\infty \left[\DERIV{uH_{x}}{u}-H_x(u)\right]\dd{u}
+	= +\int\limits_0^\infty H_x(u)\dd{u},
+\end{equation}
+where we have used the fact that $uH_{x}$ vanishes for $u=0$ and for $u\rightarrow\infty$.
+Using definition \eqref{eq:cd-flux-conv,diff} to split this power contribution into
+convective and diffusive parts yields
+\begin{equation}
+	\Theta_x
+	= \int\limits_0^\infty H_{x,\text{conv}}(u)f(u) \dd{u}
+	+ \int\limits_0^\infty H_{x,\text{diff}}(u)f(u) \dd{u}
+	= \underbrace{\int\limits_0^\infty C_x(u)f(u) \dd{u}}_{\Theta_{x,\text{conv}}}
+	+ \underbrace{\int\limits_0^\infty \left[-D_x\DERIV{f}{u}\right]\dd{u}}_{\Theta_{x,\text{diff}}}.
+\end{equation}
+Since $C(u)$ is negative for $x=el,car,ee$ (and $0$ for $x=E_g$), $D_x(u)$
+is positive (or $0$, for $x=el$ at a zero gas temperature), $f(u)$ is
+positive and $\dd{f}/\dd{u}$ is negative under normal circumstances, we find
+that $\Theta_{x,\text{conv}}$ is non-positive and that $\Theta_{\text{diff}}$
+is non-negative. We conclude that the convective and diffusive parts of the
+power terms correspond to power sinks and sources, respectively.
 
 \chapter{Discretization}
 
 \label{ch:disc}
 
-\section{Discretization of the Equation}
+TODO: check that all matrices introduced below describe the cell-averaged Boltzmann
+equations, not the cell-integrated ones.
 
-Without making additional assumptions, equation \eqref{eq:EBE-final} can be integrated
-over cell $k$ and divided by the energy interval $\Delta u$,
-\begin{equation}
-	\sum\limits_{x=el,car,ee,E_g}\MEAN{\DERIV{H_x}{u}}_k
+
+\section{Finite-Volume Representation of the Equation}
+
+Let us take another look at the final form of the Boltzmann equation as given
+by equation \eqref{eq:EBE-final},
+\[
+	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
 	=
-	\sum\limits_{x=inel,ion,att}\MEAN{\tilde{C}^0_{x}(u)}_k
+	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
 	+
-	\MEAN{\tilde{R}^0_g(u)}_k.
+	\tilde{R}^0_g(u).
+\]
+Without making additional assumptions, this can be integrated
+over a cell $P$ and divided by the energy interval $(\Delta u)_P = u_e-u_w$, where
+$u_w$ and $u_e$ indicate the face values of cell $P$ at its western and eastern
+(that is: lower and upper) boundaries. The result is
+\begin{equation}
+	\sum\limits_{x=el,car,ee,E_g}\MEAN{\DERIV{H_x}{u}}_P
+	=
+	\sum\limits_{x=inel,ion,att}\MEAN{\tilde{C}^0_{x}(u)}_P
+	+
+	\MEAN{\tilde{R}^0_g(u)}_P.
 	\label{eq:EBE-final-avg}
 \end{equation}
-Of course, the terms now represent their mean values in cell $k$.
+This notation indicates that these integrals represent the {\em averaged} values
+of the terms in cell $P$; $\MEAN{f}_P$ is defined as
+\begin{equation}
+	\MEAN{f}_P := \frac{1}{(\Delta u)_P}\int\limits_{u_w}^{u_e} f(u)\dd{u}.
+\end{equation}
 The terms on the left-hand side of equation \eqref{eq:EBE-final-avg} can be
 rewritten as
 \begin{equation}
-	\MEAN{\DERIV{H_x}{u}}_k
-	= \frac{1}{(\Delta u)_k}\int\limits_{\mhalf{k}}^{\phalf{k}}\DERIV{H_x}{u}\dd{u}
-	= \frac{H_{x,\phalf{k}}-H_{x,\mhalf{k}}}{(\Delta u)_k}.
-	\label{eq:mean-dH/du_k}
+	\MEAN{\DERIV{H_x}{u}}_P
+	= \frac{1}{(\Delta u)_P}\int\limits_{u_w}^{u_e}\DERIV{H_x}{u}\dd{u}
+	= \frac{H_{x,e}-H_{x,w}}{(\Delta u)_P}.
+	\label{eq:mean-dH/du_P}
 \end{equation}
 
-This form is used in LoKI-B as starting point for the discretization of the
-equation. In this chapter we will discuss the discrete approximations of the
+This form is used in LoKI-B as starting point for the finite-volume discretization
+of the equation. In this chapter we will discuss the discrete approximations of the
 terms that appear in equation \eqref{eq:EBE-final-avg}.
 
+\section{Overview of the Discretization and Solution Procedures}
+
 The result of that
-discretization process is that every term is cast as the product of a matrix
-and the vector of cell values of the EEDF. The discrete form of equation
-\eqref{eq:EBE-final-avg} then takes the form\footnote{In the LoKI-B code, all
-terms are brought to the {\em right}-hand side; the resulting matrices then
-have an additional minus sign.}
+discretization process is that every term of equation \eqref{eq:EBE-final-avg}
+is cast as the product of a matrix and the vector of cell values of the EEDF.
+The discrete form of equation \eqref{eq:EBE-final-avg} then takes the
+form\footnote{
+	In the LoKI-B code, all terms are brought to the {\em right}-hand side;
+	the resulting matrices then have an additional minus sign.
+}
 \begin{equation}
-	\sum\limits_{x=el,car,ee,E_g}\bmat{M}_x\bvec{f}
+	\sum\limits_{\substack{x=el,car,\\ee,E_g}}\bmat{M}_x\bvec{f}
 	=
-	-\sum\limits_{x=inel,ion,att}\bmat{M}_x\bvec{f}
+	-\sum\limits_{\substack{x=inel,\\ion,att}}\bmat{M}_x\bvec{f}
 	-\bmat{M}_g\bvec{f}
 	\iff
-	\sum\limits_{\substack{x=el,car,ee,E_g,\\inel,ion,att,g}}\bmat{M}_x\bvec{f}
+	\bmat{M}(\bvec{f})\bvec{f}=\bvec{0},
 	=\bvec{0},
 \end{equation}
-or
+where the matrix $\bmat{M}$ is the sum of all discretization matrices,
 \begin{equation}
-	\bmat{M}(\bvec{f})\bvec{f}=\bvec{0},
+	\bmat{M} = \sum\limits_{\substack{x=el,car,\\ee,E_g,inel,\\ion,att,g}}\bmat{M}_x.
+	\label{eq:M=sum_xM_x}
+\end{equation}
+This equation is singular and must be solved subject to the normalization
+condition \eqref{eq:f0u-norm}. That normalization condition can be discretized
+as
+\begin{equation}
+	\sum\limits_{k=0}^{{\cal N}-1} \sqrt{u}_k f_k \;(\Delta u)_k = 1.
+\end{equation}
+This normalization condition can be imposed by changing the equation for $k=0$
+with the discrete normalization condition. This is what is found in the MATLAB
+implementation of LoKI-B. The disadvantage is that this ruins the sparsity
+pattern of the matrix: all diagonals of the matrix will contain a non-zero
+element, even if the original matrix is tridiagonal say.
+
+Alternatively, the normalization it can be imposed by fixing the value of
+one $f_k$ to a non-zero value, and do the normalization after the solution
+has been obtained. In the C++ version of LoKI-B we replace the first equation
+with the equation $f_0=1$, or rather: $M_{11}f_0=M_{11}$. The reason is that
+this prevents a widening of the dynamic range of the matrix elements.
+
+Some terms that appear in the Boltzmann equation \eqref{eq:EBE-final} are not linear
+in $f$. This means that the corresponding matrices depend on $\bvec{f}$, and
+we will make this clear by writing $\bmat{M}_x(\bvec{f})$.
+
+\section{Discretization of the Flux Terms}
+
+\subsection{Expressions for the Total Flux $H(u)$}
+
+Let us consider the terms \eqref{eq:mean-dH/du_P}. These can be summed to a
+single term
+\begin{equation}
+	\MEAN{\DERIV{H}{u}}_P = \frac{H_e-H_w}{(\Delta u)_P},
+\end{equation}
+where $H(u)$ is the sum of the convective-diffusive
+terms, as presented in equation \eqref{eq:cd-flux-total}. For reasons that will soon
+become clear we will consider these combined terms in the discretization procedure.
+
+In order to approximate these as $\bmat{M}\bvec{f}$, we need a suitable
+expression for this total flux at the faces $e$ and $w$ in terms of the values
+of $f$ in the cells adjacent to these faces.
+\begin{framed}
+TODO: $f$ is used in two different ways in the text below: face and field.
+\end{framed}
+For an {\em internal} face $f$ we will call the cells at the lower and upper
+energy sides $L$ and $U$, respecively. We will demonstrate later that
+the resulting expression can be written as\footnote{Also see Patankar's
+seminal work on flux discretisation, \cite[eq. 5.37]{Patankar1980}, although
+in that work a {\em normalized} flux is considered).}
+\begin{equation}
+	H(u_f) = B_ff_L - A_ff_H,
+	\label{eq:disc:H(B,A)}
+\end{equation}
+where the coefficients $B_f$ and $A_f$ (of the values {\em before} and {\em
+after} the face) depend on the coefficients $C$ and $D$ around the face, and
+on the choice for the {\em flux approximation} or {\em discretizaton scheme}.
+
+For face $f=l$ we have $L=W$ (the cell west of cell $P$) and $H=P$, for $f=h$
+we have $L=P$ and $H=E$ (the cell east of $P$). Substitution of expression
+\eqref{eq:disc:H(B,A)} for these faces in the left-hand side of balance
+equation \eqref{eq:EBE-final-avg} yields, for any internal cell $P$,
+\begin{equation}
+	\MEAN{\DERIV{H}{u}}_P
+	= (B_ef_P - A_ef_E) - (B_wf_W - A_wf_P)
+	= -B_wf_W + (A_w+B_e)f_P - A_ef_E
+	= [\mat{M}_{cd}\bvec{f}]_P.
+	\label{eq:disc:H-term-int}
+\end{equation}
+For the boundary faces at $u=0$ and $u=u_{\text{max}}$, equation
+\eqref{eq:disc:H(B,A)} cannot be used umodified:
+uon the low-energy grid boundary face, cell $L$ is missing, on the high-energy
+boundary there is no cell $H$. Instead, on these faces the flux expressions
+follow from the boundary conditions. In the present case of the Boltzmann
+equation, all flux contributions are zero for $u=0$ and the flux contribution
+can simply be ignored. On the upper boundary, we will also impose the condition
+that the flux vanishes. Then the discrete equation on the western boundary becomes
+\begin{equation}
+	\MEAN{\DERIV{H}{u}}_{P=0}
+	= (B_ef_P - A_ef_E) - 0
+	=  B_ef_P - A_ef_E
+	= [\mat{M}_{cd}\bvec{f}]_{P=0},
+	\label{eq:disc:H-term-bnd,w}
+\end{equation}
+and on the eastern boundary we get
+\begin{equation}
+	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
+	= 0 - (B_wf_W - A_wf_P)
+	=  -B_wf_W + A_wf_P
+	= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
+	\label{eq:disc:H-term-bnd,e}
+\end{equation}
+The equations in all points can be summarized as the matrix-vector product
+\begin{equation}
+	\bvec{{\cal T}}
+	= \mat{M}_{cd}\bvec{f}.
+	\label{eq:disc:H-term}
+\end{equation}
+
+\subsection{Expression for Flux Contributions $H_x(u)$}
+
+Let us now consider the individual flux contributions $H_x(u)$. These are also
+described by equations of the form \eqref{eq:disc:H(B,A)}, for some coefficients
+$A_{x,f}$ and $B_{x,f}$. The discrete form of expression $\MEAN{\dd{H_x}/\dd{u}}$
+on the western boundary and in the interal points is again given by equations
+\eqref{eq:disc:H-term-bnd,w} and \eqref{eq:disc:H-term-int} (but using the
+coefficients $A_{x,f}$ and $B_{x,f}$, rather than $A_f$ and $B_f$). Only
+expression \eqref{eq:disc:H-term-bnd,e} for the upper grid cell needs to be
+adjusted. That equation was based on the boundary condition that the (total)
+flux $H$ vanishes at that boundary face. But that is not true for the
+individual flux contributions $H_x$.
+
+The solution is to introduce a {\em ghost cell}, a virtual cell just above the
+highest real grid cell. If we assume that the distance between the cell values of
+cells $L$ and the virtual cell $E$ is $(\Delta u)_f$, the
+expression for the total flux into the boundary cell is again given by expression
+\eqref{eq:disc:H(B,A)}. But since the boundary condition dictates that
+this flux is zero, we get
+\begin{equation}
+	B_ff_{P} - A_ff_{E} = 0
+	\iff
+	f_E = f_P (B_f/A_f) = 0,
+\end{equation}
+which gives us an expression for the value of the EEDF in the ghost cell.
+Using this value allows us to calculate the contribution to the boundary flux:
+applying expression \eqref{eq:disc:H(B,A)} once more, but this time for the
+flux contribution $H_x$ yields, for the upper boundary face that
+\begin{equation}
+	H_x(u_{\text{max}})
+	= B_{x,f}f_P - A_{x,f}f_P(B_f/A_f)
+	= (B_{x,f} - A_{x,f}(B_f/A_f))f_P.
+\end{equation}
+For the eastern boundary cell we then get, instead of equation \eqref{eq:disc:H-term-bnd,e},
+\begin{align}
+	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
+	&= (B_{x,e} - A_{x,e}(B_e/A_e))f_P - (B_{x,w}f_W - A_{x,w}f_P)
+	\nonumber \\
+	&=  - B_{x,w}f_W + (A_{x,w} + B_{x,e} - A_{x,e}(B_e/A_e) )f_P
+	\nonumber \\
+	&= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
+	\label{eq:disc:Hx-term-bnd,e}
+\end{align}
+
+\begin{framed}
+In the MATLAB version of LoKI-B it is assumed that all individual flux contributions
+are zero. This is achieved by making the values of $g_x$ zero at the boundary face.
+\end{framed}
+
+
+\section{The Discretization Scheme}
+
+Let us now focus on the calculation of the coefficients $B_f$ and $A_f$ that
+appear in the expression for the flux at interface $f$. These can be obtained
+in various ways.
+
+\subsection{The Central Difference Scheme}
+
+\subsubsection{Expression for the Total Flux $H(u)$}
+
+The simplest approach is to use the `central difference scheme'
+in which the values of the field and its derivative on the face are expressed in
+ters of the adjacent cell values using a first-order Taylor expansion. These
+values are then independent of the values of the coefficients $C$ and $D$ around
+that face. Firstly, we have
+\begin{equation}
+	f_f \doteq \frac{(u_H-u_f)f_l + (u_f-u_L)f_H}{u_H-u_L} = (1-c_f)f_L+c_ff_H,
+\end{equation}
+where $c$ is a relative energy coordinate, which is defined by the relation
+\begin{equation}
+	c(u) = \frac{u-u_L}{u_H-u_L}.
+	\label{eq:disc:c(u)}
+\end{equation}
+The face value is given by $c_f=c(u_f)$. Note that $c_f=\frac{1}{2}$ in the special
+case of a uniform mesh, in which case the faces lie in the middle between the centers
+of its adjacent cells.
+Secondly, for the derivative we use the approximation
+\begin{equation}
+	\left.\DERIV{f}{u}\right|_{f}
+	\doteq \frac{f_H-f_L}{u_H-u_L}
+	= \frac{f_H-f_L}{(\Delta u)_f}.
+\end{equation}
+Substitution in the expression for the flux density yields
+\begin{align}
+	H_f &= C_f((1-c_f)f_L+c_ff_H) - D_f\frac{f_H-f_L}{(\Delta u)_f} \nonumber \\
+	&= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right)f_L - \left(\frac{D_f}{(\Delta u)_f}-C_fc_f\right)f_H,
+	\label{eq:H_f:cd}
+\end{align}
+which is of the form \eqref{eq:disc:H(B,A)}, with
+\begin{align}
+	A_f &= \left(\frac{D_f}{(\Delta u)_f}-C_fc_f    \right), \label{eq:disc:A_f-cd(C,D)} \\
+	B_f &= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right). \label{eq:disc:B_f-cd(C,D)}
+\end{align}
+
+\subsubsection{Expression for Flux Contributions $H_x(u)$}
+
+Equations \eqref{eq:H_f:cd}--\eqref{eq:disc:B_f-cd(C,D)} are also valid for
+the individual flux contributions $H_x$ (when $A_{x,f}$ and $B_{x,f}$ are
+used, which are computed using $C_x$ and $D_x$). These equations reveal that
+the expression for the flux is linear in the coefficients $C_f$ and $D_f$.
+As a result, the discretization matrix \eqref{eq:disc:H-term} is the sum of
+the discretization matrices that can be constructed for the individual flux
+contributions $H_x$.
+
+As discussed before, the ghost cell method can be used to obtain an expression
+for the flux at the upper boundary face; see the discussion around equation
+\eqref{eq:disc:Hx-term-bnd,e}.
+
+TODO: specialize for $c_f=\frac{1}{2}$ and show that the LoKI-B (manual,paper)
+expressions are obtained when using $h_x$, $c_x$ and $d_x$ (covered also
+elsewhere in this text, except for the handling of the (upper) boundary face).
+
+\subsection{The Scharfetter-Gummel (Exponential) Scheme}
+
+More sophisticated schemes are obtained by solving a simplified form of
+equations \eqref{eq:be:dHdu=S} and \eqref{eq:cd-flux-total} for $f(u)$
+and $H(u)$ in the interval $[u_L,u_H]$. This local boundary value problem
+is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
+and the source $S(u)$. For a related discussion, see Patankar's textbook
+\cite[sec. 7.2--7]{Patankar1980}.
+
+\subsubsection{Expression for the Total Flux $H(u)$}
+
+The derivation starts with the introduction of a reduced flux density $H^*$.
+Using the reduced energy coordinate $c(u)$ that was introduced in equation
+\eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=\dd{}/(\Delta u)_f\dd{c})$, equation
+\eqref{eq:disc:cd-flux-total} can be written as
+\begin{equation}
+	H(u) = \frac{D(u)}{(\Delta u)_f}H^*(c(u)),
 \end{equation}
 where
 \begin{equation}
-	\bmat{M}(\bvec{f}) = \sum\limits_{\substack{x=el,car,ee,E_g,\\inel,ion,att,g}}\bmat{M}_x.
+	H^*(c) = \Pe(u(c))f-\DERIV{f}{c}
 \end{equation}
-The power balance has been presented in equation \eqref{eq:EBE-power-balance}.
-Every term ${\cal T}_x(\bvec{f})[\bvec{f}]$ in the Boltzmann equation can be discretized as
+and the grid P\'eclet number has been defined as
 \begin{equation}
-	\int\limits_0^\infty u{\cal T}_x(\bvec{f})[\bvec{f}]\dd{u}
-	\doteq
-	\sum\limits_{i=0}^{{\cal N}-1}u_i [{\cal T}_x(\bvec{f})[\bvec{f}]]_i (\Delta u)_f
-	\doteq
-	\sum\limits_{i=0}^{{\cal N}-1}u_i [\bmat{M}_x\bvec{f}]_i (\Delta u)_i
-	= (\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}_x\bvec{f}
-	:= \bmat{M}_{u,x}\bvec{f}.
-	\label{eq:EBE-power-term}
+	\Pe(u) = \frac{C(u)(\Delta u)_f}{D(u)}.
+	\label{eq:Peclet}
 \end{equation}
-When discretized this way, the power balance is satisfied if
-the Boltzmann equation itself is satisfied, since
+In terms of these new quantities, and again using energy coordinate $c(u)$,
+equation \eqref{eq:disc:be} takes the form
 \begin{equation}
-	\bmat{M}(\bvec{f})\bvec{f} = \bvec{0}
+	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c))
+\end{equation}
+and assuming that the coefficients $C(u)$ and $D(u)$ assume constant values
+$C_f$ and $D_f$ in the interval, equation \eqref{eq:disc:be} can be written as
+\begin{equation}
+	\DERIV{H}{u} = \DERIV{}{u}\left(Cf - D\DERIV{f}{u}\right)=0
+\end{equation}
+In terms of the reduced energy coordinate $c(f)$ this can be written as
+\begin{equation}
+	\DERIV{}{c}\left(\Pe_ff - \DERIV{f}{c}\right)=0
 	\iff
-	(\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}(\bvec{f})\bvec{f}
-	=
-	(\bvec{\Delta u})^T\diag(\bvec{u})\bvec{0} = 0.
+	\Pe_ff - \DERIV{f}{c}=K
+	\iff
+	-e^{\Pe c}\DERIV{}{c}\left(f(u)e^{-\Pe c}\right) = K,
+	\label{ch:disc:be-hom-flux}
 \end{equation}
-We therefore propose to implement the power terms to be consistent with
-the discretization of the terms in the Boltzmann equation. If there is the
-need to distinguish `up- and downfluxes`, a term can be split, but that
-must be done such that $\bmat{M}_{x,down}+\bmat{M}_{x,up} = \bmat{M}_x$
-to ensure this consistency.
+where $K$ is a constant value.
+As an auxiliary tool, we define the Bernoulli function ${\cal B}(P)$ as
+\begin{equation}
+	{\cal B}(P)
+	= \left[\int\limits_0^1 e^{Pc}\dd{c}\right]^{-1}
+	= \begin{cases}
+		P/(e^P-1) & P \neq 0, \\
+		1 & P=0.
+	\end{cases}
+	\label{eq:disc:bernoulli}
+\end{equation}
+It is easy to show that
+\begin{equation}
+	\int\limits_0^c e^{Pc'}\dd{c'} = c/{\cal B}(Pc),
+	\label{eq:disc:bernoulli-incomplete}
+\end{equation}
+that
+\begin{equation}
+	e^P{\cal B}(P) = {\cal B}(-P)
+	\label{eq:disc:e^PB(p)=B(-p)}
+\end{equation}
+and that also
+\begin{equation}
+	{\cal B}(P)+P = {\cal B}(-P).
+	\label{eq:disc:e^PB(p)=B(p)+P}
+\end{equation}
 
-\section{Discretization of the Flux-Divergence Terms}
+By multiplying equation \eqref{ch:disc:be-hom-flux} with $-e^{-\Pe c}$, integrating over
+the interval $[0,c]$, mutiplying the result with $e^{\Pe c}$ and using equation
+\eqref{eq:disc:e^PB(p)=B(-p)}, we get
+\begin{equation}
+	f(u)e^{-Pc} - f_L = - K \frac{c}{{\cal B}(-\Pe c)}
+	\iff
+	f(u) = f_Le^{Pc} - K \frac{c}{{\cal B}(\Pe c)}.
+\end{equation}
+The constant $K$ can be epressed in terms of $f_H$, since setting $c=1$ yields
+\begin{equation}
+	f_H = f_Le^{\Pe} -\frac{K}{{\cal B}(\Pe)}
+	\iff
+	K = - {\cal B}(\Pe)\left(f_H - f_Le^{\Pe}\right).
+\end{equation}
+and combining these equatons to eliminate $K$ yields
+\begin{equation}
+	f(u(c))
+	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}.
+\end{equation}
+Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$, but clobbers
+the expression somewhat. We will therefore first continue under the assumption that
+$\Pe\neq 0$. Then
+\begin{align}
+	f(u(c))
+	&= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{e^{\Pe c}-1}{e^\Pe-1} \nonumber \\
+	&= f_Le^{\Pe c} + (f_H + f_L(1 - e^{\Pe}-1))\frac{\left(1-e^{\Pe c}\right)}{\left(1-e^{\Pe}\right)} \nonumber \\
+	&= f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1},
+\end{align}
+and for the flux we find
+\begin{equation}
+	H(u)
+	= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- D\frac{\Pe}{(\Delta u)_f}\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}.
+	\label{eq:disc:H(C,D,P)}
+\end{equation}
+But since $DP/(\Delta u)_f=C$, this can be simplified to
+\begin{align}
+	H(u)
+	&= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- C\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}
+	\nonumber \\
+	&= C\left(f_L\left(\frac{1}{e^{\Pe}-1}+1\right) - f_H\frac{1}{e^{\Pe}-1}\right)
+	\nonumber \\
+	&= \frac{D}{(\Delta u)_f}\left(f_L\left(\frac{\Pe}{e^{\Pe}-1}+\Pe\right) - f_H\frac{\Pe}{e^{\Pe}-1}\right)
+	\nonumber \\
+	&= \frac{D}{(\Delta u)_f}\left(f_L\left({\cal B}(\Pe)+\Pe\right) - f_H{\cal B}(\Pe)\right).
+\end{align}
+In the last expression we have reintroduced the Bernoulli function ${\cal B}(\Pe)$. That expression
+is also correct for $\Pe=0$. It is again of the form \eqref{eq:disc:H(B,A)}, but this time the
+flux discretization coefficients are given by
+\begin{align}
+	B_f &= \frac{D}{(\Delta u)_f}\left({\cal B}(\Pe)+\Pe\right), \label{eq:disc:B_f-exp} \\
+	A_f &= \frac{D}{(\Delta u)_f}{\cal B}(\Pe). \label{eq:disc:A_f-exp}
+\end{align}
+Note that the flux \eqref{eq:disc:H(C,D,P)} does not depend on $u$ (or, equivalently, $c(u)$),
+which is consistent with the local approximation $\dd{H}/\dd{u}=0$ that underlies the exponential
+scheme.
 
-\label{sec:dH/du-disc}
+\subsubsection{Expression for the Flux Contributions $H_x(u)$}
+
+Let us now look at the indivudual flux contributions $H_x(u)$. These are not required to solve the
+Boltzmann equations, but are needed to evaluate the individual terms of the power balance, the
+discrete form of \eqref{eq:EBE-power-balance}. Each flux contribution $H_x(u)$ depends on its own
+$C_x$ and $D_x$, and on the values of $f(u)$ and $\dd{f}/\dd{u}$ at the interface, which depend
+on $n_L$, $n_H$ and the P\'eclet number $\Pe$, which is calculated from the summed coefficients
+of {\em all} flux contributions. Using \eqref{eq:disc:H(C,D,P)} we get
+\begin{equation}
+	H_x(u)
+	= C_x\left(f(u_L) + (f(u_H)-f(u_L))\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
+	- \frac{D_x}{(\Delta u)_f}\left(f(u_H)-f(u_L)\right)\frac{\Pe e^{\Pe c}}{e^{\Pe}-1}.
+	\label{eq:disc:Hx(Cx,Dx,P)}
+\end{equation}
+It easy to verify that summing this equation over $x$ and using the definitions of $\sum_xC_x=C$ and
+$\sum_xD_x=D$ that are part of equation \eqref{eq:disc:cd-flux-total} results in equation
+\eqref{eq:disc:H(C,D,P)} for the total flux. Note that this would {\em not} be the case if each flux
+$H_x(u)$ had been calculated based on its own P\'eclet number $\Pe_x:=C_x(\Delta u)_f/D_x$.
+Also note that, unlike the total flux $H$, the individual flux contributions $H_x(u)$ {\em do} depend on
+energy via the reduced energy coordinate $c(u)$. The interface flux depends on the energy $u_f$ (or the
+relative coordinate $c_f$) at the interface.
+
+Grouping the terms that depend on $f_L$ and $f_H$, equation \eqref{eq:disc:Hx(Cx,Dx,P)} can be written as
+\begin{equation}
+	H_x = B_xf_L - A_xf_H,
+	\label{eq:disc:H_x(B_x,A_x)}
+\end{equation}
+with
+\begin{align}
+	A_x &= \frac{D_x}{(\Delta u)_f}{\cal B}(\Pe)e^{\Pe c} - C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1},
+		\label{eq:disc:A_f-exp(C,D)} \\
+	B_x &= A_x + C_x.
+		\label{eq:disc:B_f-exp(C,D)}
+\end{align}
+As discussed before, the ghost cell method can be used to obtain an expression
+for the flux at the upper boundary face; see the discussion around equation
+\eqref{eq:disc:Hx-term-bnd,e}.
+
+A few notes about the evaluation follow. Firstly, let us assume that $D_x\neq 0$, so the
+first term on the right-hand side of the expression for $A_x$ must be considered. If
+$D_x\neq 0$, also $D\neq 0$, so the P\'eclet number $\Pe$ is finite. The term can be
+expressed in terms of the Bernoulli function to avoid the singularity for small $|\Pe|$.
+Only for large positive P\'eclet numbers there is the risk of an overflow-underflow combination,
+which can be avoided using equation \eqref{eq:disc:e^PB(p)=B(-p)} and writing, for (all)
+positive $\Pe$,
+\begin{align}
+	 {\cal B}(\Pe)e^{\Pe c}
+	={\cal B}(\Pe)e^{\Pe}e^{\Pe(c-1)}
+	={\cal B}(-\Pe)e^{-\Pe(1-c)}.
+\end{align}
+Next, consider the term related to $C_x$. The limit for $\Pe\rightarrow 0$ can be
+determined using l'H\^opital's rule, revealing the value $-C_xc$. For negative values
+of $\Pe$, the expression is well-behaved. In order to avoid overflows of the exponents
+for large positive $\Pe$, that can be rewritten for (all) positive $\Pe$ as
+\begin{equation}
+	- C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}
+	=
+	-C_xe^{-\Pe(1-c)}\frac{e^{-\Pe c}-1}{e^{-\Pe}-1}.
+\end{equation}
+In all cases, expressions of the form $e^x-1$ must be evaluated using \SRC{std::expm1(x)} to
+avoid cancellation errors for small $|\Pe|$.
+
+\section{Old version: Discretization of the Flux-Divergence Terms}
+
+TODO: merge some material from this section into the preceding section,
+most stuff here hasbecome obsolete.
 
 The flux functions $H_x(u)$ that appear in LoKI-B are of the advection-diffusion
 type and can be written as \cite[below 25a]{Manual_2_2_0}
@@ -1758,7 +2222,7 @@ in that work a {\em normalized} flux is considered). We find that
 \end{align}
 
 The flux $H_x(u_{\mhalf{k}})$ is obtained by the substitution $k\rightarrow k-1$ in the
-previous expressions. Substitution of these flux approximations in equation \eqref{eq:mean-dH/du_k} results in
+previous expressions. Substitution of these flux approximations in equation \eqref{eq:mean-dH/du_P} results in
 \begin{equation}
   \MEAN{\DERIV{H_x}{u}}_k
        = \frac{1}{\Delta u}\left[-{\cal B}_{x,\mhalf{k}}f_{k-1}
@@ -2325,384 +2789,41 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 	version is due.
 \end{itemize}
 
-
-
-\chapter{General Notes on Discretization}
-
-TODO: the matrices that are presented in this chapter are based on the integral
-form of the Boltzmann equation (per cell). Elsewhere, a division by $(\Delta u)_P$
-is done and the terms represent {\em average} values (of $\dd{H}/\dd{u}$, for
-example). Also in \SRC{ideas/example_cd_discretizer.cpp} we have the latter
-form. Let us change the text and also use the `average' formulation in the
-present chapter instead, when merging with the previous one.
-
-\label{ch:disc-general}
-
-Let us take another look at the final form of the Boltzmann equation as given
-by equation \eqref{eq:EBE-final},
-\[
-	\sum\limits_{x=el,car,ee,E_g}\DERIV{H_x}{u}
+\section{Discrete Form of the Power Balance}
+The power balance has been presented in equation \eqref{eq:EBE-power-balance}.
+Since every term ${\cal T}_x$ in the Boltzmann equation is approximated by
+$[\bmat{M}_x\bvec{f}]_i $, it can be discretized as
+\begin{equation}
+	\Theta_x
 	=
-	\sum\limits_{x=inel,ion,att}\tilde{C}^0_{x}(u)
-	+
-	\tilde{R}^0_g(u).
-\]
-The flux densities that appear on the left-hand side of this equation are of the
-form
-\begin{equation}
-	H_x(u) = C_x(u)f - D_x(u)\DERIV{f}{u}.
-	\label{eq:disc:cd-flux}
-\end{equation}
-The Boltzmann equation can be written as
-\begin{equation}
-	\DERIV{H}{u} = S,
-	\label{eq:disc:be}
-\end{equation}
-where $S$ represents the terms that appear on the right-hand side of the
-Boltzmann equation (the ones that cannot be written in flux-divergence form),
-and the total flux is given by
-\begin{equation}
-	H(u)
-	= \sum\limits_{x}H_x(u)
-	= \left(\sum\limits_x C_x\right)f - \left(\sum\limits_x D_x\right)\DERIV{f}{u}
-	:= C(u)f - D(u)\DERIV{f}{u}.
-	\label{eq:disc:cd-flux-total}
-\end{equation}
-This expression states that the sum of the flux-divergence terms can itself be
-written as a single flux-divergence term. The convection coefficient $C$ and
-diffusion coefficient $D$ of this term are obtained by summing the coefficients
-of the individual terms.
-
-We will now discuss how the Boltzmann equation can be discretized and solved
-using the finitite volume method. We will then discuss how the individual
-terms can be evaluated in a consistent way.
-
-For a given finite volume $P$, the Boltzmann equation \eqref{eq:disc:be}
-can be integrated to
-\begin{equation}
-	H(u_e) - H(u_w) = \int\limits_{u_w}^{u_e}S(u)\dd{u},
-	\label{eq:disc:be-P-int}
-\end{equation}
-where $w$ and $e$ are the faces at the lower and upper boundary of finite
-volume $P$.  Note that this equation is still exact. The first approximation
-is to replace the source $S(u)$ with its value in the point $P$ in the center
-of the finite volume, resulting in the equation
-\begin{equation}
-	H(u_e) - H(u_w)
-	= S(u_P)(u_e-u_w)
-	= S(u_P)(\Delta u)_P
-	:= b_P.
-	\label{eq:disc:be-P}
-\end{equation}
-What remains is the derivation of a suitable expression for the fluxes at the
-faces $e$ and $w$ (east and west). This `flux approximation' is the key element
-in the development of a finite volume discretization scheme.
-
-TODO: $f$ is used in two different ways in the text below: face and field.
-We will be looking for flux expressions at faces that depend only on the
-values in the cells adjacent to the faces. For an {\em internal} face $f$
-we will call the cells at the lower and upper energy sides $L$ and $U$,
-respecively. We will demonstrate later that the resulting expression can be
-written as
-\begin{equation}
-	H(u_f) = B_ff_L - A_ff_H,
-	\label{eq:disc:H(B,A)}
-\end{equation}
-where the coefficients $B_f$ and $A_f$ (of the values {\em before} and {\em
-after} the face) depend on the coefficients $C$ and $D$ around the face, and
-on the choice for the {\em flux approximation} or {\em discretizaton scheme}.
-
-For face $f=l$ we have $L=W$ (the cell west of cell $P$) and $H=P$, for $f=h$
-we have $L=P$ and $H=E$ (the cell east of $P$). Substitution of expression
-\eqref{eq:disc:H(B,A)} for these faces in the left-hand side of balance
-equation \eqref{eq:disc:be-P} yields, for any internal cell $P$,
-\begin{equation}
-	{\cal T}_P
-	= (B_ef_P - A_ef_E) - (B_wf_W - A_wf_P)
-	= -B_wf_W + (A_w+B_e)f_P - A_ef_E
-	= [\mat{M}_{cd}\bvec{f}]_P.
-	\label{eq:disc:H-term-int}
-\end{equation}
-For a boundary face, equation \eqref{eq:disc:H(B,A)} cannot be used umodified:
-on the low-energy grid boundary cell $L$ is missing, on the high-energy
-boundary there is no cell $H$. Instead, on these faces the flux expressions
-follow from the boundary conditions. In the present case of the Boltzmann
-equation a suitable condition is that the boundary flux is zero at both ends
-of the grid. As an example, on the western boundary the discrete equation
-becomes
-\begin{equation}
-	{\cal T}_{P=0}
-	= (B_ef_P - A_ef_E) - 0
-	=  B_ef_P - A_ef_E
-	= [\mat{M}_{cd}\bvec{f}]_{P=0},
-	\label{eq:disc:H-term-bnd,w}
-\end{equation}
-and on the eastern boundary
-\begin{equation}
-	{\cal T}_{P={\cal N}-1}
-	= 0 - (B_wf_W - A_wf_P)
-	=  -B_wf_W + A_wf_P
-	= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
-	\label{eq:disc:H-term-bnd,e}
-\end{equation}
-The equations in all points can be summarized as the matrix-vector product
-\begin{equation}
-	\bvec{{\cal T}}
-	= \mat{M}_{cd}\bvec{f}.
-	\label{eq:disc:H-term}
-\end{equation}
-
-\section{The Discretization Scheme}
-
-Let us now focus on the calculation of the coefficients $B_f$ and $A_f$ that
-appear in the expression for the flux at interface $f$. These can be obtained
-in various ways.
-
-\subsection{The Central Difference Scheme}
-
-The simplest approach is to use the `central difference scheme'
-in which the values of the field and its derivative on the face are expressed in
-ters of the adjacent cell values using a first-order Taylor expansion. These
-values are then independent of the values of the coefficients $C$ and $D$ around
-that face. Firstly, we have
-\begin{equation}
-	f_f \doteq \frac{(u_H-u_f)f_l + (u_f-u_L)f_H}{u_H-u_L} = (1-c_f)f_L+c_ff_H,
-\end{equation}
-where $c$ is a relative energy coordinate, which is defined by the relation
-\begin{equation}
-	c(u) = \frac{u-u_L}{u_H-u_L}.
-	\label{eq:disc:c(u)}
-\end{equation}
-The face value is given by $c_f=c(u_f)$. Note that $c_f=\frac{1}{2}$ in the special
-case of a uniform mesh, in which case the faces lie in the middle between the centers
-of its adjacent cells.
-Secondly, for the derivative we use the approximation
-\begin{equation}
-	\left.\DERIV{f}{u}\right|_{f}
-	\doteq \frac{f_H-f_L}{u_H-u_L}
-	= \frac{f_H-f_L}{(\Delta u)_f}.
-\end{equation}
-Substitution in the expression for the flux density yields
-\begin{align}
-	H_f &= C_f((1-c_f)f_L+c_ff_H) - D_f\frac{f_H-f_L}{(\Delta u)_f} \nonumber \\
-	&= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right)f_L - \left(\frac{D_f}{(\Delta u)_f}-C_fc_f\right)f_H,
-	\label{eq:H_f:cd}
-\end{align}
-which is of the form \eqref{eq:disc:H(B,A)}, with
-\begin{align}
-	A_f &= \left(\frac{D_f}{(\Delta u)_f}-C_fc_f    \right), \label{eq:disc:A_f-cd(C,D)} \\
-	B_f &= \left(\frac{D_f}{(\Delta u)_f}+C_f(1-c_f)\right). \label{eq:disc:B_f-cd(C,D)}
-\end{align}
-Following Patankar \cite{Patankar1980}, this can be written as
-\begin{align}
-	A_f &= \frac{D_f}{(\Delta u)_f}\left(1-P_fc_f    \right), \label{eq:disc:A_f-cd} \\
-	B_f &= \frac{D_f}{(\Delta u)_f}\left(1+P_f(1-c_f)\right). \label{eq:disc:B_f-cd}
-\end{align}
-Here we have introduced the {\em grid P\'eclet number} $\Pe_f$, that will
-come back in the further discussions of the discretization schemes, as
-\begin{equation}
-	\Pe_f = \frac{C_x(\Delta u)_f}{D_f}.
-	\label{eq:Peclet}
-\end{equation}
-In the special case of a uniform mesh, with $c_f=\frac{1}{2}$, these expressions for the
-coefficients reduce to
-\begin{align}
-	A_f &= \frac{D_f}{(\Delta u)_f}\left(1-\frac{\Pe_f}{2}\right), \label{eq:disc:A_f-cd-uniform} \\
-	B_f &= \frac{D_f}{(\Delta u)_f}\left(1+\frac{\Pe_f}{2}\right). \label{eq:disc:B_f-cd-uniform}
-\end{align}
-
-Equation \eqref{eq:H_f:cd} demonstrates that the expression for the flux is linear
-in the coefficients $C_f$ and $D_f$. As a result, the discretization matrix
-\eqref{eq:disc:H-term} is the sum of the discretization matrices that can be
-constructed for the individual flux contributions $H_x$. We will soon see that
-this is not true for other discretization schemes, such as the exponential
-scheme, which we will discuss next.
-
-\subsection{The Scharfetter-Gummal (Exponential) Scheme}
-
-More sophisticated schemes are obtained by solving a simplified form of
-equations \eqref{eq:disc:be} and \eqref{eq:disc:cd-flux-total} for $f(u)$
-and $H(u)$ in the interval $[u_L,u_H]$. This local boundary value problem
-is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
-and the source $S(u)$. For a related discussion, see Patankar's textbook
-\cite[sec. 7.2--7]{Patankar1980}.
-
-\subsubsection{Expression for the Total Flux $H(u)$}
-
-The derivation starts with the introduction of a reduced flux density $H^*$.
-Using the reduced energy coordinate $c(u)$ that was introduced in equation
-\eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=\dd{}/(\Delta u)_f\dd{c})$, equation
-\eqref{eq:disc:cd-flux-total} can be written as
-\begin{equation}
-	H(u) = \frac{D(u)}{(\Delta u)_f}H^*(c(u)),
-\end{equation}
-where
-\begin{equation}
-	H^*(c) = \Pe(u(c))f-\DERIV{f}{c}
-\end{equation}
-and the local value of the P\'eclet number is defined by
-\begin{equation}
-	\Pe(u) = \frac{C(u)(\Delta u)_f}{D(u)}.
-\end{equation}
-In terms of these new quantities, and again using energy coordinate $c(u)$,
-equation \eqref{eq:disc:be} takes the form
-\begin{equation}
-	\DERIV{}{c}\left(\frac{D(u)}{(\Delta u)_f}H^*(c(u))\right) = S(u(c))
-\end{equation}
-and assuming that the coefficients $C(u)$ and $D(u)$ assume constant values
-$C_f$ and $D_f$ in the interval, equation \eqref{eq:disc:be} can be written as
-\begin{equation}
-	\DERIV{H}{u} = \DERIV{}{u}\left(Cf - D\DERIV{f}{u}\right)=0
-\end{equation}
-In terms of the reduced energy coordinate $c(f)$ this can be written as
-\begin{equation}
-	\DERIV{}{c}\left(\Pe_ff - \DERIV{f}{c}\right)=0
-	\iff
-	\Pe_ff - \DERIV{f}{c}=K
-	\iff
-	-e^{\Pe c}\DERIV{}{c}\left(f(u)e^{-\Pe c}\right) = K,
-	\label{ch:disc:be-hom-flux}
-\end{equation}
-where $K$ is a constant value.
-As an auxiliary tool, we define the Bernoulli function ${\cal B}(P)$ as
-\begin{equation}
-	{\cal B}(P)
-	= \left[\int\limits_0^1 e^{Pc}\dd{c}\right]^{-1}
-	= \begin{cases}
-		P/(e^P-1) & P \neq 0, \\
-		1 & P=0.
-	\end{cases}
-	\label{eq:disc:bernoulli}
-\end{equation}
-It is easy to show that
-\begin{equation}
-	\int\limits_0^c e^{Pc'}\dd{c'} = c/{\cal B}(Pc),
-	\label{eq:disc:bernoulli-incomplete}
-\end{equation}
-that
-\begin{equation}
-	e^P{\cal B}(P) = {\cal B}(-P)
-	\label{eq:disc:e^PB(p)=B(-p)}
-\end{equation}
-and that also
-\begin{equation}
-	{\cal B}(P)+P = {\cal B}(-P).
-	\label{eq:disc:e^PB(p)=B(p)+P}
-\end{equation}
-
-By multiplying equation \eqref{ch:disc:be-hom-flux} with $-e^{-\Pe c}$, integrating over
-the interval $[0,c]$, mutiplying the result with $e^{\Pe c}$ and using equation
-\eqref{eq:disc:e^PB(p)=B(-p)}, we get
-\begin{equation}
-	f(u)e^{-Pc} - f_L = - K \frac{c}{{\cal B}(-\Pe c)}
-	\iff
-	f(u) = f_Le^{Pc} - K \frac{c}{{\cal B}(\Pe c)}.
-\end{equation}
-The constant $K$ can be epressed in terms of $f_H$, since setting $c=1$ yields
-\begin{equation}
-	f_H = f_Le^{\Pe} -\frac{K}{{\cal B}(\Pe)}
-	\iff
-	K = - {\cal B}(\Pe)\left(f_H - f_Le^{\Pe}\right).
-\end{equation}
-and combining these equatons to eliminate $K$ yields
-\begin{equation}
-	f(u(c))
-	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}.
-\end{equation}
-Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$, but clobbers
-the expression somewhat. We will therefore first continue under the assumption that
-$\Pe\neq 0$. Then
-\begin{align}
-	f(u(c))
-	&= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{e^{\Pe c}-1}{e^\Pe-1} \nonumber \\
-	&= f_Le^{\Pe c} + (f_H + f_L(1 - e^{\Pe}-1))\frac{\left(1-e^{\Pe c}\right)}{\left(1-e^{\Pe}\right)} \nonumber \\
-	&= f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1},
-\end{align}
-and for the flux we find
-\begin{equation}
-	H(u)
-	= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
-	- D\frac{\Pe}{(\Delta u)_f}\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}.
-	\label{eq:disc:H(C,D,P)}
-\end{equation}
-But since $DP/(\Delta u)_f=C$, this can be simplified to
-\begin{align}
-	H(u)
-	&= C\left(f_L + (f_H-f_L)\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
-	- C\left(f_H-f_L\right)\frac{e^{\Pe c}}{e^{\Pe}-1}
-	\nonumber \\
-	&= C\left(f_L\left(\frac{1}{e^{\Pe}-1}+1\right) - f_H\frac{1}{e^{\Pe}-1}\right)
-	\nonumber \\
-	&= \frac{D}{(\Delta u)_f}\left(f_L\left(\frac{\Pe}{e^{\Pe}-1}+\Pe\right) - f_H\frac{\Pe}{e^{\Pe}-1}\right)
-	\nonumber \\
-	&= \frac{D}{(\Delta u)_f}\left(f_L\left({\cal B}(\Pe)+\Pe\right) - f_H{\cal B}(\Pe)\right).
-\end{align}
-In the last expression we have reintroduced the Bernoulli function ${\cal B}(\Pe)$. That expression
-is also correct for $\Pe=0$. It is again of the form \eqref{eq:disc:H(B,A)}, but this time the
-flux discretization coefficients are given by
-\begin{align}
-	B_f &= \frac{D}{(\Delta u)_f}\left({\cal B}(\Pe)+\Pe\right), \label{eq:disc:B_f-exp} \\
-	A_f &= \frac{D}{(\Delta u)_f}{\cal B}(\Pe). \label{eq:disc:A_f-exp}
-\end{align}
-Note that the flux \eqref{eq:disc:H(C,D,P)} does not depend on $u$ (or, equivalently, $c(u)$),
-which is consistent with the local approximation $\dd{H}/\dd{u}=0$ that underlies the exponential
-scheme.
-
-\subsubsection{Expressions for the Flux Contributions $H_x(u)$}
-
-Let us now look at the indivudual flux contributions $H_x(u)$. These are not required to solve the
-Boltzmann equations, but are needed to evaluate the individual terms of the power balance, the
-discrete form of \eqref{eq:EBE-power-balance}. Each flux contribution $H_x(u)$ depends on its own
-$C_x$ and $D_x$, and on the values of $f(u)$ and $\dd{f}/\dd{u}$ at the interface, which depend
-on $n_L$, $n_H$ and the P\'eclet number $\Pe$, which is calculated from the summed coefficients
-of {\em all} flux contributions. Using \eqref{eq:disc:H(C,D,P)} we get
-\begin{equation}
-	H_x(u)
-	= C_x\left(f(u_L) + (f(u_H)-f(u_L))\frac{e^{\Pe c}-1}{e^{\Pe}-1}\right)
-	- \frac{D_x}{(\Delta u)_f}\left(f(u_H)-f(u_L)\right)\frac{\Pe e^{\Pe c}}{e^{\Pe}-1}.
-	\label{eq:disc:Hx(Cx,Dx,P)}
-\end{equation}
-It easy to verify that summing this equation over $x$ and using the definitions of $\sum_xC_x=C$ and
-$\sum_xD_x=D$ that are part of equation \eqref{eq:disc:cd-flux-total} results in equation
-\eqref{eq:disc:H(C,D,P)} for the total flux. Note that this would {\em not} be the case if each flux
-$H_x(u)$ had been calculated based on its own P\'eclet number $\Pe_x:=C_x(\Delta u)_f/D_x$.
-Also note that, unlike the total flux $H$, the individual flux contributions $H_x(u)$ {\em do} depend on
-energy via the reduced energy coordinate $c(u)$. The interface flux depends on the energy $u_f$ (or the
-relative coordinate $c_f$) at the interface.
-
-Grouping the terms that depend on $f_L$ and $f_H$, equation \eqref{eq:disc:Hx(Cx,Dx,P)} can be written as
-\begin{equation}
-	H_x = B_xf_L - A_xf_H,
-	\label{eq:disc:H_x(B_x,A_x)}
-\end{equation}
-with
-\begin{align}
-	A_x &= \frac{D_x}{(\Delta u)_f}{\cal B}(\Pe)e^{\Pe c} - C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}, \\
-	B_x &= A_x + C_x.
-\end{align}
-A few notes about the evaluation follow. Firstly, let us assume that $D_x\neq 0$, so the
-first term on the right-hand side of the expression for $A_x$ must be considered. If
-$D_x\neq 0$, also $D\neq 0$, so the P\'eclet number $\Pe$ is finite. The term can be
-expressed in terms of the Bernoulli function to avoid the singularity for small $|\Pe|$.
-Only for large positive P\'eclet numbers there is the risk of an overflow-underflow combination,
-which can be avoided using equation \eqref{eq:disc:e^PB(p)=B(-p)} and writing, for (all)
-positive $\Pe$,
-\begin{align}
-	 {\cal B}(\Pe)e^{\Pe c}
-	={\cal B}(\Pe)e^{\Pe}e^{\Pe(c-1)}
-	={\cal B}(-\Pe)e^{-\Pe(1-c)}.
-\end{align}
-Next, consider the term related to $C_x$. The limit for $\Pe\rightarrow 0$ can be
-determined using l'H\^opital's rule, revealing the value $-C_xc$. For negative values
-of $\Pe$, the expression is well-behaved. In order to avoid overflows of the exponents
-for large positive $\Pe$, that can be rewritten for (all) positive $\Pe$ as
-\begin{equation}
-	- C_x\frac{e^{\Pe c}-1}{e^{\Pe}-1}
+	-\int\limits_0^\infty u{\cal T}_x(u)\dd{u}
+	\doteq
+	-\sum\limits_{i=0}^{{\cal N}-1}u_i [\bmat{M}_x\bvec{f}]_i (\Delta u)_i
 	=
-	-C_xe^{-\Pe(1-c)}\frac{e^{-\Pe c}-1}{e^{-\Pe}-1}.
+	- (\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}_x\bvec{f}
+	:= -\bmat{M}_{u,x}\bvec{f}.
+	\label{eq:EBE-power-term}
 \end{equation}
-In all cases, expressions of the form $e^x-1$ must be evaluated using \SRC{std::expm1(x)} to
-avoid cancellation errors for small $|\Pe|$.
+The additional minus sign is due to the fact that all matrices are defined
+such that $\bmat{M}_x\bvec{f}$ represents a term on the left-hand side, whereas
+in the statement of the power balance all terms are brought to the
+{\em right-} hand side, so positive numbers represent power {\em gains}.
+
+When discretized this way, the power balance is satisfied if
+the Boltzmann equation itself is satisfied, since
+\begin{equation}
+	\bmat{M}(\bvec{f})\bvec{f} = \bvec{0}
+	\iff
+	(\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}(\bvec{f})\bvec{f}
+	=
+	(\bvec{\Delta u})^T\diag(\bvec{u})\bvec{0} = 0.
+\end{equation}
+We therefore propose to implement the power terms to be consistent with
+the discretization of the terms in the Boltzmann equation. If there is the
+need to distinguish `up- and downfluxes', a term can be split, but that
+must be done such that $\bmat{M}_{x,down}+\bmat{M}_{x,up} = \bmat{M}_x$
+to ensure this consistency.
+
 
 \chapter{Matrices \& Vectors}
 
@@ -3467,7 +3588,7 @@ manual started to use the $\gamma$ constant.  Let's see what material in this ch
 is still useful to keep around. Probably parts of the discussion of the power terms
 is still relevant. In version 2.2.0 of the Manual \cite[p. 20]{Manual_2_2_0},
 a derivation of the CAR power term discretization is added (compared to version 1.0.0)
-that is unnecessarily complex compared to the derivation in \ref{sec:power-terms},
+that is unnecessarily complex compared to the derivation in \ref{sec:old-power-terms},
 that we discussed before.
 
 \section{The gamma constant}
@@ -3556,11 +3677,11 @@ auxiliary functions $g_x(u)$.
         (Also see section \ref{sec:dGdu-disc}.)
   \item Note that the elements of $g_x(u)$ are also used to calculated the
         elastic terms on the power balance, see \cite[eq. 24c]{Tejero2019},
-        \cite[eq. 38c]{Manual_1_0_0} and section \ref{sec:power-terms} of the
+        \cite[eq. 38c]{Manual_1_0_0} and section \ref{sec:old-power-terms} of the
 	present text\footnote{
           In the code, a different expression is used, that appears to be
           based on partial integration of the expressions in the paper and
-          manual. See section \ref{sec:power-terms}.}
+          manual. See section \ref{sec:old-power-terms}.}
         When the meaning of $g_x(u)$ is changed, also those expressions must
         be updated accordingly.
   \item In order to compare expressions with those in the BOLSIG+ paper
@@ -3839,7 +3960,7 @@ then use $f'(u_k)\doteq(f(u_{k+1})-f(u_{k-1}))/(2\Delta u)$ and
 $f''(u_k)\doteq(f(u_{k+1})+f(u_{k-1})-2f(u_k))/(\Delta u)^2$, etc.
 
 \section{Power Terms}
-\label{sec:power-terms}
+\label{sec:old-power-terms}
 
 \begin{equation}
 	\Theta_x
