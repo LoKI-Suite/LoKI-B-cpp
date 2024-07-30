@@ -1227,7 +1227,7 @@ since the coefficients $d_x$ and $c_x$ cannot both be made $u$-independent.
 This way of writing also makes the addition of fluxes les straightforward.
 
 \section{Compatibility Notes}
-In the LoKI-B presentation (manual), these are moved to the left-hand side of the equation for $f^0_u(u)$,
+In the LoKI-B presentation (manual), the flux terms are moved to the left-hand side of the equation for $f^0_u(u)$,
 and all terms of the final equation are divided by $\gamma$. As a result, in the manual they appear as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\text{with}\quad G^{man}_x(u)=N H_x(u).
@@ -1834,7 +1834,7 @@ we have $L=P$ and $H=E$ (the cell east of $P$). Substitution of expression
 equation \eqref{eq:EBE-final-avg} yields, for any internal cell $P$,
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_P
-	= \frac{B_ef_P - A_ef_E}{(\Delta u)_P} - \frac{B_wf_W - A_wf_P}{(\Delta u)_P}
+	= \frac{(B_ef_P - A_ef_E) - (B_wf_W - A_wf_P)}{(\Delta u)_P}
 	= -\frac{B_w}{(\Delta u)_P}f_W + \frac{A_w+B_e}{(\Delta u)_P}f_P - \frac{A_e}{(\Delta u)_P}f_E
 	= [\mat{M}_{cd}\bvec{f}]_P.
 	\label{eq:disc:H-term-int}
@@ -1849,7 +1849,7 @@ can simply be ignored. On the upper boundary, we will also impose the condition
 that the flux vanishes. Then the discrete equation on the western boundary becomes
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_{P=0}
-	= \frac{B_ef_P - A_ef_E}{(\Delta u)_P} - 0
+	= \frac{(B_ef_P - A_ef_E) - 0}{(\Delta u)_P}
 	=  \frac{B_ef_P - A_ef_E}{(\Delta u)_P}
 	= [\mat{M}_{cd}\bvec{f}]_{P=0},
 	\label{eq:disc:H-term-bnd,w}
@@ -1857,7 +1857,7 @@ that the flux vanishes. Then the discrete equation on the western boundary becom
 and on the eastern boundary we get
 \begin{equation}
 	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
-	= 0 - \frac{B_wf_W - A_wf_P}{(\Delta u)_P}
+	= \frac{0 - (B_wf_W - A_wf_P)}{(\Delta u)_P}
 	=  -\frac{B_w}{(\Delta u)_P}f_W + \frac{A_w}{(\Delta u)_P}f_P
 	= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
 	\label{eq:disc:H-term-bnd,e}
@@ -1884,11 +1884,11 @@ flux $H$ vanishes at that boundary face. But that is not true for the
 individual flux contributions $H_x$.
 
 The solution is to introduce a {\em ghost cell}, a virtual cell just above the
-highest real grid cell. If we assume that the distance between the cell values of
-cells $L$ and the virtual cell $E$ is $(\Delta u)_f$, the
+highest real grid cell. If we assume that the distance between the last cell
+$L=P$ and the virtual cell $H=E$ is $(\Delta u)_f$, the
 expression for the total flux into the boundary cell is again given by expression
 \eqref{eq:disc:H(B,A)}. But since the boundary condition dictates that
-this flux is zero, we get
+this flux is zero, for the upper boundary face we get
 \begin{equation}
 	B_ff_{P} - A_ff_{E} = 0
 	\iff
@@ -1906,19 +1906,20 @@ flux contribution $H_x$ yields, for the upper boundary face that
 For the eastern boundary cell we then get, instead of equation \eqref{eq:disc:H-term-bnd,e},
 \begin{align}
 	\MEAN{\DERIV{H}{u}}_{P={\cal N}-1}
-	&= \frac{(B_{x,e} - A_{x,e}(B_e/A_e))f_P}{(\Delta u)_P} - \frac{B_{x,w}f_W - A_{x,w}f_P}{(\Delta u)_P}
+	&= \frac{(B_{x,e} - A_{x,e}(B_e/A_e))f_P - (B_{x,w}f_W - A_{x,w}f_P)}{(\Delta u)_P}
 	\nonumber \\
 	&=  -\frac{B_{x,w}}{(\Delta u)_P}f_W + \frac{A_{x,w} + B_{x,e} - A_{x,e}(B_e/A_e)}{(\Delta u)_P}f_P
 	\nonumber \\
 	&= [\mat{M}_{cd}\bvec{f}]_{P={\cal N}-1}.
 	\label{eq:disc:Hx-term-bnd,e}
 \end{align}
+TODO: decide/explain where to place the ghost cell. Since we use the face-energy intervals,
+we now place the ghost cell point {\em on} the boundary.
 
 \begin{framed}
 In the MATLAB version of LoKI-B it is assumed that all individual flux contributions
 are zero. This is achieved by making the values of $g_x$ zero at the boundary face.
 \end{framed}
-
 
 
 \subsection{The Central Difference Scheme}
@@ -1976,7 +1977,7 @@ As discussed before, the ghost cell method can be used to obtain an expression
 for the flux at the upper boundary face; see the discussion around equation
 \eqref{eq:disc:Hx-term-bnd,e}.
 
-\subsubsection{Relationship with the LoKI-B Coefficient Notation $H_x(u)$}
+\subsubsection{Relationship with the LoKI-B Coefficient Notation}
 
 Let us again consider the expressions \eqref{eq:disc:A_f-cd(C,D)} and
 \eqref{eq:disc:B_f-cd(C,D)}. In the case of a uniform mesh, so
@@ -1986,10 +1987,9 @@ $c_f=\frac{1}{2}$, and using equations \eqref{eq:C_x(h_x,d_x)} and
 	A_{x,f} &= h_{x,f}\left(\frac{c_{x,f}(u)}{(\Delta u)_f}+\frac{d_{x,f}}{2} \right), \label{eq:disc:A_f-cd(hx,cx,dx)} \\
 	B_{x,f} &= h_{x,f}\left(\frac{c_{x,f}(u)}{(\Delta u)_f}-\frac{d_{x,f}}{2} \right). \label{eq:disc:B_f-cd(hx,cx,dx)}
 \end{align}
-For the discrete equation for internal points we get
-
-TODO: maybe reproduce one of the discrete equations, such as for $\bmat{M}_{E}$ in
-\cite[eq. 25b]{Manual_2_2_0}.
+Substitution in equation \eqref{eq:disc:H-term-int} results in the equivalent
+of equation \cite[eq. 25b]{Manual_2_2_0}.
+TODO: Discuss the relation between the LoKI's manual $G$ and our $H$ more explicitly.
 
 \subsection{The Scharfetter-Gummel (Exponential) Scheme}
 
@@ -2000,12 +2000,15 @@ is simplified by making assumptions about the profiles of $C(u)$ and $D(u)$
 and the source $S(u)$. For a related discussion, see Patankar's textbook
 \cite[sec. 7.2--7]{Patankar1980}.
 
+TODO: a more complete derivation is present in appendix \ref{ch:cf-scheme}.
+Just refer to that one (after making some syntax changes)?
+
 \subsubsection{Expression for the Total Flux $H(u)$}
 
 TODO: consider the relation with appendix \ref{ch:cf-scheme}.
 The derivation starts with the introduction of a reduced flux density $H^*$.
 Using the reduced energy coordinate $c(u)$ that was introduced in equation
-\eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=\dd{}/(\Delta u)_f\dd{c})$, equation
+\eqref{eq:disc:c(u)}, and $\dd{}/\dd{u}=(1/(\Delta u)_f)\dd{}/\dd{c}$, equation
 \eqref{eq:cd-flux-total} can be written as
 \begin{equation}
 	H(u) = \frac{D(u)}{(\Delta u)_f}H^*(c(u)),
@@ -2086,8 +2089,7 @@ and combining these equatons to eliminate $K$ yields
 	= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{c{\cal B}(P)}{{\cal B}(\Pe c)}.
 \end{equation}
 Using the function ${\cal B}(\Pe)$ avoids the singularity for $\Pe=0$, but clobbers
-the expression somewhat. We will therefore first continue under the assumption that
-$\Pe\neq 0$. Then
+the expression somewhat. We will first consider the case that $\Pe\neq 0$. Then
 \begin{align}
 	f(u(c))
 	&= f_Le^{\Pe c} + (f_H - f_Le^{\Pe})\frac{e^{\Pe c}-1}{e^\Pe-1} \nonumber \\
@@ -3949,9 +3951,9 @@ In the code the parenthesized coefficients are called \SRC{auxHigh} and \SRC{aux
 \chapter{Notes on the Complete Flux Schemes}
 \label{ch:cf-scheme}
 
-We consider the convection-diffusion equation in the interval $[u_L,u_H]$ and assume
-that $D(u)$ is non-zero in this interval
-and monotonic. We define
+We consider the convection-diffusion equation \eqref{eq:be:dH/du=S}, with the flux as
+given in equation \eqref{eq:cd-flux-total}, in the interval $[u_L,u_H]$ and assume
+that $D(u)$ is non-zero in this interval. We define
 \begin{equation}
 	P(u) = \int\limits_{u_f}^u \frac{C(u')}{D(u')}\dd{u},
 \end{equation}
@@ -3960,8 +3962,7 @@ so
 	P'(u) = \frac{C(u)}{D(u)}.
 \end{equation}
 %\eqref{eq:disc:c(u)}
-
-The flux can be written as
+The flux can be expressed in terms of $P(u)$ as
 \begin{equation}
 	H(u)
 	= C(u)f(u)-D(u)\DERIV{f}{u}
