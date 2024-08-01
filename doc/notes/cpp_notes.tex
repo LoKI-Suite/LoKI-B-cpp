@@ -720,8 +720,8 @@ $(E/N)^2$.
 
 The field operator is of the form $\dd{H_{E,pt}}/\dd{u}$, with
 \begin{equation}
-	H_{E,x}(u) = - \gamma\left(\frac{E}{N}\right)^2{\cal D}_{x}^0(u)\PDEV{f^0_u}{u}.
-	\label{eq:H_E,x}
+	H_{E,g}(u) = - \gamma\left(\frac{E}{N}\right)^2{\cal D}_{g}^0(u)\PDEV{f^0_u}{u}.
+	\label{eq:H_E,g}
 \end{equation}
 Furthermore, following Hagelaar et al., the first term on the left-hand side of
 the equation for $f^0(u)$ is defined to be $-\tilde{R}_{pt}$, where
@@ -762,28 +762,28 @@ see section \ref{sec:compatibility} for details.
 For later purposes we provide an alternative expression for the mobility. Firstly,
 we define the auxialiary quantity
 \begin{equation}
-	H_{E,x}^0(u) = - \gamma{\cal D}_{x}^0(u)\PDEV{f^0_u}{u},
-	\label{eq:H_E,x^0}
+	H_{E,g}^0(u) = - \gamma{\cal D}_{g}^0(u)\PDEV{f^0_u}{u},
+	\label{eq:H_E,g^0}
 \end{equation}
-so equation \eqref{eq:H_E,x} can be written as
+so equation \eqref{eq:H_E,g} can be written as
 \begin{equation}
-	H_{E,x}(u) = \left(\frac{E}{N}\right)^2H_{E,x}^0(u).
+	H_{E,g}(u) = \left(\frac{E}{N}\right)^2H_{E,g}^0(u).
 \end{equation}
 In terms of this quantity, \eqref{eq:mueN} takes the form
 \begin{equation}
-	\mu_eN = -\int\limits_0^\infty H_{E,x}^0(u) \dd{u}.
+	\mu_eN = -\int\limits_0^\infty H_{E,g}^0(u) \dd{u}.
 \end{equation}
 This can be manipulated as follows:
 \begin{equation}
 	\mu_eN
-	= -\int\limits_0^\infty H_{E,x}^0(u) \DERIV{u}{u} \dd{u}
-	= -\int\limits_0^\infty \left(\DERIV{uH_{E,x}^0(u)}{u} - u\DERIV{H_{E,x}^0(u)}{u}\right)\dd{u}
-	= +\int\limits_0^\infty u\DERIV{H_{E,x}^0(u)}{u}\dd{u}.
+	= -\int\limits_0^\infty H_{E,g}^0(u) \DERIV{u}{u} \dd{u}
+	= -\int\limits_0^\infty \left(\DERIV{uH_{E,g}^0(u)}{u} - u\DERIV{H_{E,g}^0(u)}{u}\right)\dd{u}
+	= +\int\limits_0^\infty u\DERIV{H_{E,g}^0(u)}{u}\dd{u}.
 	\label{eq:mueN-alt}
 \end{equation}
-Here we have used the fact that $uH_{E,x}^0(u)$ vanishes for $u=0$ and for
+Here we have used the fact that $uH_{E,g}^0(u)$ vanishes for $u=0$ and for
 $u\rightarrow\infty$. (TODO: announce that the discrete form of this equation
-is consistent with the discretization of $\dd{H_{E,x}^0(u)}/\dd{u}$ that is
+is consistent with the discretization of $\dd{H_{E,g}^0(u)}/\dd{u}$ that is
 ussed in the solution of the Boltzmann equation.
 
 Repeating the steps that resulted in equation \eqref{eq:Gamma_e-temp}, but multiplying
@@ -974,7 +974,7 @@ gives an equation for $f^0(u)$,
 	\label{eq:ebe-2term-f-u0(u)-spat-subst}
 \end{equation}
 By bringing all terms that depend on $\alpha_{\text{eff}}f^0(u)$ to the right-hand side
-of the equation and using definition \eqref{eq:H_E,x} with $x=m$, that can be
+of the equation and using definition \eqref{eq:H_E,g} with $g=m$, that can be
 rewritten as
 \begin{equation}
 	\DERIV{H_{E,m}}{u} = \tilde{C}^0(u) + \tilde{R}_{sst}(u),
@@ -1055,27 +1055,27 @@ which is again the equation for $\alpha_{\text{eff}}$. Good.
 TODO: verify that also the discrete form is consistent.
 
 Additional note: the first term on the right-hand side can be expressed in terms of
-$H_{E,x}(u)$ (see equation \eqref{eq:H_E,x}):
+$H_{E,g}(u)$ (see equation \eqref{eq:H_E,g}):
 \begin{align}
 	&  -\gamma\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}\int\limits_0^\infty{\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
 	\nonumber \\
 	&= -\frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\gamma\left(\frac{E}{N}\right)^2\int\limits_0^\infty{\cal D}_m^0(u)\PDEV{f^0_u}{u}\dd{u}
 	\nonumber \\
-	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,x}\dd{u}.
+	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,g}\dd{u}.
 \end{align}
-Using a partial integration, and using the fact that $uH_{E,x}(u)$ vanishes for $u=0$ and for $u\rightarrow\infty$,
+Using a partial integration, and using the fact that $uH_{E,g}(u)$ vanishes for $u=0$ and for $u\rightarrow\infty$,
 this can be written as
 \begin{align}
 	\ldots
-	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,x}\PDEV{u}{u}\dd{u}.
+	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\int\limits_0^\infty H_{E,g}\PDEV{u}{u}\dd{u}.
 	\nonumber \\
 	&= \frac{\alpha_{\text{eff}}}{N}\frac{N}{E}\left[
-		\left. \vphantom{\int\limits_0^\infty} u H_{E,x}\right|_0^\infty
-		- \int\limits_0^\infty u\PDEV{H_{E,x}}{u}\dd{u}
+		\left. \vphantom{\int\limits_0^\infty} u H_{E,g}\right|_0^\infty
+		- \int\limits_0^\infty u\PDEV{H_{E,g}}{u}\dd{u}
 	\right]
 	\nonumber \\
 	&= -\frac{\alpha_{\text{eff}}}{N}\frac{N}{E}
-		\int\limits_0^\infty u\PDEV{H_{E,x}}{u}\dd{u}
+		\int\limits_0^\infty u\PDEV{H_{E,g}}{u}\dd{u}
 \end{align}
 \end{framed}
 
@@ -1195,15 +1195,17 @@ expressions for the fluxes $H_x(u)$ will be of the advection-diffusion type,
 	\label{eq:cd-flux}
 \end{equation}
 with a {\em positive} diffusion coefficient $D_x(u)$.
-This choice of sign is also compatible with the field term $\dd{H_{E,x}}/\dd{u}$,
-with $H_{E,x}$ as given in equation \eqref{eq:H_E,x} (which is purely diffusive).
+This choice of sign is also compatible with the field term $\dd{H_{E,g}}/\dd{u}$,
+with $H_{E,g}$ as given in equation \eqref{eq:H_E,g} (which is purely diffusive).
 The convective and diffusive parts of the flux are given by
-\begin{equation}
-	H_{x,\text{conv}}(u) = C_x(u)f, \quad
-	H_{x,\text{diff}}(u) = - D_x(u)\DERIV{f}{u}.
-	\label{eq:cd-flux-conv,diff}
-\end{equation}
-Among others, these individual components will be used in the analysis of the
+\begin{align}
+	&H_{x,\text{conv}}(u) = C_x(u)f,
+	\label{eq:cd-flux-conv}
+	\\
+	&H_{x,\text{diff}}(u) = - D_x(u)\DERIV{f}{u}.
+	\label{eq:cd-flux-diff}
+\end{align}
+Among others, these separate components will be used in the analysis of the
 power balance, later on in this text.
 
 In the LoKI-B MATLAB code and documents \cite[below 25a]{Manual_2_2_0}, the
@@ -1216,7 +1218,7 @@ flux is written in a different form, as
 A comparison with equation \eqref{eq:cd-flux} reveals that
 \begin{align}
 	C_x(u) &= -h_x(u)d_x(u), \label{eq:C_x(h_x,d_x)} \\
-	D_x(u) &= +h_x(u)c_x(u), \label{eq:D_x(h_x,c_x)}.
+	D_x(u) &= +h_x(u)c_x(u). \label{eq:D_x(h_x,c_x)}
 \end{align}
 
 There are various reasons to prefer the notation in equation \eqref{eq:cd-flux}.
@@ -1224,7 +1226,8 @@ Firstly, the symbols $d_x$ and $c_x$ are somewhat confusing, since $d_x$
 descibes the convective part, $c_x$ the diffusive part of the flux. Secondly,
 the expression for the electron-electron operator does not fit in this scheme,
 since the coefficients $d_x$ and $c_x$ cannot both be made $u$-independent.
-This way of writing also makes the addition of fluxes les straightforward.
+Thirdly, the notation makes the combination of convective-diffusive flux
+contributions less straightforward.
 
 \section{Compatibility Notes}
 In the LoKI-B presentation (manual), the flux terms are moved to the left-hand side of the equation for $f^0_u(u)$,
@@ -1233,8 +1236,9 @@ and all terms of the final equation are divided by $\gamma$. As a result, in the
 	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\text{with}\quad G^{man}_x(u)=N H_x(u).
 	\label{eq:CvsGman}
 \end{equation}
-In the {\em code} (matlab and C++), no tricks are done, the terms are all brought
-to the {\em right-}hand side of the equation the source terms are discretized as
+In the {\em code} (matlab and the present C++ code), no tricks are done: the
+terms are all brought to the {\em right-}hand side of the equation the source
+terms are discretized as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}
 \end{equation}
@@ -1296,23 +1300,34 @@ The CAR source term is of the form \eqref{eq:Ctilde=-dH/du},
 \end{equation}
 with
 \begin{equation}
-	H_{car}(u) = -4\gamma\sigma_{car}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
+	H_{car}(u) = -4\gamma u\sum\limits_k B_k x_k\sigma_{0,k}\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
 \end{equation}
-and the CAR cross section
+Here $B_k$ is the rotational constant of gas $k$.
+The CAR cross section $\sigma_{0,k}$ for gas $k$ can be found in the LoKI-B
+paper \cite{Tejero2019} in the text below equation 6d and is given by
 \begin{equation}
-	\sigma_{car}=\sum\limits_k B_k x_k\sigma_{0,k}.
+  \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
+  \label{eq:sigma_CAR}
 \end{equation}
+where $a_0$ is the Bohr radius and $Q_{k,au}$ is the quadrupole moment of that
+gas {\em in atomic units} ($ea_0^2$).
+This expression is also found in the user manual \cite{Manual_1_0_0} (below
+equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
+equation 8b). Those sources refer to the paper of Gerjuoy and Stein
+\cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
+To emphasize that $Q_{k,au}$ is a dimensionless number (the numerical value
+that arises when atomic units are used), we have added the suffix $au$ in equation
+\eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
 
-In the LoKI-B manual it is represented by \cite[eq. 12c]{Manual_2_2_0}
+In the LoKI-B manual this term is represented by \cite[eq. 12c]{Manual_2_2_0}
 \begin{equation}
 	G^{man}_{car}(u) = -\sum\limits_k 4B_k\nu_{0,k}\sqrt{u}\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
 \end{equation}
 Substituting $\nu_{0,k}=Nx_k\sigma_{0,k}v(u)=Nx_k\gamma\sigma_{0,k}\sqrt{u}$, this can
-be written in terms of a cross section as
+be written as
 \begin{equation}
 	G^{man}_{car}(u)
-		= -N\gamma\sum\limits_k 4B_k x_k\sigma_{0,k}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right]
-		= -N\gamma 4\sigma_{car}u\left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right]
+		= -4N\gamma u\sum\limits_k B_k x_k\sigma_{0,k} \left[f^0(u) + \frac{k_BT_g}{e}\PDEV{f^0}{u}\right].
 \end{equation}
 Equation \eqref{eq:CvsGman} confirms that $G^{man}_{car}(u) = NH_{car}$.
 
@@ -1684,9 +1699,10 @@ these terms as
 	= -\int\limits_0^\infty \left[\DERIV{uH_{x}}{u}-H_x(u)\right]\dd{u}
 	= +\int\limits_0^\infty H_x(u)\dd{u},
 \end{equation}
-where we have used the fact that $uH_{x}$ vanishes for $u=0$ and for $u\rightarrow\infty$.
-Using definition \eqref{eq:cd-flux-conv,diff} to split this power contribution into
-convective and diffusive parts yields
+where we have used the fact that $uH_{x}$ vanishes for $u=0$ and for
+$u\rightarrow\infty$.  Using definitions \eqref{eq:cd-flux-conv} and
+\eqref{eq:cd-flux-diff} to split this power contribution into convective and
+diffusive parts yields
 \begin{equation}
 	\Theta_x
 	= \int\limits_0^\infty H_{x,\text{conv}}(u)f(u) \dd{u}
@@ -1700,6 +1716,19 @@ positive and $\dd{f}/\dd{u}$ is negative under normal circumstances, we find
 that $\Theta_{x,\text{conv}}$ is non-positive and that $\Theta_{\text{diff}}$
 is non-negative. We conclude that the convective and diffusive parts of the
 power terms correspond to power sinks and sources, respectively.
+
+As a special case, consider the field operator, which is described by the
+flux expression \eqref{eq:H_E,g}. This is purely diffusive, and the power term
+is given by
+\begin{equation}
+	\Theta_{E,g}(u)
+	= -\left(\frac{E}{N}\right)^2 \gamma\int\limits_0^\infty{\cal D}_{g}^0(u)\PDEV{f^0_u}{u}\dd{u}
+	= -(\mu_e N)\left(\frac{E}{N}\right)^2,
+	\label{eq:Theta_Eg}
+\end{equation}
+where we have used expression \eqref{eq:mueN-alt} for the electron moblity.
+Note that according to our conventions $\mu_e$ is negative, as explained in
+\ref{sec:compatibility}, so $\Theta_{E,g}$ is positive.
 
 \chapter{Discretization}
 
@@ -2363,7 +2392,7 @@ Some comments on the MATLAB code and documentation:
       \item In the C++ code, the variable \SRC{alpha} has been renamed to \SRC{g_ee}
         so the code matches the documentation (note: $g_{ee}=h_{ee}/\gamma$).
       \item This also avoids confusion with Rockwood's constant $\alpha$,
-        see appendix \ref{sec:Rockwood1973Notes}, which is closely related to
+        see appendix \ref{ch:Rockwood1973Notes}, which is closely related to
         $g_{ee}$, but not identical.
     \end{enumerate}
   \item In the MATLAB code, the argument of the Coulomb logarithm is expanded as
@@ -2903,9 +2932,36 @@ versions, comparisons with BOLSIG+ output.
 
 \appendix
 
+\chapter{Notes on The Prescribed EEDF}
+
+\label{ch:prescribed}
+
+LoKI-B supports the evaluation of swarm parameters for a prescribed EEDF. It supports
+the following `generalized EEDF' (TODO: ADD REFS):
+\begin{equation}
+	f(u) = \left(\frac{2e}{3k_BT_e}\right)^{3/2}
+	\frac{\Gamma\left(\frac{5}{2s}\right)^{3/2}}{\Gamma\left(\frac{3}{2s}\right)^{5/2}}
+	\exp\left(-\left[
+		\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
+		\frac{2eu}{3k_BT_e}
+	\right]^s\right).
+\end{equation}
+The energy-derivative is given by
+\begin{equation}
+	\DERIV{f}{u}
+	=
+	-f(u)
+	s\left[
+                \frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
+                \frac{2eu}{3k_BT_e}
+        \right]^{s-1}
+	\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
+                \frac{2e}{3k_BT_e}.
+\end{equation}
+
 \chapter{Notes on Rockwood's 1973 Paper}
 
-\label{sec:Rockwood1973Notes}
+\label{ch:Rockwood1973Notes}
 
 \section{Nomenclature, Variables, Relation with LoKI-B}
 
@@ -3649,24 +3705,8 @@ and substitution in the expression for $g_{CAR}$ yields
   As discussed elsewhere, in the code we find $g_{CAR}$ defined without
   the minus sign --- the same is true for other $g_x(u)$.
 \end{framed}
-
-The CAR cross section for a gas $k$ can be found in the LoKI-B paper \cite{Tejero2019}
-in the text below equation 6d, which states
-\begin{equation}
-  \sigma_{0,k} = \frac{8\pi}{15}Q_{k,au}^2a_0^2,
-  \label{eq:sigma_CAR}
-\end{equation}
-where $a_0$ is the Bohr radius and $Q_{k,au}$ is the quadrupole moment of that
-gas {\em in atomic units} ($ea_0^2$).
-This expression is also found in the user manual \cite{Manual_1_0_0} (below
-equation 9d) and in the paper of Ridenti \etal \cite{Ridenti2015} (below
-equation 8b). Those sources refer to the paper of Gerjuoy and Stein
-\cite{Gerjuoy1955}, where this term appears as a factor in equation 20.
-To emphasize that $Q_{k,au}$ is a dimensionless number (the numerical value
-that arises when atomic units are used), we have added the suffix $au$ in equation
-\eqref{eq:sigma_CAR}; this does not appear in the sources cited above.
-
-Substitution of this expression in \eqref{eq:g_CAR} gives
+Substitution of expression \eqref{eq:sigma_CAR} for the CAR cross section
+$\sigma_{0,k}$ in \eqref{eq:g_CAR} gives
 \begin{equation}
   g_{CAR} = -4u\frac{8\pi}{15}a_0^2\sum\limits_k \chi_k Q_{k,au}^2B_k.
 \end{equation}
