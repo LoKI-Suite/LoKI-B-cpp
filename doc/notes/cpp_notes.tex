@@ -1180,7 +1180,7 @@ as stated here are part of the power balance (in the NB just before item 24 on p
 \chapter{Collisional Source Terms}
 \label{ch:sources}
 
-\section{Notation, Conservative Source Terms}
+\section{Conservative Source Terms}
 
 Let us now take a look at the source terms $\tilde{C}^0(u)$. We will soon see
 that some of these can be written in flux-divergence form,
@@ -1188,15 +1188,16 @@ that some of these can be written in flux-divergence form,
 	\tilde{C}^0_x(u) = -\DERIV{H_x(u)}{u}.
 	\label{eq:Ctilde=-dH/du}
 \end{equation}
-The reason for introducing the minus sign here is that the resulting
-expressions for the fluxes $H_x(u)$ will be of the advection-diffusion type,
+The reason for introducing the minus sign here is that the fluxes $H_x(u)$ will
+be of the advection-diffusion type,
 \begin{equation}
 	H_x(u) = C_x(u)f - D_x(u)\DERIV{f}{u},
 	\label{eq:cd-flux}
 \end{equation}
-with a {\em positive} diffusion coefficient $D_x(u)$.
-This choice of sign is also compatible with the field term $\dd{H_{E,g}}/\dd{u}$,
-with $H_{E,g}$ as given in equation \eqref{eq:H_E,g} (which is purely diffusive).
+which now has a {\em positive} diffusion coefficient $D_x(u)$. The terms of this
+form can be moved to the left-hand side of the equation and be combined with the
+field term $\dd{H_{E,g}}/\dd{u}$, with the difusive flux $H_{E,g}$ from equation
+\eqref{eq:H_E,g}.
 The convective and diffusive parts of the flux are given by
 \begin{align}
 	&H_{x,\text{conv}}(u) = C_x(u)f,
@@ -1236,8 +1237,8 @@ and all terms of the final equation are divided by $\gamma$. As a result, in the
 	\frac{\tilde{C}_x(u)}{\gamma} := -\frac{1}{N\gamma}\DERIV{G^{man}_x}{u}, \quad\text{with}\quad G^{man}_x(u)=N H_x(u).
 	\label{eq:CvsGman}
 \end{equation}
-In the {\em code} (matlab and the present C++ code), no tricks are done: the
-terms are all brought to the {\em right-}hand side of the equation the source
+In the {\em code} (matlab and the present C++ code), the terms are all
+brought to the {\em right-}hand side of the equation the source
 terms are discretized as
 \begin{equation}
 	\frac{\tilde{C}_x(u)}{\gamma} = -\frac{1}{\gamma}\DERIV{H(u)}{u}
@@ -2777,6 +2778,118 @@ need to distinguish `up- and downfluxes', a term can be split, but that
 must be done such that $\bmat{M}_{x,down}+\bmat{M}_{x,up} = \bmat{M}_x$
 to ensure this consistency.
 
+\chapter{Notes on The Prescribed EEDF}
+
+\label{ch:prescribed}
+
+TODO: Complete this discussion.
+
+\section{The Prescribed EEDF Function}
+
+LoKI-B supports the evaluation of swarm parameters for a prescribed EEDF. It
+supports the following parametrized expression for the EEDF
+\begin{equation}
+	f_s(u) = s\left(\frac{2e}{3k_BT_e}\right)^{3/2}
+	\frac{\Gamma\left(\frac{5}{2s}\right)^{3/2}}{\Gamma\left(\frac{3}{2s}\right)^{5/2}}
+	\exp\left(-\left[
+		\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
+		\frac{2eu}{3k_BT_e}
+	\right]^s\right),
+	\label{eq:eedf-prescribed}
+\end{equation}
+where $\Gamma(x)$ is the gamma function and $s$ is the `shape parameter`. For
+$s=1$ and $s=2$ the Maxwell and Druvesteyn distributions are reproduced.
+This particular expression apppears in \cite[eq. 3]{Nam2008}. In an alternative
+form it appears in \cite[eq. 13]{Amemiya1997} and in \cite[eq. 1]{Gudmundsson2001}.
+\begin{framed}
+	In \cite[eq. 22]{Manual_2_2_0}, there are two mistakes. A factor $s$ is missing,
+	and $1/(k_BT_e)$ is written instead of $e/(k_BT_e)$ (to arrive at $\si{eV}$).
+\end{framed}
+In terms of the mean energy $\MEAN{u}=\frac{3}{2}kT_e/e$, the distribution takes the form
+\begin{equation}
+	f_s(u) = s\frac{1}{\MEAN{u}^{3/2}}
+	\frac{\Gamma\left(\frac{5}{2s}\right)^{3/2}}{\Gamma\left(\frac{3}{2s}\right)^{5/2}}
+	\exp\left(-\left[
+		\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
+		\frac{u}{\MEAN{u}}
+	\right]^s\right),
+	\label{eq:eedf-prescribed-meanu}
+\end{equation}
+and in terms of an $s$-dependent reference energy
+\begin{equation}
+	u_{\text{ref,s}}
+	= \frac{\Gamma\left(\frac{3}{2s}\right)}{\Gamma\left(\frac{5}{2s}\right)}\frac{3k_BT_e}{2e}
+	= \frac{\Gamma\left(\frac{3}{2s}\right)}{\Gamma\left(\frac{5}{2s}\right)}\MEAN{u}
+\end{equation}
+it can be written as
+\begin{equation}
+	f_s(u)
+	= \frac{s}{\Gamma\left(\frac{3}{2s}\right)}
+	\frac{1}{u_{\text{ref,s}}^{3/2}}
+	\exp\left(-\left[\frac{u}{u_{\text{ref,s}}}\right]^s\right).
+\end{equation}
+
+To analyze this EEDF, we calculate the averaged value of $u^p$ for some
+non-negative $p$. Using the substitutions $x = u/u_{\text{ref,s}}$ and $x=\sqrt[s]{y}$,
+we find that
+\begin{align}
+	\MEAN{u^p}
+	= \int\limits_0^\infty u^p \sqrt{u}f_s(u)\dd{u}
+	&= \frac{s}{\Gamma\left(\frac{3}{2s}\right)}
+	\frac{1}{u_{\text{ref,s}}^{3/2}}
+	\int\limits_0^\infty
+	u^{p+\frac{1}{2}}
+	\exp\left(-\left[u/u_{\text{ref,s}}\right]^s\right)\dd{u}
+	\nonumber \\
+	&= \frac{s}{\Gamma\left(\frac{3}{2s}\right)}
+	u_{\text{ref,s}}^{p}
+	\int\limits_0^\infty
+	x^{p+\frac{1}{2}}
+	\exp\left(-x^s\right)\dd{x}
+	\nonumber \\
+	&= \frac{s}{\Gamma\left(\frac{3}{2s}\right)}
+	u_{\text{ref,s}}^{p}
+	\frac{1}{s}
+	\int\limits_0^\infty
+	y^{\left(p+\frac{3}{2}\right)/s-1}
+	\exp\left(-y\right)\dd{y}
+	\nonumber \\
+	&= \frac{1}{\Gamma\left(\frac{3}{2s}\right)}
+	u_{\text{ref,s}}^{p}
+	\Gamma\left(\frac{p+\frac{3}{2}}{s}\right).
+\end{align}
+The results show that for $p=0$, the integral is unity (for all $s$). For $p=1$ the
+result is $\MEAN{u}=3k_BT_e/2e$, the mean energy in $\si{eV}$. These are the expected results.
+
+The energy-derivative is given by
+\begin{equation}
+	\DERIV{f_s}{u} = -f_s(u) s\left(\frac{u}{u_{\text{ref,s}}}\right)^{s-1} \frac{1}{u_{\text{ref,s}}}.
+\end{equation}
+The most likely energy is found at the location where $\sqrt{u}f_s(u)$ has a maximum value, or
+\begin{equation}
+	\frac{1}{2\sqrt{u}}f_s(u) + \sqrt{u}\DERIV{f_s}{u} = 0
+	\iff
+	\frac{1}{2\sqrt{u}} = \sqrt{u} s\left(\frac{u}{u_{\text{ref,s}}}\right)^{s-1} \frac{1}{u_{\text{ref,s}}}
+	\iff
+	u = \frac{u_{\text{ref,s}}}{\sqrt[s]{2s}}
+	  = \frac{1}{\sqrt[s]{2s}}\frac{\Gamma\left(\frac{3}{2s}\right)}{\Gamma\left(\frac{5}{2s}\right)}\MEAN{u}.
+\end{equation}
+For a Maxwellian ($s=1$) this gives
+\begin{equation}
+	u = \frac{1}{2}\frac{2}{3}\MEAN{u} = \frac{1}{3}\MEAN{u}.
+\end{equation}
+For a Druyvesteyn ($s=2$) this gives
+\begin{equation}
+	u = \frac{1}{2}\frac{\Gamma\left(\frac{3}{4}\right)}{\Gamma\left(\frac{5}{4}\right)}\MEAN{u}
+	  = 0.676\ldots\MEAN{u}.
+\end{equation}
+TODO: Dimensionless form, for plotting:
+\begin{equation}
+	\MEAN{u}f_s(r\MEAN{u})
+	= \sqrt{r}\frac{s}{\Gamma\left(\frac{3}{2s}\right)}
+	\left(\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}\right)^{3/2}
+	\exp\left(-\left[\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}r\right]^s\right).
+\end{equation}
 
 \chapter{Matrices \& Vectors}
 
@@ -2931,33 +3044,6 @@ Unit tests, checking results with reference data, comparing the MATLAB and C++
 versions, comparisons with BOLSIG+ output.
 
 \appendix
-
-\chapter{Notes on The Prescribed EEDF}
-
-\label{ch:prescribed}
-
-LoKI-B supports the evaluation of swarm parameters for a prescribed EEDF. It supports
-the following `generalized EEDF' (TODO: ADD REFS):
-\begin{equation}
-	f(u) = \left(\frac{2e}{3k_BT_e}\right)^{3/2}
-	\frac{\Gamma\left(\frac{5}{2s}\right)^{3/2}}{\Gamma\left(\frac{3}{2s}\right)^{5/2}}
-	\exp\left(-\left[
-		\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
-		\frac{2eu}{3k_BT_e}
-	\right]^s\right).
-\end{equation}
-The energy-derivative is given by
-\begin{equation}
-	\DERIV{f}{u}
-	=
-	-f(u)
-	s\left[
-                \frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
-                \frac{2eu}{3k_BT_e}
-        \right]^{s-1}
-	\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}
-                \frac{2e}{3k_BT_e}.
-\end{equation}
 
 \chapter{Notes on Rockwood's 1973 Paper}
 
