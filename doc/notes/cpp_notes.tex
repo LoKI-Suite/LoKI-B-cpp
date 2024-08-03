@@ -18,7 +18,7 @@
 \newcommand{\mhalf}[1]{\ensuremath{{#1}-\frachalf}}
 \newcommand{\pmhalf}[1]{\ensuremath{{#1}\pm\frachalf}}
 
-\newcommand{\MEAN}[1]{\ensuremath{\left\langle{{#1}}\right\rangle}}
+\newcommand{\MEAN}[1]{\ensuremath{\!\left\langle{{#1}}\right\rangle}}
 
 \input{doc/listings}
 \input{doc/loki_defs}
@@ -2797,7 +2797,7 @@ supports the following parametrized expression for the EEDF
 	\right]^s\right),
 	\label{eq:eedf-prescribed}
 \end{equation}
-where $\Gamma(x)$ is the gamma function and $s$ is the `shape parameter`. For
+where $\Gamma(x)$ is the gamma function and $s$ is the `shape parameter'. For
 $s=1$ and $s=2$ the Maxwell and Druvesteyn distributions are reproduced.
 This particular expression apppears in \cite[eq. 3]{Nam2008}. In an alternative
 form it appears in \cite[eq. 13]{Amemiya1997} and in \cite[eq. 1]{Gudmundsson2001}.
@@ -2883,13 +2883,41 @@ For a Druyvesteyn ($s=2$) this gives
 	u = \frac{1}{2}\frac{\Gamma\left(\frac{3}{4}\right)}{\Gamma\left(\frac{5}{4}\right)}\MEAN{u}
 	  = 0.676\ldots\MEAN{u}.
 \end{equation}
-TODO: Dimensionless form, for plotting:
+
+\begin{figure}[tb]
+\begin{center}
+	% prescribed.pdf can be (re)created by calling 'gnuplot prescribed.gnu'
+	\includegraphics[width=0.8\textwidth]{prescribed}
+	\caption{The reduced prescribed probability distribution function
+		$g_s(r)$ from equation \eqref{eq:prescribed_reduced}.
+		For a given $\MEAN{u}$, the probability distribution function
+		is obtained as $\sqrt{u}f_s(u)=g_s(u/\MEAN{u})/\MEAN{u}$, see
+		equation \eqref{eq:prescribed_from_reduced}.
+		The parameters $s=1$ and $s=2$ result in the Maxwellian
+		and Druyvesteyn distributions, respectively.
+		}
+	\label{fig:prescribed}
+\end{center}
+\end{figure}
+
+A reduced (dimensionless) can be obtained by scaling the energies with the mean energy, yielding
 \begin{equation}
-	\MEAN{u}f_s(r\MEAN{u})
+	g_s(r) := \MEAN{u}\sqrt{r\MEAN{u}}f_s(r\MEAN{u})
 	= \sqrt{r}\frac{s}{\Gamma\left(\frac{3}{2s}\right)}
 	\left(\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}\right)^{3/2}
 	\exp\left(-\left[\frac{\Gamma\left(\frac{5}{2s}\right)}{\Gamma\left(\frac{3}{2s}\right)}r\right]^s\right).
+	\label{eq:prescribed_reduced}
 \end{equation}
+For a given parameter value $s$ and mean energy value $\MEAN{u}$, the value
+$\sqrt{u}f_s(u)$ of the probability distribution function can be obtained from
+\begin{equation}
+	\sqrt{u}f_s(u) := g_s(u/\MEAN{u})/\MEAN{u}.
+	\label{eq:prescribed_from_reduced}
+\end{equation}
+The function $g_s(r)$ has been plotted in figure \ref{fig:prescribed} for a
+range of shape parameter values $s$. The physically relevant cases are $s=1$
+(the Maxwellian distribution) and $s=2$ (the Druyvesteyn distribution), other
+$s$ values may be useful for testing purposes.
 
 \chapter{Matrices \& Vectors}
 
