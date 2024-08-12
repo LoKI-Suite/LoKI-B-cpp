@@ -38,8 +38,10 @@ int main()
     SparseMatrix M2(nCells,nCells);
 
     const double CIEff = 0.0;
-    fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, CIEff, M1);
-    fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, CIEff, M2);
+    fieldOperator1.evaluate(grid1, fieldCrossSection, won, CIEff, M1);
+    M1 *= eon*eon;
+    fieldOperator2.evaluate(grid2, fieldCrossSection, won, CIEff, M2);
+    M2 *= eon*eon;
     test_expr(M1.isApprox(M2));
 
     Vector eedf1 = Vector::Zero(nCells);
