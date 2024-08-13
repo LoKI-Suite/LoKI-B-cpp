@@ -76,6 +76,17 @@ lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double g, dou
  */
 lokib_export Vector makePrescribedEDF(const Grid& grid, double g, double T_eV, bool normalize=true);
 
+/** This function solves the system \a matrix * \a eedf = b, with b=[0],
+ *  subject to the normalization constraint for \a eedf (see function
+ *  normalizeEDF). This constraint is imposed by replacing the first
+ *  equation of the system with the equation C*eedf[0] = C, solving
+ *  the resulting nonsingular system, and calling normalizeEDF to
+ *  achieve the normalization. For C we use matrix element (1,1), to
+ *  avoid widening the dynamic range of the matrix elements.
+ */
+lokib_export void solveEEDF(Vector &eedf, Matrix &matrix, const Grid &grid);
+
+
 } // namespace loki
 
 
