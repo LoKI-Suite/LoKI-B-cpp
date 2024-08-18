@@ -3,6 +3,7 @@
 
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/Output.h"
 #include "LoKI-B/Simulation.h"
 #include <chrono>
@@ -46,7 +47,7 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
                        const Vector *firstAnisotropy) {
                 callback(wc.reducedField(), reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
-                         reinterpret_cast<uintptr_t>(eedf.data()), eedf.size(), swarmParameters.Te);
+                         reinterpret_cast<uintptr_t>(eedf.data()), eedf.size(), swarmParameters);
             });
         simulation->obtainedResults().addListener(&loki::Output::saveCycle, output.get());
 
@@ -74,4 +75,11 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
 EMSCRIPTEN_BINDINGS(loki)
 {
     emscripten::function("run", &loki::web::run);
+    emscripten::value_object<loki::SwarmParameters>("SwarmParameters")
+        .field("electronTemperature", &loki::SwarmParameters::Te)
+        .field("diffusionCoefficient", &loki::SwarmParameters::redDiffCoeff)
+        .field("mobilityCoefficient", &loki::SwarmParameters::redMobCoeff)
+        .field("characteristicEnergy", &loki::SwarmParameters::characEnergy)
+        .field("townsendCoefficient", &loki::SwarmParameters::redTownsendCoeff)
+        .field("attachmentCoefficient", &loki::SwarmParameters::redAttCoeff);
 }
