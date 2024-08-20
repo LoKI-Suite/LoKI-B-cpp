@@ -47,7 +47,9 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
                        const EedfCollisionDataMixture &collData, const SwarmParameters &swarmParameters,
                        const Vector *firstAnisotropy) {
                 callback(wc.reducedField(), reinterpret_cast<uintptr_t>(grid.getCells().data()), grid.getCells().size(),
-                         reinterpret_cast<uintptr_t>(eedf.data()), eedf.size(), swarmParameters);
+                         reinterpret_cast<uintptr_t>(eedf.data()), eedf.size(),
+                         reinterpret_cast<uintptr_t>(firstAnisotropy->data()), firstAnisotropy->size(),
+                         swarmParameters);
             });
         simulation->obtainedResults().addListener(&loki::Output::saveCycle, output.get());
 
