@@ -68,9 +68,10 @@ VectorType remove_electron_entries(const Collision::StateVector &parts, const Ve
 
 } // namespace
 
-EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+EedfCollision::EedfCollision(Collision::IdType id, CollisionType type,
+                             const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
+    : Collision(id, type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
       m_lhsHeavyStates(remove_electron_entries(lhsStates, lhsStates)),
       m_lhsHeavyCoeffs(remove_electron_entries(lhsStates, lhsCoeffs)),
       m_rhsHeavyStates(remove_electron_entries(rhsStates, rhsStates)),
@@ -603,7 +604,7 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
 
             std::vector stateVector{electron, state};
             auto *collision =
-                new EedfCollision(CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
+                new EedfCollision(-1, CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
 
             collision->crossSection.reset(new CrossSection(*elasticCS));
 
@@ -875,7 +876,7 @@ EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const 
     // 1. Create the collision object (but do not configure a CrossSection
     //    object yet).
     std::unique_ptr<EedfCollision> coll_uptr{
-        new Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
+        new Collision(m_collisions.size(), type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
     Log<Message>::Notify(*coll_uptr);
     // 2. See if we already have a collision of the same type with the same
     //    lhs and rhs. If we do, a runtime_error is thrown.
