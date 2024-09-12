@@ -1,24 +1,39 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
-    pin-emscripten_3-1-15.url =
-      "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+    pin-emscripten_3-1-15.url = "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
   };
 
-  outputs = { self, nixpkgs, pin-emscripten_3-1-15 }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      pin-emscripten_3-1-15,
+    }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      emscripten_3-1-15 =
-        pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
+      emscripten_3-1-15 = pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
-      latex = with pkgs;
+      latex =
+        with pkgs;
         (texlive.combine {
           inherit (texlive)
-            scheme-small amsmath hyperref mhchem latexmk enumitem titlesec
-            texcount framed siunitx upquote cm-super;
+            scheme-small
+            amsmath
+            hyperref
+            mhchem
+            latexmk
+            enumitem
+            titlesec
+            texcount
+            framed
+            siunitx
+            upquote
+            cm-super
+            ;
         });
 
       shellInputs = with pkgs; [
@@ -33,33 +48,37 @@
 
         # Documentation
         doxygen
+        graphviz
 
         # Coverage
         gcovr
       ];
-    in {
+    in
+    {
       devShells.${system} = rec {
         dev = gccEnv.mkDerivation {
           name = "loki-b-dev";
-          buildInputs = shellInputs ++ (with pkgs; [
-            # Development tools
-            clang-tools
+          buildInputs =
+            shellInputs
+            ++ (with pkgs; [
+              # Development tools
+              clang-tools
 
-            # Needed to make clang-tools not complain.
-            llvmPackages.openmp
+              # Needed to make clang-tools not complain.
+              llvmPackages.openmp
 
-            # WebAssembly compilation
-            emscripten_3-1-15
+              # WebAssembly compilation
+              emscripten_3-1-15
 
-            # Plotting
-            gnuplot
+              # Plotting
+              gnuplot
 
-            # Workflow testing
-            act
+              # Workflow testing
+              act
 
-            # LaTeX
-            latex
-          ]);
+              # LaTeX
+              latex
+            ]);
           EM_CACHE = "./.cache/emscripten";
         };
         ci = gccEnv.mkDerivation {
@@ -76,11 +95,22 @@
 
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [ cmake ninja nlohmann_json eigen ];
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            nlohmann_json
+            eigen
+          ];
 
-          cmakeFlags =
-            [ "-DENABLE_INSTALL=ON" "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON" ];
-          ninjaFlags = [ "loki" "loki_legacytojson" "loki_offsidetojson" ];
+          cmakeFlags = [
+            "-DENABLE_INSTALL=ON"
+            "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON"
+          ];
+          ninjaFlags = [
+            "loki"
+            "loki_legacytojson"
+            "loki_offsidetojson"
+          ];
         };
         loki-web = gccEnv.mkDerivation {
           pname = "loki-web";
@@ -99,7 +129,10 @@
 
           EM_CACHE = "./.cache/emscripten";
 
-          ninjaFlags = [ "-C build" "loki_bindings" ];
+          ninjaFlags = [
+            "-C build"
+            "loki_bindings"
+          ];
 
           configurePhase = ''
             # Create the cache directory.
@@ -139,7 +172,10 @@
             gcovr
           ];
 
-          cmakeFlags = [ "-Dcoverage=ON" "-DCMAKE_BUILD_TYPE=Debug" ];
+          cmakeFlags = [
+            "-Dcoverage=ON"
+            "-DCMAKE_BUILD_TYPE=Debug"
+          ];
           ninjaFlags = [ "coverage" ];
 
           installPhase = ''
