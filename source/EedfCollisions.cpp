@@ -490,9 +490,23 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
                 cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)).dot(eedf.head(nCells - lmin));
         } else
         {
-            m_supRateCoeff =
-                SI::gamma * statWeightRatio *
-                cellCrossSection.cwiseProduct(grid->duCells().cwiseProduct(grid->getCells().tail(nCells - lmin))).dot(eedf.head(nCells - lmin));
+            const Vector cellCrossSectionn = interpolateNodalToCell(*grid, *crossSection);
+            m_supRateCoeff = 0;
+            for (Grid::Index k = 0; k < grid->nCells(); ++k)
+            {
+                if (grid->getNode(k + 1) + grid->getCell(lmin) <= grid->getNode(grid->nCells()))
+                {
+
+                    const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin),
+                         grid->getCell(k), k, true);
+
+                    for (int i = 0; i < int(alpha.size()); i++)
+                    {
+                         m_supRateCoeff += std::get<1>(alpha[i]) *
+                            SI::gamma * statWeightRatio * grid->getCells()[std::get<0>(alpha[i])] * cellCrossSectionn[std::get<0>(alpha[i])] * eedf[k] * grid->duCell(k);
+                    }
+                }
+            }
         }
     }
 
