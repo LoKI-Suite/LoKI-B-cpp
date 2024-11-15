@@ -425,21 +425,13 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
     if (reverse)
     {
         targetCell = frac * source + threshold;
-        targetBegin = getLowerBound(grid, grid.getNode(sourceidx) + threshold);
-        targetEnd = getUpperBound(grid, grid.getNode(sourceidx + 1) + threshold);
-        // targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) + threshold) - 
-        //     grid.getNodes().begin() - 1;
-        // targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) + threshold) -
-        //     grid.getNodes().begin() - 1;
+        targetBegin = getLowerBound(grid, targetCell -  0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell +  0.5*grid.duCell(sourceidx));
     } else
     {
         targetCell = frac * source - threshold;
-        targetBegin = getLowerBound(grid, grid.getNode(sourceidx) - threshold);
-        targetEnd = getUpperBound(grid, grid.getNode(sourceidx + 1) - threshold);
-        // targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), frac * grid.getNode(sourceidx) - threshold) -
-        //     grid.getNodes().begin() - 1;
-        // targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), frac * grid.getNode(sourceidx + 1) - threshold) -
-        //     grid.getNodes().begin() - 1;
+        targetBegin = getLowerBound(grid, targetCell -  0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell +  0.5*grid.duCell(sourceidx));
     }
 
     std::vector<std::tuple<Grid::Index, double>> alpha;
