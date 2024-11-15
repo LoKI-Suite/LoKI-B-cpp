@@ -467,8 +467,8 @@ RateCoefficient EedfCollision::evaluateRateCoefficient(const Vector &eedf)
 
     } else
     {
-        m_ineRateCoeff = SI::gamma * cellCrossSection.cwiseProduct(grid->getCells().tail(nCells - lmin)
-                             .cwiseProduct(grid->duCells().tail(nCells - lmin))).dot(eedf.tail(nCells - lmin));
+        const Vector cellCrossSectionn = interpolateNodalToCell(*grid, *crossSection);
+        m_ineRateCoeff = SI::gamma *energyIntegral(*grid, grid->getCells().cwiseProduct(cellCrossSectionn), eedf);
     }
 
     if (isReverse())
