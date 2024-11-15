@@ -249,9 +249,14 @@ PowerTerm EedfCollision::evaluateConservativePower(const Vector &eedf) const
 
                 if (grid->getCell(i) + grid->getNode(lmin) < grid->getCell(n - 1))
                 {
-                    int j = std::upper_bound(grid->getCells().begin(), grid->getCells().end(), grid->getCell(i) + 
-                            grid->getNode(lmin)) - grid->getCells().begin() - 1;
-                    supSum -= grid->getCell(j) * cellCrossSection[j] * grid->getCell(i) * grid->duCell(i) * eedf[i];
+                    const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin),
+                                         grid->getCell(i), i, true);
+
+                    for (int j = 0; j < int(alpha.size()); j++)
+                    {
+                        supSum -= std::get<1>(alpha[j]) * grid->getCell(std::get<0>(alpha[j])) * 
+                                  cellCrossSection[std::get<0>(alpha[j])] * grid->getCell(i) * grid->duCell(i) * eedf[i];
+                    }
                 }
             }
             collPower.backward += SI::gamma * statWeightRatio * m_rhsHeavyStates[0]->delta() * supSum;
