@@ -132,12 +132,18 @@ void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg,
     } else
     {
         const auto n = grid.nCells();
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < n; ++k)
+        {
+            if (k!=0)
+                net -=  eedf[k] * g[k] * (kTg + grid.duCell(k - 1) * .5);
 
-        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
-        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+            if (k!=n-1)
+                net += eedf[k] * g[k + 1] * (kTg - grid.duCell(k + 1) * .5);
 
-        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
-        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
     }
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
