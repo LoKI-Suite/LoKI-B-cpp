@@ -111,6 +111,9 @@ target_link_libraries(test_invalid_inputs PRIVATE loki-b)
 add_executable(test_valid_inputs test_valid_inputs.cpp)
 target_link_libraries(test_valid_inputs PRIVATE loki-b)
 
+add_executable(test_moving_mesh test_moving_mesh.cpp)
+target_link_libraries(test_moving_mesh PRIVATE loki-b)
+
 target_add_test(loki_test_offside_to_json)
 target_add_test(loki_test_derivatives)
 target_add_test(loki_test_eedf_utilities)
