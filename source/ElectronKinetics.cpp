@@ -39,14 +39,6 @@
 #include <fstream>
 #include <sstream>
 
-void write_eedf(std::ostream& os, const loki::Grid& grid, const loki::Vector& eedf)
-{
-    for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
-    {
-        os << grid.getCells()(k) << '\t' << std::setprecision(15) << eedf(k)  << std::endl;
-    }
-}
-
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
 
