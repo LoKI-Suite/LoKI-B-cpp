@@ -326,9 +326,9 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                 {
                     sum1 -= grid->getCell(i) * cellCrossSection[i] * eedf[i] * grid->getCell(i) * grid->duCell(i);
 
-                    if (grid->getNode(i+1) < (grid->getCell(n - 1) - grid->getCell(lmin)) / 2)
+                    if (grid->getNode(lmin) + 2*grid->getCell(i) <= grid->getCell(n - 1))
                     {
-                        const auto alpha = getOperatorDistribution(*grid, grid->getCell(lmin),
+                        const auto alpha = getOperatorDistribution(*grid, grid->getNode(lmin),
                                 grid->getCell(i), i, true, 2.0);
                         for (int k = 0; k < int(alpha.size()); k++)
                         {
@@ -337,9 +337,8 @@ PowerTerm EedfCollision::evaluateNonConservativePower(const Vector &eedf,
                                 * eedf[std::get<0>(alpha[k])] * grid->getCell(i) * grid->duCell(i);
                         }
                     }
-
-                    collPower.forward = SI::gamma * getTarget()->delta() * (sum1 + sum2);
                 }
+                collPower.forward = SI::gamma * getTarget()->delta() * (sum1 + sum2);
             }
         }
         else if (ionizationOperatorType == IonizationOperatorType::oneTakesAll)
