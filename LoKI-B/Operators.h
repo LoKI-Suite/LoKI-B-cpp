@@ -121,6 +121,7 @@ namespace loki {
          */
         void evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture);
         Matrix inelasticMatrix;
+        Matrix superelasticMatrix;
     };
 
     class ElectronElectronOperator

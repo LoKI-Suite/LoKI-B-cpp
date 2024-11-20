@@ -422,12 +422,14 @@ std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, d
 InelasticOperator::InelasticOperator(const Grid& grid)
 {
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
+    superelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
 {
     const Grid::Index cellNumber = grid.nCells();
     inelasticMatrix.setZero();
+    superelasticMatrix.setZero();
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -500,11 +502,11 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                             for (Grid::Index k = 0; k < cellNumber; ++k)
                             {
                                 if (k >= numThreshold)
-                                    inelasticMatrix(k, k - numThreshold) +=
+                                    superelasticMatrix(k, k - numThreshold) +=
                                         swRatio * productDensity * grid.getCell(k) * cellCrossSection[k];
 
                                 if (k < cellNumber - numThreshold)
-                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(k + numThreshold) *
+                                    superelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(k + numThreshold) *
                                                             cellCrossSection[k + numThreshold];
                             }
                         } else
@@ -518,7 +520,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                     
                                     for (int i = 0; i < int(alpha.size()); i++)
                                     {
-                                        inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
+                                        superelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
                                             swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
                                     }
                                 }
@@ -527,7 +529,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                 {
                                     int j = std::upper_bound(grid.getCells().begin(), grid.getCells().end(), grid.getCell(k) + 
                                          grid.getCell(numThreshold)) - grid.getCells().begin() - 1;
-                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(j) *
+                                    superelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(j) *
                                                             cellCrossSection[j];
                                 }
                             }
