@@ -32,6 +32,7 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include <cmath>
 
@@ -257,7 +258,35 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
         boltzmannMatrix += CARMatrix;
     }
 
-    invertMatrix(boltzmannMatrix);
+    // invertMatrix(boltzmannMatrix);
+    invertMatrixFast(boltzmannMatrix, inelasticOperator.superelasticMatrix);
+}
+
+void ElectronKineticsBoltzmann::invertMatrixFast(Matrix &matrix, Matrix &rhs) 
+{
+    eedf.setZero();
+    eedf[0] = boltzmannMatrix(1,1);
+    boltzmannMatrix.row(0).setZero();
+    boltzmannMatrix(0,0)=boltzmannMatrix(1,1);
+
+    LinAlg::hessenberg(boltzmannMatrix.data(), eedf.data(), grid().nCells());
+
+    for (uint i = 0; i < 5; i++) {
+        Vector eedfNew = -rhs * eedf;
+        eedfNew(0)=boltzmannMatrix(1,1);
+
+        LinAlg::hessenberg(boltzmannMatrix.data(), eedfNew.data(), grid().nCells());
+
+        double err = (eedfNew - eedf).cwiseQuotient(eedfNew).cwiseAbs().mean();
+        Log<Message>::Notify("Error: ", err);
+        if (err < 1e-4) {
+            break;
+        }
+
+        eedf = eedfNew;
+    }
+
+    normalizeEDF(eedf, grid());
 }
 
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
@@ -446,7 +475,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         Vector eedfNew = eedf;
 
-        invertMatrix(boltzmannMatrix);
+        // invertMatrix(boltzmannMatrix);
+        invertMatrixFast(boltzmannMatrix, inelasticOperator.superelasticMatrix);
 
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
@@ -565,7 +595,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
         eedfNew = eedf;
 
-        invertMatrix(boltzmannMatrix);
+        // invertMatrix(boltzmannMatrix);
+        invertMatrixFast(boltzmannMatrix, inelasticOperator.superelasticMatrix);
 
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
@@ -685,7 +716,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
         // *add* the discretization of the ee term
         eeOperator->discretizeTerm(boltzmannMatrix,grid());
 
-        invertMatrix(boltzmannMatrix);
+        // invertMatrix(boltzmannMatrix);
+        invertMatrixFast(boltzmannMatrix, inelasticOperator.superelasticMatrix);
 
         evaluatePower();
 
