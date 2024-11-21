@@ -31,7 +31,6 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/JobSystem.h"
 #include "LoKI-B/EedfMixture.h"
-#include "LoKI-B/NonuniformGridMaker.h"
 
 namespace loki
 {
