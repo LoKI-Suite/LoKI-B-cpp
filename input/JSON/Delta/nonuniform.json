@@ -4,7 +4,7 @@
         "excitationFrequency": 0,
         "gasPressure": 133.32,
         "electronTemperature": 0.03,
-        "gasTemperature": 300.0,
+        "gasTemperature": 0.0,
         "electronDensity": 1e19,
         "chamberLength": 1.0,
         "chamberRadius": 1.0
