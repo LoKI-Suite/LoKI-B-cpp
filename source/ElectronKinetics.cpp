@@ -265,17 +265,17 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
 void ElectronKineticsBoltzmann::invertMatrixFast(Matrix &matrix, Matrix &rhs) 
 {
     eedf.setZero();
-    eedf[0] = boltzmannMatrix(1,1);
-    boltzmannMatrix.row(0).setZero();
-    boltzmannMatrix(0,0)=boltzmannMatrix(1,1);
+    eedf[0] = matrix(1,1);
+    matrix.row(0).setZero();
+    matrix(0,0)=matrix(1,1);
 
-    LinAlg::hessenberg(boltzmannMatrix.data(), eedf.data(), grid().nCells());
+    LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
 
     for (uint i = 0; i < 10; i++) {
         Vector eedfNew = -rhs * eedf;
-        eedfNew(0)=boltzmannMatrix(1,1);
+        eedfNew(0)=matrix(1,1);
 
-        LinAlg::hessenberg(boltzmannMatrix.data(), eedfNew.data(), grid().nCells());
+        LinAlg::hessenberg(matrix.data(), eedfNew.data(), grid().nCells());
 
         double err = (eedfNew - eedf).cwiseQuotient(eedfNew).cwiseAbs().mean();
         Log<Message>::Notify("Error: ", err);
