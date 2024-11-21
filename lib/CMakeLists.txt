@@ -17,7 +17,6 @@ target_sources(loki-b PRIVATE
    ../source/LegacyToJSON.cpp
    ../source/LinearAlgebra.cpp
    ../source/LookupTable.cpp
-   ../source/NonuniformGridMaker.cpp
    ../source/OffSideToJSON.cpp
    ../source/Operators.cpp
    ../source/Output.cpp
