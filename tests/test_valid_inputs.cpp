@@ -69,6 +69,25 @@ void execute_test(const fs::path &test_dir)
     test_expr(*test_output == expected_output);
 }
 
+void regenerate_output(const fs::path &test_dir)
+{
+    const auto input_path = test_dir / "input.in";
+    const auto test_output = std::make_unique<loki::json_type>();
+
+    disable_output();
+
+    const auto input = loki::legacyToJSON(input_path);
+    loki::Simulation test_sim(input_path, input);
+    test_sim.obtainedResults().addListener(&loki::Output::saveCycle,
+                                           new loki::JsonOutput(*test_output, input, &test_sim.workingConditions()));
+    test_sim.run();
+
+    restore_output();
+
+    std::ofstream ofs(test_dir / "output.json");
+    ofs << test_output->dump(2);
+}
+
 int main()
 {
     const fs::path base_dir = loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR");
