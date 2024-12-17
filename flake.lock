@@ -31,11 +31,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1734455976,
-        "narHash": "sha256-MoH6ERQTpz3B2IqF8L5uhllCMLCgQdclF8vuRqlioYQ=",
+        "lastModified": 1734525180,
+        "narHash": "sha256-I1tmgOYKAFnH22IcI/3guJTeCDWics4xBJhWGhdMQWQ=",
         "ref": "refs/heads/main",
-        "rev": "c54e2b73e50fedf0e09512552f49f7e07a90609e",
-        "revCount": 78,
+        "rev": "ff0f047ad92c99f0915cdecc4c5a5c0e1dea3423",
+        "revCount": 80,
         "type": "git",
         "url": "ssh://git@github.com/daanboer/lxcat-rs.git"
       },
@@ -54,13 +54,13 @@
       "locked": {
         "lastModified": 1733346208,
         "narHash": "sha256-a4WZp1xQkrnA4BbnKrzJNr+dYoQr5Xneh2syJoddFyE=",
-        "owner": "nmattia",
+        "owner": "nix-community",
         "repo": "naersk",
         "rev": "378614f37a6bee5a3f2ef4f825a73d948d3ae921",
         "type": "github"
       },
       "original": {
-        "owner": "nmattia",
+        "owner": "nix-community",
         "repo": "naersk",
         "type": "github"
       }

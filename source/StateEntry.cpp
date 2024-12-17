@@ -1,15 +1,16 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Log.h"
-#include <fstream>
 #include <regex>
 #include <stdexcept>
+#include <string>
+#include <lxcat-core.h>
 
 namespace loki
 {
 
 StateEntry StateEntry::electronEntry()
 {
-    static StateEntry el{"e", StateType::charge, "e", "-", std::string{}, std::string{}, std::string{}};
+    static StateEntry el{"e", StateType::charge, "e", "-1", std::string{}, std::string{}, std::string{}};
     return el;
 }
 
@@ -231,64 +232,65 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
 
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
-    const json_type &ser_cnf = cnf.at("serialized");
+    using namespace lxcat_core;
 
-    const std::string gasName = ser_cnf.at("particle");
+    // TODO: Does disabling this cause problems when loading multiple datasets,
+    //       i.e. having multiple electron species around?
     // this is how it is now done for the electron for legacy input
-    if (gasName == "e")
-    {
-        Log<Message>::Warning("Ignoring state attributes for electrons.");
-        return StateEntry::electronEntry();
-    }
-    const int charge_int = ser_cnf.at("charge").get<int>();
+    // if (cnf.at("type").get<std::string>() == "Electron")
+    // {
+    //     Log<Message>::Warning("Ignoring state attributes for electrons.");
+    //     return StateEntry::electronEntry();
+    // }
+
+    const auto ser = serialize_species_id(cnf.dump().c_str());
+
+    // We need to split the charge from the gas name, as loki treats them separately.
+    std::string gasName(composition(ser));
+    gasName = gasName.substr(0, gasName.find("^"));
+
+    const int charge_int = cnf.at("charge").get<int>();
     const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
-    if (ser_cnf.contains("electronic"))
+
+    const auto ele_count = electronic_count(ser);
+
+    if (ele_count > 0)
     {
-        const json_type &el_cnf = ser_cnf.at("electronic");
-        if (!el_cnf.is_object())
+        if (ele_count != 1)
         {
             throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
         }
-        e = el_cnf.at("summary");
-        if (el_cnf.contains("vibrational"))
-        {
-            const json_type &vib_cnf = el_cnf.at("vibrational");
-            // if (vib_cnf.size() == 0)
-            // {
-            //     throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
-            // }
-            if (vib_cnf.is_object())
-            {
-                // we expect a number, but sometimes a string is encountered, like "10+"
-                v = vib_cnf.at("summary").get<std::string>();
-                // v = vib_cnf.at("v").type() == json_type::value_t::string
-                //         ? vib_cnf.at("v").get<std::string>()
-                //         : std::to_string(vib_cnf.at("v").get<int>());
 
-                if (vib_cnf.contains("rotational"))
+        e = get_electronic(ser, 0);
+
+        const auto vib_count = vibrational_count(ser);
+
+        if (vib_count > 0)
+        {
+            if (vib_count == 1)
+            {
+                v = get_vibrational(ser, 0);
+
+                const auto rot_count = rotational_count(ser);
+
+                if (rot_count > 0)
                 {
-                    const json_type &rot_cnf = vib_cnf.at("rotational");
-                    // if (rot_cnf.size() == 0)
-                    // {
-                    //     throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
-                    // }
-                    if (rot_cnf.is_object())
+                    if (rot_count == 1)
                     {
-                        // J = std::to_string(rot_cnf[0].at("J").get<int>());
-                        J = rot_cnf.at("summary").get<std::string>();
+                        J = get_rotational(ser, 0);
                     }
                     else
                     {
                         // For "v" and "J" we assume that the entries form a continuous value-range.
                         std::set<unsigned> J_vals;
-                        for (const auto &Jentry : rot_cnf)
+                        for (unsigned index = 0; index < rot_count; index++)
                         {
-                            J_vals.insert(Jentry.at("J").get<int>());
+                            J_vals.insert(std::stoi(get_rotational(ser, index)));
                         }
-                        if (J_vals.size() != rot_cnf.size())
+                        if (J_vals.size() != rot_count)
                         {
                             throw std::runtime_error("Duplicate J entries encountered.");
                         }
@@ -304,17 +306,18 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
             else
             {
                 std::set<unsigned> v_vals;
-                for (const auto &ventry : vib_cnf)
+
+                if (rotational_count(ser) > 0)
                 {
-                    if (ventry.contains("rotational"))
-                    {
-                        throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                                 "multiple virbational states are specified.");
-                    }
-                    v_vals.insert(ventry.at("v").get<int>());
+                    throw std::runtime_error("Rotational state identifiers are not allowed when "
+                                             "multiple vibrational states are specified.");
+                }
+                for (unsigned index = 0; index < vib_count; index++)
+                {
+                    v_vals.insert(std::stoi(get_vibrational(ser, index)));
                 }
                 // For "v" and "J" we assume that the entries form a continuous value-range.
-                if (v_vals.size() != vib_cnf.size())
+                if (v_vals.size() != vib_count)
                 {
                     throw std::runtime_error("Duplicate v entries encountered.");
                 }
