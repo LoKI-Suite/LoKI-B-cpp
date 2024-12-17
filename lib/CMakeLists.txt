@@ -75,6 +75,16 @@ if(LOKIB_USE_HDF5)
         target_link_libraries(loki-b PUBLIC HighFive)
 endif()
 
+if (EMSCRIPTEN)
+  target_link_libraries(loki-b PRIVATE lxcat_emscripten)
+else()
+  target_link_libraries(loki-b PRIVATE lxcat_c)
+endif()
+
+if (LOKIB_LXCAT_DIR)
+  target_include_directories(loki-b PRIVATE ${LOKIB_LXCAT_DIR}/include)
+  target_link_directories(loki-b PRIVATE ${LOKIB_LXCAT_DIR}/lib)
+endif()
 
 install(
    TARGETS loki-b

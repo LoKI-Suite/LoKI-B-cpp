@@ -2,6 +2,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     pin-emscripten_3-1-15.url = "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+    lxcat-core = {
+      url = "git+ssh://git@github.com/daanboer/lxcat-rs.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -9,11 +13,15 @@
       self,
       nixpkgs,
       pin-emscripten_3-1-15,
+      lxcat-core,
     }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       emscripten_3-1-15 = pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
+
+      lxcat-c = lxcat-core.packages.${system}.lxcat-c;
+      lxcat-emscripten = lxcat-core.packages.${system}.lxcat-emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
@@ -45,6 +53,8 @@
         eigen
         nlohmann_json
         openblas
+        lxcat-c
+        lxcat-emscripten
 
         # Documentation
         doxygen
@@ -100,6 +110,7 @@
             ninja
             nlohmann_json
             eigen
+            lxcat-c
           ];
 
           cmakeFlags = [
@@ -125,6 +136,7 @@
             nlohmann_json
             emscripten_3-1-15
             python3
+            lxcat-emscripten
           ];
 
           EM_CACHE = "./.cache/emscripten";
@@ -147,6 +159,7 @@
             # Configure using emscripten.
             emcmake cmake \
               -GNinja \
+              -DLOKIB_LXCAT_DIR=${lxcat-emscripten} \
               -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
               -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
               -DLOKIB_USE_OPENMP=OFF \
@@ -169,6 +182,7 @@
             ninja
             nlohmann_json
             eigen
+            lxcat-c
             gcovr
           ];
 

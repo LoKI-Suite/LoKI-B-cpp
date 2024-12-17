@@ -31,3 +31,7 @@ set_target_properties(loki_bindings
   LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
   RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
 )
+
+if (LOKIB_LXCAT_DIR)
+  target_link_directories(loki_bindings PRIVATE ${LOKIB_LXCAT_DIR}/lib)
+endif()

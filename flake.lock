@@ -1,5 +1,70 @@
 {
   "nodes": {
+    "fenix": {
+      "inputs": {
+        "nixpkgs": [
+          "lxcat-core",
+          "nixpkgs"
+        ],
+        "rust-analyzer-src": "rust-analyzer-src"
+      },
+      "locked": {
+        "lastModified": 1730010749,
+        "narHash": "sha256-UBckyKItSD0z50+3YQOqfOuyvUI7UjPHiLbOPFUolqo=",
+        "owner": "nix-community",
+        "repo": "fenix",
+        "rev": "5fa09829e74070c1e83b2aaa50b71bbc6da3f37c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "fenix",
+        "type": "github"
+      }
+    },
+    "lxcat-core": {
+      "inputs": {
+        "fenix": "fenix",
+        "naersk": "naersk",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1734455976,
+        "narHash": "sha256-MoH6ERQTpz3B2IqF8L5uhllCMLCgQdclF8vuRqlioYQ=",
+        "ref": "refs/heads/main",
+        "rev": "c54e2b73e50fedf0e09512552f49f7e07a90609e",
+        "revCount": 78,
+        "type": "git",
+        "url": "ssh://git@github.com/daanboer/lxcat-rs.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/daanboer/lxcat-rs.git"
+      }
+    },
+    "naersk": {
+      "inputs": {
+        "nixpkgs": [
+          "lxcat-core",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1733346208,
+        "narHash": "sha256-a4WZp1xQkrnA4BbnKrzJNr+dYoQr5Xneh2syJoddFyE=",
+        "owner": "nmattia",
+        "repo": "naersk",
+        "rev": "378614f37a6bee5a3f2ef4f825a73d948d3ae921",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nmattia",
+        "repo": "naersk",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1734323986,
@@ -34,8 +99,26 @@
     },
     "root": {
       "inputs": {
+        "lxcat-core": "lxcat-core",
         "nixpkgs": "nixpkgs",
         "pin-emscripten_3-1-15": "pin-emscripten_3-1-15"
+      }
+    },
+    "rust-analyzer-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1729923686,
+        "narHash": "sha256-Tc+5E/UmjpXlYGQQ6X2nGDv6J6VQgZ+pVOJLcNCIVQc=",
+        "owner": "rust-lang",
+        "repo": "rust-analyzer",
+        "rev": "26d2fbaef2d68a2fccf55d725915188c2634439a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rust-lang",
+        "ref": "nightly",
+        "repo": "rust-analyzer",
+        "type": "github"
       }
     }
   },
