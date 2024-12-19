@@ -163,9 +163,17 @@ void regenerate_output(const fs::path &test_dir)
     ofs << test_output->dump(2);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     const fs::path base_dir = loki::getEnvironmentVariable("LOKI_TEST_INPUT_DIR");
+
+    const auto regenerate = argc > 1 && std::string(argv[1]) == "--regenerate";
+
+    if (regenerate && argc == 3)
+    {
+        regenerate_output(base_dir / "valid-inputs" / std::string(argv[2]));
+        return 0;
+    }
 
     unsigned counter = 1;
 
@@ -174,7 +182,15 @@ int main()
         if (dir.is_directory() && fs::exists(dir.path() / "input.in") && fs::exists(dir.path() / "output.json"))
         {
             std::cout << counter++ << ". " << dir.path().filename().c_str() << std::endl;
-            execute_test(dir.path());
+
+            if (regenerate)
+            {
+                regenerate_output(dir.path());
+            }
+            else
+            {
+                execute_test(dir.path());
+            }
         }
     }
 
