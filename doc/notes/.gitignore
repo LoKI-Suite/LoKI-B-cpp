@@ -3,4 +3,6 @@
 
 # Only allow *.tex
 !.gitignore
+!*.gnu
 !*.tex
+!*.pdf

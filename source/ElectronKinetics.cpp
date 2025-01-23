@@ -33,11 +33,7 @@
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
-#include <chrono>
 #include <cmath>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -174,11 +170,10 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
 
 void ElectronKineticsBoltzmann::evaluateFieldOperator()
 {
-    const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
     /// \todo Should we use the real value (CIEff) here? That will be 0 for DC or spatial growth
     const double dummyCIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff,fieldMatrix);
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff,fieldMatrix);
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
@@ -247,12 +242,13 @@ void ElectronKineticsBoltzmann::doSolve()
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
+    const double EoN = m_workingConditions->reducedFieldSI();
     // Here the Conservative ionization and attachment matrices are added.
     // Otherwise, the sum is the same as in solveSpatialGrowthMatrix
     // (note that in solveTemporalGrowthMatrix fieldMatrix is not added).
     boltzmannMatrix
         = elasticMatrix
-        + fieldMatrix
+        + fieldMatrix*(EoN*EoN)
         + inelasticOperator.inelasticMatrix
         + ionizationOperator.ionConservativeMatrix
         + attachmentOperator.attachmentConservativeMatrix;
@@ -264,105 +260,9 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     invertMatrix(boltzmannMatrix);
 }
 
-// show matrix inversion times?
-#define LOKIB_MATRIX_TIME_INVERSION 0
-
-// print the bandwidth and solver choice to the console?
-#define LOKIB_MATRIX_SHOW_BANDWIDTHS 0
-
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 {
-#if LOKIB_MATRIX_TIME_INVERSION
-    using namespace std::chrono;
-    const auto begin = high_resolution_clock::now();
-#endif
-
-    /* 1. In this function we use the matrix, the grid and the eedf vector.
-     *    First check that the dimensions of these variables ae consistent.
-     */
-    if (matrix.rows()!=matrix.cols())
-    {
-        throw std::runtime_error("invertMatrix: the matrix is not square.");
-    }
-    if (matrix.rows()!=grid().nCells())
-    {
-        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the grid's number of cells.");
-    }
-    if (matrix.rows()!=eedf.size())
-    {
-        throw std::runtime_error("invertMatrix: the matrix dimensions do not match the length of the solution vector.");
-    }
-    /* In principle we can allow a matrix with a single row and column, but that
-     * is not of practical interest, and in the code below we use the element
-     * matrix(1,1).
-     */
-    if (matrix.rows()<2)
-    {
-        throw std::runtime_error("invertMatrix: the matrix must have at least 2 rows.");
-    }
-
-    /* 2. Make the system non-singular by fixing the first value of the EEDF to 1:
-     *   replace the first equation with M(1,1)*eedf[0] = M(1,1). After solving
-     *   the system, the eedf is rescaled as to satisfy the normalization
-     *   condition. Choosing M(1,1) is semi-arbitrary, but avoids that we
-     *   unnecessarily increase the dynamic range of the matrix elements. In
-     *   principle any other non-zero value will do.
-     */
-    matrix.row(0).setZero();
-    matrix(0,0)=matrix(1,1);
-    eedf.setZero();
-    eedf[0] = matrix(1,1);
-
-    /* 3. Calculate the lower and upper bandwidth and use the most efficient
-     *    algorithm for solving the matrix. For a tridiagonal matrix (with lower
-     *    and upper band widths [-1,1]) use TDMA, for an upper Hessenberg matrix
-     *    (with bandwidths [-1,X]), use the hessenberg hessenberg solver.
-     *    Otherwise, use eigen's LU solver with partial pivoting.
-     */
-#if LOKIB_MATRIX_TIME_INVERSION
-    const auto begin_bw = high_resolution_clock::now();
-#endif
-    const auto bw = calculateBandwidth(matrix);
-#if LOKIB_MATRIX_TIME_INVERSION
-    const auto end_bw = high_resolution_clock::now();
-#endif
-#if LOKIB_MATRIX_SHOW_BANDWIDTHS==1
-    std::cout << "In ElectronKineticsBoltzmann::invertMatrix" << std::endl;
-    std::cout << " * bandwidth: [" << bw.first << ',' << bw.second << ']' << std::endl;
-#endif
-    if (bw.first==-1 && bw.second==+1)
-    {
-        LinAlg::solveTDMA(matrix,eedf);
-    }
-    else if (bw.first==-1)
-    {
-        /* solve Ax=b. On entry of LinAlg::hessenberg, the second argument of
-         * LinAlg::hessenberg (eedf.data) must point to b. After returning,
-         * this vector has been overwritten with the solution vector x of the
-         * system of equations.
-         */
-        LinAlg::hessenberg(matrix.data(), eedf.data(), grid().nCells());
-    }
-    else
-    {
-        // at this point, eedf has been set up to contain b.
-        Vector b(eedf);
-        eedf = matrix.partialPivLu().solve(b);
-    }
-    /* 4. We have calculated the new EEDF, but eedf[0]==1 and the result is
-     *    correct up to a multiplicative constant. Scale the EEDF to satisfy
-     *    the normalization condition (the integral of f(u)sqrt(u) over the
-     *    energies must be unity) to make it final.
-     */
-    normalizeEDF(eedf,grid());
-
-#if LOKIB_MATRIX_TIME_INVERSION
-    const auto end = high_resolution_clock::now();
-    std::cerr << " invertMatrix time report:"
-        << "\n * bandwidth: " << duration_cast<microseconds>(end_bw - begin_bw).count() << "mus"
-        << "\n * total:     " << duration_cast<microseconds>(end - begin).count() << "mus"
-        << std::endl;
-#endif
+    solveEEDF(eedf,matrix,grid());
 }
 
 void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
@@ -372,7 +272,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     const Vector& cellTotalCrossSection(mixture.collision_data().totalCellCrossSection());
     boltzmannMatrix
         = elasticMatrix
-        + fieldMatrix
+        + fieldMatrix*(EoN*EoN)
         + inelasticOperator.inelasticMatrix
         + ionizationOperator.ionizationMatrix
         + attachmentOperator.attachmentMatrix;
@@ -649,6 +549,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
         muE = - SI::gamma* fgPrimeEnergyIntegral(grid(),D0,eedf) * EoN;
 
+#if 0
+        std::cout << "muE: " << muE << std::endl;
+        std::cout << "alt: " << SI::gamma*grid().duCells().dot(grid().getCells().asDiagonal()*(fieldMatrix*eedf))*EoN << std::endl;
+#endif
+
         /** \todo See the notes just above this loop for a note about the discontinuity.
          */
         const double discriminant_new = muE * muE - 4 * CIEffNew * ND;
@@ -730,23 +635,23 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
  //       Log<Message>::Notify("Iteration ", iter);
 
         // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
-        fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,CIEffNew,fieldMatrixTempGrowth);
+        fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,CIEffNew,fieldMatrixTempGrowth);
         const long double growthFactor = CIEffNew / SI::gamma;
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
             // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
-            boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k) +
+            boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k)*EoN*EoN +
                                                            ionTemporalGrowth.coeff(k, k);
 
             if (k > 0)
             {
-                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1);
+                boltzmannMatrix(k, k - 1) = baseSubDiag[k] + fieldMatrixTempGrowth.coeff(k, k - 1)*EoN*EoN;
             }
 
             if (k < grid().nCells() - 1)
             {
-                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1);
+                boltzmannMatrix(k, k + 1) = baseSupDiag[k] + fieldMatrixTempGrowth.coeff(k, k + 1)*EoN*EoN;
             }
 
         }
@@ -782,6 +687,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
     assert(eeOperator);
     // Splitting all possible options for the best performance.
 
+    const double EoN = m_workingConditions->reducedFieldSI();
     /** \todo What if only one of the following is true? Then we use e.g. the ionizationMatrix, while includeNonConservativeIonization==false.
      *  Is that correct?
      */
@@ -797,7 +703,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + attachmentOperator.attachmentMatrix
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
-                + fieldMatrix
+                + fieldMatrix*(EoN*EoN)
                 + ionSpatialGrowthD
                 + ionSpatialGrowthU
                 + fieldMatrixSpatGrowth;
@@ -810,7 +716,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
                 + ionTemporalGrowth
-                + fieldMatrixTempGrowth;
+                + fieldMatrixTempGrowth*(EoN*EoN);
         }
     }
     else
@@ -820,7 +726,7 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + attachmentOperator.attachmentConservativeMatrix
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
-                + fieldMatrix;
+                + fieldMatrix*(EoN*EoN);
     }
     if (carOperator)
     {
@@ -1001,6 +907,15 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
             Log<Message>::Notify("Starting e-e collision routine.");
             solveEEColl();
     }
+#if 0
+    evaluatePower();
+    const double EoN = m_workingConditions->reducedFieldSI();
+    const double elP = SI::gamma*grid().duCells().dot(grid().getCells().asDiagonal()*(elasticMatrix*eedf));
+    const double efP = SI::gamma*grid().duCells().dot(grid().getCells().asDiagonal()*(fieldMatrix*eedf))*(EoN*EoN);
+    const double efPSG = SI::gamma*grid().duCells().dot(grid().getCells().asDiagonal()*(fieldMatrixSpatGrowth*eedf));
+    std::cout << "Prat: " << elP/power.elasticNet << ", Prat_field = " << (efP+efPSG)/power.field << std::endl;
+    std::cout << "P: " << efP << ", sg = " << efPSG << ", sum = " << power.field << std::endl;
+#endif
 }
 
 void ElectronKineticsBoltzmann::solveSingle()
@@ -1203,6 +1118,7 @@ void ElectronKineticsBoltzmann::evaluateFirstAnisotropy()
 
 void ElectronKineticsBoltzmann::evaluatePower()
 {
+    const double EoN = m_workingConditions->reducedFieldSI();
     const double Tg = m_workingConditions->gasTemperature();
     // reset by an assignment of a default-constructed Power object
     power = Power();
@@ -1211,7 +1127,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
     {
         carOperator->evaluatePower(grid(),eedf,Tg,power.carNet,power.carGain,power.carLoss);
     }
-    fieldOperator.evaluatePower(grid(),eedf,power.field);
+    fieldOperator.evaluatePower(grid(),eedf,EoN,power.field);
     // growth terms. Note that GrowthModelType::spatial also adds to power.field
     if (ionizationOperator.includeNonConservativeIonization || attachmentOperator.includeNonConservativeAttachment)
     {
@@ -1221,6 +1137,12 @@ void ElectronKineticsBoltzmann::evaluatePower()
         }
         else if (growthModelType == GrowthModelType::spatial)
         {
+            /** \todo field and correction are both of the form 'eedf*g'.
+             *  Check that the following is correct. That requires that g_E and g_fieldSpatialGrowth
+             *  have different dimensions (factor energy).
+             */
+            // Note that field is calculated by fieldOperator.evaluatePower, which already
+            // adds the factor SI::gamma.
             const double correction = energyIntegral(grid(), interpolateNodalToCell(grid(), g_fieldSpatialGrowth), eedf);
             const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
             power.field -= SI::gamma * correction;
@@ -1392,10 +1314,9 @@ ElectronKineticsPrescribed::ElectronKineticsPrescribed(const std::filesystem::pa
 
 void ElectronKineticsPrescribed::evaluateFieldOperator()
 {
-    const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
     const double dummyCIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff);
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff);
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
@@ -1506,12 +1427,12 @@ void ElectronKineticsPrescribed::evaluatePower()
      * 3) P_field = P_field(E/N=1)*(E/N)^2 => E/N = sqrt(P_field/P_field(E/N=1)).
      */
     // 1. Calculate P_1 := P_field(E/N=1)
-    const double dummyEoN = 1.0;
+    const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
     const double dummyCIEff= 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),dummyEoN,WoN,dummyCIEff);
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff);
     double P_1;
-    fieldOperator.evaluatePower(grid(),eedf,P_1);
+    fieldOperator.evaluatePower(grid(),eedf,EoN,P_1);
     // 2. we calculate P_E such that the power balance will be satisfied
     power.field = -power.balance;
     // 3. E_N = sqrt(P_field/P_field(E/N=1)).

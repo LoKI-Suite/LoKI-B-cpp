@@ -251,23 +251,23 @@ FieldOperator::FieldOperator(const Grid& grid)
 {
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff)
 {
     assert(g.size()==grid.getNodes().size());
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        g[i] = (EoN * EoN / 3) * grid.getNode(i) /
+        g[i] = (1. / 3) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,EoN,WoN,CIEff);
+    evaluate(grid,totalCS,WoN,CIEff);
 
     if (grid.isUniform())
     {
@@ -309,10 +309,10 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
     }
 }
 
-void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double& power) const
+void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double EoN, double& power) const
 {
     const auto n = grid.nCells();
-    power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum();
+    power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum() * EoN*EoN;
 }
 
 std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac)

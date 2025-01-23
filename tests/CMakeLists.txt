@@ -30,6 +30,9 @@ target_link_libraries(compare_tables PRIVATE loki-b)
 add_executable(loki_test_derivatives test_derivatives.cpp)
 target_link_libraries(loki_test_derivatives PRIVATE loki-b)
 
+add_executable(loki_test_eedf_utilities test_eedf_utilities.cpp)
+target_link_libraries(loki_test_eedf_utilities PRIVATE loki-b)
+
 add_executable(loki_test_gas_properties test_gas_properties.cpp)
 target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
 
@@ -99,8 +102,15 @@ target_link_libraries(test_nonuniform_inelastic PRIVATE loki-b)
 add_executable(test_nonuniform_operator_distribution test_nonuniform_operator_distribution.cpp)
 target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki-b)
 
+add_executable(test_invalid_inputs test_invalid_inputs.cpp)
+target_link_libraries(test_invalid_inputs PRIVATE loki-b)
+
+add_executable(test_valid_inputs test_valid_inputs.cpp)
+target_link_libraries(test_valid_inputs PRIVATE loki-b)
+
 target_add_test(loki_test_offside_to_json)
 target_add_test(loki_test_derivatives)
+target_add_test(loki_test_eedf_utilities)
 target_add_test(test_druyvesteyn)
 target_add_test(test_ee)
 target_add_test(test_ee_relaxation)
@@ -122,6 +132,8 @@ target_add_test(test_nonuniform_druyvesteyn)
 target_add_test(test_nonuniform_CAR)
 target_add_test(test_nonuniform_inelastic)
 target_add_test(test_nonuniform_operator_distribution)
+target_add_test(test_invalid_inputs)
+target_add_test(test_valid_inputs)
 
 if (LOKIB_COVERAGE)
   setup_target_for_coverage_gcovr_xml(

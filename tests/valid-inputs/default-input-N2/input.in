@@ -18,35 +18,21 @@ workingConditions:
 electronKinetics:
   isOn: true                           % true or false (to activate of deactivate the electron kinetics)
   eedfType: boltzmann                  % boltzmann or prescribedEedf (generalized expression Maxwellian/Druyvesteyn)
-%   shapeParameter: 1                  % prescribedEedf shape parameter from 1 (Maxwellian) to 2 (Druyvesteyn)
   ionizationOperatorType: usingSDCS    % conservative, oneTakesAll, equalSharing or usingSDCS
   growthModelType: temporal             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
-		%- Nitrogen/N2_LXCat.json
-		%- Nitrogen/N2_rot_LXCat.json
-    - Nitrogen/N2_LXCat.txt
-    - Nitrogen/N2_rot_LXCat.txt
-    %- Oxygen/O2_LXCat.txt
-    %- Oxygen/O2_vib_LXCat.txt
-    %- Oxygen/O2_rot_LXCat.txt
-    %- Oxygen/O_LXCat.txt
-    %- Argon/Ar_LXCat.txt
-    %- Helium/He_LXCat.txt
-%  LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
-%  effectiveCrossSectionPopulations:   % see doc
-%    - N2_effectivePop.txt
-%  CARgases:                           % gases for which CAR is activated
-%    - N2
+    - ../../../input/Nitrogen/N2_LXCat.txt
+    - ../../../input/Nitrogen/N2_rot_LXCat.txt
   gasProperties:                       % properties of the gases (S.I. Units)
-    mass: Databases/masses.txt
+    mass: ../../../input/Databases/masses.txt
     fraction:
       - N2 = 1
-    harmonicFrequency: Databases/harmonicFrequencies.txt
-    anharmonicFrequency: Databases/anharmonicFrequencies.txt
-    rotationalConstant: Databases/rotationalConstants.txt
-    electricQuadrupoleMoment: Databases/quadrupoleMoment.txt
-    OPBParameter: Databases/OPBParameter.txt
+    harmonicFrequency: ../../../input/Databases/harmonicFrequencies.txt
+    anharmonicFrequency: ../../../input/Databases/anharmonicFrequencies.txt
+    rotationalConstant: ../../../input/Databases/rotationalConstants.txt
+    electricQuadrupoleMoment: ../../../input/Databases/quadrupoleMoment.txt
+    OPBParameter: ../../../input/Databases/OPBParameter.txt
   stateProperties:                     % properties of the states (S.I. Units except for the energy [eV])
     energy:
       - N2(X,v=*) = harmonicOscillatorEnergy
@@ -56,7 +42,7 @@ electronKinetics:
       - N2(X,v=0,J=*) = rotationalDegeneracy_N2
     population:
       - N2(X) = 1.0
-      - Nitrogen/N2_vibpop.txt
+      - ../../../input/Nitrogen/N2_vibpop.txt
       - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
@@ -71,8 +57,6 @@ electronKinetics:
       algorithm: mixingDirectSolutions % mixingDirectSolutions or iterativeSolution
       mixingParameter: 0.7             % mixingDirectSolutions mixing parameter from 0 to 1
       maxEedfRelError: 1e-9            % maximum rel. variation for EEDF between two iterations (stop criterion)
-%	  odeSetParameters:                % optional parameters for the ode solver of the "iterativeSolution" algorithm	           
-%		maxStep: 1e-7
 
 % --- configuration of the graphical user interface ---
 gui: 
@@ -84,6 +68,7 @@ output:
   isOn: true
   writeText: false
   writeJSON: true
+  JSONFile: output.json
   writeHDF5: true
   HDF5File: output.h5
   folder: simulation

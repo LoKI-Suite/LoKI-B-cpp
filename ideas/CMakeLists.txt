@@ -23,3 +23,6 @@ target_add_test(loki_test_statecontainer)
 
 add_executable(loki_example_hessenberg_extra example_hessenberg_extra.cpp HessenbergExtra.cpp)
 target_link_libraries(loki_example_hessenberg_extra PRIVATE loki-b)
+
+add_executable(loki_example_cd_discretizer example_cd_discretizer.cpp)
+target_link_libraries(loki_example_cd_discretizer PRIVATE loki-b)

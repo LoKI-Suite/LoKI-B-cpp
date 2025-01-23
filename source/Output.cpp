@@ -92,9 +92,9 @@ void Output::saveCycle(const Grid &energyGrid, const Vector &eedf, const Working
     if (savePower)
         writePower(power, collData);
     if (saveRates)
-        writeRateCoefficients(collData.m_rateCoefficients, collData.m_rateCoefficientsExtra);
+        writeRateCoefficients(collData.rateCoefficients(), collData.rateCoefficientsExtra());
     if (saveTable)
-        writeLookuptable(power, swarmParameters);
+        writeLookupTable(power, collData.rateCoefficients(), collData.rateCoefficientsExtra(), swarmParameters);
 }
 
 FileOutput::FileOutput(const json_type &cnf, const WorkingConditions *workingConditions,
@@ -146,7 +146,7 @@ void FileOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 
 void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/swarm_parameters.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/swarmParameters.txt");
     writeTerm(os, "Reduced electric field", "Td", m_workingConditions->reducedField());
     writeTerm(os, "Reduced diffusion coefficient", "1/(ms)", swarmParameters.redDiffCoeff);
     writeTerm(os, "Reduced mobility coefficient", "1/(msV)", swarmParameters.redMobCoeff);
@@ -170,7 +170,7 @@ void FileOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 
 void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture &collData) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/power_balance.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/powerBalance.txt");
     writeTerm(os, "Field", "eVm3/s", power.field);
     writeTerm(os, "Elastic collisions (gain)", "eVm3/s", power.elasticGain);
     writeTerm(os, "Elastic collisions (loss)", "eVm3/s", power.elasticLoss);
@@ -250,7 +250,7 @@ void FileOutput::writePower(const Power &power, const EedfCollisionDataMixture &
 void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
                                        const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
-    std::ofstream os(m_folder + "/" + m_subFolder + "/rate_coefficients.txt");
+    std::ofstream os(m_folder + "/" + m_subFolder + "/rateCoefficients.txt");
     os << "Ine.R.Coeff.(m3/s)   Sup.R.Coeff.(m3/s)   Description" << std::endl;
     for (const auto &rateCoeff : rateCoefficients)
     {
@@ -279,52 +279,201 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
     }
 }
 
-void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+void FileOutput::writeLookupTablePower(const Power &power) const
 {
-    /// \todo Write lookUpTablePower.txt and lookUpTableRateCoeff.txt
-    std::ofstream os(m_folder + "/lookup_table.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    std::ofstream os(m_folder + "/lookUpTablePower.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    if (m_initTable)
+    {
+        if (isBoltzmann())
+        {
+            os << std::setw(23) << "RedField(Td)";
+        }
+        else
+        {
+            os << std::setw(23) << "EleTemp(eV)";
+        }
+        os << std::setw(23) << "PowerField(eVm^3s^-1)";
+        os << std::setw(23) << "PwrElaGain(eVm^3s^-1)";
+        os << std::setw(23) << "PwrElaLoss(eVm^3s^-1)";
+        os << std::setw(23) << "PwrElaNet(eVm^3s^-1)";
+        os << std::setw(23) << "PwrCARGain(eVm^3s^-1)";
+        os << std::setw(23) << "PwrCARLoss(eVm^3s^-1)";
+        os << std::setw(23) << "PwrCARNet(eVm^3s^-1)";
+        os << std::setw(23) << "PwrEleGain(eVm^3s^-1)";
+        os << std::setw(23) << "PwrEleLoss(eVm^3s^-1)";
+        os << std::setw(23) << "PwrEleNet(eVm^3s^-1)";
+        os << std::setw(23) << "PwrVibGain(eVm^3s^-1)";
+        os << std::setw(23) << "PwrVibLoss(eVm^3s^-1)";
+        os << std::setw(23) << "PwrVibNet(eVm^3s^-1)";
+        os << std::setw(23) << "PwrRotGain(eVm^3s^-1)";
+        os << std::setw(23) << "PwrRotLoss(eVm^3s^-1)";
+        os << std::setw(23) << "PwrRotNet(eVm^3s^-1)";
+        os << std::setw(23) << "PwrIon(eVm^3s^-1)";
+        os << std::setw(23) << "PwrAtt(eVm^3s^-1)";
+        os << std::setw(23) << "PwrGrowth(eVm^3s^-1)";
+        os << std::setw(23) << "PwrBalance(eVm^3s^-1)";
+        os << std::setw(23) << "RelPwrBalance";
+        os << std::endl;
+    }
+    if (isBoltzmann())
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+    }
+    else
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->electronTemperature();
+    }
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.field;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticGain;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticLoss;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticNet;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carGain;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carLoss;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carNet;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.backward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.forward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.net();
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.backward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.forward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.net();
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.backward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.forward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.net();
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.ionization.forward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.attachment.forward;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.eDensGrowth;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.balance;
+    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.relativeBalance*100;
+    os << std::endl;
+}
+
+void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoefficients,
+                               const std::vector<RateCoefficient> &extraRateCoefficients) const
+{
+    std::ofstream os(m_folder + "/lookUpTableRateCoeff.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+    if (m_initTable)
+    {
+        unsigned id=1;
+        for (const auto& rc : rateCoefficients)
+        {
+            os << "# R" << id++ << ": " << *rc.collision << std::endl;
+        }
+        if (extraRateCoefficients.size())
+        {
+            os << "#" << std::endl;
+            os << "# *** Extra rate coefficients ***" << std::endl;
+            os << "#" << std::endl;
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            os << "# R" << id++ << ": " << *rc.collision << std::endl;
+        }
+        if (isBoltzmann())
+        {
+            os << std::setw(23) << "RedField(Td)";
+        }
+        else
+        {
+            os << std::setw(23) << "EleTemp(eV)";
+        }
+        id=1;
+        for (const auto& rc : rateCoefficients)
+        {
+            os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            if (rc.collision->isReverse())
+            {
+                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            }
+            ++id;
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            if (rc.collision->isReverse())
+            {
+                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+            }
+            ++id;
+        }
+        os << std::endl;
+    }
+    if (isBoltzmann())
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << m_workingConditions->reducedField();
+    }
+    else
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << m_workingConditions->electronTemperature();
+    }
+    for (const auto& rc : rateCoefficients)
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.inelastic;
+        if (rc.collision->isReverse())
+        {
+            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+               << rc.superelastic;
+        }
+    }
+    for (const auto& rc : extraRateCoefficients)
+    {
+        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+           << rc.inelastic;
+        if (rc.collision->isReverse())
+        {
+            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
+               << rc.superelastic;
+        }
+    }
+    os << std::endl;
+}
+
+void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParameters, const Power &power) const
+{
+    std::ofstream os(m_folder + "/lookUpTableSwarm.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
     if (isBoltzmann())
     {
         if (m_initTable)
         {
-            os << "RedField(Td)                "
-               << "RedDif(1/(ms))              "
-               << "RedMob(1/(msV))             ";
+            os << std::setw(27) << "RedField(Td)"
+               << std::setw(27) << "RedDif(1/(ms))"
+               << std::setw(27) << "RedMob(1/(msV))";
             if (isSimulationHF())
             {
-                os << "R[RedMobHF]((msV)^-1)       "
-                   << "I[RedMobHF]((msV)^-1)       ";
+                os << std::setw(27) << "R[RedMobHF]((msV)^-1)"
+                   << std::setw(27) << "I[RedMobHF]((msV)^-1)";
             }
             else
             {
-                os << "DriftVelocity(m/s)          "
-                   << "RedTow(m2)                  "
-                   << "RedAtt(m2)                  ";
+                os << std::setw(27) << "DriftVelocity(m/s)"
+                   << std::setw(27) << "RedTow(m2)"
+                   << std::setw(27) << "RedAtt(m2)";
             }
-            os << "RedDiffE(eV/(ms))           "
-               << "RedMobE(eV/(msV))           "
-               << "MeanE(eV)                   "
-               << "CharE(eV)                   "
-               << "EleTemp(eV)                 "
-               << "ElasticPowerLoss(eVm3/s)    "
-               << "ElasticPowerGain(eVm3/s)    "
-               << "FieldPowerGain(eVm3/s)      "
-               << "CARPowerLoss(eVm3/s)        "
-               << "CARPowerGain(eVm3/s)        "
-               << "ElectronicInePower(eVm3/s)  "
-               << "ElectronicSupPower(eVm3/s)  "
-               << "RotationalInePower(eVm3/s)  "
-               << "RotationalSupPower(eVm3/s)  "
-               << "VibrationalInePower(eVm3/s) "
-               << "VibrationalSupPower(eVm3/s) "
-               << "AttachmentPower(eVm3/s)     "
-               << "IonizationPower(eVm3/s)     "
-               << "eDensGrowthPower(eVm3/s)    "
-               << "EEPowerGain(eVm3/s)         "
-               << "EEPowerLoss(eVm3/s)         "
-               << "ReferencePower(eVm3/s)      "
-               << "RelativePowerBalance" << std::endl;
-            m_initTable = false;
+            os << std::setw(27) << "RedDiffE(eV/(ms))"
+               << std::setw(27) << "RedMobE(eV/(msV))"
+               << std::setw(27) << "MeanE(eV)"
+               << std::setw(27) << "CharE(eV)"
+               << std::setw(27) << "EleTemp(eV)"
+               << std::setw(27) << "ElasticPowerLoss(eVm3/s)"
+               << std::setw(27) << "ElasticPowerGain(eVm3/s)"
+               << std::setw(27) << "FieldPowerGain(eVm3/s)"
+               << std::setw(27) << "CARPowerLoss(eVm3/s)"
+               << std::setw(27) << "CARPowerGain(eVm3/s)"
+               << std::setw(27) << "ElectronicInePower(eVm3/s)"
+               << std::setw(27) << "ElectronicSupPower(eVm3/s)"
+               << std::setw(27) << "RotationalInePower(eVm3/s)"
+               << std::setw(27) << "RotationalSupPower(eVm3/s)"
+               << std::setw(27) << "VibrationalInePower(eVm3/s) "
+               << std::setw(27) << "VibrationalSupPower(eVm3/s) "
+               << std::setw(27) << "AttachmentPower(eVm3/s)"
+               << std::setw(27) << "IonizationPower(eVm3/s)"
+               << std::setw(27) << "eDensGrowthPower(eVm3/s)"
+               << std::setw(27) << "EEPowerGain(eVm3/s)"
+               << std::setw(27) << "EEPowerLoss(eVm3/s)"
+               << std::setw(27) << "ReferencePower(eVm3/s)"
+               << std::setw(27) << "RelativePowerBalance" << std::endl;
         }
         os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
            << m_workingConditions->reducedField();
@@ -426,136 +575,116 @@ void FileOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
     {
         if (m_initTable)
         {
-            os << "EleTemp(eV)                 "
-               << "RedField(Td)                "
-               << "RedDif(1/(ms))              "
-               << "RedMob(1/(msV))             ";
+            os << std::setw(24) << "EleTemp(eV)"
+               << std::setw(24) << "RedField(Td)"
+               << std::setw(24) << "RedDif(1/(ms))"
+               << std::setw(24) << "RedMob(1/(msV))";
             if (isSimulationHF())
             {
-                os << "R[RedMobHF]((msV)^-1)       "
-                   << "I[RedMobHF]((msV)^-1)       ";
+                os << std::setw(24) << "R[RedMobHF]((msV)^-1)"
+                   << std::setw(24) << "I[RedMobHF]((msV)^-1)";
             }
             else
             {
-                os << "DriftVelocity(m/s)          "
-                   << "RedTow(m2)                  "
-                   << "RedAtt(m2)                  ";
+                os << std::setw(24) << "DriftVelocity(m/s)"
+                   << std::setw(24) << "RedTow(m2)"
+                   << std::setw(24) << "RedAtt(m2)";
             }
-            os << "RedDiffE(eV/(ms))           "
-               << "RedMobE(eV/(msV))           "
-               << "MeanE(eV)                   "
-               << "CharE(eV)                   "
-               << "ElasticPowerLoss(eVm3/s)    "
-               << "ElasticPowerGain(eVm3/s)    "
-               << "FieldPowerGain(eVm3/s)      "
-               << "CARPowerLoss(eVm3/s)        "
-               << "CARPowerGain(eVm3/s)        "
-               << "ElectronicInePower(eVm3/s)  "
-               << "ElectronicSupPower(eVm3/s)  "
-               << "RotationalInePower(eVm3/s)  "
-               << "RotationalSupPower(eVm3/s)  "
-               << "VibrationalInePower(eVm3/s) "
-               << "VibrationalSupPower(eVm3/s) "
-               << "AttachmentPower(eVm3/s)     "
-               << "IonizationPower(eVm3/s)     "
-               << "eDensGrowthPower(eVm3/s)    "
-               << "EEPowerGain(eVm3/s)         "
-               << "EEPowerLoss(eVm3/s)         "
-               << "ReferencePower(eVm3/s)      "
-               << "RelativePowerBalance" << std::endl;
-            m_initTable = false;
+            os << std::setw(24) << "RedDiffE(eV/(ms))"
+               << std::setw(24) << "RedMobE(eV/(msV))"
+               << std::setw(24) << "MeanE(eV)"
+               << std::setw(24) << "CharE(eV)"
+               << std::setw(24) << "ElasticPowerLoss(eVm3/s)"
+               << std::setw(24) << "ElasticPowerGain(eVm3/s)"
+               << std::setw(24) << "FieldPowerGain(eVm3/s)"
+               << std::setw(24) << "CARPowerLoss(eVm3/s)"
+               << std::setw(24) << "CARPowerGain(eVm3/s)"
+               << std::setw(24) << "ElectronicInePower(eVm3/s)"
+               << std::setw(24) << "ElectronicSupPower(eVm3/s)"
+               << std::setw(24) << "RotationalInePower(eVm3/s)"
+               << std::setw(24) << "RotationalSupPower(eVm3/s)"
+               << std::setw(24) << "VibrationalInePower(eVm3/s) "
+               << std::setw(24) << "VibrationalSupPower(eVm3/s) "
+               << std::setw(24) << "AttachmentPower(eVm3/s)"
+               << std::setw(24) << "IonizationPower(eVm3/s)"
+               << std::setw(24) << "eDensGrowthPower(eVm3/s)"
+               << std::setw(24) << "EEPowerGain(eVm3/s)"
+               << std::setw(24) << "EEPowerLoss(eVm3/s)"
+               << std::setw(24) << "ReferencePower(eVm3/s)"
+               << std::setw(24) << "RelativePowerBalance" << std::endl;
         }
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.Te;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.Te;
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
            << m_workingConditions->reducedField();
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
         if (isSimulationHF())
         {
-            os << ' ';
-            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
                << swarmParameters.redMobilityHF.real();
-            os << ' ';
-            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
                << swarmParameters.redMobilityHF.imag();
         }
         else
         {
-            os << ' ';
-            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
                << swarmParameters.driftVelocity;
-            os << ' ';
-            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
                << swarmParameters.redTownsendCoeff;
-            os << ' ';
-            os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
                << swarmParameters.redAttCoeff;
         }
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
            << swarmParameters.redDiffCoeffEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
            << swarmParameters.redMobilityEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.elasticLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.elasticGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.field;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.carLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.carGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.field;
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.carLoss;
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.carGain;
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.excitation.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.excitation.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.rotational.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.rotational.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.vibrational.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.vibrational.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.attachment.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.ionization.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.eDensGrowth;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.electronElectronGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
            << power.electronElectronLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.reference;
-        os << ' ';
-        os << std::showpos << std::setw(20) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100)
+        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.reference;
+        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100)
            << '%';
         os << std::endl;
     }
+}
+
+void FileOutput::writeLookupTable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
+{
+    writeLookupTablePower(power);
+    writeLookupTableRC(rateCoefficients,extraRateCoefficients);
+    writeLookupTableSwarmParams(swarmParameters,power);
+    m_initTable = false;
 }
 
 void FileOutput::createPath(const PathExistsHandler &handler)
@@ -744,7 +873,10 @@ void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
     }
 }
 
-void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swarmParameters) const
+void JsonOutput::writeLookupTable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
 {
     /// \todo Handle isSimulationHF()
     json_type *out = m_root.contains("lookup_table") ? &m_root["lookup_table"] : nullptr;
@@ -753,7 +885,19 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
         // make the section, and set up the labels and units
         out = &m_root["lookup_table"];
         /// \todo It would be nice to be able to add the quantities and units as pairs.
-        (*out)["labels"] = {"RedField",
+        if (isBoltzmann())
+        {
+            (*out)["abscissa"]["labels"] = {"RedField" };
+            (*out)["abscissa"]["units"] = {"Td" };
+        }
+        else
+        {
+            // prescribed EEDF
+            (*out)["abscissa"]["labels"] = {"EleTemp" };
+            (*out)["abscissa"]["units"] = {"eV" };
+        }
+
+        (*out)["swarm"]["labels"] = {
                             "RedDif",
                             "RedMob",
                             "RedTow",
@@ -761,7 +905,10 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                             "MeanE",
                             "CharE",
                             "EleTemp",
-                            "DriftVelocity",
+                            "DriftVelocity"};
+        (*out)["swarm"]["units"] = {"1/(m*s)", "1/(m*s*V)", "m^2", "m^2", "eV", "eV", "eV", "m/s"};
+
+        (*out)["power"]["labels"] = {
                             "ElasticPowerLoss",
                             "ElasticPowerGain",
                             "FieldPowerGain",
@@ -780,14 +927,53 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                             "EEPowerLoss",
                             "ReferencePower",
                             "RelativePowerBalance"};
-        (*out)["units"] = {"Td",       "1/(m*s)",  "1/(m*s*V)", "m^2",      "m^2",      "eV",       "eV",
-                           "eV",       "m/s",      "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
-                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
-                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",  "eV*m^3/s", "eV*m^3/s", "1"};
+        (*out)["power"]["units"] = {
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s", "eV*m^3/s",
+                           "1"};
+
+        json_type& rc_labels = (*out)["rate_coefficients"]["labels"];
+        json_type& rc_units  = (*out)["rate_coefficients"]["units"];
+        unsigned id=1;
+        /// \todo At present we write all 'superelastic' terms, also for processes like Effective and Elastic
+        for (const auto& rc : rateCoefficients)
+        {
+            std::stringstream ss; ss << *rc.collision;
+            rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (inelastic)");
+            rc_units.push_back("m^3/s");
+            if (rc.collision->isReverse())
+            {
+                rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (superelastic)");
+                rc_units.push_back("m^3/s");
+            }
+            ++id;
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            std::stringstream ss; ss << *rc.collision;
+            rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (inelastic)");
+            rc_units.push_back("m^3/s");
+            if (rc.collision->isReverse())
+            {
+                rc_labels.push_back("R" + std::to_string(id) + ": " + ss.str() + " (superelastic)");
+                rc_units.push_back("m^3/s");
+            }
+            ++id;
+        }
     }
     assert(out);
 
-    (*out)["data"].push_back({m_workingConditions->reducedField(),
+    if (isBoltzmann())
+    {
+        (*out)["abscissa"]["data"].push_back(m_workingConditions->reducedField());
+    }
+    else
+    {
+        (*out)["abscissa"]["data"].push_back(m_workingConditions->electronTemperature());
+    }
+
+    (*out)["swarm"]["data"].push_back({
                               swarmParameters.redDiffCoeff,
                               swarmParameters.redMobCoeff,
                               swarmParameters.redTownsendCoeff,
@@ -795,7 +981,9 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                               swarmParameters.meanEnergy,
                               swarmParameters.characEnergy,
                               swarmParameters.Te,
-                              swarmParameters.driftVelocity,
+                              swarmParameters.driftVelocity});
+
+    (*out)["power"]["data"].push_back({
                               power.elasticLoss,
                               power.elasticGain,
                               power.field,
@@ -814,6 +1002,250 @@ void JsonOutput::writeLookuptable(const Power &power, const SwarmParameters &swa
                               power.electronElectronLoss,
                               power.reference,
                               power.relativeBalance * 100});
+
+        json_type& rc_data  = (*out)["rate_coefficients"]["data"];
+        for (const auto& rc : rateCoefficients)
+        {
+            rc_data.push_back(rc.inelastic);
+            if (rc.collision->isReverse())
+            {
+                rc_data.push_back(rc.superelastic);
+            }
+        }
+        for (const auto& rc : extraRateCoefficients)
+        {
+            rc_data.push_back(rc.inelastic);
+            if (rc.collision->isReverse())
+            {
+                rc_data.push_back(rc.superelastic);
+            }
+        }
 }
+
+#ifdef LOKIB_USE_HIGHFIVE
+
+HDF5Output::HDF5Output(const std::filesystem::path& fileName, const json_type &cnf, const WorkingConditions *workingConditions)
+ : Output(cnf,workingConditions),
+   m_file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate),
+   m_active_path("/")
+{
+#if 0
+
+    /// \todo copy the settings into the HDF5 file, somewhere
+    m_root["setup"] = cnf;
+#endif
+}
+
+void HDF5Output::setDestination(const std::string& subFolder)
+{
+    /// \todo See how to set the destination of data in HDF5
+    m_active_path = "/" + subFolder;
+}
+
+#if 0
+/// \todo See if we need s function similar to this one.
+json_type HDF5Output::makeQuantity(const std::string& name, double value, const std::string unit)
+{
+    return { { name, { { "value", value }, { "unit", unit } } } };
+}
+#endif
+
+void HDF5Output::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
+{
+#if 0
+    json_type& out = (*m_active)["eedf"];
+    if (firstAnisotropy)
+    {
+        out["labels"] = { "Energy", "EEDF", "First Anisotropy"};
+        out["units"] = { "eV", "eV^-(3/2)", "1"};
+    }
+    else
+    {
+        out["labels"] = { "Energy", "EEDF"};
+        out["units"] = { "eV", "eV^-(3/2)"};
+    }
+    json_type& data = out["data"];
+    for (Vector::Index i = 0; i < energies.size(); ++i)
+    {
+        if (firstAnisotropy)
+        {
+            data.push_back(json_type{energies[i], eedf[i], (*firstAnisotropy)[i]});
+        }
+        else
+        {
+            data.push_back(json_type{energies[i], eedf[i]});
+        }
+    }
+#endif
+    //Set compression level. 0 = no compression, 9 = max compression
+    //Compression significantly slows down writes, but results in smaller filesize
+    constexpr int compression_level = 0;
+
+    std::string path_energy = m_active_path + "/energy";
+    HighFive::DataSet ds_energy = H5Easy::dump(m_file,path_energy,energies,H5Easy::DumpOptions(H5Easy::Compression(compression_level)));
+    ds_energy.createAttribute("unit", "eV");
+    ds_energy.createAttribute("name", "energy");
+    ds_energy.createAttribute("size", energies.size());
+
+    std::string path_eedf = m_active_path + "/eedf";
+    HighFive::DataSet ds_eedf = H5Easy::dump(m_file,path_eedf,eedf,H5Easy::DumpOptions(H5Easy::Compression(compression_level)));
+    ds_eedf.createAttribute("unit", "eV^-(3/2)");
+    ds_eedf.createAttribute("name", "eedf");
+    ds_eedf.createAttribute("size", eedf.size());
+}
+
+void HDF5Output::writeSwarm(const SwarmParameters &swarmParameters) const
+{
+#if 0
+    json_type& out = (*m_active)["swarm_parameters"];
+    out.push_back( makeQuantity("Reduced electric field", m_workingConditions->reducedField(), "Td") );
+    out.push_back( makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)") );
+    out.push_back( makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)") );
+    out.push_back( makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2") );
+    out.push_back( makeQuantity("Reduced attachment coefficient", swarmParameters.redAttCoeff, "m^2") );
+    out.push_back( makeQuantity("Mean energy", swarmParameters.meanEnergy, "eV") );
+    out.push_back( makeQuantity("Characteristic energy", swarmParameters.characEnergy, "eV") );
+    out.push_back( makeQuantity("Electron temperature", swarmParameters.Te, "eV") );
+    out.push_back( makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s") );
+#endif
+}
+
+void HDF5Output::writePower(const Power &power, const EedfCollisionDataMixture& collData) const
+{
+#if 0
+    json_type& out = (*m_active)["power_balance"];
+    out.push_back( makeQuantity("Field", power.field, "eV*m^3/s") );
+    //out.push_back( { "Field", "eV*m^3/s", power.field });
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Ionization collisions", power.ionization.forward, "eV*m^3/s") ); // no recombination
+    out.push_back( makeQuantity("Attachment collisions", power.attachment.forward, "eV*m^3/s") ); // no detachment
+    out.push_back( makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Power Balance", power.balance, "eV*m^3/s") );
+    out.push_back( makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%") );
+    out.push_back( makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s") );
+    out.push_back( makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("CAR (net)", power.carNet, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Excitation collisions (net)", power.excitation.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Vibrational collisions (net)", power.vibrational.net(), "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s") );
+    out.push_back( makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s") );
+
+    out.push_back( makeQuantity("Rotational collisions (net)", power.rotational.net(), "eV*m^3/s") );
+
+    for (const auto &cd : collData.data_per_gas())
+    {
+        const GasPower &gasPower = cd.getPower();
+	json_type gas_out;
+        gas_out.push_back( { { "name", cd.gas().name() } } );
+        gas_out.push_back( makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational inelastic collisions", gasPower.vibrational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational superelastic collisions", gasPower.vibrational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Vibrational collisions (net)", gasPower.vibrational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational inelastic collisions", gasPower.rotational.forward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational superelastic collisions", gasPower.rotational.backward, "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Rotational collisions (net)", gasPower.rotational.net(), "eV*m^3/s") );
+        gas_out.push_back( makeQuantity("Ionization collisions", gasPower.ionization.forward, "eV*m^3/s") ); // no recombination
+        gas_out.push_back( makeQuantity("Attachment collisions", gasPower.attachment.forward, "eV*m^3/s") ); // no detachment
+
+        out.push_back( { "gas", gas_out } );
+    }
+#endif
+}
+
+void HDF5Output::writeRateCoefficients(const std::vector<RateCoefficient> &rateCoefficients,
+                   const std::vector<RateCoefficient> &extraRateCoefficients) const
+{
+#if 0
+    if (rateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : rateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+    /** \todo See if we can merge this or re-use code: the code block is identical
+     *        to that above, except for extraRateCoefficients instead of rateCoefficients.
+     */
+    if (extraRateCoefficients.size())
+    {
+        json_type& out = (*m_active)["rate_coefficients_extra"];
+        out["labels"] = { "Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
+        out["units"] = { "m^3/s", "m^3/s", ""};
+        json_type& data = out["data"];
+        for (const auto &rateCoeff : extraRateCoefficients)
+        {
+            std::stringstream ss;
+            ss << *rateCoeff.collision;
+            data.push_back( json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str() } );
+        }
+    }
+#endif
+}
+
+void HDF5Output::writeLookupTable(const Power &power,
+                                  const std::vector<RateCoefficient> &rateCoefficients,
+                                  const std::vector<RateCoefficient> &extraRateCoefficients,
+                                  const SwarmParameters &swarmParameters) const
+{
+#if 0
+    json_type* out = m_root.contains("lookup_table")
+                ? &m_root["lookup_table"]
+                : nullptr;
+    if (!out)
+    {
+        // make the section, and set up the labels and units
+        out = &m_root["lookup_table"];
+        /// \todo It would be nice to be able to add the quantities and units as pairs.
+        (*out)["labels"] = { "RedField", "RedDif", "RedMob", "RedTow" "RedAtt","MeanE", "CharE", "EleTemp",
+                      "DriftVelocity", "RelativePowerBalance" };
+        (*out)["units"] = { "Td", "1/(m*s)", "1/(m*s*V)", "m^2" "m^2", "eV", "eV", "eV", "m/s", "1" };
+    }
+    assert(out);
+
+    (*out)["data"].push_back( {
+            m_workingConditions->reducedField(),
+            swarmParameters.redDiffCoeff,
+            swarmParameters.redMobCoeff,
+            swarmParameters.redTownsendCoeff,
+            swarmParameters.redAttCoeff,
+            swarmParameters.meanEnergy,
+            swarmParameters.characEnergy,
+            swarmParameters.Te,
+            swarmParameters.driftVelocity,
+            power.relativeBalance * 100
+    } );
+#endif
+}
+
+#endif // LOKIB_USE_HIGHFIVE
 
 } // namespace loki
