@@ -50,7 +50,7 @@ GasProperties::GasProperties(const std::filesystem::path &basePath, const json_t
         {
             // We have, for example, { "mass": "DataBases/masses.txt" }
             // Replace this with a member "mass: " [ { "gasname", "mass" }, ... ]
-            std::filesystem::path path(p.value());
+            std::filesystem::path path(p.value().get<std::string>());
             if (path.is_relative())
             {
                 path = basePath.parent_path() / path;

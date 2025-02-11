@@ -206,7 +206,7 @@ void GasMixture::loadStateProperty(const std::filesystem::path &basePath, const 
         for (const auto &propEntry : stateProp["files"])
         {
             std::cout << "loadStateProperty: handling: " << propEntry.dump() << std::endl;
-            std::filesystem::path fileName(propEntry);
+            std::filesystem::path fileName(propEntry.get<std::string>());
             if (fileName.is_relative())
             {
                 fileName = basePath.parent_path() / fileName;
