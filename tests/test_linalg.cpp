@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <Eigen/Dense>
 
 using Matrix = loki::Matrix;
 using Vector = loki::Vector;
