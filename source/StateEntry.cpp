@@ -233,12 +233,14 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const json_type &ser_cnf = cnf.at("serialized");
 
-    std::string gasName = ser_cnf.at("composition").at("summary");
+    std::string gas_name = ser_cnf.at("composition").at("summary");
+    std::string charge_str = "";
 
     // Split the charge from the gas name.
-    const auto pos = gasName.find("^");
+    const auto pos = gas_name.find("^");
     if (pos != std::string::npos) {
-        gasName = gasName.substr(0, pos);
+        charge_str = gas_name.substr(pos + 1);
+        gas_name = gas_name.substr(0, pos);
     }
     
     // this is how it is now done for the electron for legacy input
@@ -247,8 +249,6 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         Log<Message>::Warning("Ignoring state attributes for electrons.");
         return StateEntry::electronEntry();
     }
-    const int charge_int = cnf.at("detailed").at("charge").get<int>();
-    const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
@@ -337,7 +337,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                           : v.empty() == false ? vibrational
                           : e.empty() == false ? electronic
                                                : charge;
-    return StateEntry{id, stateType, gasName, charge_str, e, v, J};
+    return StateEntry{id, stateType, gas_name, charge_str, e, v, J};
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)
