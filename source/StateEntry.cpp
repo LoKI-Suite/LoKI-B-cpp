@@ -265,18 +265,13 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
             const json_type &vib_cnf = el_cnf.at("vibrational");
             if (vib_cnf.is_object())
             {
-                // we expect a number, but sometimes a string is encountered, like "10+"
                 v = vib_cnf.at("summary").get<std::string>();
-                // v = vib_cnf.at("v").type() == json_type::value_t::string
-                //         ? vib_cnf.at("v").get<std::string>()
-                //         : std::to_string(vib_cnf.at("v").get<int>());
 
                 if (vib_cnf.contains("rotational"))
                 {
                     const json_type &rot_cnf = vib_cnf.at("rotational");
                     if (rot_cnf.is_object())
                     {
-                        // J = std::to_string(rot_cnf[0].at("J").get<int>());
                         J = rot_cnf.at("summary").get<std::string>();
                     }
                     else
@@ -318,7 +313,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     if (ventry.contains("rotational"))
                     {
                         throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                                 "multiple virbational states are specified.");
+                                                 "multiple vibrational states are specified.");
                     }
                     v_vals.insert(ventry.at("v").get<int>());
                 }
