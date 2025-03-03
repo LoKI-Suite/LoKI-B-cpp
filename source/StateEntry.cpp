@@ -242,13 +242,6 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         charge_str = gas_name.substr(pos + 1);
         gas_name = gas_name.substr(0, pos);
     }
-    
-    // this is how it is now done for the electron for legacy input
-    if (cnf.at("detailed").at("type") == "Electron")
-    {
-        Log<Message>::Warning("Ignoring state attributes for electrons.");
-        return StateEntry::electronEntry();
-    }
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
