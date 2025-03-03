@@ -285,7 +285,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                         std::set<unsigned> J_vals;
                         for (const auto &Jentry : rot_cnf)
                         {
-                            J_vals.insert(Jentry.at("J").get<int>());
+                            J_vals.insert(std::stoi(Jentry.at("summary").get<std::string>()));
                         }
                         if (J_vals.size() != rot_cnf.size())
                         {
@@ -315,7 +315,9 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                         throw std::runtime_error("Rotational states identifiers are not allowed when "
                                                  "multiple vibrational states are specified.");
                     }
-                    v_vals.insert(ventry.at("v").get<int>());
+                    // We only support compound states in diatoms (molecules with a single vibrational
+                    // mode).
+                    v_vals.insert(std::stoi(ventry.at("summary").get<std::string>()));
                 }
                 // For "v" and "J" we assume that the entries form a continuous value-range.
                 if (v_vals.size() != vib_cnf.size())
