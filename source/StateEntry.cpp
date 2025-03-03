@@ -242,7 +242,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
     }
     
     // this is how it is now done for the electron for legacy input
-    if (gasName == "e")
+    if (cnf.at("detailed").at("type") == "Electron")
     {
         Log<Message>::Warning("Ignoring state attributes for electrons.");
         return StateEntry::electronEntry();
