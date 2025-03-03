@@ -233,7 +233,14 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const json_type &ser_cnf = cnf.at("serialized");
 
-    const std::string gasName = ser_cnf.at("particle");
+    std::string gasName = ser_cnf.at("composition").at("summary");
+
+    // Split the charge from the gas name.
+    const auto pos = gasName.find("^");
+    if (pos != std::string::npos) {
+        gasName = gasName.substr(0, pos);
+    }
+    
     // this is how it is now done for the electron for legacy input
     if (gasName == "e")
     {
