@@ -263,10 +263,6 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         if (el_cnf.contains("vibrational"))
         {
             const json_type &vib_cnf = el_cnf.at("vibrational");
-            // if (vib_cnf.size() == 0)
-            // {
-            //     throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
-            // }
             if (vib_cnf.is_object())
             {
                 // we expect a number, but sometimes a string is encountered, like "10+"
@@ -278,10 +274,6 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                 if (vib_cnf.contains("rotational"))
                 {
                     const json_type &rot_cnf = vib_cnf.at("rotational");
-                    // if (rot_cnf.size() == 0)
-                    // {
-                    //     throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
-                    // }
                     if (rot_cnf.is_object())
                     {
                         // J = std::to_string(rot_cnf[0].at("J").get<int>());
@@ -289,6 +281,11 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     }
                     else
                     {
+                        if (rot_cnf.size() == 0)
+                        {
+                            throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
+                        }
+
                         // For "v" and "J" we assume that the entries form a continuous value-range.
                         std::set<unsigned> J_vals;
                         for (const auto &Jentry : rot_cnf)
@@ -310,6 +307,11 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
             }
             else
             {
+                if (vib_cnf.size() == 0)
+                {
+                    throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+                }
+
                 std::set<unsigned> v_vals;
                 for (const auto &ventry : vib_cnf)
                 {
