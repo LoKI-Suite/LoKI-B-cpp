@@ -297,29 +297,33 @@ nlohmann::json twoSingleDeltaPeaks(int nCells, double frac)
     // j["electronKinetics"]["numerics"]["energyGrid"]["maxEnergy"] = Umax;
     // j["electronKinetics"]["numerics"]["energyGrid"]["cellNumber"] = nCells;
 
-    j["electronKinetics"]["mixture"]["processes"][1]["threshold"] = U0 - deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][0]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][0]  = U0 - deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][0]  = U0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][0]  = U0 + deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][0]  = 1e3;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][1]  = sigma0*U0/(deltau);
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][1]  = 0;
+    auto &firstProcessInfo = j["electronKinetics"]["mixture"]["processes"][1]["info"][0];
 
-    j["electronKinetics"]["mixture"]["processes"][2]["threshold"] = U1 - deltau;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][0][0]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][1][0]  = U1 - deltau;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][2][0]  = U1;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][3][0]  = U1 + deltau;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][4][0]  = 1e3;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][0][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][1][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][2][1]  = sigma1*U1/(deltau);
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][3][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][2]["data"][4][1]  = 0;
+    firstProcessInfo["threshold"] = U0 - deltau;
+    firstProcessInfo["data"]["values"][0][0]  = 0;
+    firstProcessInfo["data"]["values"][1][0]  = U0 - deltau;
+    firstProcessInfo["data"]["values"][2][0]  = U0;
+    firstProcessInfo["data"]["values"][3][0]  = U0 + deltau;
+    firstProcessInfo["data"]["values"][4][0]  = 1e3;
+    firstProcessInfo["data"]["values"][0][1]  = 0;
+    firstProcessInfo["data"]["values"][1][1]  = 0;
+    firstProcessInfo["data"]["values"][2][1]  = sigma0*U0/(deltau);
+    firstProcessInfo["data"]["values"][3][1]  = 0;
+    firstProcessInfo["data"]["values"][4][1]  = 0;
+
+    auto &secondProcessInfo = j["electronKinetics"]["mixture"]["processes"][2]["info"][0];
+
+    secondProcessInfo["threshold"] = U1 - deltau;
+    secondProcessInfo["data"]["values"][0][0]  = 0;
+    secondProcessInfo["data"]["values"][1][0]  = U1 - deltau;
+    secondProcessInfo["data"]["values"][2][0]  = U1;
+    secondProcessInfo["data"]["values"][3][0]  = U1 + deltau;
+    secondProcessInfo["data"]["values"][4][0]  = 1e3;
+    secondProcessInfo["data"]["values"][0][1]  = 0;
+    secondProcessInfo["data"]["values"][1][1]  = 0;
+    secondProcessInfo["data"]["values"][2][1]  = sigma1*U1/(deltau);
+    secondProcessInfo["data"]["values"][3][1]  = 0;
+    secondProcessInfo["data"]["values"][4][1]  = 0;
 
     return j;
 }
@@ -373,24 +377,26 @@ nlohmann::json doubleDeltaPeaks(int nCells, double frac)
     // j["electronKinetics"]["numerics"]["energyGrid"]["maxEnergy"] = Umax;
     // j["electronKinetics"]["numerics"]["energyGrid"]["cellNumber"] = nCells;
 
-    j["electronKinetics"]["mixture"]["processes"][1]["threshold"] = U0 - deltau1;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][0]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][0]  = U0 - deltau1;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][0]  = U0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][0]  = U0 + deltau1;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][0]  = U1 - deltau2;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][5][0]  = U1;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][6][0]  = U1 + deltau2;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][7][0]  = 1e3;
+    auto &processInfo = j["electronKinetics"]["mixture"]["processes"][1]["info"][0];
 
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][1]  = sigma0*U0/(deltau1);
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][5][1]  = sigma1*U1/(deltau2);
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][6][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][7][1]  = 0;
+    processInfo["threshold"] = U0 - deltau1;
+    processInfo["data"]["values"][0][0]  = 0;
+    processInfo["data"]["values"][1][0]  = U0 - deltau1;
+    processInfo["data"]["values"][2][0]  = U0;
+    processInfo["data"]["values"][3][0]  = U0 + deltau1;
+    processInfo["data"]["values"][4][0]  = U1 - deltau2;
+    processInfo["data"]["values"][5][0]  = U1;
+    processInfo["data"]["values"][6][0]  = U1 + deltau2;
+    processInfo["data"]["values"][7][0]  = 1e3;
+
+    processInfo["data"]["values"][0][1]  = 0;
+    processInfo["data"]["values"][1][1]  = 0;
+    processInfo["data"]["values"][2][1]  = sigma0*U0/(deltau1);
+    processInfo["data"]["values"][3][1]  = 0;
+    processInfo["data"]["values"][4][1]  = 0;
+    processInfo["data"]["values"][5][1]  = sigma1*U1/(deltau2);
+    processInfo["data"]["values"][6][1]  = 0;
+    processInfo["data"]["values"][7][1]  = 0;
 
     return j;
 }
@@ -434,17 +440,19 @@ nlohmann::json singleDeltaPeak(int nCells, double frac)
     // j["electronKinetics"]["numerics"]["energyGrid"]["maxEnergy"] = Umax;
     // j["electronKinetics"]["numerics"]["energyGrid"]["cellNumber"] = nCells;
 
-    j["electronKinetics"]["mixture"]["processes"][1]["threshold"] = U0- deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][0]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][0]  = U0 - deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][0]  = U0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][0]  = U0 + deltau;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][0]  = 1e3;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][0][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][1][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][2][1]  = sigma0*U0/(deltau);
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][3][1]  = 0;
-    j["electronKinetics"]["mixture"]["processes"][1]["data"][4][1]  = 0;
+    auto &processInfo = j["electronKinetics"]["mixture"]["processes"][1]["info"][0];
+
+    processInfo["threshold"] = U0- deltau;
+    processInfo["data"]["values"][0][0]  = 0;
+    processInfo["data"]["values"][1][0]  = U0 - deltau;
+    processInfo["data"]["values"][2][0]  = U0;
+    processInfo["data"]["values"][3][0]  = U0 + deltau;
+    processInfo["data"]["values"][4][0]  = 1e3;
+    processInfo["data"]["values"][0][1]  = 0;
+    processInfo["data"]["values"][1][1]  = 0;
+    processInfo["data"]["values"][2][1]  = sigma0*U0/(deltau);
+    processInfo["data"]["values"][3][1]  = 0;
+    processInfo["data"]["values"][4][1]  = 0;
 
     return j;
 }
