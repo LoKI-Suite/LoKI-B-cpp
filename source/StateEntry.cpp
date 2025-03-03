@@ -247,7 +247,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         Log<Message>::Warning("Ignoring state attributes for electrons.");
         return StateEntry::electronEntry();
     }
-    const int charge_int = ser_cnf.at("charge").get<int>();
+    const int charge_int = cnf.at("detailed").at("charge").get<int>();
     const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
