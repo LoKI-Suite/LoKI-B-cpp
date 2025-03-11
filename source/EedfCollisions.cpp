@@ -631,6 +631,13 @@ std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findState
             // All children have an elastic cross section.
             return true;
         } else {
+            for (const auto * child : state->children()) {
+                if (child->population() > 0) {
+                    if (hasElasticRecursive(child)) {
+                        Log<Message>::Error("Duplicate elastic cross section encountered for parent ", *state, " and child ", *child, ".");
+                    }
+                }
+            }
             return true;
         }
     };
