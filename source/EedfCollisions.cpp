@@ -591,6 +591,16 @@ bool EedfCollisionDataGas::isDummy() const
     return true;
 }
 
+/**
+ * @brief Finds the states that need their elastic cross section to be computed from an effective
+ *        cross section.
+ *
+ * This function iterates through the states of the gas and checks if they participate in elastic
+ * collisions. If a state does not participate in an elastic collision (or all its children do not),
+ * it is added to the list of states to update.
+ *
+ * @return A vector of pointers to the states that need to be updated.
+ */
 std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate() const
 {
     std::vector<const State *> statesToUpdate;
