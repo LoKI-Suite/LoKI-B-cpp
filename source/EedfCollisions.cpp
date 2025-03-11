@@ -606,58 +606,49 @@ std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findState
     std::vector<const State *> statesToUpdate;
 
     /** \todo This seems wrong: an effective cross section for the neutrals will
-     *  will also be used as a basis for the charged states' elastic cross section,
+     *  also be used as a basis for the charged states' elastic cross section,
      *  it seems.
      */
     const auto hasElastic = [this](const loki::Gas::State *state) -> bool {
-            const auto colls_it = m_state_collisions.find(state);
-            if (colls_it==m_state_collisions.end())
-            {
-                return false;
-            }
-            const auto &colls = colls_it->second;
-            auto it = find_if(colls.begin(), colls.end(),
-                              [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
-            return it != colls.end();
+        const auto colls_it = m_state_collisions.find(state);
+        if (colls_it == m_state_collisions.end()) {
+            return false;
+        }
+        const auto &colls = colls_it->second;
+        return std::any_of(colls.begin(), colls.end(),
+                           [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
     };
 
     const std::function<bool(const loki::Gas::State *)> hasElasticRecursive = [hasElastic, &hasElasticRecursive](const loki::Gas::State *state) -> bool {
         // Either the state has an elastic cross section, or all of its (grand)children with
         // nonzero population have an elastic cross section.
-        if (!hasElastic(state)) {
-            if (state->children().empty()) {
-                return false;
-            }
-
-            // This assumes that at least one child state needs to have a nonzero population.
-            for (const auto * child : state->children()) {
-                if (child->population() > 0) {
-                    if (!hasElasticRecursive(child)) {
-                        return false;
-                    }
-                }
-            }
-
-            // All children have an elastic cross section.
-            return true;
-        } else {
-            for (const auto * child : state->children()) {
-                if (child->population() > 0) {
-                    if (hasElasticRecursive(child)) {
-                        Log<Message>::Error("Duplicate elastic cross section encountered for parent ", *state, " and child ", *child, ".");
-                    }
+        if (hasElastic(state)) {
+            for (const auto *child : state->children()) {
+                if (child->population() > 0 && hasElasticRecursive(child)) {
+                    Log<Message>::Error("Duplicate elastic cross section encountered for parent ", *state, " and child ", *child, ".");
                 }
             }
             return true;
         }
+
+        if (state->children().empty()) {
+            return false;
+        }
+
+        // This assumes that at least one child state needs to have a nonzero population.
+        for (const auto *child : state->children()) {
+            if (child->population() > 0 && !hasElasticRecursive(child)) {
+                return false;
+            }
+        }
+
+        // All children have an elastic cross section.
+        return true;
     };
 
-    for (const auto *chargeState : m_gas.get_root().children())
-    {
-        for (const auto *eleState : chargeState->children())
-        {
-            if (eleState->population() > 0 && !hasElasticRecursive(eleState))
-            {
+    for (const auto *chargeState : m_gas.get_root().children()) {
+        for (const auto *eleState : chargeState->children()) {
+            if (eleState->population() > 0 && !hasElasticRecursive(eleState)) {
                 statesToUpdate.emplace_back(eleState);
             }
         }
