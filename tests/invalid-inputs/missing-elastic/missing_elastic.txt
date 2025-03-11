@@ -1,0 +1,22 @@
+************************************************************************************************************************
+
+COMMENT: Simple test case to test the support for multiple elastic collisions.
+
+********************************************************** N2 **********************************************************
+
+EXCITATION
+N2
+ 1.000000e+1
+SPECIES: e / N2
+PROCESS: E + N2 -> E + N2, Excitation
+PARAM.:  E = 10, complete set
+COMMENT: [e + N2(X) -> e + N2(A), Excitation]
+UPDATED: 2017-11-14 10:24:49
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 0.000000e+0	0.000000e+0
+ 1.000000e+1	1.000000e-20
+ 1.000000e+4	1.000000e-20
+-----------------------------
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

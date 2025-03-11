@@ -591,102 +591,70 @@ bool EedfCollisionDataGas::isDummy() const
     return true;
 }
 
+/**
+ * @brief Finds the states that need their elastic cross section to be computed from an effective
+ *        cross section.
+ *
+ * This function iterates through the states of the gas and checks if they participate in elastic
+ * collisions. If a state does not participate in an elastic collision (or all its children do not),
+ * it is added to the list of states to update.
+ *
+ * @return A vector of pointers to the states that need to be updated.
+ */
 std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findStatesToUpdate() const
 {
-#define NEW_FINDSTATESTOUPDATE_IMPLEMENTATION 0
-#if NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
-
     std::vector<const State *> statesToUpdate;
 
     /** \todo This seems wrong: an effective cross section for the neutrals will
-     *  will also be used as a basis for the charged states' elastic cross section,
+     *  also be used as a basis for the charged states' elastic cross section,
      *  it seems.
      */
     const auto hasElastic = [this](const loki::Gas::State *state) -> bool {
-            const auto colls_it = m_state_collisions.find(state);
-            if (colls_it==m_state_collisions.end())
-            {
-                std::stringstream ss; ss << *state;
-                throw std::runtime_error("No state collisions found for state '" + ss.str() + "'.");
-            }
-            const auto &colls = colls_it->second;
-            auto it = find_if(colls.begin(), colls.end(),
-                              [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
-            return it != colls.end();
+        const auto colls_it = m_state_collisions.find(state);
+        if (colls_it == m_state_collisions.end()) {
+            return false;
+        }
+        const auto &colls = colls_it->second;
+        return std::any_of(colls.begin(), colls.end(),
+                           [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
     };
 
     const std::function<bool(const loki::Gas::State *)> hasElasticRecursive = [hasElastic, &hasElasticRecursive](const loki::Gas::State *state) -> bool {
         // Either the state has an elastic cross section, or all of its (grand)children with
         // nonzero population have an elastic cross section.
-        if (!hasElastic(state)) {
-            if (state->children().empty()) {
-                return false;
-            }
-
-            // This assumes that at least one child state needs to have a nonzero population.
-            for (const auto * child : state->children()) {
-                if (child->population() > 0) {
-                    if (!hasElasticRecursive(child)) {
-                        return false;
-                    }
+        if (hasElastic(state)) {
+            for (const auto *child : state->children()) {
+                if (child->population() > 0 && hasElasticRecursive(child)) {
+                    Log<Message>::Error("Duplicate elastic cross section encountered for parent ", *state, " and child ", *child, ".");
                 }
             }
-
-            // All children have an elastic cross section.
-            return true;
-        } else {
             return true;
         }
+
+        if (state->children().empty()) {
+            return false;
+        }
+
+        // This assumes that at least one child state needs to have a nonzero population.
+        for (const auto *child : state->children()) {
+            if (child->population() > 0 && !hasElasticRecursive(child)) {
+                return false;
+            }
+        }
+
+        // All children have an elastic cross section.
+        return true;
     };
 
-    for (const auto *chargeState : m_gas.get_root().children())
-    {
-        for (const auto *eleState : chargeState->children())
-        {
-            if (eleState->population() > 0 && !hasElasticRecursive(eleState))
-            {
+    for (const auto *chargeState : m_gas.get_root().children()) {
+        for (const auto *eleState : chargeState->children()) {
+            if (eleState->population() > 0 && !hasElasticRecursive(eleState)) {
                 statesToUpdate.emplace_back(eleState);
             }
         }
     }
 
     return statesToUpdate;
-
-#else
-
-    // the original implementation.
-
-    std::vector<const State *> statesToUpdate;
-
-    /** \todo This seems wrong: an effective cross section for the neutrals will
-     *  will also be used as a basis for the charged states' elastic cross section,
-     *  it seems.
-     */
-    for (const auto *chargeState : m_gas.get_root().children())
-    {
-        for (const auto *eleState : chargeState->children())
-        {
-            if (eleState->population() > 0)
-            {
-                const auto colls_it = m_state_collisions.find(eleState);
-                if (colls_it==m_state_collisions.end())
-                {
-                    std::stringstream ss; ss << *eleState;
-                    throw std::runtime_error("No state collisions found for state '" + ss.str() + "'.");
-                }
-                const auto &colls = colls_it->second;
-                const auto it = find_if(colls.begin(), colls.end(),
-                                  [](const EedfCollision *collision) { return collision->type() == CollisionType::elastic; });
-
-                if (it == colls.end())
-                    statesToUpdate.emplace_back(eleState);
-            }
-        }
-    }
-
-    return statesToUpdate;
-
-#endif // NEW_FINDSTATESTOUPDATE_IMPLEMENTATION
 }
 
 const GasPower &EedfCollisionDataGas::evaluatePower(const IonizationOperatorType ionType, const Vector &eedf)
