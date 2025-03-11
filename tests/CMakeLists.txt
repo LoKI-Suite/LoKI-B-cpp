@@ -69,6 +69,9 @@ target_link_libraries(test_lut PRIVATE loki-b)
 add_executable(test_parser test_parser.cpp)
 target_link_libraries(test_parser PRIVATE loki-b)
 
+add_executable(test_json_state_parsing test_json_state_parsing.cpp)
+target_link_libraries(test_json_state_parsing PRIVATE loki-b)
+
 add_executable(loki_test_range test_range.cpp)
 target_link_libraries(loki_test_range PRIVATE loki-b)
 
@@ -121,6 +124,7 @@ target_add_test(loki_test_interpolation)
 target_add_test(test_linalg)
 target_add_test(test_lut)
 target_add_test(test_parser)
+target_add_test(test_json_state_parsing)
 target_add_test(loki_test_range)
 target_add_test(test_reaction_format)
 target_add_test(test_statebase)
