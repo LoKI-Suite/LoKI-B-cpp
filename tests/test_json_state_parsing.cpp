@@ -23,7 +23,6 @@ bool test_invalid(const std::string_view expected_error, const nlohmann::json &s
     }
     catch (const std::exception &error)
     {
-        std::cout << error.what() << std::endl;
         return error.what() == expected_error;
     }
 
@@ -211,22 +210,23 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    // FIXME: This test currently does not behave as it should. Parsing of this
-    // definition passes and produces "CO2(X,v=10-11)". It should instead throw
-    // an error. Should we check for leading zeros?
-    // test_expr(test_invalid("",
-    //                        R"json({
-    //                          "serialized": {
-    //                            "composition": { "summary": "CO2" },
-    //                            "electronic": {
-    //                              "summary": "X",
-    //                              "vibrational": [
-    //                                { "summary": "010" },
-    //                                { "summary": "011" }
-    //                              ]
-    //                            }
-    //                          }
-    //                        })json"_json));
+    test_expr(test_invalid("Invalid v entry 010 in compound vibrational state. LoKI-B only supports compound "
+                           "vibrational and rotational states for species types with a single rotational quanta.\n",
+                           R"json({
+                             "detailed": {
+                               "type": "LinearTriatomInversionCenter"
+                             },
+                             "serialized": {
+                               "composition": { "summary": "CO2" },
+                               "electronic": {
+                                 "summary": "X",
+                                 "vibrational": [
+                                   { "summary": "010" },
+                                   { "summary": "011" }
+                                 ]
+                               }
+                             }
+                           })json"_json));
     test_expr(test_invalid("Expected a contiguous J-range.",
                            R"json({
                              "detailed": {
@@ -297,6 +297,24 @@ int main(int argc, char **argv)
                                    "summary": "0",
                                    "rotational": []
                                  }
+                               }
+                             }
+                           })json"_json));
+    test_expr(test_invalid("Invalid J entry 010 in compound rotational state. LoKI-B only supports compound "
+                           "vibrational and rotational states for species types with a single rotational quanta.\n",
+                           R"json({
+                             "detailed": {
+                               "type": "TriatomC2v"
+                             },
+                             "serialized": {
+                               "composition": { "summary": "H2O" },
+                               "electronic": {
+                                 "summary": "X",
+                                 "vibrational": {
+                                   "summary": "010",
+                                   "rotational": [{ "summary": "010" }, { "summary": "100" }]
+                                 }
+                                 
                                }
                              }
                            })json"_json));
