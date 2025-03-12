@@ -34,18 +34,27 @@ int main(int argc, char **argv)
 {
     // Tests that should pass.
     test_expr(test_valid("N2(X)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom"
+            },
             "serialized": {
               "composition": { "summary": "N2" },
               "electronic": { "summary": "X" }
             }
           })json"_json));
     test_expr(test_valid("Ar(^1S_0)", R"json({
+            "detailed": {
+              "type": "AtomLS"
+            },
             "serialized": {
               "composition": { "summary": "Ar" },
               "electronic": { "summary": "^1S_0" }
             }
           })json"_json));
     test_expr(test_valid("N2(X,v=0)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom"
+            },
             "serialized": {
               "composition": { "summary": "N2" },
               "electronic": {
@@ -55,6 +64,9 @@ int main(int argc, char **argv)
             }
           })json"_json));
     test_expr(test_valid("N2(X,v=0-4)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom"
+            },
             "serialized": {
               "composition": { "summary": "N2" },
               "electronic": {
@@ -70,6 +82,9 @@ int main(int argc, char **argv)
             }
           })json"_json));
     test_expr(test_valid("N2(X,v=0,J=0)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom"
+            },
             "serialized": {
               "composition": { "summary": "N2" },
               "electronic": {
@@ -84,6 +99,9 @@ int main(int argc, char **argv)
             }
           })json"_json));
     test_expr(test_valid("N2(X,v=0,J=3-6)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom"
+            },
             "serialized": {
               "composition": { "summary": "N2" },
               "electronic": {
@@ -102,6 +120,9 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("CO2(X,v=010,J=0)",
                          R"json({
+                             "detailed": {
+                               "type": "LinearTriatomInversionCenter"
+                             },
                              "serialized": {
                                "composition": { "summary": "CO2" },
                                "electronic": {
@@ -117,6 +138,9 @@ int main(int argc, char **argv)
     // Tests that should fail.
     test_expr(test_invalid("Exactly one electronic state is expected by LoKI-B.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": [
@@ -128,6 +152,9 @@ int main(int argc, char **argv)
     test_expr(
         test_invalid("Rotational states identifiers are not allowed when multiple vibrational states are specified.",
                      R"json({
+                       "detailed": {
+                         "type": "HomonuclearDiatom"
+                       },
                        "serialized": {
                          "composition": { "summary": "N2" },
                          "electronic": {
@@ -141,6 +168,9 @@ int main(int argc, char **argv)
                      })json"_json));
     test_expr(test_invalid("At least one vibrational state is expected by LoKI-B.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -151,6 +181,9 @@ int main(int argc, char **argv)
                            })json"_json));
     test_expr(test_invalid("Expected a contiguous v-range.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -164,6 +197,9 @@ int main(int argc, char **argv)
                            })json"_json));
     test_expr(test_invalid("Duplicate v entries encountered.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -193,6 +229,9 @@ int main(int argc, char **argv)
     //                        })json"_json));
     test_expr(test_invalid("Expected a contiguous J-range.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -209,6 +248,9 @@ int main(int argc, char **argv)
                            })json"_json));
     test_expr(test_invalid("Expected a contiguous J-range.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -225,6 +267,9 @@ int main(int argc, char **argv)
                            })json"_json));
     test_expr(test_invalid("Duplicate J entries encountered.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {
@@ -241,6 +286,9 @@ int main(int argc, char **argv)
                            })json"_json));
     test_expr(test_invalid("At least one rotational state is expected by LoKI-B.",
                            R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom"
+                             },
                              "serialized": {
                                "composition": { "summary": "N2" },
                                "electronic": {

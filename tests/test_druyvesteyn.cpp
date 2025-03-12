@@ -26,23 +26,35 @@ auto json = R"json(
         "mixture": {
             "states": {
                 "e": {
+                    "detailed": {
+                        "type": "Electron"  
+                    },
                     "serialized": {
                         "composition": { "summary": "e^-" }
                     }
                 },
                 "X(0)": {
+                    "detailed": {
+                        "type": "AtomLS"  
+                    },
                     "serialized": {
                         "composition": { "summary": "X" },
                         "electronic": { "summary": "0" }
                     }
                 },
                 "X(*)": {
+                    "detailed": {
+                        "type": "AtomLS"  
+                    },
                     "serialized": {
                         "composition": { "summary": "X" },
                         "electronic": { "summary": "*" }
                     }
                 },
                 "X(+)": {
+                    "detailed": {
+                        "type": "AtomLS"  
+                    },
                     "serialized": {
                         "composition": { "summary": "X^+" }
                     }
