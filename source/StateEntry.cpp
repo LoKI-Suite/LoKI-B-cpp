@@ -232,13 +232,15 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const json_type &ser_cnf = cnf.at("serialized");
+    const auto species_type = cnf.at("detailed").at("type").get<std::string_view>();
 
     std::string gas_name = ser_cnf.at("composition").at("summary");
     std::string charge_str = "";
 
     // Split the charge from the gas name.
     const auto pos = gas_name.find("^");
-    if (pos != std::string::npos) {
+    if (pos != std::string::npos)
+    {
         charge_str = gas_name.substr(pos + 1);
         gas_name = gas_name.substr(0, pos);
     }
@@ -278,7 +280,20 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                         std::set<unsigned> J_vals;
                         for (const auto &Jentry : rot_cnf)
                         {
-                            J_vals.insert(std::stoi(Jentry.at("summary").get<std::string>()));
+                            // Avoid unexpected behavior for rotational states of molecules with multiple rotational
+                            // quanta (e.g. water).
+                            const auto &J_str = Jentry.at("summary").get<std::string>();
+
+                            if (!(species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom" ||
+                                  species_type == "LinearTriatomInversionCenter"))
+                            {
+                                Log<Message>::Error(
+                                    "Invalid J entry ", J_str,
+                                    " in compound rotational state. LoKI-B only supports compound vibrational and "
+                                    "rotational states for species types with a single rotational quanta.");
+                            }
+
+                            J_vals.insert(std::stoi(J_str));
                         }
                         if (J_vals.size() != rot_cnf.size())
                         {
@@ -308,9 +323,16 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                         throw std::runtime_error("Rotational states identifiers are not allowed when "
                                                  "multiple vibrational states are specified.");
                     }
-                    // We only support compound states in diatoms (molecules with a single vibrational
-                    // mode).
-                    v_vals.insert(std::stoi(ventry.at("summary").get<std::string>()));
+                    const auto &v_str = ventry.at("summary").get<std::string>();
+                    // Avoid unexpected behavior for vibrational states of molecules with multiple vibrational modes
+                    // (e.g. CO2).
+                    if (!(species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom"))
+                    {
+                        Log<Message>::Error("Invalid v entry ", v_str,
+                                            " in compound vibrational state. LoKI-B only supports compound vibrational "
+                                            "and rotational states for species types with a single rotational quanta.");
+                    }
+                    v_vals.insert(std::stoi(v_str));
                 }
                 // For "v" and "J" we assume that the entries form a continuous value-range.
                 if (v_vals.size() != vib_cnf.size())
