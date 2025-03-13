@@ -1,19 +1,16 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
-    pin-emscripten_3-1-15.url = "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      pin-emscripten_3-1-15,
     }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      emscripten_3-1-15 = pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
@@ -68,7 +65,7 @@
               llvmPackages.openmp
 
               # WebAssembly compilation
-              emscripten_3-1-15
+              emscripten
 
               # Plotting
               gnuplot
@@ -79,7 +76,7 @@
               # LaTeX
               latex
             ]);
-          EM_CACHE = "./.cache/emscripten";
+          EM_CACHE = "/tmp/emscripten_cache";
         };
         ci = gccEnv.mkDerivation {
           name = "loki-b-ci";
@@ -123,11 +120,11 @@
             ninja
             eigen
             nlohmann_json
-            emscripten_3-1-15
+            emscripten
             python3
           ];
 
-          EM_CACHE = "./.cache/emscripten";
+          EM_CACHE = "/tmp/emscripten_cache";
 
           ninjaFlags = [
             "-C build"
@@ -136,13 +133,13 @@
 
           configurePhase = ''
             # Create the cache directory.
-            mkdir -p build/$EM_CACHE
+            mkdir -p $EM_CACHE
 
-            # Copy the prebuilt emscripten cache.
-            cp -r ${emscripten_3-1-15}/share/emscripten/cache/* build/$EM_CACHE
+            # # Copy the prebuilt emscripten cache.
+            cp -r ${pkgs.emscripten}/share/emscripten/cache/* $EM_CACHE
 
             # Set correct permissions for cache.
-            chmod u+rwX -R build/$EM_CACHE
+            chmod u+rwX -R $EM_CACHE
 
             # Configure using emscripten.
             emcmake cmake \
