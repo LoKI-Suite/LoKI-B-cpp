@@ -115,6 +115,7 @@
               inherit name version;
               type = "module";
               files = [
+                "share/loki-web/loki_bindings.data"
                 "share/loki-web/loki_bindings.wasm"
                 "share/loki-web/loki_bindings.js"
                 "share/loki-web/loki_bindings.d.ts"
