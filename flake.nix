@@ -109,23 +109,23 @@
             "loki_offsidetojson"
           ];
         };
-        loki-web =
+        loki-wasm =
           let
             packageJSON = name: version: {
               inherit name version;
               type = "module";
               files = [
-                "share/loki-web/loki_bindings.data"
-                "share/loki-web/loki_bindings.wasm"
-                "share/loki-web/loki_bindings.js"
-                "share/loki-web/loki_bindings.d.ts"
+                "share/loki-wasm/loki_bindings.data"
+                "share/loki-wasm/loki_bindings.wasm"
+                "share/loki-wasm/loki_bindings.js"
+                "share/loki-wasm/loki_bindings.d.ts"
               ];
-              main = "share/loki-web/loki_bindings.js";
-              types = "share/loki-web/loki_bindings.d.ts";
+              main = "share/loki-wasm/loki_bindings.js";
+              types = "share/loki-wasm/loki_bindings.d.ts";
             };
           in
           gccEnv.mkDerivation rec {
-            pname = "loki-web";
+            pname = "loki-wasm";
             version = "0.0.1";
 
             src = ./.;
@@ -168,8 +168,8 @@
             '';
 
             installPhase = ''
-              mkdir -p $out/share/loki-web
-              mv web/*.{html,js,wasm,data,d.ts} $out/share/loki-web
+              mkdir -p $out/share/loki-wasm
+              mv web/*.{html,js,wasm,data,d.ts} $out/share/loki-wasm
               echo '${builtins.toJSON (packageJSON pname version)}' | jq > $out/package.json
             '';
           };
