@@ -109,52 +109,67 @@
             "loki_offsidetojson"
           ];
         };
-        loki-web = gccEnv.mkDerivation {
-          pname = "loki-web";
-          version = "0.0.1";
+        loki-web =
+          let
+            packageJSON = name: version: {
+              inherit name version;
+              type = "module";
+              files = [
+                "share/loki-web/loki_bindings.wasm"
+                "share/loki-web/loki_bindings.js"
+              ];
+              main = "share/loki-web/loki_bindings.js";
+              # types = "lib/wasm.d.ts";
+            };
+          in
+          gccEnv.mkDerivation rec {
+            pname = "loki-web";
+            version = "0.0.1";
 
-          src = ./.;
+            src = ./.;
 
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            eigen
-            nlohmann_json
-            emscripten
-            python3
-          ];
+            buildInputs = with pkgs; [
+              cmake
+              ninja
+              eigen
+              nlohmann_json
+              emscripten
+              python3
+              jq
+            ];
 
-          EM_CACHE = "/tmp/emscripten_cache";
+            EM_CACHE = "/tmp/emscripten_cache";
 
-          ninjaFlags = [
-            "-C build"
-            "loki_bindings"
-          ];
+            ninjaFlags = [
+              "-C build"
+              "loki_bindings"
+            ];
 
-          configurePhase = ''
-            # Create the cache directory.
-            mkdir -p $EM_CACHE
+            configurePhase = ''
+              # Create the cache directory.
+              mkdir -p $EM_CACHE
 
-            # # Copy the prebuilt emscripten cache.
-            cp -r ${pkgs.emscripten}/share/emscripten/cache/* $EM_CACHE
+              # # Copy the prebuilt emscripten cache.
+              cp -r ${pkgs.emscripten}/share/emscripten/cache/* $EM_CACHE
 
-            # Set correct permissions for cache.
-            chmod u+rwX -R $EM_CACHE
+              # Set correct permissions for cache.
+              chmod u+rwX -R $EM_CACHE
 
-            # Configure using emscripten.
-            emcmake cmake \
-              -GNinja \
-              -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
-              -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
-              -DLOKIB_USE_OPENMP=OFF \
-              -B build
-          '';
+              # Configure using emscripten.
+              emcmake cmake \
+                -GNinja \
+                -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
+                -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
+                -DLOKIB_USE_OPENMP=OFF \
+                -B build
+            '';
 
-          installPhase = ''
-            mkdir -p $out/share/loki-web
-            mv web/*.{html,js,wasm,data} $out/share/loki-web
-          '';
-        };
+            installPhase = ''
+              mkdir -p $out/share/loki-web
+              mv web/*.{html,js,wasm,data} $out/share/loki-web
+              echo '${builtins.toJSON (packageJSON pname version)}' | jq > $out/package.json
+            '';
+          };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
           version = "0.0.1";
