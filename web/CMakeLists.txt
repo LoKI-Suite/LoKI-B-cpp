@@ -13,6 +13,7 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
   -s EXPORTED_RUNTIME_METHODS=[FS,run] \
   -s NO_DISABLE_EXCEPTION_CATCHING \
   --bind \
+  --emit-tsd loki_bindings.d.ts \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_LXCat.json@JSON/N2/ \
   --preload-file ${PROJECT_SOURCE_DIR}/input/JSON/N2/N2_rot_LXCat.json@JSON/N2/ \
   --preload-file ${PROJECT_SOURCE_DIR}/input/Databases/masses.txt@Databases/ \
