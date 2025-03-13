@@ -117,9 +117,10 @@
               files = [
                 "share/loki-web/loki_bindings.wasm"
                 "share/loki-web/loki_bindings.js"
+                "share/loki-web/loki_bindings.d.ts"
               ];
               main = "share/loki-web/loki_bindings.js";
-              # types = "lib/wasm.d.ts";
+              types = "share/loki-web/loki_bindings.d.ts";
             };
           in
           gccEnv.mkDerivation rec {
@@ -136,6 +137,7 @@
               emscripten
               python3
               jq
+              typescript
             ];
 
             EM_CACHE = "/tmp/emscripten_cache";
@@ -166,7 +168,7 @@
 
             installPhase = ''
               mkdir -p $out/share/loki-web
-              mv web/*.{html,js,wasm,data} $out/share/loki-web
+              mv web/*.{html,js,wasm,data,d.ts} $out/share/loki-web
               echo '${builtins.toJSON (packageJSON pname version)}' | jq > $out/package.json
             '';
           };
