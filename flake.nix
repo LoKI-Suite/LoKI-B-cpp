@@ -113,7 +113,6 @@
           let
             packageJSON = name: version: {
               inherit name version;
-              type = "module";
               files = [
                 "share/loki-wasm/loki_bindings.data"
                 "share/loki-wasm/loki_bindings.wasm"
