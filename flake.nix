@@ -1,19 +1,16 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
-    pin-emscripten_3-1-15.url = "github:NixOS/nixpkgs/34bfa9403e42eece93d1a3740e9d8a02fceafbca";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      pin-emscripten_3-1-15,
     }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      emscripten_3-1-15 = pin-emscripten_3-1-15.legacyPackages.${system}.emscripten;
 
       gccEnv = pkgs.gcc11Stdenv;
 
@@ -68,7 +65,7 @@
               llvmPackages.openmp
 
               # WebAssembly compilation
-              emscripten_3-1-15
+              emscripten
 
               # Plotting
               gnuplot
@@ -79,7 +76,7 @@
               # LaTeX
               latex
             ]);
-          EM_CACHE = "./.cache/emscripten";
+          EM_CACHE = "/tmp/emscripten_cache";
         };
         ci = gccEnv.mkDerivation {
           name = "loki-b-ci";
@@ -112,52 +109,69 @@
             "loki_offsidetojson"
           ];
         };
-        loki-web = gccEnv.mkDerivation {
-          pname = "loki-web";
-          version = "0.0.1";
+        loki-wasm =
+          let
+            packageJSON = name: version: {
+              inherit name version;
+              files = [
+                "share/loki-wasm/loki_bindings.data"
+                "share/loki-wasm/loki_bindings.wasm"
+                "share/loki-wasm/loki_bindings.js"
+                "share/loki-wasm/loki_bindings.d.ts"
+              ];
+              main = "share/loki-wasm/loki_bindings.js";
+              types = "share/loki-wasm/loki_bindings.d.ts";
+            };
+          in
+          gccEnv.mkDerivation rec {
+            pname = "loki-wasm";
+            version = "0.0.1";
 
-          src = ./.;
+            src = ./.;
 
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            eigen
-            nlohmann_json
-            emscripten_3-1-15
-            python3
-          ];
+            buildInputs = with pkgs; [
+              cmake
+              ninja
+              eigen
+              nlohmann_json
+              emscripten
+              python3
+              jq
+              typescript
+            ];
 
-          EM_CACHE = "./.cache/emscripten";
+            EM_CACHE = "/tmp/emscripten_cache";
 
-          ninjaFlags = [
-            "-C build"
-            "loki_bindings"
-          ];
+            ninjaFlags = [
+              "-C build"
+              "loki_bindings"
+            ];
 
-          configurePhase = ''
-            # Create the cache directory.
-            mkdir -p build/$EM_CACHE
+            configurePhase = ''
+              # Create the cache directory.
+              mkdir -p $EM_CACHE
 
-            # Copy the prebuilt emscripten cache.
-            cp -r ${emscripten_3-1-15}/share/emscripten/cache/* build/$EM_CACHE
+              # # Copy the prebuilt emscripten cache.
+              cp -r ${pkgs.emscripten}/share/emscripten/cache/* $EM_CACHE
 
-            # Set correct permissions for cache.
-            chmod u+rwX -R build/$EM_CACHE
+              # Set correct permissions for cache.
+              chmod u+rwX -R $EM_CACHE
 
-            # Configure using emscripten.
-            emcmake cmake \
-              -GNinja \
-              -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
-              -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
-              -DLOKIB_USE_OPENMP=OFF \
-              -B build
-          '';
+              # Configure using emscripten.
+              emcmake cmake \
+                -GNinja \
+                -DEigen3_DIR=${pkgs.eigen}/share/eigen3/cmake \
+                -Dnlohmann_json_DIR=${pkgs.nlohmann_json}/share/cmake/nlohmann_json \
+                -DLOKIB_USE_OPENMP=OFF \
+                -B build
+            '';
 
-          installPhase = ''
-            mkdir -p $out/share/loki-web
-            mv web/*.{html,js,wasm,data} $out/share/loki-web
-          '';
-        };
+            installPhase = ''
+              mkdir -p $out/share/loki-wasm
+              mv web/*.{html,js,wasm,data,d.ts} $out/share/loki-wasm
+              echo '${builtins.toJSON (packageJSON pname version)}' | jq > $out/package.json
+            '';
+          };
         coverage = gccEnv.mkDerivation {
           pname = "loki-b-coverage";
           version = "0.0.1";

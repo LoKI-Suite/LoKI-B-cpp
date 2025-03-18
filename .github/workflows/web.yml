@@ -21,11 +21,11 @@ jobs:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
     - name: Build web deployment
-      run: nix build .#loki-web
+      run: nix build .#loki-wasm
     - name: Upload GitHub pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: "./result/share/loki-web"
+        path: "./result/share/loki-wasm"
 
   Deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
