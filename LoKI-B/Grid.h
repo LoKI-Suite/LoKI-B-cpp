@@ -6,7 +6,7 @@
  *  electron Boltzmann equation (EBE), for non-magnetised non-equilibrium
  *  low-temperature plasmas excited by DC/HF electric fields from
  *  different gases or gas mixtures.
- *  Copyright (C) 2018-2024 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
+ *  Copyright (C) 2018-2025 A. Tejero-del-Caz, V. Guerra, D. Goncalves,
  *  M. Lino da Silva, L. Marques, N. Pinhao, C. D. Pintassilgo and
  *  L. L. Alves
  *
