@@ -660,7 +660,7 @@ for example. What impact would such more general approach have on fluid models t
 use results of the two-term expansion?
 
 Related question: when `complete' data sets are compiled using a 2-term model,
-is the choice for temporal/spatial usually docuented? Then that should be respected,
+is the choice for temporal/spatial usually documented? Then that should be respected,
 obviously. Is that actually what people do?
 \end{framed}
 
@@ -1454,7 +1454,7 @@ TODO:
 		deviations? The manual should be more clear about that.
 		Small issue: the usage of $(u,u')$ vs $(u',u)$ as formal parameter
 		lists in equations 14 and 63 of the manual could be made consistent.
-	\item The derivations (see section \ref{app:ionization} rely on the peak
+	\item The derivations (see section \ref{app:ionization}) rely on the peak
 		of a delta-function being fully enclosed by an integration
 		interval, when it is located on its boundary. This is mathematically
 		not sound. Unfortunately, neither the LoKI Manual, nor the BOLSIG+
@@ -1727,7 +1727,7 @@ is given by
 	= -(\mu_e N)\left(\frac{E}{N}\right)^2,
 	\label{eq:Theta_Eg}
 \end{equation}
-where we have used expression \eqref{eq:mueN-alt} for the electron moblity.
+where we have used expression \eqref{eq:mueN-alt} for the electron mobility.
 Note that according to our conventions $\mu_e$ is negative, as explained in
 \ref{sec:compatibility}, so $\Theta_{E,g}$ is positive.
 
@@ -2677,7 +2677,7 @@ See section \ref{sec:theory:spat-growth} for a discussion of the spatial growth 
 			coefficient and mobility of the electrons (see below).
 		\end{framed}
 		\item \SRC{ionSpatialGrowthD} provides $(\alpha_{\text{eff}}/N)^2{\cal D}_{sst}^0f^0(u)$:
-			the second term on the right-hand side of eqiation \eqref{eq:Rsst-orig},
+			the second term on the right-hand side of equation \eqref{eq:Rsst-orig},
 			the first term of equation (29) of the manual.
 		\item The remaining first term of requation \eqref{eq:Rsst-orig} is
 			$\frac{\alpha_{\text{eff}}}{N}\frac{E}{N}{\cal D}^0(u)\DERIV{f^0}{u}$
@@ -2713,7 +2713,7 @@ alphaRedEffNew*U0sup[k+1] == alphaRedEffNew*(+EoN /(2.*grid().du())*D0[k]) (= +C
 			It is important that the same coefficients (here called $C_k$) are used in
 			the discretization of the growth operator as in the evaluation of the
 			mobility. This means that also the mobility must use the expression involving
-			the derivative if the EEDF, instead of the more convenient expression that
+			the derivative of the EEDF, instead of the more convenient expression that
 			is based on a partial integration of the integrand.
 \end{framed}
 	\end{itemize}
@@ -2754,8 +2754,7 @@ $[\bmat{M}_x\bvec{f}]_i $, it can be discretized as
 	\doteq
 	-\sum\limits_{i=0}^{{\cal N}-1}u_i [\bmat{M}_x\bvec{f}]_i (\Delta u)_i
 	=
-	- (\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}_x\bvec{f}
-	:= -\bmat{M}_{u,x}\bvec{f}.
+	- (\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}_x\bvec{f}.
 	\label{eq:EBE-power-term}
 \end{equation}
 The additional minus sign is due to the fact that all matrices are defined
@@ -2767,7 +2766,7 @@ When discretized this way, the power balance is satisfied if
 the Boltzmann equation itself is satisfied, since
 \begin{equation}
 	\bmat{M}(\bvec{f})\bvec{f} = \bvec{0}
-	\iff
+	\implies
 	(\bvec{\Delta u})^T\diag(\bvec{u})\bmat{M}(\bvec{f})\bvec{f}
 	=
 	(\bvec{\Delta u})^T\diag(\bvec{u})\bvec{0} = 0.
