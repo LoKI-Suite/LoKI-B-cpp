@@ -3,7 +3,7 @@
  *  Functions for querying environment variables.
  *  This code is based on the PLASIMO code plutil/environment.h
  *  and accompanying .cpp file, see see https://plasimo.phys.tue.nl.
- *  Copyright (C) 2013-2024 J. van Dijk
+ *  Copyright (C) 2013-2025 J. van Dijk
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
