@@ -514,27 +514,24 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 /* Handle fieldMatrixSpatGrowth, which is defined such that
                 * [fieldMatrixSpatGrowth*eedf]_k = (alphaEffNew/N)*(E/N)*[d(D^0*f0)/du]_k.
                 */
-                fieldMatrixSpatGrowth.coeffRef(k, k) = 0;
-                if (k > 0)
-                {
-                    const double Bmin = -grid().duCell(k) / grid().duNode(k) / 2;
-                    const double Amin = grid().duCell(k-1) / grid().duNode(k) / 2;
-                    fieldMatrixSpatGrowth.coeffRef(k, k) -= g_fieldSpatialGrowth[k] * Amin / grid().duCell(k);
-                    fieldMatrixSpatGrowth.coeffRef(k, k - 1) = g_fieldSpatialGrowth[k] * Bmin / grid().duCell(k); 
-                    
-                    boltzmannMatrix(k, k - 1) += fieldMatrixSpatGrowth.coeff(k, k - 1);
-                }
-
-                if (k < grid().nCells() - 1)
-                {
-                    const double Bplus = -grid().duCell(k+1) / grid().duNode(k+1) / 2;
-                    const double Aplus = grid().duCell(k) / grid().duNode(k+1) / 2;
-
-                    fieldMatrixSpatGrowth.coeffRef(k, k) -= g_fieldSpatialGrowth[k + 1] * Bplus / grid().duCell(k);
-                    fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] * Aplus / grid().duCell(k);
-                    boltzmannMatrix(k, k + 1) += fieldMatrixSpatGrowth.coeff(k, k + 1);
-                }
+                fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k+1] - g_fieldSpatialGrowth[k]) / grid().duCell(k);
                 boltzmannMatrix(k, k) += fieldMatrixSpatGrowth.coeff(k, k);
+
+                if (k > 0) {
+                    fieldMatrixSpatGrowth.coeffRef(k, k-1) =
+                        - (g_fieldSpatialGrowth[k] + g_fieldSpatialGrowth[k+1])
+                        / 2.
+                        / (grid().duNode(k) + grid().duNode(k+1));
+                    boltzmannMatrix(k, k-1) += fieldMatrixSpatGrowth.coeff(k, k-1);
+                }
+
+                if (k < grid().nCells() - 1) {
+                    fieldMatrixSpatGrowth.coeffRef(k, k+1) =
+                        (g_fieldSpatialGrowth[k] + g_fieldSpatialGrowth[k+1])
+                        / 2.
+                        / (grid().duNode(k) + grid().duNode(k+1));
+                    boltzmannMatrix(k, k+1) += fieldMatrixSpatGrowth.coeff(k, k+1);
+                }
             }
         }
         Vector eedfNew = eedf;
