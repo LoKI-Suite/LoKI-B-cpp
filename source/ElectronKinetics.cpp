@@ -66,6 +66,11 @@ void ElectronKinetics::updateMaxEnergy(double uMax)
     m_grid.updateMaxEnergy(uMax);
 }
 
+void ElectronKinetics::updateMaxEnergyNonuniform(double uMax)
+{
+    m_grid.updateMaxEnergyNonuniform(uMax, mixture);
+}
+
 void ElectronKinetics::solve()
 {
     doSolve();
@@ -935,8 +940,7 @@ void ElectronKineticsBoltzmann::solveSmartGrid()
             updateMaxEnergy(grid().uMax() * (1 + smartGrid.updateFactor));
         } else
         {
-            // updateMaxEnergyNonuniform(grid().uMax() * (1 + smartGrid.updateFactor));
-            updateMaxEnergy(grid().uMax() * (1 + smartGrid.updateFactor));
+            updateMaxEnergyNonuniform(grid().uMax() * (1 + smartGrid.updateFactor));
         }
         solveSingle();
         decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
@@ -950,8 +954,7 @@ void ElectronKineticsBoltzmann::solveSmartGrid()
             updateMaxEnergy(grid().uMax() / (1 + smartGrid.updateFactor));
         } else
         {
-            updateMaxEnergy(grid().uMax() / (1 + smartGrid.updateFactor));
-            // updateMaxEnergyNonuniform(grid().uMax() / (1 + smartGrid.updateFactor));
+            updateMaxEnergyNonuniform(grid().uMax() / (1 + smartGrid.updateFactor));
         }
         solveSingle();
         decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
@@ -985,8 +988,7 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
                 updateMaxEnergy(uP);
             } else
             {
-                updateMaxEnergy(uP);
-                // updateMaxEnergyNonuniform(uP);
+                updateMaxEnergyNonuniform(uP);
             }
             solveSingle();
             decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
@@ -1005,8 +1007,7 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
                 updateMaxEnergy(uM);
             } else
             {
-                updateMaxEnergy(uM);
-                // updateMaxEnergyNonuniform(uM);
+                updateMaxEnergyNonuniform(uM);
             }
             solveSingle();
             decades = calcDecades(eedf[0],eedf[grid().nCells()-1]);
@@ -1034,8 +1035,7 @@ void ElectronKineticsBoltzmann::solveSmartGrid2()
             updateMaxEnergy((uP+uM)/2);
         } else
         {
-            updateMaxEnergy((uP+uM)/2);
-            // updateMaxEnergyNonuniform((uP+uM)/2);
+            updateMaxEnergyNonuniform((uP+uM)/2);
         }
         
         solveSingle();

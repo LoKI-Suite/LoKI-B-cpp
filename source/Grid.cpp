@@ -155,18 +155,9 @@ void Grid::updateMaxEnergy(double uMax)
 void Grid::updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture)
 {
     // TODO: Build new nonuniform energy grid.
-    // m_nodes = fnc() * uMax;
+    Log<Message>::Warning("Combining the smart grid feature with a nonuniform grid is not yet handled correctly.");
 
-    const double uMaxRatio = uMax / this->uMax();
-    m_nodes *= uMaxRatio;
-
-    m_cells = .5*(m_nodes.tail(m_nodes.size() - 1) + m_nodes.head(m_nodes.size() - 1));
-    m_duCells = m_nodes.tail(m_nodes.size() - 1) - m_nodes.head(m_nodes.size() - 1);
-    m_duNodes[0] = m_cells[0] - 0.;
-    m_duNodes[m_nodes.size()-1] = uMax - m_cells[m_cells.size()-1];
-    m_duNodes.segment(1,m_nodes.size()-2) = m_cells.tail(m_nCells - 1) - m_cells.head(m_nCells - 1);
-
-    Log<Message>::Notify("Maximum energy = ", uMax, " N Grid points = ", m_nodes.size());
+    updateMaxEnergy(uMax);
     updatedMaxEnergy.emit();
 }
 } // namespace loki
