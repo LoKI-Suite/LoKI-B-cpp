@@ -425,13 +425,13 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
     if (reverse)
     {
         targetCell = frac * source + threshold;
-        targetBegin = getLowerBound(grid, targetCell -  0.5*grid.duCell(sourceidx));
-        targetEnd = getUpperBound(grid, targetCell +  0.5*grid.duCell(sourceidx));
+        targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     } else
     {
         targetCell = frac * source - threshold;
-        targetBegin = getLowerBound(grid, targetCell -  0.5*grid.duCell(sourceidx));
-        targetEnd = getUpperBound(grid, targetCell +  0.5*grid.duCell(sourceidx));
+        targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     }
 
     std::vector<std::tuple<Grid::Index, double>> alpha;
@@ -444,6 +444,15 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
     } else
     {
         alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse, frac);
+    }
+
+    /** This is a bounds check. If some of the operator should be distributed
+      * in a cell that is beyond the maximum energy, add it to the previous
+      * cell instead.
+      */
+    if (std::get<0>(alpha[alpha.size() - 1]) >= grid.nCells()) {
+        std::get<1>(alpha[alpha.size() - 2]) += std::get<1>(alpha[alpha.size() - 1]);
+        alpha.pop_back();
     }
 
     return alpha;
