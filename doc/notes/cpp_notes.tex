@@ -2438,11 +2438,11 @@ The expressions for $D_eN$ and $D_uN$ are given by equation \eqref{eq:DeN} and \
 	D_eN &= \gamma\int\limits_0^\infty {\cal D}_x^0(u)f(u)\dd{u}, \\
 	D_uN &= \frac{\gamma}{\MEAN{u}}\int\limits_0^\infty u{\cal D}_{x}^0(u)f(u)\dd{u}.
 \end{align*}
-The approximation of $D_N$ and $D_uN$ is straightforward:
+The approximation of $D_eN$ and $D_uN$ is straightforward:
 \begin{align}
 	D_eN &\doteq \gamma \sum_k {\cal D}^0_kf_k\Delta u,
 	\label{eq:DeN-disc} \\
-	D_eN &\doteq \frac{\gamma}{\MEAN{u}} \sum_k u_k{\cal D}^0_kf_k\Delta u,
+	D_uN &\doteq \frac{\gamma}{\MEAN{u}} \sum_k u_k{\cal D}^0_kf_k\Delta u,
 	\label{eq:DuN-disc}
 \end{align}
 and this is also what you find in the code.
