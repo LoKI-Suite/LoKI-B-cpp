@@ -536,7 +536,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                     if (grid.isUniform())
                     {
-                        numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+                       numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
                     } else
                     {
                        numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
@@ -558,7 +558,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                         for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
-                            if (grid.getNode(k+1) + grid.getNode(numThreshold) < grid.getCell(grid.nCells() - 1))
+                            if (grid.getNode(k) + grid.getNode(numThreshold) < grid.getCell(grid.nCells() - 1))
                             {
                                 const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
 
@@ -609,7 +609,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                                     }
                                 }
 
-                                if (grid.getNode(k + 1) + grid.getNode(numThreshold) < grid.getCell(cellNumber - 1))
+                                if (grid.getNode(k) + grid.getNode(numThreshold) < grid.getCell(cellNumber - 1))
                                 {
 
                                     const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
