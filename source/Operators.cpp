@@ -1042,9 +1042,9 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             {
                 for (Grid::Index k = 0; k < grid.nCells(); ++k)
                 {
-                    if (grid.getNode(k+1) + threshold < grid.getCell(grid.nCells() - 1))
+                    if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
                     {
-                        const auto alpha = getOperatorDistribution(grid, threshold, grid.getCell(k), k, true);
+                        const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true);
 
                         for (int i = 0; i < int(alpha.size()); i++)
                         {
@@ -1055,7 +1055,6 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                     ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
                 }
             }
-            
 
             /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
             if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
