@@ -823,7 +823,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 {
                     for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        if (grid.getNode(k+1) + grid.getNode(numThreshold) < grid.getCell(grid.nCells() - 1))
+                        if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
                         {
                             const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
                                     grid.getCell(k), k, true);
@@ -871,7 +871,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                     {
                         ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
 
-                        if (grid.getNode(k+1) < (grid.getCell(grid.nCells() - 1) - grid.getNode(numThreshold)) / 2)
+                        if (grid.getNode(k) < (grid.uMax() - grid.getNode(numThreshold)) / 2.)
                         {
                             const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
                                     grid.getCell(k), k, true, 2.0);
@@ -972,7 +972,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                          *        Document (in the document, not necessarily here) what are the
                          *        consequences of that.
                          */
-                        if (grid.getNode(k + 1) + grid.getNode(numThreshold + 1) < grid.nCells())
+                        if (grid.getNode(k) + grid.getNode(numThreshold + 1) < grid.uMax())
                         {
                             Grid::Index idx;
                             idx = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), 
