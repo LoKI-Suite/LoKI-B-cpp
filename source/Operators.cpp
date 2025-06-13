@@ -503,6 +503,15 @@ std::vector<std::tuple<Grid::Index, double>> oneTakesAllDistribution(const Grid&
         alpha = distributeNCellsIonization(grid, targetCell, targetBegin, targetEnd, sourceidx);
     }
 
+    /** This is a bounds check. If some of the operator should be distributed
+      * in a cell that is less than the minimum energy, add it to the next
+      * cell instead.
+      */
+    if (std::get<0>(alpha[0]) < 0) {
+        std::get<1>(alpha[1]) += std::get<1>(alpha[0]);
+        alpha.erase(alpha.begin());
+    }
+
     return alpha;
 }
 
