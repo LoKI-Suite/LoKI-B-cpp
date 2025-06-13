@@ -837,7 +837,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
                                     grid.getCell(k), k, true);
 
-                            for (int i = 0; i < int(alpha.size()); i++)
+                            for (unsigned long i = 0; i < alpha.size(); i++)
                             {
                                 ionizationMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
                                     delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
@@ -850,7 +850,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
                         const auto alpha = oneTakesAllDistribution(grid, k);
 
-                        for (int i = 0; i < int(alpha.size()); i++)
+                        for (unsigned long i = 0; i < alpha.size(); i++)
                         {
                             ionizationMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) * term;
                         }
