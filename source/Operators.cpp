@@ -567,7 +567,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                         for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
-                            if (grid.getNode(k) + grid.getNode(numThreshold) < grid.getCell(grid.nCells() - 1))
+                            if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
                             {
                                 const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
 
@@ -962,7 +962,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 {
                     for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        const double end = std::min(2*grid.getNode(k+1) + grid.getNode(numThreshold), grid.getNode(grid.nCells()));
+                        const double end = std::min(2*grid.getNode(k+1) + grid.getNode(numThreshold), grid.uMax());
 
                         if (k > numThreshold)
                         {
