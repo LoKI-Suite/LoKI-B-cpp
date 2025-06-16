@@ -912,6 +912,7 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                         if (k > numThreshold)
                         {
                             const Grid::Index half = (k + 1 - numThreshold) / 2;
+
                             const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
                             double sum = 0.;
 
@@ -966,9 +967,9 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
 
                         if (k > numThreshold)
                         {
-                            const double half = (grid.getCell(k) - grid.getCell(numThreshold)) * 0.5;
-                            // const Grid::Index half = (k + 1 - numThreshold) / 2;
-                            const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
+                            const double half = (grid.getNode(k + 1) - grid.getNode(numThreshold)) / 2.0;
+
+                            const double numerator = 1. / std::atan((grid.getCell(k) - threshold) / (2. * W));
                             double sum = 0.;
 
                             for (Grid::Index i = 0; grid.getCell(i) <= half; ++i)
@@ -981,12 +982,12 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                          *        Document (in the document, not necessarily here) what are the
                          *        consequences of that.
                          */
-                        if (grid.getNode(k) + grid.getNode(numThreshold + 1) < grid.uMax())
+                        if (grid.getNode(k + 1) + grid.getNode(numThreshold) <= grid.uMax())
                         {
                             Grid::Index idx;
                             idx = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), 
                                   grid.getCell(k) + grid.getCell(numThreshold)) - grid.getNodes().begin() - 1;
-                            for (Grid::Index i = idx; grid.getCell(i) < end; ++i)
+                            for (Grid::Index i = idx; grid.getNode(i + 1) < end; ++i)
                             {
                                 ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
                                                         (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
@@ -999,13 +1000,6 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                             }
                         }
 
-                        /** \todo The following comment needs to be sorted out (possible index errors).
-                         *  \todo Document what is done here (algorithm) and how it is implemented.
-                         */
-
-                        /** \todo This last section might need some adjustments because of indexing
-                         *  differences between Matlab and C++ (since indexes are multiplied here).
-                         */
                         Grid::Index idx1;
                         idx1 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), 
                                 2*grid.getCell(k) + grid.getCell(numThreshold)) - grid.getNodes().begin() - 1;
