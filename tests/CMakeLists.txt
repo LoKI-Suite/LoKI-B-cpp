@@ -130,7 +130,12 @@ target_add_test(test_maxwell)
 target_add_test(test_nonuniform_field)
 target_add_test(test_nonuniform_druyvesteyn)
 target_add_test(test_nonuniform_CAR)
-target_add_test(test_nonuniform_inelastic)
+# NOTE: This test is disabled as it uses the analytical solution for a case with
+# a constant elastic cross section and a delta peaked inelastic cross section.
+# This solution does not take into account the inelastic cross section in the
+# field operator, and therefore LoKI-B does not compute the same thing as the
+# analytical solution.
+# target_add_test(test_nonuniform_inelastic)
 target_add_test(test_nonuniform_operator_distribution)
 target_add_test(test_invalid_inputs)
 target_add_test(test_valid_inputs)
