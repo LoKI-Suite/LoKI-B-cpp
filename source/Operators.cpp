@@ -1100,15 +1100,15 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
             for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
-            int numThreshold;
+            Grid::Index numThreshold;
             if (grid.isUniform())
             {
                 numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
             } else
             {
-                Grid::Index findIndex = (std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin());
-                numThreshold = static_cast<Grid::Index>(findIndex) - 1;
+                numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
             }
+
             /* This is an optimization: do not add a source and a sink that cancel out.
              * When this happens, the (minor) energy gain is ignored.
              */
@@ -1119,28 +1119,43 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
              *  given the amount of work done.
              */
-            for (Grid::Index k = 0; k < cellNumber; ++k)
-            {
-                /** \todo The manual \cite Manual_2_2_0 states that attachment is always
-                 *  non-conserving (5 lines below eq. 16). What is attachmentConservativeMatrix,
-                 *  then?
-                 */
-                /** \todo Explain the structure of this term. Explain that this is conserving,
-                 *  how we can see that (integral source must be zero).
-                 */
-                /** \todo Is this really a conserving term? It appears that this loses electrons
-                 *  if the argument of the following if-statement is false (that is: for
-                 *  electrons with at a distance smaller than the attachment energy from uMax.
-                 *  Of course this is in practice only a minor problem. It can be fixed by
-                 *  also having the sink inside the if-statement, so we simply discard the
-                 *  processes that produce electrons with an energy that cannot be represented.
-                 */
-                if (k < cellNumber - numThreshold)
-                    attachmentConservativeMatrix(k, k + numThreshold) +=
-                        targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+            if (grid.isUniform()) {
+                for (Grid::Index k = 0; k < cellNumber; ++k)
+                {
+                    /** \todo The manual \cite Manual_2_2_0 states that attachment is always
+                     *  non-conserving (5 lines below eq. 16). What is attachmentConservativeMatrix,
+                     *  then?
+                     */
+                    /** \todo Explain the structure of this term. Explain that this is conserving,
+                     *  how we can see that (integral source must be zero).
+                     */
+                    /** \todo Is this really a conserving term? It appears that this loses electrons
+                     *  if the argument of the following if-statement is false (that is: for
+                     *  electrons with at a distance smaller than the attachment energy from uMax.
+                     *  Of course this is in practice only a minor problem. It can be fixed by
+                     *  also having the sink inside the if-statement, so we simply discard the
+                     *  processes that produce electrons with an energy that cannot be represented.
+                     */
+                    if (k + numThreshold < cellNumber)
+                        attachmentConservativeMatrix(k, k + numThreshold) +=
+                            targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                    attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                }                
+            } else {
+                for (Grid::Index k = 0; grid.getNode(k) < grid.uMax(); ++k) {
+                    const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
+
+                    for (int i = 0; i < int(alpha.size()); i++)
+                    {
+                         attachmentConservativeMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                            targetDensity * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                    }
+
+                    attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                }
             }
+
         }
     }
 }
