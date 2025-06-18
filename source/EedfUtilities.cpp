@@ -30,7 +30,6 @@
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
 #include <cmath>
-#include <chrono>
 
 namespace loki {
 
