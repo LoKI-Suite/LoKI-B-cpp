@@ -33,6 +33,7 @@
 #include "LoKI-B/GridOps.h"
 
 #include <cassert>
+#include <cmath>
 
 namespace loki {
 
@@ -518,6 +519,16 @@ std::vector<std::tuple<Grid::Index, double>> oneTakesAllDistribution(const Grid&
 InelasticOperator::InelasticOperator(const Grid& grid)
 {
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
+}
+
+double collisionIntegral(double u_sig_start, double sig_start, double sig_slope, double u_f_start, double f_slope, double u) {
+    const double expr = (
+        2 * sig_slope / std::pow(f_slope, 3.)
+        + (u * (sig_start + (u - u_sig_start) * sig_slope)) / f_slope
+        - (sig_start + (2 * u - u_sig_start) * sig_slope) / std::pow(f_slope, 2.)
+    );
+    return std::exp(f_slope * (u - u_f_start)) * expr;
+    // return std::expm1(f_slope * (u - u_f_start)) * expr + expr;
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
