@@ -120,6 +120,7 @@ namespace loki {
          *                 only electronic, or also vibrational, rotational?
          */
         void evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture);
+        void evaluateInelasticOperatorsNew(const Grid& grid, const Vector& eedf, const EedfMixture& mixture);
         Matrix inelasticMatrix;
     };
 
