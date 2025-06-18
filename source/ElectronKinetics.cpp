@@ -35,6 +35,7 @@
 #include "LoKI-B/Log.h"
 #include <Eigen/src/Core/BandMatrix.h>
 #include <cmath>
+#include <limits>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -249,6 +250,43 @@ void ElectronKineticsBoltzmann::doSolve()
 #endif
 }
 
+void ElectronKineticsBoltzmann::invertLinearMatrixNew()
+{
+    const double EoN = m_workingConditions->reducedFieldSI();
+
+    Matrix baseMatrix = elasticMatrix + fieldMatrix*(EoN*EoN);
+
+    // boltzmannMatrix
+    //     = elasticMatrix
+    //     + fieldMatrix*(EoN*EoN)
+    //     + inelasticOperator.inelasticMatrix
+    //     + ionizationOperator.ionConservativeMatrix
+    //     + attachmentOperator.attachmentConservativeMatrix;
+
+    // if (carOperator)
+    // {
+    //     boltzmannMatrix += CARMatrix;
+    // }
+
+    invertMatrix(baseMatrix);
+
+    Vector eedf_cur(eedf);
+
+    double error = std::numeric_limits<double>::max();
+
+    for (int i = 0; i < 100 && error > 1e-5; ++i) {
+        eedf_cur = eedf;
+
+        inelasticOperator.evaluateInelasticOperatorsNew(grid(), eedf, this->mixture);
+        boltzmannMatrix = baseMatrix + inelasticOperator.inelasticMatrix;
+
+        invertMatrix(boltzmannMatrix);
+
+        error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().sum();
+        Log<Message>::Warning("EEDF rel error: ", error);
+    }
+}
+
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
@@ -258,13 +296,13 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     boltzmannMatrix
         = elasticMatrix
         + fieldMatrix*(EoN*EoN)
-        + inelasticOperator.inelasticMatrix
-        + ionizationOperator.ionConservativeMatrix
-        + attachmentOperator.attachmentConservativeMatrix;
-    if (carOperator)
-    {
-        boltzmannMatrix += CARMatrix;
-    }
+        + inelasticOperator.inelasticMatrix;
+    //     + ionizationOperator.ionConservativeMatrix
+    //     + attachmentOperator.attachmentConservativeMatrix;
+    // if (carOperator)
+    // {
+    //     boltzmannMatrix += CARMatrix;
+    // }
 
     invertMatrix(boltzmannMatrix);
 }
@@ -838,7 +876,8 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
 void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
-    invertLinearMatrix();
+    // invertLinearMatrix();
+    invertLinearMatrixNew();
 
     /* Maybe we are done. But we need to do more work if non-linear terms are
      * present:

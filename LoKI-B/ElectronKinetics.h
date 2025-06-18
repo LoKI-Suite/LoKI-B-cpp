@@ -148,6 +148,7 @@ private:
     /** solve the Boltzmann equation, taking into account only the linear terms.
      */
     void invertLinearMatrix();
+    void invertLinearMatrixNew();
     /** calls function solveEEDF, passing the eedf and grid member data and \a matrix.
      */
     void invertMatrix(Matrix &matrix);
