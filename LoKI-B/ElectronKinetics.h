@@ -76,6 +76,7 @@ protected:
      *  to the grid (via member grid()).
      */
     void updateMaxEnergy(double uMax);
+    void updateMaxEnergyNonuniform(double uMax);
     virtual void doSolve()=0;
 
     /** Given two numbers, calculate how many decades |v2| is smaller than |v1|.

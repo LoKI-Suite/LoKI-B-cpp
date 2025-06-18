@@ -29,6 +29,7 @@
 
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
 
 #include <cassert>
@@ -131,12 +132,18 @@ void CAROperator::evaluatePower(const Grid& grid, const Vector& eedf, double Tg,
     } else
     {
         const auto n = grid.nCells();
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < n; ++k)
+        {
+            if (k!=0)
+                net -=  eedf[k] * g[k] * (kTg + grid.duCell(k - 1) * .5);
 
-        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
-        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+            if (k!=n-1)
+                net += eedf[k] * g[k + 1] * (kTg - grid.duCell(k + 1) * .5);
 
-        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
-        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
     }
     net *= SI::gamma;
     gain *= SI::gamma * kTg;
@@ -186,7 +193,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
             {   
                 const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
                 const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
-                
+
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
@@ -220,12 +227,18 @@ void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double
     } else
     {
         const auto n = grid.nCells();
+        net = 0.0;
+        gain = 0.0;
+        for (Grid::Index k = 0; k < n; ++k)
+        {
+            if (k!=0)
+                net -=  eedf[k] * g[k] * (kTg + grid.duCell(k - 1) * .5);
 
-        Vector auxHigh = kTg * Vector::Ones(n + 1) + grid.duNodes() * .5; // aux1
-        Vector auxLow  = kTg * Vector::Ones(n + 1) - grid.duNodes() * .5; // aux2
+            if (k!=n-1)
+                net += eedf[k] * g[k + 1] * (kTg - grid.duCell(k + 1) * .5);
 
-        net = (eedf.array() * (g.tail(n).array() * auxLow.tail(n).array() - g.head(n).array() * auxHigh.head(n).array())).sum();
-        gain = (eedf.array() * (g.tail(n) - g.head(n)).array()).sum();
+            gain += eedf[k] * (g[k + 1] - g[k]);
+        }
     }
 
     net *= SI::gamma;
@@ -280,7 +293,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN
             {
                 const double Amin = 1/grid.duNode(k);
                 const double Bmin = 1/grid.duNode(k);
-                
+
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
             }
@@ -302,7 +315,7 @@ void FieldOperator::evaluatePower(const Grid& grid, const Vector& eedf, double E
     power = SI::gamma * eedf.cwiseProduct(g.tail(n) - g.head(n)).sum() * EoN*EoN;
 }
 
-std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac = 1.)
+std::array<double, 2> alphaDistribution(double targetCell, double uMin, double uPlus, double frac)
 {
     std::array<double, 2> alpha;
     alpha[0] = frac*(uPlus - targetCell) / (uPlus - uMin);
@@ -311,10 +324,11 @@ std::array<double, 2> alphaDistribution(double targetCell, double uMin, double u
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double targetCell, int targetBegin)
+std::vector<std::tuple<Grid::Index, double>> distributeOneCell(const Grid& grid, double targetCell, Grid::Index targetBegin)
 {
-    std::vector<std::tuple<int, double>> alpha;
+    std::vector<std::tuple<Grid::Index, double>> alpha;
     std::array<double, 2> alphaMinPlus;
+
     if (targetCell > grid.getCell(targetBegin))
     {
         alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
@@ -333,17 +347,17 @@ std::vector<std::tuple<int, double>> distributeOneCell(const Grid& grid, double 
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeTwoCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd)
+std::vector<std::tuple<Grid::Index, double>> distributeTwoCells(const Grid& grid, double targetCell, Grid::Index targetBegin)
 {
-    std::vector<std::tuple<int, double>> alpha;
-    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetEnd));
+    std::vector<std::tuple<Grid::Index, double>> alpha;
+    std::array<double, 2> alphaMinPlus = alphaDistribution(targetCell, grid.getCell(targetBegin), grid.getCell(targetBegin + 1));
     alpha.push_back(std::make_tuple(targetBegin, alphaMinPlus[0]));
-    alpha.push_back(std::make_tuple(targetEnd, alphaMinPlus[1]));
+    alpha.push_back(std::make_tuple(targetBegin + 1, alphaMinPlus[1]));
     return alpha;
 }
 
-std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double targetCell, int targetBegin, int targetEnd, 
-    Grid::Index origin, double threshold, bool reverse = false)
+std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, double targetCell, Grid::Index targetBegin, Grid::Index targetEnd, 
+                                                     Grid::Index origin, double threshold, bool reverse, double frac)
 {
     double targetMiddleLeft;
     double targetMiddleRight;
@@ -351,69 +365,151 @@ std::vector<std::tuple<int, double>> distributeNCells(const Grid& grid, double t
     double fractionRight;
     if (reverse)
     {
-        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) + threshold) / 2.;
-        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) + threshold) / 2.;
-        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) + threshold)) / grid.duCell(origin);
-        fractionRight = (grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) + threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd - 1) + frac * grid.getNode(origin + 1) + threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (frac * grid.getNode(origin) + threshold)) / grid.duCell(origin);
+        fractionRight = (frac * grid.getNode(origin + 1) + threshold - grid.getNode(targetEnd - 1)) / grid.duCell(origin);
     } else
     {
-        targetMiddleLeft = (grid.getNode(targetBegin + 1) + grid.getNode(origin) - threshold) / 2.;
-        targetMiddleRight = (grid.getNode(targetEnd) + grid.getNode(origin + 1) - threshold) / 2.;
-        fractionLeft = (grid.getNode(targetBegin + 1) - (grid.getNode(origin) - threshold)) / grid.duCell(origin);
-        fractionRight = (grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd)) / grid.duCell(origin);
+        targetMiddleLeft = (grid.getNode(targetBegin + 1) + frac * grid.getNode(origin) - threshold) / 2.;
+        targetMiddleRight = (grid.getNode(targetEnd - 1) + frac * grid.getNode(origin + 1) - threshold) / 2.;
+        fractionLeft = (grid.getNode(targetBegin + 1) - (frac * grid.getNode(origin) - threshold)) / grid.duCell(origin);
+        fractionRight = (frac * grid.getNode(origin + 1) - threshold - grid.getNode(targetEnd - 1)) / grid.duCell(origin);
     }
 
-    double alphaMiddle = (grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
-    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd)) / 2.;
+    double alphaMiddle = (grid.getNode(targetEnd - 1) - grid.getNode(targetBegin + 1)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin + 1) + grid.getNode(targetEnd - 1)) / 2.;
 
-    auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(targetBegin), targetMiddleCenter, fractionLeft);
+    const auto alphaMin = alphaDistribution(targetMiddleLeft, grid.getCell(targetBegin), targetMiddleCenter, fractionLeft);
     alphaMiddle += alphaMin[1];
-    auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd), fractionRight);
+    const auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd - 1), fractionRight);
     alphaMiddle += alphaPlus[0];
 
-    std::vector<std::tuple<int, double>> alpha;
+    std::vector<std::tuple<Grid::Index, double>> alpha;
     alpha.push_back(std::make_tuple(targetBegin, alphaMin[0]));
-    for (Grid::Index i = targetBegin + 1; i < targetEnd; i++)
+    for (Grid::Index i = targetBegin + 1; i < targetEnd - 1; i++)
     {
-        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd) - grid.getNode(targetBegin + 1)) * alphaMiddle));
+        // TODO: This is the same as `grid.duCell(i) / grid.duCell(origin)`?
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd - 1) - grid.getNode(targetBegin + 1)) * alphaMiddle));
     }
-    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
+    alpha.push_back(std::make_tuple(targetEnd - 1, alphaPlus[1]));
 
     return alpha;
 }
 
+Grid::Index getLowerBound(const Grid& grid, double energy) {
+    assert(energy > 0);
 
-std::vector<std::tuple<int, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, int sourceidx, bool reverse = 0)
+    for (Grid::Index i = 1; i < grid.nCells() + 1; ++i) {
+        if (grid.getNode(i) > energy) return i - 1;
+    }
+
+    Log<Message>::Error("Cannot find lower bound, as ", energy, " is higher than the maximum node energy ", grid.getNode(grid.nCells()));
+}
+
+Grid::Index getUpperBound(const Grid& grid, double energy) {
+    for (Grid::Index i = grid.nCells() - 1; i >= 0; --i) {
+        if (grid.getNode(i) < energy) return i + 1;
+    }
+
+    Log<Message>::Error("Cannot find upper bound, as ", energy, " is lower than the minimum node energy ", grid.getNode(0));
+}
+
+
+std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid& grid, double threshold, double source, Grid::Index sourceidx, 
+                                                             bool reverse, double frac)
 {
     double targetCell;
     int targetBegin;
     int targetEnd;
     if (reverse)
     {
-        targetCell = source + threshold;
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) + threshold) - 
-            grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) + threshold) -
-            grid.getNodes().begin() - 1;
+        targetCell = frac * source + threshold;
+        targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     } else
     {
-        targetCell = source - threshold;
-        targetBegin = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), grid.getNode(sourceidx) - threshold) - 
-            grid.getNodes().begin() - 1;
-        targetEnd = std::upper_bound(grid.getNodes().begin() + targetBegin, grid.getNodes().end(), grid.getNode(sourceidx + 1) - threshold) -
-            grid.getNodes().begin() - 1;
+        targetCell = frac * source - threshold;
+        targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
+        targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     }
 
-    std::vector<std::tuple<int, double>> alpha;
-    if (targetBegin == targetEnd)
+    std::vector<std::tuple<Grid::Index, double>> alpha;
+    if (targetEnd - targetBegin == 1)
     {
         alpha = distributeOneCell(grid, targetCell, targetBegin);
-    } else if (targetEnd - targetBegin == 1)
+    } else if (targetEnd - targetBegin == 2)
     {
-        alpha = distributeTwoCells(grid,targetCell, targetBegin, targetEnd);
+        alpha = distributeTwoCells(grid, targetCell, targetBegin);
     } else
     {
-        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse);
+        alpha = distributeNCells(grid, targetCell, targetBegin, targetEnd, sourceidx, threshold, reverse, frac);
+    }
+
+    /** This is a bounds check. If some of the operator should be distributed
+      * in a cell that is beyond the maximum energy, add it to the previous
+      * cell instead.
+      */
+    if (std::get<0>(alpha[alpha.size() - 1]) >= grid.nCells()) {
+        std::get<1>(alpha[alpha.size() - 2]) += std::get<1>(alpha[alpha.size() - 1]);
+        alpha.pop_back();
+    }
+
+    return alpha;
+}
+
+std::vector<std::tuple<Grid::Index, double>> distributeNCellsIonization(const Grid& grid, double targetCell, Grid::Index targetBegin, Grid::Index targetEnd, 
+    Grid::Index origin)
+{
+    double targetMiddleRight;
+    double fractionRight;
+    targetMiddleRight = (grid.getNode(targetEnd - 1) + grid.getNode(origin + 1) - grid.getNode(origin)) / 2.;
+    fractionRight = (grid.getNode(origin + 1) - grid.getNode(origin) - grid.getNode(targetEnd - 1)) / grid.duCell(origin);
+
+    double alphaMiddle = (grid.getNode(targetEnd - 1) - grid.getNode(targetBegin)) / grid.duCell(origin);
+    double targetMiddleCenter = (grid.getNode(targetBegin) + grid.getNode(targetEnd - 1)) / 2.;
+
+    const auto alphaPlus = alphaDistribution(targetMiddleRight, targetMiddleCenter, grid.getCell(targetEnd - 1), fractionRight);
+    alphaMiddle += alphaPlus[0];
+
+    std::vector<std::tuple<Grid::Index, double>> alpha;
+    for (Grid::Index i = targetBegin; i < targetEnd; i++)
+    {
+        alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd - 1) - grid.getNode(targetBegin)) * alphaMiddle));
+    }
+    alpha.push_back(std::make_tuple(targetEnd, alphaPlus[1]));
+
+    return alpha;
+}
+
+std::vector<std::tuple<Grid::Index, double>> oneTakesAllDistribution(const Grid& grid, Grid::Index sourceidx)
+{
+    double targetCell;
+    int targetBegin;
+    int targetEnd;
+    targetCell = grid.getCell(sourceidx) - grid.getNode(sourceidx);
+    targetBegin = 0;
+    targetEnd = getUpperBound(grid, grid.duCell(sourceidx));
+
+    std::vector<std::tuple<Grid::Index, double>> alpha;
+    if (targetEnd - targetBegin == 1)
+    {
+        alpha = distributeOneCell(grid, targetCell, targetBegin);
+    } else if (targetEnd - targetBegin == 2)
+    {
+        alpha = distributeTwoCells(grid, targetCell, targetBegin);
+    } else
+    {
+        alpha = distributeNCellsIonization(grid, targetCell, targetBegin, targetEnd, sourceidx);
+    }
+
+    /** This is a bounds check. If some of the operator should be distributed
+      * in a cell that is less than the minimum energy, add it to the next
+      * cell instead.
+      */
+    if (std::get<0>(alpha[0]) < 0) {
+        std::get<1>(alpha[1]) += std::get<1>(alpha[0]);
+        alpha.erase(alpha.begin());
     }
 
     return alpha;
@@ -449,7 +545,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
 
                     if (grid.isUniform())
                     {
-                        numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+                       numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
                     } else
                     {
                        numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
@@ -461,7 +557,7 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             if (k < cellNumber - numThreshold)
                                 inelasticMatrix(k, k + numThreshold) +=
-                                    targetDensity * grid.getCells()[k + numThreshold] * cellCrossSection[k + numThreshold];
+                                    targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
                             /** \todo Clarify. See the comments on the (conserving) attachment operator.
                              */
@@ -471,17 +567,17 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                     {
                         for (Grid::Index k = 0; k < cellNumber; ++k)
                         {
-                            if (k > numThreshold)
+                            if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
                             {
-                                std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
-                                     grid.getCell(k), k);
+                                const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
 
                                 for (int i = 0; i < int(alpha.size()); i++)
                                 {
-                                    inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
-                                        targetDensity * grid.getCells()[k] * cellCrossSection[k];
+                                     inelasticMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                        targetDensity * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
                                 }
                             }
+
                             inelasticMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
                         }
                     }
@@ -511,24 +607,28 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
                         {
                             for (Grid::Index k = 0; k < cellNumber; ++k)
                             {
-                                if (k >= numThreshold)
+                                if (grid.getNode(k) >= grid.getNode(numThreshold))
                                 {
-                                    std::vector<std::tuple<int, double>> alpha = getOperatorDistribution(grid, grid.getCell(numThreshold),
-                                         grid.getCell(k), k, true);
-                                    
+                                    const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
+                                         grid.getCell(k), k);
                                     for (int i = 0; i < int(alpha.size()); i++)
                                     {
-                                        inelasticMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) *
+                                        inelasticMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
                                             swRatio * productDensity * grid.getCells()[k] * cellCrossSection[k];
                                     }
                                 }
 
-                                if (k < cellNumber - numThreshold)
+                                if (grid.getNode(k) + grid.getNode(numThreshold) < grid.getCell(cellNumber - 1))
                                 {
-                                    int j = std::upper_bound(grid.getCells().begin(), grid.getCells().end(), grid.getCell(k) + 
-                                         grid.getCell(numThreshold)) - grid.getCells().begin() - 1;
-                                    inelasticMatrix(k, k) -= swRatio * productDensity * grid.getCell(j) *
-                                                            cellCrossSection[j];
+
+                                    const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
+                                         grid.getCell(k), k, true);
+
+                                    for (int i = 0; i < int(alpha.size()); i++)
+                                    {
+                                        inelasticMatrix(k, k) -= std::get<1>(alpha[i]) *
+                                            swRatio * productDensity * grid.getCells()[std::get<0>(alpha[i])] * cellCrossSection[std::get<0>(alpha[i])];
+                                    }
                                 }
                             }
                         }
@@ -675,11 +775,6 @@ IonizationOperator::IonizationOperator(IonizationOperatorType type)
 
 void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("IonizationOperator does not support nonuniform grids.");
-    }
-    
     bool hasValidCollisions = false;
 
     ionConservativeMatrix.setZero();
@@ -698,46 +793,106 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             if (threshold > grid.getNode(grid.nCells()))
                 continue;
             hasValidCollisions = true;
-
             const double delta = collision->getTarget()->delta();
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+
+            Grid::Index numThreshold;
 
             const Vector cellCrossSection = interpolateNodalToCell(grid,*collision->crossSection);
 
+            if (grid.isUniform())
+            {
+                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            } else
+            {
+                numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
+            }
+           
             switch (ionizationOperatorType)
             {
             case IonizationOperatorType::conservative:
                 break;
 
             case IonizationOperatorType::oneTakesAll:
-                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                if (grid.isUniform())
                 {
-                    // Manual_2_2_0 eq. 15. TODO: Note that newborns are
-                    // inserted in the first cell, so at du/2, not at zero.
-                    if (k < grid.nCells() - numThreshold)
-                        ionizationMatrix(k, k + numThreshold) +=
-                            delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        // Manual_2_2_0 eq. 15. TODO: Note that newborns are
+                        // inserted in the first cell, so at du/2, not at zero.
+                        if (k < grid.nCells() - numThreshold)
+                            ionizationMatrix(k, k + numThreshold) +=
+                                delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                    const double term = delta * grid.getCell(k) * cellCrossSection(k);
+                        const double term = delta * grid.getCell(k) * cellCrossSection(k);
 
-                    ionizationMatrix(k, k) -= term;
-                    ionizationMatrix(0, k) += term;
+                        ionizationMatrix(k, k) -= term;
+                        ionizationMatrix(0, k) += term;
+                    }
+                } else
+                {
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
+                        {
+                            const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
+                                    grid.getCell(k), k, true);
+
+                            for (unsigned long i = 0; i < alpha.size(); i++)
+                            {
+                                ionizationMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                    delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                            }
+                        }
+
+                        const double term = delta * grid.getCell(k) * cellCrossSection(k);
+
+                        ionizationMatrix(k, k) -= term;
+
+                        const auto alpha = oneTakesAllDistribution(grid, k);
+
+                        for (unsigned long i = 0; i < alpha.size(); i++)
+                        {
+                            ionizationMatrix(std::get<0>(alpha[i]), k) += std::get<1>(alpha[i]) * term;
+                        }
+                    }
                 }
+                
                 break;
 
             case IonizationOperatorType::equalSharing:
-                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                if (grid.isUniform())
                 {
-                    // Manual_2_2_0 eq. 16
-                    ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
-
-                    if (k < (grid.nCells() - numThreshold) / 2)
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
+                        // Manual_2_2_0 eq. 16
+                        ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
 
-                        ionizationMatrix(k, i) += 4 * delta * grid.getCell(i) * cellCrossSection(i);
+                        if (k < (grid.nCells() - numThreshold) / 2)
+                        {
+                            const Grid::Index i = 2 * (k + 1) + numThreshold - 1;
+
+                            ionizationMatrix(k, i) += 4 * delta * grid.getCell(i) * cellCrossSection(i);
+                        }
+                    }
+                } else
+                {
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                    {
+                        ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+
+                        if (grid.getNode(k) < (grid.uMax() - grid.getNode(numThreshold)) / 2.)
+                        {
+                            const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold),
+                                    grid.getCell(k), k, true, 2.0);
+                            for (int i = 0; i < int(alpha.size()); i++)
+                            {
+                                ionizationMatrix(k, std::get<0>(alpha[i])) += 4 * std::get<1>(alpha[i]) *
+                                    delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                            }
+                        }
                     }
                 }
+                
                 break;
             case IonizationOperatorType::sdcs:
 
@@ -748,57 +903,115 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 if (W < 0)
                     W = threshold;
 
-                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                if (grid.isUniform())
                 {
-                    const Grid::Index end = std::min(2 * (k + 1) + numThreshold, grid.nCells());
-
-                    if (k > numThreshold)
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        const Grid::Index half = (k + 1 - numThreshold) / 2;
-                        const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
-                        double sum = 0.;
+                        const Grid::Index end = std::min(2 * (k + 1) + numThreshold, grid.nCells());
 
-                        for (Grid::Index i = 0; i < half; ++i)
-                            sum += numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
+                        if (k > numThreshold)
+                        {
+                            const Grid::Index half = (k + 1 - numThreshold) / 2;
 
-                        ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
-                    }
+                            const double numerator = 1 / std::atan((grid.getCell(k) - threshold) / (2 * W));
+                            double sum = 0.;
 
-                    /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
-                     *        Document (in the document, not necessarily here) what are the
-                     *        consequences of that.
-                     */
-                    if (k + numThreshold + 1 < grid.nCells())
-                    {
-                        for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                            for (Grid::Index i = 0; i < half; ++i)
+                                sum += numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
+
+                            ionizationMatrix(k, k) -= delta * grid.du() * grid.getCell(k) * cellCrossSection[k] * sum;
+                        }
+
+                        /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
+                         *        Document (in the document, not necessarily here) what are the
+                         *        consequences of that.
+                         */
+                        if (k + numThreshold + 1 < grid.nCells())
+                        {
+                            for (Grid::Index i = k + numThreshold + 1; i < end; ++i)
+                            {
+                                ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
+                                                        (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                        (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
+                            /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
+                            * because the w from the denominator of the first multiplicand is combined
+                            * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
+                            * factor 1/(w+u^2/w).
+                            */
+                            }
+                        }
+
+                        /** \todo The following comment needs to be sorted out (possible index errors).
+                         *  \todo Document what is done here (algorithm) and how it is implemented.
+                         */
+
+                        /** \todo This last section might need some adjustments because of indexing
+                         *  differences between Matlab and C++ (since indexes are multiplied here).
+                         */
+
+                        for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
                         {
                             ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
-                                                      (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
-                                                       (W + std::pow(grid.getCell(i - k - numThreshold - 1), 2) / W));
-                        /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
-                         * because the w from the denominator of the first multiplicand is combined
-                         * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
-                         * factor 1/(w+u^2/w).
-                         */
+                                                    (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                    (W + std::pow(grid.getCell(k), 2) / W));
+                            /* See the note above about the optical differences with equation 63
+                            * of the manual (2.2.0).
+                            */
                         }
                     }
-
-                    /** \todo The following comment needs to be sorted out (possible index errors).
-                     *  \todo Document what is done here (algorithm) and how it is implemented.
-                     */
-
-                    /** \todo This last section might need some adjustments because of indexing
-                     *  differences between Matlab and C++ (since indexes are multiplied here).
-                     */
-
-                    for (Grid::Index i = 2 * (k + 1) + numThreshold - 1; i < grid.nCells(); ++i)
+                } else
+                {
+                    for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        ionizationMatrix(k, i) += delta * grid.du() * grid.getCell(i) * cellCrossSection[i] /
-                                                  (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
-                                                   (W + std::pow(grid.getCell(k), 2) / W));
-                        /* See the note above about the optical differences with equation 63
-                         * of the manual (2.2.0).
+                        const double end = std::min(2*grid.getNode(k+1) + grid.getNode(numThreshold), grid.uMax());
+
+                        if (k > numThreshold)
+                        {
+                            const double half = (grid.getNode(k + 1) - grid.getNode(numThreshold)) / 2.0;
+
+                            const double numerator = 1. / std::atan((grid.getCell(k) - threshold) / (2. * W));
+                            double sum = 0.;
+
+                            for (Grid::Index i = 0; grid.getCell(i) <= half; ++i)
+                                sum += grid.duCell(i) * numerator / (W + grid.getCell(i) * grid.getCell(i) / W);
+
+                            ionizationMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k] * sum;
+                        }
+
+                        /** \todo If k + numThreshold + 1 >= grid.nCells(), the term is ignored.
+                         *        Document (in the document, not necessarily here) what are the
+                         *        consequences of that.
                          */
+                        if (grid.getNode(k + 1) + grid.getNode(numThreshold) <= grid.uMax())
+                        {
+                            Grid::Index idx;
+                            idx = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), 
+                                  grid.getCell(k) + grid.getCell(numThreshold)) - grid.getNodes().begin() - 1;
+                            for (Grid::Index i = idx; grid.getNode(i + 1) < end; ++i)
+                            {
+                                ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
+                                                        (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                        (W + std::pow(grid.getCell(i) - grid.getCell(k) - grid.getCell(numThreshold), 2) / W));
+                            /* NOTE: The expression looks a bit different from eq. 63 of the manual (2.2.0)
+                            * because the w from the denominator of the first multiplicand is combined
+                            * with the factor 1+(u/w)^beta, and beta=2 is hardcoded, resulting in the
+                            * factor 1/(w+u^2/w).
+                            */
+                            }
+                        }
+
+                        Grid::Index idx1;
+                        idx1 = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), 
+                                2*grid.getCell(k) + grid.getCell(numThreshold)) - grid.getNodes().begin() - 1;
+                        for (Grid::Index i = idx1; i < grid.nCells(); ++i)
+                        {
+                            ionizationMatrix(k, i) += delta * grid.duCell(i) * grid.getCell(i) * cellCrossSection[i] /
+                                                    (std::atan((grid.getCell(i) - threshold) / (2 * W)) *
+                                                    (W + std::pow(grid.getCell(k), 2) / W));
+                            /* See the note above about the optical differences with equation 63
+                            * of the manual (2.2.0).
+                            */
+                        }
                     }
                 }
                 break;
@@ -809,13 +1022,32 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             if (numThreshold == 0)
                 continue;
 
-            for (Grid::Index k = 0; k < grid.nCells(); ++k)
+            if (grid.isUniform())
             {
-                if (k < grid.nCells() - numThreshold)
-                    ionConservativeMatrix(k, k + numThreshold) +=
-                        delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    if (k < grid.nCells() - numThreshold)
+                        ionConservativeMatrix(k, k + numThreshold) +=
+                            delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                    ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                }
+            } else
+            {
+                for (Grid::Index k = 0; k < grid.nCells(); ++k)
+                {
+                    if (grid.getNode(k) + grid.getNode(numThreshold) < grid.uMax())
+                    {
+                        const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true);
+
+                        for (int i = 0; i < int(alpha.size()); i++)
+                        {
+                                ionConservativeMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                                delta * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                        }
+                    }
+                    ionConservativeMatrix(k, k) -= delta * grid.getCell(k) * cellCrossSection[k];
+                }
             }
 
             /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
@@ -832,11 +1064,7 @@ AttachmentOperator::AttachmentOperator()
 
 void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const EedfMixture& mixture)
 {
-    if (!grid.isUniform())
-    {
-        throw std::runtime_error("AttachmentOperator does not support nonuniform grids.");
-    }
-    
+
     attachmentMatrix.setZero();
     attachmentConservativeMatrix.setZero();
 
@@ -872,7 +1100,15 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
             for (Grid::Index k = 0; k < cellNumber; ++k)
                 attachmentMatrix.coeffRef(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
 
-            const auto numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            Grid::Index numThreshold;
+            if (grid.isUniform())
+            {
+                numThreshold = static_cast<Grid::Index>(std::floor(threshold / grid.du()));
+            } else
+            {
+                numThreshold = std::upper_bound(grid.getNodes().begin(),grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
+            }
+
             /* This is an optimization: do not add a source and a sink that cancel out.
              * When this happens, the (minor) energy gain is ignored.
              */
@@ -883,28 +1119,43 @@ void AttachmentOperator::evaluateAttachmentOperator(const Grid& grid, const Eedf
              *  It does not seem problematic to have an 'if (numThreshold)' in the loop,
              *  given the amount of work done.
              */
-            for (Grid::Index k = 0; k < cellNumber; ++k)
-            {
-                /** \todo The manual \cite Manual_2_2_0 states that attachment is always
-                 *  non-conserving (5 lines below eq. 16). What is attachmentConservativeMatrix,
-                 *  then?
-                 */
-                /** \todo Explain the structure of this term. Explain that this is conserving,
-                 *  how we can see that (integral source must be zero).
-                 */
-                /** \todo Is this really a conserving term? It appears that this loses electrons
-                 *  if the argument of the following if-statement is false (that is: for
-                 *  electrons with at a distance smaller than the attachment energy from uMax.
-                 *  Of course this is in practice only a minor problem. It can be fixed by
-                 *  also having the sink inside the if-statement, so we simply discard the
-                 *  processes that produce electrons with an energy that cannot be represented.
-                 */
-                if (k < cellNumber - numThreshold)
-                    attachmentConservativeMatrix(k, k + numThreshold) +=
-                        targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
+            if (grid.isUniform()) {
+                for (Grid::Index k = 0; k < cellNumber; ++k)
+                {
+                    /** \todo The manual \cite Manual_2_2_0 states that attachment is always
+                     *  non-conserving (5 lines below eq. 16). What is attachmentConservativeMatrix,
+                     *  then?
+                     */
+                    /** \todo Explain the structure of this term. Explain that this is conserving,
+                     *  how we can see that (integral source must be zero).
+                     */
+                    /** \todo Is this really a conserving term? It appears that this loses electrons
+                     *  if the argument of the following if-statement is false (that is: for
+                     *  electrons with at a distance smaller than the attachment energy from uMax.
+                     *  Of course this is in practice only a minor problem. It can be fixed by
+                     *  also having the sink inside the if-statement, so we simply discard the
+                     *  processes that produce electrons with an energy that cannot be represented.
+                     */
+                    if (k + numThreshold < cellNumber)
+                        attachmentConservativeMatrix(k, k + numThreshold) +=
+                            targetDensity * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
 
-                attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                    attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                }                
+            } else {
+                for (Grid::Index k = 0; grid.getNode(k) < grid.uMax(); ++k) {
+                    const auto alpha = getOperatorDistribution(grid, grid.getNode(numThreshold), grid.getCell(k), k, true, 1.0);
+
+                    for (int i = 0; i < int(alpha.size()); i++)
+                    {
+                         attachmentConservativeMatrix(k, std::get<0>(alpha[i])) += std::get<1>(alpha[i]) *
+                            targetDensity * grid.getCell(std::get<0>(alpha[i])) * cellCrossSection[std::get<0>(alpha[i])];
+                    }
+
+                    attachmentConservativeMatrix(k, k) -= targetDensity * grid.getCell(k) * cellCrossSection[k];
+                }
             }
+
         }
     }
 }

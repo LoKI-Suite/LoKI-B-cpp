@@ -19,8 +19,7 @@ void test_distribution(loki::Vector nodes, unsigned int sourceIdx, bool reverse 
     const double eps = std::numeric_limits<double>::epsilon();
 
     Grid grid(nodes, uMax, false);
-    std::vector<std::tuple<int, double>> alpha;
-    alpha = getOperatorDistribution(grid, threshold, grid.getCell(sourceIdx), sourceIdx, reverse);
+    const auto alpha = getOperatorDistribution(grid, threshold, grid.getCell(sourceIdx), sourceIdx, reverse);
 
     double alphaTot = 0;
     double energyTarget = 0;

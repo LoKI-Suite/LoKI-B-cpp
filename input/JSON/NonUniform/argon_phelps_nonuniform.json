@@ -1,0 +1,73 @@
+{
+    "workingConditions": {
+      "reducedField": 10,
+      "electronTemperature": 1,
+      "excitationFrequency": 0,
+      "gasPressure": 133.32,
+      "gasTemperature": 300,
+      "electronDensity": 1e19,
+      "chamberLength": 1.0,
+      "chamberRadius": 1.0
+    },
+    "electronKinetics": {
+      "isOn": true,
+      "eedfType": "boltzmann",
+      "ionizationOperatorType": "equalSharing",
+      "growthModelType": "spatial",
+      "includeEECollisions": false,
+      "_LXCatFiles": [
+        "http://localhost:3000/api/scat-css/1171607?refstyle=bibtex"
+      ],
+      "LXCatFiles": [
+        "../../JSON/Ar/Ar_Phelps_LXCat.json"
+      ],
+      "gasProperties": {
+        "mass": "../../Databases/masses.txt",
+        "fraction": ["Ar = 1"],
+        "harmonicFrequency": "../../Databases/harmonicFrequencies.txt",
+        "anharmonicFrequency": "../../Databases/anharmonicFrequencies.txt",
+        "rotationalConstant": "../../Databases/rotationalConstants.txt",
+        "electricQuadrupoleMoment": "../../Databases/quadrupoleMoment.txt",
+        "OPBParameter": "../../Databases/OPBParameter.txt"
+      },
+      "stateProperties": {
+        "population": ["Ar(^1S_0) = 1.0"],
+        "energy": [],
+        "statisticalWeight": []
+      },
+      "numerics": {
+        "energyGrid": {
+            "nonuniformGrid": {
+                "maxEnergy":20.0,
+                "nodeDistribution": {
+                  "max": 1,
+                  "min": 0,
+                  "nvalues": 3001,
+                  "range": "linspace"
+                }
+            }  
+        },
+        "maxPowerBalanceRelError": 1e-9,
+        "nonLinearRoutines": {
+          "algorithm": "mixingDirectSolutions",
+          "mixingParameter": 0.7,
+          "maxEedfRelError": 1e-9
+        }
+      }
+    },
+    "gui": {
+      "isOn": false,
+      "refreshFrequency": 1
+    },
+    "output": {
+      "isOn": false,
+      "folder": "simulation",
+      "dataFiles": [
+        "eedf",
+        "swarmParameters",
+        "rateCoefficients",
+        "powerBalance",
+        "lookUpTable"
+      ]
+    }
+  }
