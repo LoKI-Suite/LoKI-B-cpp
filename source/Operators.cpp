@@ -522,6 +522,8 @@ InelasticOperator::InelasticOperator(const Grid& grid)
     inelasticMatrix.setZero(grid.nCells(), grid.nCells());
 }
 
+// Assumes linear interpolation for the cross sections, and logarithmic
+// interpolation for the eedf.
 double collision_integral(double u_sig_start, double sig_start, double sig_slope, double u_f_start, double f_slope, double u) {
     const double expr = (
         2 * sig_slope / std::pow(f_slope, 3.)
@@ -530,6 +532,25 @@ double collision_integral(double u_sig_start, double sig_start, double sig_slope
     );
     return std::exp(f_slope * (u - u_f_start)) * expr;
     // return std::expm1(f_slope * (u - u_f_start)) * expr + expr;
+}
+
+// Assumes linear interpolation for the cross sections, and logarithmic
+// interpolation for the eedf. This function avoids a call to std::exp.
+double collision_integral_adv(double u_sig_start, double sig_start, double sig_slope, double u_f_start, double f_div, double delta_u_f, double u) {
+    // exp(ln(f1/f2) / (u2 - u1)) = exp(ln((f2/f1)^((u2 - u1)^-1)) = (f2/f1)^((u2-u1)^-1)
+    const double f_slope = std::log(f_div) / delta_u_f;
+    const double expr = (
+        2 * sig_slope / std::pow(f_slope, 3.)
+        + (u * (sig_start + (u - u_sig_start) * sig_slope)) / f_slope
+        - (sig_start + (2 * u - u_sig_start) * sig_slope) / std::pow(f_slope, 2.)
+    );
+    return std::pow(f_div, (u - u_f_start) / delta_u_f) * expr;
+}
+
+// Assumes linear interpolation for the cross sections, and a constant value for
+// the eedf.
+double collision_integral_simple(double u_sig_start, double sig_start, double sig_slope, double u_f_start, double f_slope, double u) {
+    return 0.5 * std::pow(u, 2.) * (sig_start - u_sig_start * sig_slope) + 1./3. * std::pow(u, 3.) * sig_slope;
 }
 
 // This version of the `collision_integral_sink` function directly interpolates
