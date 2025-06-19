@@ -536,7 +536,7 @@ void collision_integral_sink(const Grid& grid, const Vector &eedf, Matrix& inela
 
     // Compute initial f_slope using forward differences.
     double f_slope = std::log(eedf[1] / eedf[0]) / grid.duNode(1);
-    double u_f_start = 0.;
+    double u_f_start = grid.getCell(0);
 
     for (Grid::Index i = 0; i < grid.nCells(); ++i) {
         // The cross section slope is constant over the cell.
