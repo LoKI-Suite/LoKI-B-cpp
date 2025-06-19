@@ -33,6 +33,7 @@
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/OperatorsNew.h"
 #include <cmath>
 #include <limits>
 
@@ -248,21 +249,42 @@ void ElectronKineticsBoltzmann::doSolve()
 
 void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 {
-    const double EoN = m_workingConditions->reducedFieldSI();
+    experimental::ElasticOperator elastic_operator(grid());
+    experimental::FieldOperator field_operator(grid());
 
-    Matrix baseMatrix = elasticMatrix + fieldMatrix*(EoN*EoN);
+    elastic_operator.evaluate(
+        grid(),
+        mixture.collision_data().elasticCrossSection(),
+        m_workingConditions->gasTemperature()
+    );
+    field_operator.evaluate(
+        grid(),
+        mixture.collision_data().totalCrossSection(),
+        m_workingConditions->reducedFieldSI()
+    );
 
-    // boltzmannMatrix
-    //     = elasticMatrix
-    //     + fieldMatrix*(EoN*EoN)
-    //     + inelasticOperator.inelasticMatrix
-    //     + ionizationOperator.ionConservativeMatrix
-    //     + attachmentOperator.attachmentConservativeMatrix;
+    const auto drift_coeff = elastic_operator.drift_coefficient() + field_operator.drift_coefficient();
+    const auto diff_coeff = elastic_operator.diffusion_coefficient() + field_operator.diffusion_coefficient();
 
-    // if (carOperator)
-    // {
-    //     boltzmannMatrix += CARMatrix;
-    // }
+    Vector peclet = drift_coeff.array() * grid().duNodes().array() / diff_coeff.array();
+
+    Matrix baseMatrix(grid().nCells(), grid().nCells());
+
+    baseMatrix.setZero();
+
+    // Apply the Scharfetter-Gummel discretization scheme with a zero-flux
+    // boundary condition on both boundaries.
+    for (Grid::Index i = 0; i < grid().nCells(); i++) {
+        if (i > 0) {
+            baseMatrix(i, i) -= drift_coeff[i] / (1. - std::exp(peclet[i]));
+            baseMatrix(i, i - 1) -= drift_coeff[i] / (1. - std::exp(-peclet[i]));
+        }
+
+        if (i < grid().nCells() - 1) {
+            baseMatrix(i, i) += drift_coeff[i + 1] / (1. - std::exp(-peclet[i + 1]));
+            baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
+        }
+    }
 
     invertMatrix(baseMatrix);
 

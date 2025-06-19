@@ -775,7 +775,9 @@ void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Ve
         }
     }
 
-    inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
+    // NOTE: This line is only required when the drift diffusion terms are also
+    // divided by the cell width.
+    // inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
 void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture)
