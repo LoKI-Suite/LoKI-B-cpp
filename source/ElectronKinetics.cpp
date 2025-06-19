@@ -191,23 +191,23 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
 
     evaluateFieldOperator();
 
-    if (carOperator.get())
-    {
-        carOperator->evaluate(grid(),Tg,CARMatrix);
-    }
+    // if (carOperator.get())
+    // {
+    //     carOperator->evaluate(grid(),Tg,CARMatrix);
+    // }
 
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
 
-    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        ionizationOperator.evaluateIonizationOperator(grid(),mixture);
+    // if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+    //     ionizationOperator.evaluateIonizationOperator(grid(),mixture);
 
-    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-        attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
+    // if (mixture.collision_data().hasCollisions(CollisionType::attachment))
+    //     attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
 
-    if (eeOperator)
-    {
-        eeOperator->initialize(grid());
-    }
+    // if (eeOperator)
+    // {
+    //     eeOperator->initialize(grid());
+    // }
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -865,6 +865,7 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
     // invertLinearMatrix();
     invertLinearMatrixNew();
+    return;
 
     /* Maybe we are done. But we need to do more work if non-linear terms are
      * present:
