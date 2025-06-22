@@ -786,10 +786,13 @@ void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Ve
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
-        for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
+        for (auto vecIndex : { CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational })
         {
             for (const auto &collision : cd.collisions(vecIndex) )
             {
+                if (collision->crossSection->threshold() >= grid.uMax())
+                    continue;
+
                 collision_integral_sink_adv(grid, eedf, this->inelasticMatrix, *collision);
                 collision_integral_source_adv(grid, eedf, this->inelasticMatrix, *collision);
             }
