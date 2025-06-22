@@ -24,7 +24,7 @@ ElasticOperator::ElasticOperator(const Grid &grid) : DriftDiffusionOperator(grid
 }
 void ElasticOperator::evaluate(const Grid &grid, const Vector &elasticCrossSection, double T_gas)
 {
-    this->drift_coeff = grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection);
+    this->drift_coeff = 2. * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection);
     this->diff_coeff = -(Constant::kBeV * T_gas) * this->drift_coefficient();
 }
 
