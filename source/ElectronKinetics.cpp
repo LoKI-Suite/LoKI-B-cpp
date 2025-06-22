@@ -286,7 +286,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
         }
     }
 
-    invertMatrix(baseMatrix);
+    // TODO: Determine a suitable value for the electron temperature.
+    eedf = makePrescribedEDF(grid(), 1, 0.1, false);
 
     Vector eedf_cur(eedf);
 
