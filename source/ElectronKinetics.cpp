@@ -311,6 +311,12 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
         inelasticOperator.evaluateInelasticOperatorsNew(grid(), eedf, this->mixture);
         boltzmannMatrix = baseMatrix + inelasticOperator.inelasticMatrix;
 
+        // Apply the constant logarithmic decay boundary condition.
+        // const auto N = grid().nCells() - 1;
+        // boltzmannMatrix.row(N).setZero();
+        // boltzmannMatrix(N, N) = 1;
+        // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N - 2));
+
         invertMatrix(boltzmannMatrix);
 
         error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().sum();
