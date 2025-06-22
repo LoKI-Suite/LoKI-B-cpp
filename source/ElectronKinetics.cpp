@@ -285,6 +285,18 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
             baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
         }
     }
+    // Central difference scheme.
+    // for (Grid::Index i = 0; i < grid().nCells(); i++) {
+    //     if (i > 0) {
+    //         baseMatrix(i, i) -= drift_coeff[i] / 2. - diff_coeff[i] / grid().duNode(i);
+    //         baseMatrix(i, i - 1) -= drift_coeff[i] / 2. + diff_coeff[i] / grid().duNode(i);
+    //     }
+
+    //     if (i < grid().nCells() - 1) {
+    //         baseMatrix(i, i) += drift_coeff[i + 1] / 2. + diff_coeff[i + 1] / grid().duNode(i + 1);
+    //         baseMatrix(i, i + 1) += drift_coeff[i + 1] / 2. - diff_coeff[i + 1] / grid().duNode(i + 1);
+    //     }
+    // }
 
     // TODO: Determine a suitable value for the electron temperature.
     eedf = makePrescribedEDF(grid(), 1, 0.1, false);
