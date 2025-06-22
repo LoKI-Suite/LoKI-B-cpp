@@ -157,7 +157,7 @@ void solveEEDF(Vector &eedf, Matrix &matrix, const Grid &grid)
      *    the normalization condition (the integral of f(u)sqrt(u) over the
      *    energies must be unity) to make it final.
      */
-    normalizeEDF(eedf,grid);
+    // normalizeEDF(eedf,grid);
 
 #if LOKIB_MATRIX_TIME_INVERSION
     const auto end = high_resolution_clock::now();

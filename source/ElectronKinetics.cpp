@@ -303,6 +303,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
         error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().sum();
         Log<Message>::Warning("EEDF rel error: ", error);
     }
+
+    normalizeEDF(eedf, grid());
 }
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
@@ -323,6 +325,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     // }
 
     invertMatrix(boltzmannMatrix);
+    normalizeEDF(eedf, grid());
 }
 
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
