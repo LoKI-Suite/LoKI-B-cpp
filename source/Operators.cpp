@@ -592,12 +592,12 @@ void collision_integral_sink_adv(const Grid& grid, const Vector &eedf, Matrix& i
         // move to the next grid cell.
         if (u_start >= grid.getNode(i_grid + 1)) {
             i_grid++;
+            u_f_start = grid.getCell(i_grid);
         }
         // If the current integration domain starts at the current cell center,
         // recompute the slope of the eedf.
         if (u_start == grid.getCell(i_grid) && i_grid < grid.nCells() - 1) {
             f_slope = std::log(eedf[i_grid + 1] / eedf[i_grid]) / grid.duNode(i_grid + 1);
-            u_f_start = grid.getCell(i_grid);
         }
 
         // The end of the current integration domain is either the next cell
@@ -666,12 +666,12 @@ void collision_integral_source_adv(const Grid& grid, const Vector& eedf, Matrix&
         // move to the next grid cell.
         if (u_start >= grid.getNode(j_grid + 1)) {
             j_grid++;
+            u_f_start = grid.getCell(j_grid);
         }
         // If the current integration domain starts at the current target cell
         // center, recompute the slope of the eedf.
         if (u_start == grid.getCell(j_grid) && j_grid < grid.nCells() - 1) {
             f_slope = std::log(eedf[j_grid + 1] / eedf[j_grid]) / grid.duNode(j_grid + 1);
-            u_f_start = grid.getCell(j_grid);
         }
         // The end of the current integration domain is either the next source
         // cell center, the next cross section entry, the next target cell face,
