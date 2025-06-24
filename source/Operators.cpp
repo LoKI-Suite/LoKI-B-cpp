@@ -35,6 +35,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <limits>
 
 namespace loki {
 
@@ -575,6 +576,7 @@ void collision_integral_sink_adv(const Grid& grid, const Vector &eedf, Matrix& i
 
     double sig_slope = 0.;
     double u_sig_start = 0.;
+    double u_sig_next = cs_energy[i_cs + 1];
     double sig_start = 0.;
 
     double u_start = 0;
@@ -582,11 +584,20 @@ void collision_integral_sink_adv(const Grid& grid, const Vector &eedf, Matrix& i
     while (u_start < grid.uMax()) {
         // If the current integration domain is outside the current cross
         // section cell, move to the next cell.
-        if (u_start >= cs_energy[i_cs + 1]) {
+        if (u_start >= u_sig_next) {
             i_cs++;
-            sig_slope = (cs[i_cs + 1] - cs[i_cs]) / (cs_energy[i_cs + 1] - cs_energy[i_cs]);
-            u_sig_start = cs_energy[i_cs];
-            sig_start = cs[i_cs];
+
+            if (i_cs == cs.size() - 1) {
+                sig_slope = 0.;
+                u_sig_start = 0.;
+                u_sig_next = std::numeric_limits<double>::max();
+                sig_start = 0.;
+            } else {
+                sig_slope = (cs[i_cs + 1] - cs[i_cs]) / (cs_energy[i_cs + 1] - cs_energy[i_cs]);
+                u_sig_start = cs_energy[i_cs];
+                u_sig_next = cs_energy[i_cs + 1];
+                sig_start = cs[i_cs];
+            }
         }
         // If the current integration domain is outside the current grid cell,
         // move to the next grid cell.
@@ -603,7 +614,7 @@ void collision_integral_sink_adv(const Grid& grid, const Vector &eedf, Matrix& i
         // The end of the current integration domain is either the next cell
         // center, the next cross section entry, or the grid boundary.
         const double u_end = std::min(
-                                 std::min(u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid), cs_energy[i_cs + 1]),
+                                 std::min(u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid), u_sig_next),
                                  grid.uMax()
                              );
 
@@ -646,16 +657,26 @@ void collision_integral_source_adv(const Grid& grid, const Vector& eedf, Matrix&
 
     double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
     double u_sig_start = cs_energy[j_cs];
+    double u_sig_next = cs_energy[j_cs + 1];
     double sig_start = cs[j_cs];
 
     while (u_start < grid.uMax()) {
         // If the current integration domain is outside the current cross
         // section cell, move to the next cell.
-        if (u_start >= cs_energy[j_cs + 1]) {
+        if (u_start >= u_sig_next) {
             j_cs++;
-            sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
-            u_sig_start = cs_energy[j_cs];
-            sig_start = cs[j_cs];
+
+            if (j_cs == cs.size() - 1) {
+                sig_slope = 0.;
+                u_sig_start = 0.;
+                u_sig_next = std::numeric_limits<double>::max();
+                sig_start = 0.;
+            } else {
+                sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+                u_sig_start = cs_energy[j_cs];
+                u_sig_next = cs_energy[j_cs + 1];
+                sig_start = cs[j_cs];
+            }
         }
         // If the current integration domain is outside the current source cell,
         // move to the next grid cell.
@@ -677,7 +698,7 @@ void collision_integral_source_adv(const Grid& grid, const Vector& eedf, Matrix&
         // cell center, the next cross section entry, the next target cell face,
         // or the grid boundary.
         const double u_end = std::min(
-                                 std::min(cs_energy[j_cs + 1], grid.getNode(i_grid + 1) + threshold),
+                                 std::min(u_sig_next, grid.getNode(i_grid + 1) + threshold),
                                  u_start >= grid.getCell(j_grid) ? grid.getNode(j_grid + 1) : grid.getCell(j_grid)
                              );
 
