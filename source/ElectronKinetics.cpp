@@ -319,7 +319,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 
         invertMatrix(boltzmannMatrix);
 
-        error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().sum();
+        error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().mean();
         Log<Message>::Warning("EEDF rel error: ", error);
     }
 
