@@ -767,7 +767,7 @@ void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& i
         }
         // If the current integration domain is outside the current target cell,
         // move to the next grid cell.
-        if (u_start + threshold >= grid.getNode(j_grid + 1)) {
+        if (u_start >= grid.getNode(j_grid + 1) - threshold) {
             j_grid++;
         }
         // If the current integration domain starts at the current target cell
@@ -780,7 +780,7 @@ void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& i
         // or the grid boundary.
         const double u_end = std::min(
                                  std::min(u_sig_next, grid.getNode(j_grid + 1) - threshold),
-                                 u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(j_grid)
+                                 u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)
                              );
 
         double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
