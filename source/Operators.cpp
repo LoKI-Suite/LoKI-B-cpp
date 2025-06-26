@@ -711,99 +711,189 @@ void collision_integral_source_adv(const Grid& grid, const Vector& eedf, Matrix&
     }
 }
 
-void collision_integral_sink(const Grid& grid, const Vector &eedf, Matrix& inelasticMatrix, const EedfCollision& col) {
-    const double target_density = col.getTarget()->delta();
+void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& inelasticMatrix, const EedfCollision& col) {
+    const double threshold = col.crossSection->threshold();
+
+    const double product_density = col.m_rhsHeavyStates[0]->delta();
+    const double swRatio = col.getTarget()->statisticalWeight /
+                           col.m_rhsHeavyStates[0]->statisticalWeight;
+
+    double u_start = 0.;
+
+    // The grid iterator iterates over the source cells of the grid.
+    Grid::Index i_grid = 0;
 
     // Compute initial f_slope using forward differences.
     double f_slope = std::log(eedf[1] / eedf[0]) / grid.duNode(1);
     double u_f_start = grid.getCell(0);
 
-    for (Grid::Index i = 0; i < grid.nCells(); ++i) {
-        // The cross section slope is constant over the cell.
-        const double sig_slope = ((*col.crossSection)[i + 1] - (*col.crossSection)[i]) / grid.duCell(i);
+    // Find the target cell in which the left face of the first source cell lands.
+    Grid::Index j_grid = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
 
-        // Integrate from the left face to the cell center. For the first half
-        // of the cell we can reuse the f_slope computed for the second half of
-        // the previous cell.
-        const double start = collision_integral(grid.getNode(i), (*col.crossSection)[i], sig_slope, u_f_start, f_slope, grid.getNode(i));
-        const double end = collision_integral(grid.getNode(i), (*col.crossSection)[i], sig_slope, u_f_start, f_slope, grid.getCell(i));
+    // Get the raw cross section data.
+    const auto &cs = col.crossSection->lookupTable().y();
+    const auto &cs_energy = col.crossSection->lookupTable().x();
 
-        // Subtract from the inelastic matrix (electron sink term).
-        inelasticMatrix(i, i) -= target_density * (end - start);
+    Grid::Index j_cs = std::upper_bound(cs_energy.begin(), cs_energy.end(), threshold) - cs_energy.begin() - 1;
 
-        // Use backward difference to compute the eedf slope at the upper grid
-        // boundary (reuse the slope from the first half of the cell). Otherwise
-        // we compute the new slope.
-        if (i < grid.nCells() - 1) {
-            u_f_start = grid.getCell(i);
-            f_slope = std::log(eedf[i + 1] / eedf[i]) / grid.duNode(i + 1);
+    double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+    double u_sig_start = cs_energy[j_cs] - threshold;
+    double u_sig_next = cs_energy[j_cs + 1] - threshold;
+    double sig_start = cs[j_cs];
+
+    while (u_start + threshold < grid.uMax()) {
+        // If the current integration domain is outside the current cross
+        // section cell, move to the next cell.
+        if (j_cs < cs.size() - 1 && u_start >= u_sig_next) {
+            j_cs++;
+
+            if (j_cs == cs.size() - 1) {
+                sig_slope = 0.;
+                u_sig_start = 0.;
+                u_sig_next = std::numeric_limits<double>::max();
+                sig_start = 0.;
+            } else {
+                sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+                u_sig_start = cs_energy[j_cs] - threshold;
+                u_sig_next = cs_energy[j_cs + 1] - threshold;
+                sig_start = cs[j_cs];
+            }
         }
+        // If the current integration domain is outside the current source cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(i_grid + 1)) {
+            i_grid++;
+            u_f_start = grid.getCell(i_grid);
+        }
+        // If the current integration domain is outside the current target cell,
+        // move to the next grid cell.
+        if (u_start + threshold >= grid.getNode(j_grid + 1)) {
+            j_grid++;
+        }
+        // If the current integration domain starts at the current target cell
+        // center, recompute the slope of the eedf.
+        if (u_start == grid.getCell(i_grid) && i_grid < grid.nCells() - 1) {
+            f_slope = std::log(eedf[i_grid + 1] / eedf[i_grid]) / grid.duNode(i_grid + 1);
+        }
+        // The end of the current integration domain is either the next source
+        // cell center, the next cross section entry, the next target cell face,
+        // or the grid boundary.
+        const double u_end = std::min(
+                                 std::min(u_sig_next, grid.getNode(j_grid + 1) - threshold),
+                                 u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(j_grid)
+                             );
 
-        // Integrate from the cell center to the right face.
-        const double start_2 = collision_integral(grid.getNode(i), (*col.crossSection)[i], sig_slope, u_f_start, f_slope, grid.getCell(i));
-        const double end_2 = collision_integral(grid.getNode(i), (*col.crossSection)[i], sig_slope, u_f_start, f_slope, grid.getNode(i + 1));
+        double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
+        double integral_end = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_end);
 
-        // Subtract from the inelastic matrix (electron sink term).
-        inelasticMatrix(i, i) -= target_density * (end_2 - start_2);
+        inelasticMatrix(i_grid, i_grid) -= product_density * swRatio * (integral_end - integral_start);
+
+        u_start = u_end;
     }
 }
 
-void collision_integral_source(const Grid& grid, const Vector& eedf, Matrix& inelasticMatrix, const EedfCollision& col) {
+void collision_integral_sup_source(const Grid& grid, const Vector& eedf, Matrix& inelasticMatrix, const EedfCollision& col) {
     const double threshold = col.crossSection->threshold();
-    const double target_density = col.getTarget()->delta();
 
-    double u_start = grid.getNode(0) + threshold;
+    const double product_density = col.m_rhsHeavyStates[0]->delta();
+    const double swRatio = col.getTarget()->statisticalWeight /
+                           col.m_rhsHeavyStates[0]->statisticalWeight;
+
+    double u_start = threshold;
+
+    // The grid iterator iterates over the source cells of the grid.
+    Grid::Index i_grid = 0;
+
+    // Compute initial f_slope using forward differences.
+    double f_slope = std::log(eedf[1] / eedf[0]) / grid.duNode(1);
+    double u_f_start = grid.getCell(0);
 
     // Find the target cell in which the left face of the first source cell lands.
-    Grid::Index j = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), u_start) - grid.getNodes().begin() - 1;
+    Grid::Index j_grid = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
 
-    // The cross section slope is constant over the target cell.
-    double sig_slope = ((*col.crossSection)[j + 1] - (*col.crossSection)[j]) / grid.duCell(j);
+    // Get the raw cross section data.
+    const auto &cs = col.crossSection->lookupTable().y();
+    const auto &cs_energy = col.crossSection->lookupTable().x();
 
-    for (Grid::Index i = 0; i < grid.nCells(); ++i) {
-        if (u_start >= grid.uMax()) break;
+    Grid::Index j_cs = std::upper_bound(cs_energy.begin(), cs_energy.end(), threshold) - cs_energy.begin() - 1;
 
-        const double right_bound = std::min(grid.getNode(i + 1) + threshold, grid.uMax());
+    double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+    double u_sig_start = cs_energy[j_cs];
+    double u_sig_next = cs_energy[j_cs + 1];
+    double sig_start = cs[j_cs];
 
-        while (u_start < right_bound) {
-            // If the starting energy of our integration domain is higher that
-            // the current cell, increment the target cell index.
-            if (u_start >= grid.getNode(j + 1)) {
-                j++;
-                sig_slope = ((*col.crossSection)[j + 1] - (*col.crossSection)[j]) / grid.duCell(j);
+    while (u_start < grid.uMax()) {
+        // If the current integration domain is outside the current cross
+        // section cell, move to the next cell.
+        if (j_cs < cs.size() - 1 && u_start >= u_sig_next) {
+            j_cs++;
+
+            if (j_cs == cs.size() - 1) {
+                sig_slope = 0.;
+                u_sig_start = 0.;
+                u_sig_next = std::numeric_limits<double>::max();
+                sig_start = 0.;
+            } else {
+                sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+                u_sig_start = cs_energy[j_cs];
+                u_sig_next = cs_energy[j_cs + 1];
+                sig_start = cs[j_cs];
             }
-
-            // The end of the integration region is either a target cell energy,
-            // a target node energy, a source node energy, or u_max.
-            double u_end = u_start < grid.getCell(j)
-                                   ? std::min(grid.getCell(j), right_bound)
-                                   : std::min(grid.getNode(j + 1), right_bound);
-
-
-            // TODO: Reuse f_slope where possible.
-            // The slope of the eedf is dependent on whether we are integrating
-            // in the first or second half of the cell.
-            double f_slope_idx = u_start < grid.getCell(j) || j == grid.nCells() - 1 ? j - 1 : j;
-            double f_slope = std::log(eedf[f_slope_idx + 1] / eedf[f_slope_idx]) / grid.duNode(f_slope_idx + 1);
-            double u_f_start = grid.getCell(f_slope_idx);
-            // Use forward differences to compute f_slope in the first cell.
-            if (u_start < grid.getNode(1)) {
-                f_slope = std::log(eedf[1] / eedf[0]) / grid.duNode(1);
-                u_f_start = 0.;
-            }
-
-            double integral_start = collision_integral(grid.getNode(j), (*col.crossSection)[j], sig_slope, u_f_start, f_slope, u_start);
-            double integral_end = collision_integral(grid.getNode(j), (*col.crossSection)[j], sig_slope, u_f_start, f_slope, u_end);
-
-            inelasticMatrix(i, j) += target_density * (integral_end - integral_start);
-
-            u_start = u_end;
         }
+        // If the current integration domain is outside the current source cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(i_grid + 1) + threshold) {
+            i_grid++;
+            u_f_start = grid.getCell(i_grid) + threshold;
+        }
+        // If the current integration domain is outside the current target cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(j_grid + 1)) {
+            j_grid++;
+        }
+        // If the current integration domain starts at the current target cell
+        // center, recompute the slope of the eedf.
+        if (u_start == grid.getCell(i_grid) + threshold && i_grid < grid.nCells() - 1) {
+            f_slope = std::log(eedf[i_grid + 1] / eedf[i_grid]) / grid.duNode(i_grid + 1);
+        }
+        // The end of the current integration domain is either the next source
+        // cell center, the next cross section entry, the next target cell face,
+        // or the grid boundary.
+        const double u_end = std::min(
+                                 std::min(u_sig_next, grid.getNode(j_grid + 1)),
+                                 (u_start >= grid.getCell(i_grid) + threshold ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold
+                             );
+            // Log<Message>::Warning("grid.getCell(i_grid): ", grid.getCell(i_grid));
+            // Log<Message>::Warning("u_start - threshold: ", u_start - threshold);
+            // Log<Message>::Warning("u_start - threshold >= grid.getCell(i_grid): ", u_start - threshold >= grid.getCell(i_grid));
+            // Log<Message>::Warning("(u_start - threshold >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold: ", (u_start - threshold >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold);
+            // Log<Message>::Warning("grid.getNode(j_grid + 1): ", grid.getNode(j_grid + 1));
+
+        double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
+        double integral_end = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_end);
+
+        // if (std::isnan(integral_start) || std::isnan(integral_end)) {
+            // Log<Message>::Warning("u_start: ", u_start);
+            // Log<Message>::Warning("u_end: ", u_end);
+            // Log<Message>::Warning("u_sig_start: ", u_sig_start);
+            // Log<Message>::Warning("u_sig_next: ", u_sig_next);
+            // Log<Message>::Warning("sig_start: ", sig_start);
+            // Log<Message>::Warning("sig_slope: ", sig_slope);
+            // Log<Message>::Warning("u_f_start: ", u_f_start);
+            // Log<Message>::Warning("f_slope: ", f_slope);
+        // }
+
+
+        inelasticMatrix(j_grid, i_grid) += product_density * swRatio * (integral_end - integral_start);
+
+        u_start = u_end;
     }
 }
 
 void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Vector& eedf, const EedfMixture& mixture) {
     inelasticMatrix.setZero();
+
+    Log<Message>::Warning("eedf: ", eedf.sum());
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -816,6 +906,13 @@ void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Ve
 
                 collision_integral_sink_adv(grid, eedf, this->inelasticMatrix, *collision);
                 collision_integral_source_adv(grid, eedf, this->inelasticMatrix, *collision);
+
+                if (collision->isReverse()) {
+                    collision_integral_sup_sink(grid, eedf, this->inelasticMatrix, *collision);
+                    Log<Message>::Warning("sink: ", this->inelasticMatrix.sum());
+                    collision_integral_sup_source(grid, eedf, this->inelasticMatrix, *collision);
+                    Log<Message>::Warning("source: ", this->inelasticMatrix.sum());
+                }
             }
         }
     }
