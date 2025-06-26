@@ -718,14 +718,14 @@ void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& i
     const double swRatio = col.getTarget()->statisticalWeight /
                            col.m_rhsHeavyStates[0]->statisticalWeight;
 
-    double u_start = 0.;
+    double u_start = threshold;
 
     // The grid iterator iterates over the source cells of the grid.
     Grid::Index i_grid = 0;
 
     // Compute initial f_slope using forward differences.
     double f_slope = std::log(eedf[1] / eedf[0]) / grid.duNode(1);
-    double u_f_start = grid.getCell(0);
+    double u_f_start = grid.getCell(0) + threshold;
 
     // Find the target cell in which the left face of the first source cell lands.
     Grid::Index j_grid = std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), threshold) - grid.getNodes().begin() - 1;
@@ -737,11 +737,11 @@ void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& i
     Grid::Index j_cs = std::upper_bound(cs_energy.begin(), cs_energy.end(), threshold) - cs_energy.begin() - 1;
 
     double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
-    double u_sig_start = cs_energy[j_cs] - threshold;
-    double u_sig_next = cs_energy[j_cs + 1] - threshold;
+    double u_sig_start = cs_energy[j_cs];
+    double u_sig_next = cs_energy[j_cs + 1];
     double sig_start = cs[j_cs];
 
-    while (u_start + threshold < grid.uMax()) {
+    while (u_start < grid.uMax()) {
         // If the current integration domain is outside the current cross
         // section cell, move to the next cell.
         if (j_cs < cs.size() - 1 && u_start >= u_sig_next) {
@@ -754,33 +754,33 @@ void collision_integral_sup_sink(const Grid& grid, const Vector& eedf, Matrix& i
                 sig_start = 0.;
             } else {
                 sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
-                u_sig_start = cs_energy[j_cs] - threshold;
-                u_sig_next = cs_energy[j_cs + 1] - threshold;
+                u_sig_start = cs_energy[j_cs];
+                u_sig_next = cs_energy[j_cs + 1];
                 sig_start = cs[j_cs];
             }
         }
         // If the current integration domain is outside the current source cell,
         // move to the next grid cell.
-        if (u_start >= grid.getNode(i_grid + 1)) {
+        if (u_start >= (grid.getNode(i_grid + 1) + threshold)*(1.0-1e-14)) {
             i_grid++;
-            u_f_start = grid.getCell(i_grid);
+            u_f_start = grid.getCell(i_grid) + threshold;
         }
         // If the current integration domain is outside the current target cell,
         // move to the next grid cell.
-        if (u_start >= grid.getNode(j_grid + 1) - threshold) {
+        if (u_start >= grid.getNode(j_grid + 1)) {
             j_grid++;
         }
         // If the current integration domain starts at the current target cell
         // center, recompute the slope of the eedf.
-        if (u_start == grid.getCell(i_grid) && i_grid < grid.nCells() - 1) {
+        if (u_start == grid.getCell(i_grid) + threshold && i_grid < grid.nCells() - 1) {
             f_slope = std::log(eedf[i_grid + 1] / eedf[i_grid]) / grid.duNode(i_grid + 1);
         }
         // The end of the current integration domain is either the next source
         // cell center, the next cross section entry, the next target cell face,
         // or the grid boundary.
         const double u_end = std::min(
-                                 std::min(u_sig_next, grid.getNode(j_grid + 1) - threshold),
-                                 u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)
+                                 std::min(u_sig_next, grid.getNode(j_grid + 1)),
+                                 (u_start >= (grid.getCell(i_grid) + threshold) * (1.0-1e-14) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold
                              );
 
         double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
