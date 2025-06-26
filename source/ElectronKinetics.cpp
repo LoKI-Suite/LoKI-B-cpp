@@ -305,7 +305,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 
     double error = std::numeric_limits<double>::max();
 
-    for (int i = 0; i < 100 && error > 1e-5; ++i) {
+    for (int i = 0; i < 100 && error > 1e-4; ++i) {
         eedf_cur = eedf;
 
         inelasticOperator.evaluateInelasticOperatorsNew(grid(), eedf, this->mixture);
