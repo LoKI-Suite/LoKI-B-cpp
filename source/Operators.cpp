@@ -863,26 +863,9 @@ void collision_integral_sup_source(const Grid& grid, const Vector& eedf, Matrix&
                                  std::min(u_sig_next, grid.getNode(j_grid + 1)),
                                  (u_start >= grid.getCell(i_grid) + threshold ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold
                              );
-            // Log<Message>::Warning("grid.getCell(i_grid): ", grid.getCell(i_grid));
-            // Log<Message>::Warning("u_start - threshold: ", u_start - threshold);
-            // Log<Message>::Warning("u_start - threshold >= grid.getCell(i_grid): ", u_start - threshold >= grid.getCell(i_grid));
-            // Log<Message>::Warning("(u_start - threshold >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold: ", (u_start - threshold >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid)) + threshold);
-            // Log<Message>::Warning("grid.getNode(j_grid + 1): ", grid.getNode(j_grid + 1));
 
         double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
         double integral_end = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_end);
-
-        // if (std::isnan(integral_start) || std::isnan(integral_end)) {
-            // Log<Message>::Warning("u_start: ", u_start);
-            // Log<Message>::Warning("u_end: ", u_end);
-            // Log<Message>::Warning("u_sig_start: ", u_sig_start);
-            // Log<Message>::Warning("u_sig_next: ", u_sig_next);
-            // Log<Message>::Warning("sig_start: ", sig_start);
-            // Log<Message>::Warning("sig_slope: ", sig_slope);
-            // Log<Message>::Warning("u_f_start: ", u_f_start);
-            // Log<Message>::Warning("f_slope: ", f_slope);
-        // }
-
 
         inelasticMatrix(j_grid, i_grid) += product_density * swRatio * (integral_end - integral_start);
 
@@ -892,8 +875,6 @@ void collision_integral_sup_source(const Grid& grid, const Vector& eedf, Matrix&
 
 void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Vector& eedf, const EedfMixture& mixture) {
     inelasticMatrix.setZero();
-
-    Log<Message>::Warning("eedf: ", eedf.sum());
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -909,9 +890,7 @@ void InelasticOperator::evaluateInelasticOperatorsNew(const Grid& grid, const Ve
 
                 if (collision->isReverse()) {
                     collision_integral_sup_sink(grid, eedf, this->inelasticMatrix, *collision);
-                    Log<Message>::Warning("sink: ", this->inelasticMatrix.sum());
                     collision_integral_sup_source(grid, eedf, this->inelasticMatrix, *collision);
-                    Log<Message>::Warning("source: ", this->inelasticMatrix.sum());
                 }
             }
         }
