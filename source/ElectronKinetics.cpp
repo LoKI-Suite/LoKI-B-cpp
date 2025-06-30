@@ -251,6 +251,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 {
     experimental::ElasticOperator elastic_operator(grid());
     experimental::FieldOperator field_operator(grid());
+    experimental::InelasticOperator inelastic_operator(grid());
 
     elastic_operator.evaluate(
         grid(),
@@ -308,8 +309,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     for (int i = 0; i < 100 && error > 1e-4; ++i) {
         eedf_cur = eedf;
 
-        inelasticOperator.evaluateInelasticOperatorsNew(grid(), eedf, this->mixture);
-        boltzmannMatrix = baseMatrix + inelasticOperator.inelasticMatrix;
+        inelastic_operator.evaluate(grid(), eedf, this->mixture);
+        boltzmannMatrix = baseMatrix + inelastic_operator.inelasticMatrix + inelastic_operator.superelasticMatrix;
 
         // Apply the constant logarithmic decay boundary condition.
         // const auto N = grid().nCells() - 1;
