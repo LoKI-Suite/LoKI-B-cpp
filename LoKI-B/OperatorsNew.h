@@ -29,5 +29,15 @@ class FieldOperator : public DriftDiffusionOperator
     FieldOperator(const Grid &grid);
     void evaluate(const Grid &grid, const Vector &total_cs, double EoN);
 };
-} // namespace exp
+
+class InelasticOperator
+{
+  public:
+    InelasticOperator(const Grid &grid);
+    void evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture);
+
+    Matrix inelasticMatrix;
+    Matrix superelasticMatrix;
+};
+} // namespace experimental
 } // namespace loki
