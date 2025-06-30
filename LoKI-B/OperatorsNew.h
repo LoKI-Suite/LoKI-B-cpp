@@ -1,3 +1,4 @@
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/LinearAlgebra.h"
 
@@ -39,5 +40,17 @@ class InelasticOperator
     Matrix inelasticMatrix;
     Matrix superelasticMatrix;
 };
+
+class IonizationOperator
+{
+  public:
+    IonizationOperator(const Grid &grid, IonizationOperatorType type);
+    void evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture);
+
+    const IonizationOperatorType operatorType;
+
+    Matrix ionizationMatrix;
+};
+
 } // namespace experimental
 } // namespace loki
