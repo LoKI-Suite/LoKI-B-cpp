@@ -2,6 +2,7 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/EedfMixture.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
 
 namespace loki
@@ -459,5 +460,29 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
     // divided by the cell width.
     // inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
+
+IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
+    : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells())
+{
+}
+
+// NOTE: For now this only implements conservative ionization.
+void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
+{
+    ionizationMatrix.setZero();
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
+        {
+            if (collision->crossSection->threshold() > grid.uMax())
+                continue;
+
+            collision_integral_sink(grid, eedf, ionizationMatrix, *collision);
+            collision_integral_source(grid, eedf, ionizationMatrix, *collision);
+        }
+    }
+}
+
 } // namespace experimental
 } // namespace loki

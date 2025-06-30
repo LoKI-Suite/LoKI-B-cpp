@@ -31,6 +31,7 @@
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/OperatorsNew.h"
@@ -252,6 +253,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     experimental::ElasticOperator elastic_operator(grid());
     experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
+    experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::conservative);
 
     elastic_operator.evaluate(
         grid(),
@@ -309,8 +311,13 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     for (int i = 0; i < 100 && error > 1e-4; ++i) {
         eedf_cur = eedf;
 
-        inelastic_operator.evaluate(grid(), eedf, this->mixture);
-        boltzmannMatrix = baseMatrix + inelastic_operator.inelasticMatrix + inelastic_operator.superelasticMatrix;
+        inelastic_operator.evaluate(grid(), eedf, mixture);
+        ionization_operator.evaluate(grid(), eedf, mixture);
+
+        boltzmannMatrix = baseMatrix
+                          + inelastic_operator.inelasticMatrix
+                          + inelastic_operator.superelasticMatrix
+                          + ionization_operator.ionizationMatrix;
 
         // Apply the constant logarithmic decay boundary condition.
         // const auto N = grid().nCells() - 1;

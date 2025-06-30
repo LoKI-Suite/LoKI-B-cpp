@@ -34,8 +34,6 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <stdexcept>
-#include <utility>
 
 namespace loki
 {
