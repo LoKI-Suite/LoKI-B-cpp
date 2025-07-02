@@ -253,7 +253,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     experimental::ElasticOperator elastic_operator(grid());
     experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
-    experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::conservative);
+    experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::equalSharing);
 
     elastic_operator.evaluate(
         grid(),
