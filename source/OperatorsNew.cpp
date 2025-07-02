@@ -461,6 +461,95 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
     // inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
+void equal_sharing_source(const Grid &grid, const Vector &eedf, Matrix &matrix, const EedfCollision &col)
+{
+    const double threshold = col.crossSection->threshold();
+    const double target_density = col.getTarget()->delta();
+
+    double u_start = grid.getNode(0) + threshold;
+
+    // The grid iterator iterates over the source cells of the grid.
+    Grid::Index i_grid = 0;
+
+    // Find the target cell in which the left face of the first source cell lands.
+    Grid::Index j_grid =
+        std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), u_start) - grid.getNodes().begin() - 1;
+
+    // Compute initial f_slope.
+    double f_slope = u_start >= grid.getCell(j_grid) || j_grid == 0
+                         ? std::log(eedf[j_grid + 1] / eedf[j_grid]) / grid.duNode(j_grid + 1)
+                         : std::log(eedf[j_grid] / eedf[j_grid - 1]) / grid.duNode(j_grid);
+    double u_f_start = u_start >= grid.getCell(j_grid) || j_grid == 0 ? grid.getCell(j_grid) : grid.getCell(j_grid - 1);
+
+    // Get the raw cross section data.
+    const auto &cs = col.crossSection->lookupTable().y();
+    const auto &cs_energy = col.crossSection->lookupTable().x();
+
+    Grid::Index j_cs = std::upper_bound(cs_energy.begin(), cs_energy.end(), u_start) - cs_energy.begin() - 1;
+
+    double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+    double u_sig_start = cs_energy[j_cs];
+    double u_sig_next = cs_energy[j_cs + 1];
+    double sig_start = cs[j_cs];
+
+    while (u_start < grid.uMax())
+    {
+        // If the current integration domain is outside the current cross
+        // section cell, move to the next cell.
+        if (u_start >= u_sig_next)
+        {
+            j_cs++;
+
+            if (j_cs == cs.size() - 1)
+            {
+                sig_slope = 0.;
+                u_sig_start = 0.;
+                u_sig_next = std::numeric_limits<double>::max();
+                sig_start = 0.;
+            }
+            else
+            {
+                sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
+                u_sig_start = cs_energy[j_cs];
+                u_sig_next = cs_energy[j_cs + 1];
+                sig_start = cs[j_cs];
+            }
+        }
+        // If the current integration domain is outside the current source cell,
+        // move to the next grid cell.
+        if (u_start >= 2.0 * grid.getNode(i_grid + 1) + threshold)
+        {
+            i_grid++;
+        }
+        // If the current integration domain is outside the current target cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(j_grid + 1))
+        {
+            j_grid++;
+            u_f_start = grid.getCell(j_grid);
+        }
+        // If the current integration domain starts at the current target cell
+        // center, recompute the slope of the eedf.
+        if (u_start == grid.getCell(j_grid) && j_grid < grid.nCells() - 1)
+        {
+            f_slope = std::log(eedf[j_grid + 1] / eedf[j_grid]) / grid.duNode(j_grid + 1);
+        }
+        // The end of the current integration domain is either the next source
+        // cell center, the next cross section entry, the next target cell face,
+        // or the grid boundary.
+        const double u_end =
+            std::min(std::min(u_sig_next, 2.0 * grid.getNode(i_grid + 1) + threshold),
+                     u_start >= grid.getCell(j_grid) ? grid.getNode(j_grid + 1) : grid.getCell(j_grid));
+
+        double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
+        double integral_end = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_end);
+
+        matrix(i_grid, j_grid) += 4.0 * target_density * (integral_end - integral_start);
+
+        u_start = u_end;
+    }
+}
+
 IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
     : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells())
 {
@@ -479,7 +568,14 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
                 continue;
 
             collision_integral_sink(grid, eedf, ionizationMatrix, *collision);
-            collision_integral_source(grid, eedf, ionizationMatrix, *collision);
+
+            switch (operatorType)
+            {
+            case IonizationOperatorType::conservative:
+                collision_integral_source(grid, eedf, ionizationMatrix, *collision);
+            case IonizationOperatorType::equalSharing:
+                equal_sharing_source(grid, eedf, ionizationMatrix, *collision);
+            }
         }
     }
 }
