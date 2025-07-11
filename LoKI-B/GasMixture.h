@@ -111,6 +111,7 @@ class lokib_export GasMixture
      *  mixture, not their parents that are crated implicitly.
      */
     Gas::State *ensureState(const GasProperties& gasProps, const StateEntry &entry);
+    /// \todo Add a constant overload of GasMixture::findStateById
     Gas::State *findStateById(const std::string &stateId);
   private:
     /** propEntry should be an object that can contain:
