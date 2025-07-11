@@ -29,6 +29,7 @@
 
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include <cmath>
 #include <chrono>
 
@@ -151,7 +152,8 @@ void solveEEDF(Vector &eedf, Matrix &matrix, const Grid &grid)
     {
         // at this point, eedf has been set up to contain b.
         Vector b(eedf);
-        eedf = matrix.partialPivLu().solve(b);
+        // eedf = matrix.partialPivLu().solve(b);
+        eedf = Eigen::BiCGSTAB<SparseMatrix, Eigen::IncompleteLUT<double>>(matrix.sparseView()).solve(b);
     }
     /* 4. We have calculated the new EEDF, but eedf[0]==1 and the result is
      *    correct up to a multiplicative constant. Scale the EEDF to satisfy
