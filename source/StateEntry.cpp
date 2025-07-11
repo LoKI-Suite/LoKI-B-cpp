@@ -250,11 +250,17 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
     if (ser_cnf.contains("electronic"))
     {
         const json_type &el_cnf = ser_cnf.at("electronic");
-        if (!el_cnf.is_object())
+        if (el_cnf.is_array())
         {
-            throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
+            for (auto i = 0; i < el_cnf.size(); i++) {
+                e.append(el_cnf[i].at("summary").get<std::string>());
+                if (i < el_cnf.size() - 1) e.append("|");
+            }
+        } else if (el_cnf.is_object())
+        {
+            e = el_cnf.at("summary");
+            // throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
         }
-        e = el_cnf.at("summary");
         if (el_cnf.contains("vibrational"))
         {
             const json_type &vib_cnf = el_cnf.at("vibrational");
