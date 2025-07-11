@@ -321,36 +321,39 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
                 }
 
-                std::set<unsigned> v_vals;
-                for (const auto &ventry : vib_cnf)
-                {
-                    if (ventry.contains("rotational"))
+                // Special case treatment for species types with a single
+                // vibrational quanta. Compound vibrational states can then be
+                // written as a range (e.g. "0-5").
+                if (species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom") {
+                    std::set<unsigned> v_vals;
+                    for (const auto &ventry : vib_cnf)
                     {
-                        throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                                 "multiple vibrational states are specified.");
+                        if (ventry.contains("rotational"))
+                        {
+                            throw std::runtime_error("Rotational states identifiers are not allowed when "
+                                                     "multiple vibrational states are specified.");
+                        }
+                        const auto &v_str = ventry.at("summary").get<std::string>();
+                        v_vals.insert(std::stoi(v_str));
                     }
-                    const auto &v_str = ventry.at("summary").get<std::string>();
-                    // Avoid unexpected behavior for vibrational states of molecules with multiple vibrational modes
-                    // (e.g. CO2).
-                    if (!(species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom"))
+                
+                    // For "v" and "J" we assume that the entries form a continuous value-range.
+                    if (v_vals.size() != vib_cnf.size())
                     {
-                        Log<Message>::Error("Invalid v entry ", v_str,
-                                            " in compound vibrational state. LoKI-B only supports compound vibrational "
-                                            "and rotational states for species types with a single rotational quanta.");
+                        throw std::runtime_error("Duplicate v entries encountered.");
                     }
-                    v_vals.insert(std::stoi(v_str));
+                    auto nv = *v_vals.rbegin() + 1 - *v_vals.begin();
+                    if (nv != v_vals.size())
+                    {
+                        throw std::runtime_error("Expected a contiguous v-range.");
+                    }
+                    v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
+                } else {
+                    for (auto i = 0; i < vib_cnf.size(); i++) {
+                        v.append(vib_cnf[i].at("summary").get<std::string>());
+                        if (i < vib_cnf.size() - 1) v.append("|");
+                    }
                 }
-                // For "v" and "J" we assume that the entries form a continuous value-range.
-                if (v_vals.size() != vib_cnf.size())
-                {
-                    throw std::runtime_error("Duplicate v entries encountered.");
-                }
-                int nv = *v_vals.rbegin() + 1 - *v_vals.begin();
-                if (nv != int(v_vals.size()))
-                {
-                    throw std::runtime_error("Expected a contiguous v-range.");
-                }
-                v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
             }
         }
     }
@@ -364,7 +367,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_|\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
     std::smatch m;
 
     if (!std::regex_search(propertyString, m, reState))
