@@ -213,7 +213,7 @@ void ElectronKineticsBoltzmann::doSolve()
 {
     if (grid().smartGrid())
     {
-//#define LOKIB_USE_BISECTING_SMART_GRID
+#define LOKIB_USE_BISECTING_SMART_GRID
 #ifdef LOKIB_USE_BISECTING_SMART_GRID
         solveSmartGrid2();
 #else
