@@ -143,6 +143,11 @@ CollisionType getCollisionTypeFromTypeTagArray(const json_type &type_tags)
             Log<Message>::Notify("Found 'Electronic'. Setting the collision type to Excitation, ignoring other tags.");
             return getCollisionType("Excitation");
         }
+        else if (std::find(tags.begin(), tags.end(), "MomentumTransfer") != tags.end())
+        {
+            Log<Message>::Notify("Found 'MomentumTransfer'. Setting the collision type to Elastic, ignoring other tags.");
+            return getCollisionType("Elastic");
+        }
         else
         {
             throw std::runtime_error("type_tags: I do not know how to handle the type_tags array.");
