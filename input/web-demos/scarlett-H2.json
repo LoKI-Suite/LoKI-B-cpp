@@ -1,0 +1,141 @@
+{
+  "electronKinetics": {
+    "_LXCatFiles": [
+      "JSON/H2/H2_Scarlett_new.json"
+    ],
+    "LXCatFiles": [
+      "http://localhost:3000/api/scat-css/19283501"
+    ],
+    "eedfType": "boltzmann",
+    "gasProperties": {
+      "OPBParameter": "Databases/OPBParameter.txt",
+      "anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
+      "electricQuadrupoleMoment": "Databases/quadrupoleMoment.txt",
+      "fraction": {
+        "H2": 1.0
+      },
+      "harmonicFrequency": "Databases/harmonicFrequencies.txt",
+      "mass": "Databases/masses.txt",
+      "rotationalConstant": "Databases/rotationalConstants.txt"
+    },
+    "growthModelType": "temporal",
+    "includeEECollisions": false,
+    "ionizationOperatorType": "usingSDCS",
+    "isOn": true,
+    "numerics": {
+      "energyGrid": {
+        "cellNumber": 1024,
+        "maxEnergy": 1,
+        "smartGrid": {
+          "maxEedfDecay": 25,
+          "minEedfDecay": 15,
+          "updateFactor": 0.05
+        }
+      },
+      "maxPowerBalanceRelError": 1e-09,
+      "nonLinearRoutines": {
+        "algorithm": "mixingDirectSolutions",
+        "maxEedfRelError": 1e-09,
+        "mixingParameter": 0.7
+      }
+    },
+    "stateProperties": {
+      "energy": {
+        "states": {
+          "H2(X^1S_g,v=*)": {
+            "name": "harmonicOscillatorEnergy",
+            "type": "function"
+          },
+          "H2(X^1S_g,v=0,J=*)": {
+            "name": "rigidRotorEnergy",
+            "type": "function"
+          }
+        }
+      },
+      "population": {
+        "states": {
+          "H2(X^1S_g)": {
+            "type": "constant",
+            "value": 1.0
+          },
+          "H2(X^1S_g,v=0)": {
+            "type": "constant",
+            "value": 1.0
+          },
+          "H2(X^1S_g,v=0,J=*)": {
+            "arguments": [
+              "gasTemperature"
+            ],
+            "name": "boltzmannPopulation",
+            "type": "function"
+          }
+        }
+      },
+      "statisticalWeight": {
+        "states": {
+          "H2(X^1S_g,v=*)": {
+            "type": "constant",
+            "value": 1.0
+          },
+          "H2(X^1S_g,v=0,J=*)": {
+            "name": "rotationalDegeneracy_H2",
+            "type": "function"
+          }
+        }
+      }
+    }
+  },
+  "gui": {
+    "isOn": false,
+    "refreshFrequency": 1
+  },
+  "output": {
+    "dataFiles": [
+      "eedf",
+      "swarmParameters",
+      "rateCoefficients",
+      "powerBalance",
+      "lookUpTable"
+    ],
+    "folder": "simulation",
+    "isOn": true
+  },
+  "workingConditions": {
+    "_reducedField": {
+      "range": {
+        "function": "linspace",
+        "max": 100.0,
+        "min": 0.1,
+        "steps": 100
+      }
+    },
+    "chamberLength": 1.0,
+    "chamberRadius": 1.0,
+    "electronDensity": {
+      "unit": "m^-3",
+      "value": 1e+19
+    },
+    "electronTemperature": {
+      "unit": "eV",
+      "value": 0.03
+    },
+    "excitationFrequency": {
+      "unit": "Hz",
+      "value": 0
+    },
+    "gasPressure": {
+      "unit": "Pa",
+      "value": 133.32
+    },
+    "gasTemperature": {
+      "unit": "K",
+      "value": 300
+    },
+    "reducedField": {
+      "max": 2.3,
+      "min": -2,
+      "nvalues": 50,
+      "range": "logspace"
+    }
+  }
+}

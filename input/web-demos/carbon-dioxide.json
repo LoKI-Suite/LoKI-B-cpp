@@ -1,0 +1,128 @@
+{
+  "chemistry": {
+    "isOn": false
+  },
+  "electronKinetics": {
+    "LXCatFiles": [
+      "https://demo.lxcat.net/api/scat-css/32628683"
+    ],
+    "eedfType": "boltzmann",
+    "effectiveCrossSectionPopulations": {
+      "states": {
+        "CO2(X^1S_g^+)": { "type": "constant", "value": 1 },
+        "CO2(X^1S_g^+,v=000)": { "type": "constant", "value": 0.9254 },
+        "CO2(X^1S_g^+,v=010)": { "type": "constant", "value": 0.0746 }
+      }
+    },
+    "gasProperties": {
+      "OPBParameter": "Databases/OPBParameter.txt",
+      "anharmonicFrequency": "Databases/anharmonicFrequencies.txt",
+      "electricQuadrupoleMoment": "Databases/quadrupoleMoment.txt",
+      "fraction": {
+        "CO2": 1.0
+      },
+      "harmonicFrequency": "Databases/harmonicFrequencies.txt",
+      "mass": "Databases/masses.txt",
+      "rotationalConstant": "Databases/rotationalConstants.txt"
+    },
+    "growthModelType": "spatial",
+    "includeEECollisions": false,
+    "ionizationOperatorType": "usingSDCS",
+    "isOn": true,
+    "numerics": {
+      "energyGrid": {
+        "cellNumber": 1024,
+        "maxEnergy": 1,
+        "smartGrid": {
+          "maxEedfDecay": 25,
+          "minEedfDecay": 15,
+          "updateFactor": 0.05
+        }
+      },
+      "maxPowerBalanceRelError": 1e-09,
+      "nonLinearRoutines": {
+        "algorithm": "mixingDirectSolutions",
+        "maxEedfRelError": 1e-09,
+        "mixingParameter": 0.7
+      }
+    },
+    "stateProperties": {
+      "energy": {
+        "states": {}
+      },
+      "population": {
+        "states": {
+          "CO2(X^1S_g^+)": {
+            "type": "constant",
+            "value": 1.0
+          },
+          "CO2(X^1S_g^+,v=000)": {
+            "type": "constant",
+            "value": 0.9254
+          },
+          "CO2(X^1S_g^+,v=010)": {
+            "type": "constant",
+            "value": 0.0746
+          }
+        }
+      },
+      "statisticalWeight": {
+        "states": {
+          "CO2(X^1S_g^+,v=000)": {
+            "type": "constant",
+            "value": 1.0
+          },
+          "CO2(X^1S_g^+,v=010)": {
+            "type": "constant",
+            "value": 2.0
+          }
+        }
+      }
+    }
+  },
+  "gui": {
+    "isOn": true,
+    "refreshFrequency": 1
+  },
+  "output": {
+    "dataFiles": [
+      "eedf",
+      "swarmParameters",
+      "rateCoefficients",
+      "powerBalance",
+      "lookUpTable"
+    ],
+    "folder": "CO2Swarm_300K",
+    "isOn": false
+  },
+  "workingConditions": {
+    "chamberLength": 1.0,
+    "chamberRadius": 1.0,
+    "electronDensity": {
+      "unit": "m^-3",
+      "value": 1e+19
+    },
+    "electronTemperature": {
+      "unit": "eV",
+      "value": 1
+    },
+    "excitationFrequency": {
+      "unit": "Hz",
+      "value": 0
+    },
+    "gasPressure": {
+      "unit": "Pa",
+      "value": 133.32
+    },
+    "gasTemperature": {
+      "unit": "K",
+      "value": 300
+    },
+    "reducedField": {
+      "max": 3,
+      "min": -3,
+      "nvalues": 50,
+      "range": "logspace"
+    }
+  }
+}
