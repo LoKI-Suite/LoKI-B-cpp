@@ -318,7 +318,7 @@ void FileOutput::writeLookupTablePower(const Power &power) const
         os << std::setw(column_width) << "PwrAtt(eVm^3s^-1)";
         os << std::setw(column_width) << "PwrGrowth(eVm^3s^-1)";
         os << std::setw(column_width) << "PwrBalance(eVm^3s^-1)";
-        os << std::setw(column_width) << "RelPwrBalance";
+        os << std::setw(column_width) << "RelPwrBalance(%)";
         os << std::endl;
     }
 
@@ -353,7 +353,7 @@ void FileOutput::writeLookupTablePower(const Power &power) const
     os << std::setw(column_width) << power.attachment.forward;
     os << std::setw(column_width) << power.eDensGrowth;
     os << std::setw(column_width) << power.balance;
-    os << std::setw(column_width) << power.relativeBalance*100;
+    os << std::setw(column_width) << power.relativeBalance * 100;
     os << std::endl;
 }
 
