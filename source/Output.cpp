@@ -29,7 +29,6 @@
 
 #include "LoKI-B/Output.h"
 #include "LoKI-B/EedfCollisions.h"
-#include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/StandardPaths.h"
 
