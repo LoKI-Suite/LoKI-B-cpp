@@ -50,6 +50,18 @@ int main(int argc, char **argv)
               "electronic": { "summary": "^1S_0" }
             }
           })json"_json));
+    test_expr(test_valid("N2(X|A)", R"json({
+           "detailed": {
+             "type": "HomonuclearDiatom"
+           },
+           "serialized": {
+             "composition": { "summary": "N2" },
+             "electronic": [
+               { "summary": "X" },
+               { "summary": "A" }
+             ]
+           }
+         })json"_json));
     test_expr(test_valid("N2(X,v=0)", R"json({
             "detailed": {
               "type": "HomonuclearDiatom"
@@ -133,21 +145,24 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-
-    // Tests that should fail.
-    test_expr(test_invalid("Exactly one electronic state is expected by LoKI-B.",
-                           R"json({
+    test_expr(test_valid("CO2(X,v=010|011)",
+                         R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "LinearTriatomInversionCenter"
                              },
                              "serialized": {
-                               "composition": { "summary": "N2" },
-                               "electronic": [
-                                 { "summary": "X" },
-                                 { "summary": "A" }
-                               ]
+                               "composition": { "summary": "CO2" },
+                               "electronic": {
+                                 "summary": "X",
+                                 "vibrational": [
+                                   { "summary": "010" },
+                                   { "summary": "011" }
+                                 ]
+                               }
                              }
                            })json"_json));
+
+    // Tests that should fail.
     test_expr(
         test_invalid("Rotational states identifiers are not allowed when multiple vibrational states are specified.",
                      R"json({
@@ -206,23 +221,6 @@ int main(int argc, char **argv)
                                  "vibrational": [
                                    { "summary": "0" },
                                    { "summary": "0" }
-                                 ]
-                               }
-                             }
-                           })json"_json));
-    test_expr(test_invalid("Invalid v entry 010 in compound vibrational state. LoKI-B only supports compound "
-                           "vibrational and rotational states for species types with a single rotational quanta.\n",
-                           R"json({
-                             "detailed": {
-                               "type": "LinearTriatomInversionCenter"
-                             },
-                             "serialized": {
-                               "composition": { "summary": "CO2" },
-                               "electronic": {
-                                 "summary": "X",
-                                 "vibrational": [
-                                   { "summary": "010" },
-                                   { "summary": "011" }
                                  ]
                                }
                              }
@@ -301,7 +299,7 @@ int main(int argc, char **argv)
                              }
                            })json"_json));
     test_expr(test_invalid("Invalid J entry 010 in compound rotational state. LoKI-B only supports compound "
-                           "vibrational and rotational states for species types with a single rotational quanta.\n",
+                           "rotational states for species types with a single rotational quanta.\n",
                            R"json({
                              "detailed": {
                                "type": "TriatomC2v"
