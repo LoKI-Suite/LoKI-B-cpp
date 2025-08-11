@@ -228,21 +228,31 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
     }
 }
 
+std::string serialize_charge(int charge) {
+    switch (charge) {
+        case 0: return "";
+        case 1: return "+";
+        case -1: return "-";
+        default: return std::to_string(charge);
+    }
+}
+
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const json_type &ser_cnf = cnf.at("serialized");
     const auto species_type = cnf.at("detailed").at("type").get<std::string_view>();
 
     std::string gas_name = ser_cnf.at("composition").at("summary");
-    std::string charge_str = "";
 
     // Split the charge from the gas name.
     const auto pos = gas_name.find("^");
     if (pos != std::string::npos)
     {
-        charge_str = gas_name.substr(pos + 1);
         gas_name = gas_name.substr(0, pos);
     }
+
+    const int charge_int = cnf.at("detailed").at("charge").get<int>();
+    const std::string charge_str = serialize_charge(charge_int);
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
