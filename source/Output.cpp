@@ -451,8 +451,8 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
     // Set persistent flags.
     os << std::left << std::showpos << std::scientific << std::setprecision(14);
 
-    // Defined as the maximum header width + 1.
-    const uint32_t column_width = 28;
+    // Defined as the maximum header width + 2.
+    const uint32_t column_width = 23;
 
     if (isBoltzmann())
     {
@@ -476,25 +476,7 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
                << std::setw(column_width) << "RedMobE(eV/(msV))"
                << std::setw(column_width) << "MeanE(eV)"
                << std::setw(column_width) << "CharE(eV)"
-               << std::setw(column_width) << "EleTemp(eV)"
-               << std::setw(column_width) << "ElasticPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "ElasticPowerGain(eVm3/s)"
-               << std::setw(column_width) << "FieldPowerGain(eVm3/s)"
-               << std::setw(column_width) << "CARPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "CARPowerGain(eVm3/s)"
-               << std::setw(column_width) << "ElectronicInePower(eVm3/s)"
-               << std::setw(column_width) << "ElectronicSupPower(eVm3/s)"
-               << std::setw(column_width) << "RotationalInePower(eVm3/s)"
-               << std::setw(column_width) << "RotationalSupPower(eVm3/s)"
-               << std::setw(column_width) << "VibrationalInePower(eVm3/s)"
-               << std::setw(column_width) << "VibrationalSupPower(eVm3/s)"
-               << std::setw(column_width) << "AttachmentPower(eVm3/s)"
-               << std::setw(column_width) << "IonizationPower(eVm3/s)"
-               << std::setw(column_width) << "eDensGrowthPower(eVm3/s)"
-               << std::setw(column_width) << "EEPowerGain(eVm3/s)"
-               << std::setw(column_width) << "EEPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "ReferencePower(eVm3/s)"
-               << std::setw(column_width) << "RelativePowerBalance" << std::endl;
+               << std::setw(column_width) << "EleTemp(eV)" << std::endl;
         }
         os << std::setw(column_width) << m_workingConditions->reducedField();
         os << std::setw(column_width) << swarmParameters.redDiffCoeff;
@@ -515,24 +497,6 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
         os << std::setw(column_width) << swarmParameters.meanEnergy;
         os << std::setw(column_width) << swarmParameters.characEnergy;
         os << std::setw(column_width) << swarmParameters.Te;
-        os << std::setw(column_width) << power.elasticLoss;
-        os << std::setw(column_width) << power.elasticGain;
-        os << std::setw(column_width) << power.field;
-        os << std::setw(column_width) << power.carLoss;
-        os << std::setw(column_width) << power.carGain;
-        os << std::setw(column_width) << power.excitation.forward;
-        os << std::setw(column_width) << power.excitation.backward;
-        os << std::setw(column_width) << power.rotational.forward;
-        os << std::setw(column_width) << power.rotational.backward;
-        os << std::setw(column_width) << power.vibrational.forward;
-        os << std::setw(column_width) << power.vibrational.backward;
-        os << std::setw(column_width) << power.attachment.forward;
-        os << std::setw(column_width) << power.ionization.forward;
-        os << std::setw(column_width) << power.eDensGrowth;
-        os << std::setw(column_width) << power.electronElectronGain;
-        os << std::setw(column_width) << power.electronElectronLoss;
-        os << std::setw(column_width) << power.reference;
-        os << std::setw(column_width) << power.relativeBalance * 100 << '%';
         os << std::endl;
     }
     else // prescribed EEDF
@@ -557,25 +521,7 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
             os << std::setw(column_width) << "RedDiffE(eV/(ms))"
                << std::setw(column_width) << "RedMobE(eV/(msV))"
                << std::setw(column_width) << "MeanE(eV)"
-               << std::setw(column_width) << "CharE(eV)"
-               << std::setw(column_width) << "ElasticPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "ElasticPowerGain(eVm3/s)"
-               << std::setw(column_width) << "FieldPowerGain(eVm3/s)"
-               << std::setw(column_width) << "CARPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "CARPowerGain(eVm3/s)"
-               << std::setw(column_width) << "ElectronicInePower(eVm3/s)"
-               << std::setw(column_width) << "ElectronicSupPower(eVm3/s)"
-               << std::setw(column_width) << "RotationalInePower(eVm3/s)"
-               << std::setw(column_width) << "RotationalSupPower(eVm3/s)"
-               << std::setw(column_width) << "VibrationalInePower(eVm3/s) "
-               << std::setw(column_width) << "VibrationalSupPower(eVm3/s) "
-               << std::setw(column_width) << "AttachmentPower(eVm3/s)"
-               << std::setw(column_width) << "IonizationPower(eVm3/s)"
-               << std::setw(column_width) << "eDensGrowthPower(eVm3/s)"
-               << std::setw(column_width) << "EEPowerGain(eVm3/s)"
-               << std::setw(column_width) << "EEPowerLoss(eVm3/s)"
-               << std::setw(column_width) << "ReferencePower(eVm3/s)"
-               << std::setw(column_width) << "RelativePowerBalance" << std::endl;
+               << std::setw(column_width) << "CharE(eV)" << std::endl;
         }
         os << std::setw(column_width) << swarmParameters.Te;
         os << std::setw(column_width) << m_workingConditions->reducedField();
@@ -596,24 +542,6 @@ void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParamet
         os << std::setw(column_width) << swarmParameters.redMobilityEnergy;
         os << std::setw(column_width) << swarmParameters.meanEnergy;
         os << std::setw(column_width) << swarmParameters.characEnergy;
-        os << std::setw(column_width) << power.elasticLoss;
-        os << std::setw(column_width) << power.elasticGain;
-        os << std::setw(column_width) << power.field;
-        os << std::setw(column_width) << power.carLoss;
-        os << std::setw(column_width) << power.carGain;
-        os << std::setw(column_width) << power.excitation.forward;
-        os << std::setw(column_width) << power.excitation.backward;
-        os << std::setw(column_width) << power.rotational.forward;
-        os << std::setw(column_width) << power.rotational.backward;
-        os << std::setw(column_width) << power.vibrational.forward;
-        os << std::setw(column_width) << power.vibrational.backward;
-        os << std::setw(column_width) << power.attachment.forward;
-        os << std::setw(column_width) << power.ionization.forward;
-        os << std::setw(column_width) << power.eDensGrowth;
-        os << std::setw(column_width) << power.electronElectronGain;
-        os << std::setw(column_width) << power.electronElectronLoss;
-        os << std::setw(column_width) << power.reference;
-        os << std::setw(column_width) << power.relativeBalance * 100 << '%';
         os << std::endl;
     }
 }
