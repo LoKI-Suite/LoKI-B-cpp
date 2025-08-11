@@ -29,7 +29,6 @@
 
 #include "LoKI-B/Output.h"
 #include "LoKI-B/EedfCollisions.h"
-#include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/StandardPaths.h"
 
@@ -282,68 +281,79 @@ void FileOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
 void FileOutput::writeLookupTablePower(const Power &power) const
 {
     std::ofstream os(m_folder + "/lookUpTablePower.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+
+    // Left align table entries.
+    os << std::left;
+
+    // Defined as maximum header width + 2.
+    const uint32_t column_width = 23;
+
     if (m_initTable)
     {
         if (isBoltzmann())
         {
-            os << std::setw(23) << "RedField(Td)";
+            os << std::setw(column_width) << "RedField(Td)";
         }
         else
         {
-            os << std::setw(23) << "EleTemp(eV)";
+            os << std::setw(column_width) << "EleTemp(eV)";
         }
-        os << std::setw(23) << "PowerField(eVm^3s^-1)";
-        os << std::setw(23) << "PwrElaGain(eVm^3s^-1)";
-        os << std::setw(23) << "PwrElaLoss(eVm^3s^-1)";
-        os << std::setw(23) << "PwrElaNet(eVm^3s^-1)";
-        os << std::setw(23) << "PwrCARGain(eVm^3s^-1)";
-        os << std::setw(23) << "PwrCARLoss(eVm^3s^-1)";
-        os << std::setw(23) << "PwrCARNet(eVm^3s^-1)";
-        os << std::setw(23) << "PwrEleGain(eVm^3s^-1)";
-        os << std::setw(23) << "PwrEleLoss(eVm^3s^-1)";
-        os << std::setw(23) << "PwrEleNet(eVm^3s^-1)";
-        os << std::setw(23) << "PwrVibGain(eVm^3s^-1)";
-        os << std::setw(23) << "PwrVibLoss(eVm^3s^-1)";
-        os << std::setw(23) << "PwrVibNet(eVm^3s^-1)";
-        os << std::setw(23) << "PwrRotGain(eVm^3s^-1)";
-        os << std::setw(23) << "PwrRotLoss(eVm^3s^-1)";
-        os << std::setw(23) << "PwrRotNet(eVm^3s^-1)";
-        os << std::setw(23) << "PwrIon(eVm^3s^-1)";
-        os << std::setw(23) << "PwrAtt(eVm^3s^-1)";
-        os << std::setw(23) << "PwrGrowth(eVm^3s^-1)";
-        os << std::setw(23) << "PwrBalance(eVm^3s^-1)";
-        os << std::setw(23) << "RelPwrBalance";
+        os << std::setw(column_width) << "PowerField(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrElaGain(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrElaLoss(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrElaNet(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrCARGain(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrCARLoss(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrCARNet(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrEleGain(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrEleLoss(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrEleNet(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrVibGain(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrVibLoss(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrVibNet(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrRotGain(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrRotLoss(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrRotNet(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrIon(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrAtt(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrGrowth(eVm^3s^-1)";
+        os << std::setw(column_width) << "PwrBalance(eVm^3s^-1)";
+        os << std::setw(column_width) << "RelPwrBalance(%)";
         os << std::endl;
     }
+
+    // Set persistent formatting flags.
+    os << std::showpos << std::scientific << std::setprecision(14);
+
     if (isBoltzmann())
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->reducedField();
+        os << std::setw(column_width) << m_workingConditions->reducedField();
     }
     else
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << m_workingConditions->electronTemperature();
+        os << std::setw(column_width) << m_workingConditions->electronTemperature();
     }
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.field;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticGain;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticLoss;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.elasticNet;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carGain;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carLoss;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.carNet;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.backward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.forward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.excitation.net();
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.backward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.forward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.vibrational.net();
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.backward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.forward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.rotational.net();
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.ionization.forward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.attachment.forward;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.eDensGrowth;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.balance;
-    os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14) << power.relativeBalance*100;
+    os << std::setw(column_width) << power.field;
+    os << std::setw(column_width) << power.elasticGain;
+    os << std::setw(column_width) << power.elasticLoss;
+    os << std::setw(column_width) << power.elasticNet;
+    os << std::setw(column_width) << power.carGain;
+    os << std::setw(column_width) << power.carLoss;
+    os << std::setw(column_width) << power.carNet;
+    os << std::setw(column_width) << power.excitation.backward;
+    os << std::setw(column_width) << power.excitation.forward;
+    os << std::setw(column_width) << power.excitation.net();
+    os << std::setw(column_width) << power.vibrational.backward;
+    os << std::setw(column_width) << power.vibrational.forward;
+    os << std::setw(column_width) << power.vibrational.net();
+    os << std::setw(column_width) << power.rotational.backward;
+    os << std::setw(column_width) << power.rotational.forward;
+    os << std::setw(column_width) << power.rotational.net();
+    os << std::setw(column_width) << power.ionization.forward;
+    os << std::setw(column_width) << power.attachment.forward;
+    os << std::setw(column_width) << power.eDensGrowth;
+    os << std::setw(column_width) << power.balance;
+    os << std::setw(column_width) << power.relativeBalance * 100;
     os << std::endl;
 }
 
@@ -351,6 +361,12 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
                                const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
     std::ofstream os(m_folder + "/lookUpTableRateCoeff.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+
+    // Left align table entries.
+    os << std::left;
+
+    const uint32_t column_width = 23;
+
     if (m_initTable)
     {
         unsigned id=1;
@@ -370,61 +386,58 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
         }
         if (isBoltzmann())
         {
-            os << std::setw(23) << "RedField(Td)";
+            os << std::setw(column_width) << "RedField(Td)";
         }
         else
         {
-            os << std::setw(23) << "EleTemp(eV)";
+            os << std::setw(column_width) << "EleTemp(eV)";
         }
         id=1;
         for (const auto& rc : rateCoefficients)
         {
-            os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            os << std::setw(column_width) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
             if (rc.collision->isReverse())
             {
-                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+                os << std::setw(column_width) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
             }
             ++id;
         }
         for (const auto& rc : extraRateCoefficients)
         {
-            os << std::setw(23) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
+            os << std::setw(column_width) << std::string("R" + std::to_string(id) + "_ine(m^3s^-1)");
             if (rc.collision->isReverse())
             {
-                os << std::setw(23) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
+                os << std::setw(column_width) << std::string("R" + std::to_string(id) + "_sup(m^3s^-1)");
             }
             ++id;
         }
         os << std::endl;
     }
+    // Set persistent flags for number formatting.
+    os << std::showpos << std::scientific << std::setprecision(14);
+
     if (isBoltzmann())
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << m_workingConditions->reducedField();
+        os << std::setw(column_width) << m_workingConditions->reducedField();
     }
     else
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << m_workingConditions->electronTemperature();
+        os << std::setw(column_width) << m_workingConditions->electronTemperature();
     }
     for (const auto& rc : rateCoefficients)
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << rc.inelastic;
+        os << std::setw(column_width) << rc.inelastic;
         if (rc.collision->isReverse())
         {
-            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-               << rc.superelastic;
+            os << std::setw(column_width) << rc.superelastic;
         }
     }
     for (const auto& rc : extraRateCoefficients)
     {
-        os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-           << rc.inelastic;
+        os << std::setw(column_width) << rc.inelastic;
         if (rc.collision->isReverse())
         {
-            os << std::showpos << std::setw(23) << std::scientific << std::setprecision(14)
-               << rc.superelastic;
+            os << std::setw(column_width) << rc.superelastic;
         }
     }
     os << std::endl;
@@ -433,245 +446,101 @@ void FileOutput::writeLookupTableRC(const std::vector<RateCoefficient> &rateCoef
 void FileOutput::writeLookupTableSwarmParams(const SwarmParameters &swarmParameters, const Power &power) const
 {
     std::ofstream os(m_folder + "/lookUpTableSwarm.txt", m_initTable ? std::ios_base::trunc : std::ios_base::app);
+
+    // Set persistent flags.
+    os << std::left << std::showpos << std::scientific << std::setprecision(14);
+
+    // Defined as the maximum header width + 2.
+    const uint32_t column_width = 23;
+
     if (isBoltzmann())
     {
         if (m_initTable)
         {
-            os << std::setw(27) << "RedField(Td)"
-               << std::setw(27) << "RedDif(1/(ms))"
-               << std::setw(27) << "RedMob(1/(msV))";
+            os << std::setw(column_width) << "RedField(Td)"
+               << std::setw(column_width) << "RedDif(1/(ms))"
+               << std::setw(column_width) << "RedMob(1/(msV))";
             if (isSimulationHF())
             {
-                os << std::setw(27) << "R[RedMobHF]((msV)^-1)"
-                   << std::setw(27) << "I[RedMobHF]((msV)^-1)";
+                os << std::setw(column_width) << "R[RedMobHF]((msV)^-1)"
+                   << std::setw(column_width) << "I[RedMobHF]((msV)^-1)";
             }
             else
             {
-                os << std::setw(27) << "DriftVelocity(m/s)"
-                   << std::setw(27) << "RedTow(m2)"
-                   << std::setw(27) << "RedAtt(m2)";
+                os << std::setw(column_width) << "DriftVelocity(m/s)"
+                   << std::setw(column_width) << "RedTow(m2)"
+                   << std::setw(column_width) << "RedAtt(m2)";
             }
-            os << std::setw(27) << "RedDiffE(eV/(ms))"
-               << std::setw(27) << "RedMobE(eV/(msV))"
-               << std::setw(27) << "MeanE(eV)"
-               << std::setw(27) << "CharE(eV)"
-               << std::setw(27) << "EleTemp(eV)"
-               << std::setw(27) << "ElasticPowerLoss(eVm3/s)"
-               << std::setw(27) << "ElasticPowerGain(eVm3/s)"
-               << std::setw(27) << "FieldPowerGain(eVm3/s)"
-               << std::setw(27) << "CARPowerLoss(eVm3/s)"
-               << std::setw(27) << "CARPowerGain(eVm3/s)"
-               << std::setw(27) << "ElectronicInePower(eVm3/s)"
-               << std::setw(27) << "ElectronicSupPower(eVm3/s)"
-               << std::setw(27) << "RotationalInePower(eVm3/s)"
-               << std::setw(27) << "RotationalSupPower(eVm3/s)"
-               << std::setw(27) << "VibrationalInePower(eVm3/s) "
-               << std::setw(27) << "VibrationalSupPower(eVm3/s) "
-               << std::setw(27) << "AttachmentPower(eVm3/s)"
-               << std::setw(27) << "IonizationPower(eVm3/s)"
-               << std::setw(27) << "eDensGrowthPower(eVm3/s)"
-               << std::setw(27) << "EEPowerGain(eVm3/s)"
-               << std::setw(27) << "EEPowerLoss(eVm3/s)"
-               << std::setw(27) << "ReferencePower(eVm3/s)"
-               << std::setw(27) << "RelativePowerBalance" << std::endl;
+            os << std::setw(column_width) << "RedDiffE(eV/(ms))"
+               << std::setw(column_width) << "RedMobE(eV/(msV))"
+               << std::setw(column_width) << "MeanE(eV)"
+               << std::setw(column_width) << "CharE(eV)"
+               << std::setw(column_width) << "EleTemp(eV)" << std::endl;
         }
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << m_workingConditions->reducedField();
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.redDiffCoeff;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.redMobCoeff;
+        os << std::setw(column_width) << m_workingConditions->reducedField();
+        os << std::setw(column_width) << swarmParameters.redDiffCoeff;
+        os << std::setw(column_width) << swarmParameters.redMobCoeff;
         if (isSimulationHF())
         {
-            os << ' ';
-            os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-               << swarmParameters.redMobilityHF.real();
-            os << ' ';
-            os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-               << swarmParameters.redMobilityHF.imag();
+            os << std::setw(column_width) << swarmParameters.redMobilityHF.real();
+            os << std::setw(column_width) << swarmParameters.redMobilityHF.imag();
         }
         else
         {
-            os << ' ';
-            os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-               << swarmParameters.driftVelocity;
-            os << ' ';
-            os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-               << swarmParameters.redTownsendCoeff;
-            os << ' ';
-            os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-               << swarmParameters.redAttCoeff;
+            os << std::setw(column_width) << swarmParameters.driftVelocity;
+            os << std::setw(column_width) << swarmParameters.redTownsendCoeff;
+            os << std::setw(column_width) << swarmParameters.redAttCoeff;
         }
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.redDiffCoeffEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.redMobilityEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.meanEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.characEnergy;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << swarmParameters.Te;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.elasticLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.elasticGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.field;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.carLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.carGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.excitation.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.excitation.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.rotational.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.rotational.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.vibrational.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.vibrational.backward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.attachment.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.ionization.forward;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.eDensGrowth;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.electronElectronGain;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << power.electronElectronLoss;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14) << power.reference;
-        os << ' ';
-        os << std::showpos << std::setw(27) << std::left << std::scientific << std::setprecision(14)
-           << (power.relativeBalance * 100) << '%';
+        os << std::setw(column_width) << swarmParameters.redDiffCoeffEnergy;
+        os << std::setw(column_width) << swarmParameters.redMobilityEnergy;
+        os << std::setw(column_width) << swarmParameters.meanEnergy;
+        os << std::setw(column_width) << swarmParameters.characEnergy;
+        os << std::setw(column_width) << swarmParameters.Te;
         os << std::endl;
     }
     else // prescribed EEDF
     {
         if (m_initTable)
         {
-            os << std::setw(24) << "EleTemp(eV)"
-               << std::setw(24) << "RedField(Td)"
-               << std::setw(24) << "RedDif(1/(ms))"
-               << std::setw(24) << "RedMob(1/(msV))";
+            os << std::setw(column_width) << "EleTemp(eV)"
+               << std::setw(column_width) << "RedField(Td)"
+               << std::setw(column_width) << "RedDif(1/(ms))"
+               << std::setw(column_width) << "RedMob(1/(msV))";
             if (isSimulationHF())
             {
-                os << std::setw(24) << "R[RedMobHF]((msV)^-1)"
-                   << std::setw(24) << "I[RedMobHF]((msV)^-1)";
+                os << std::setw(column_width) << "R[RedMobHF]((msV)^-1)"
+                   << std::setw(column_width) << "I[RedMobHF]((msV)^-1)";
             }
             else
             {
-                os << std::setw(24) << "DriftVelocity(m/s)"
-                   << std::setw(24) << "RedTow(m2)"
-                   << std::setw(24) << "RedAtt(m2)";
+                os << std::setw(column_width) << "DriftVelocity(m/s)"
+                   << std::setw(column_width) << "RedTow(m2)"
+                   << std::setw(column_width) << "RedAtt(m2)";
             }
-            os << std::setw(24) << "RedDiffE(eV/(ms))"
-               << std::setw(24) << "RedMobE(eV/(msV))"
-               << std::setw(24) << "MeanE(eV)"
-               << std::setw(24) << "CharE(eV)"
-               << std::setw(24) << "ElasticPowerLoss(eVm3/s)"
-               << std::setw(24) << "ElasticPowerGain(eVm3/s)"
-               << std::setw(24) << "FieldPowerGain(eVm3/s)"
-               << std::setw(24) << "CARPowerLoss(eVm3/s)"
-               << std::setw(24) << "CARPowerGain(eVm3/s)"
-               << std::setw(24) << "ElectronicInePower(eVm3/s)"
-               << std::setw(24) << "ElectronicSupPower(eVm3/s)"
-               << std::setw(24) << "RotationalInePower(eVm3/s)"
-               << std::setw(24) << "RotationalSupPower(eVm3/s)"
-               << std::setw(24) << "VibrationalInePower(eVm3/s) "
-               << std::setw(24) << "VibrationalSupPower(eVm3/s) "
-               << std::setw(24) << "AttachmentPower(eVm3/s)"
-               << std::setw(24) << "IonizationPower(eVm3/s)"
-               << std::setw(24) << "eDensGrowthPower(eVm3/s)"
-               << std::setw(24) << "EEPowerGain(eVm3/s)"
-               << std::setw(24) << "EEPowerLoss(eVm3/s)"
-               << std::setw(24) << "ReferencePower(eVm3/s)"
-               << std::setw(24) << "RelativePowerBalance" << std::endl;
+            os << std::setw(column_width) << "RedDiffE(eV/(ms))"
+               << std::setw(column_width) << "RedMobE(eV/(msV))"
+               << std::setw(column_width) << "MeanE(eV)"
+               << std::setw(column_width) << "CharE(eV)" << std::endl;
         }
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.Te;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-           << m_workingConditions->reducedField();
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.redDiffCoeff;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.redMobCoeff;
+        os << std::setw(column_width) << swarmParameters.Te;
+        os << std::setw(column_width) << m_workingConditions->reducedField();
+        os << std::setw(column_width) << swarmParameters.redDiffCoeff;
+        os << std::setw(column_width) << swarmParameters.redMobCoeff;
         if (isSimulationHF())
         {
-            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-               << swarmParameters.redMobilityHF.real();
-            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-               << swarmParameters.redMobilityHF.imag();
+            os << std::setw(column_width) << swarmParameters.redMobilityHF.real();
+            os << std::setw(column_width) << swarmParameters.redMobilityHF.imag();
         }
         else
         {
-            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-               << swarmParameters.driftVelocity;
-            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-               << swarmParameters.redTownsendCoeff;
-            os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-               << swarmParameters.redAttCoeff;
+            os << std::setw(column_width) << swarmParameters.driftVelocity;
+            os << std::setw(column_width) << swarmParameters.redTownsendCoeff;
+            os << std::setw(column_width) << swarmParameters.redAttCoeff;
         }
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-           << swarmParameters.redDiffCoeffEnergy;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14)
-           << swarmParameters.redMobilityEnergy;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.meanEnergy;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << swarmParameters.characEnergy;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.elasticLoss;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.elasticGain;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.field;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.carLoss;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.carGain;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.excitation.forward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.excitation.backward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.rotational.forward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.rotational.backward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.vibrational.forward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.vibrational.backward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.attachment.forward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.ionization.forward;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.eDensGrowth;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.electronElectronGain;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14)
-           << power.electronElectronLoss;
-        os << std::showpos << std::setw(24) << std::left << std::scientific << std::setprecision(14) << power.reference;
-        os << std::showpos << std::setw(24) << std::scientific << std::setprecision(14) << (power.relativeBalance * 100)
-           << '%';
+        os << std::setw(column_width) << swarmParameters.redDiffCoeffEnergy;
+        os << std::setw(column_width) << swarmParameters.redMobilityEnergy;
+        os << std::setw(column_width) << swarmParameters.meanEnergy;
+        os << std::setw(column_width) << swarmParameters.characEnergy;
         os << std::endl;
     }
 }
