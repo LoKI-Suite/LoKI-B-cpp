@@ -229,12 +229,11 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
 }
 
 std::string serialize_charge(int charge) {
-    switch (charge) {
-        case 0: return "";
-        case 1: return "+";
-        case -1: return "-";
-        default: return std::to_string(charge);
+    if (charge == 0) {
+        return "";
     }
+
+    return std::string(std::abs(charge), charge > 0 ? '+' : '-');
 }
 
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
