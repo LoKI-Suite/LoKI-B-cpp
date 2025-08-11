@@ -143,14 +143,13 @@ void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_
      */
     if (entry.m_level == none)
     {
-        throw std::runtime_error("loadStateProperty: illegal "
-                        "state identifier '" + propEntry.at("states").get<std::string>() + "'.");
+        Log<Message>::Error("loadStateProperty: illegal state identifier '" + state_id + "'.");
     }
     Gas::State::ChildContainer states = findStates(entry);
     if (states.empty())
     {
-        throw std::runtime_error("loadStateProperty: could not find "
-                        "state or state group '" + propEntry.at("states").get<std::string>() + "'.");
+        Log<Message>::Error("loadStateProperty: could not find state or state group '"
+                            + state_id + "'.");
     }
 
     // 2. Now apply the expression.
