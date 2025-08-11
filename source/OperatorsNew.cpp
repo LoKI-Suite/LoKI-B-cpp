@@ -4,6 +4,8 @@
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/GridOps.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {
@@ -580,5 +582,95 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
     }
 }
 
+SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : DriftDiffusionOperator(grid)
+{
+}
+
+double mobility_integral(double u, double u_sig_start, double sig_start, double sig_slope, double u_f_start,
+                         double u_f_end, double f_start, double f_div, double du)
+{
+    Log<Message>::Warning("u: ", u);
+    Log<Message>::Warning("u_sig_start: ", u_sig_start);
+    Log<Message>::Warning("sig_start: ", sig_start);
+    Log<Message>::Warning("sig_slope: ", sig_slope);
+    Log<Message>::Warning("u_f_start: ", u_f_start);
+    Log<Message>::Warning("u_f_end: ", u_f_end);
+    Log<Message>::Warning("f_start: ", f_start);
+    Log<Message>::Warning("f_div: ", f_div);
+    Log<Message>::Warning("u: ", u);
+    Log<Message>::Warning(u / (3. * (sig_start + u * sig_slope)));
+    Log<Message>::Warning(std::pow(f_div, (u - u_f_start) / (u_f_end - u_f_start)));
+    Log<Message>::Warning(std::log(f_div) / (u_f_end - u_f_start));
+    return u / (3. * (sig_start + u * sig_slope)) * f_start * std::pow(f_div, (u - u_f_start) / (u_f_end - u_f_start)) *
+           std::log(f_div) / (u_f_end - u_f_start) * du;
+}
+
+double integrate_mobility(const Grid &grid, const Vector &eedf, const Vector &total_cs)
+{
+    // The grid iterator iterates over the cells of the grid.
+    Grid::Index i_grid = 0;
+
+    // Compute initial f_slope using forward differences.
+    double f_div = eedf[1] / eedf[0];
+    double f_start = eedf[0];
+    double u_f_start = grid.getCell(0);
+    double u_f_end = grid.getCell(1);
+
+    double sig_slope = (total_cs[1] - total_cs[0]) / (grid.getNode(1) - grid.getNode(0));
+    double u_sig_start = 0.;
+    double sig_start = total_cs[0];
+
+    double u_start = 0;
+
+    double mobility = 0;
+
+    while (u_start < grid.uMax())
+    {
+        // If the current integration domain is outside the current grid cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(i_grid + 1))
+        {
+            i_grid++;
+            u_f_start = grid.getCell(i_grid);
+            u_f_end = grid.getCell(i_grid + 1);
+
+            sig_slope = (total_cs[i_grid + 1] - total_cs[i_grid]) / (grid.getNode(i_grid + 1) - grid.getNode(i_grid));
+            u_sig_start = grid.getNode(i_grid);
+            sig_start = total_cs[i_grid];
+        }
+        // If the current integration domain starts at the current cell center,
+        // recompute the slope of the eedf.
+        if (u_start == grid.getCell(i_grid) && i_grid < grid.nCells() - 1)
+        {
+            f_div = eedf[i_grid + 1] / eedf[i_grid];
+        }
+
+        // The end of the current integration domain is either the next cell
+        // center, the next cross section entry, or the grid boundary.
+        const double u_end =
+            std::min(u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid), grid.uMax());
+
+        mobility += mobility_integral((u_end + u_start) / 2.0, u_sig_start, sig_start, sig_slope, u_f_start, u_f_end,
+                                      f_start, f_div, u_end - u_start);
+        if (std::isnan(mobility))
+        {
+            Log<Message>::Warning("mobility: ", mobility);
+            Log<Message>::Warning("");
+            throw "";
+        }
+
+        u_start = u_end;
+    }
+
+    return mobility;
+}
+
+void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN)
+{
+    Log<Message>::Warning("New: ", integrate_mobility(grid, eedf, total_cs));
+    const Vector Dnodes = grid.getNodes().array() / (3. * total_cs.array());
+    const Vector D = (Dnodes.head(Dnodes.size() - 1) + Dnodes.tail(Dnodes.size() - 1)) / 2.0;
+    Log<Message>::Warning("Old: ", fgPrimeEnergyIntegral(grid, eedf, D));
+}
 } // namespace experimental
 } // namespace loki

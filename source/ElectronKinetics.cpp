@@ -254,6 +254,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
     experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::equalSharing);
+    experimental::SpatialGrowthOperator spatial_growth_operator(grid());
 
     elastic_operator.evaluate(
         grid(),
@@ -313,6 +314,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 
         inelastic_operator.evaluate(grid(), eedf, mixture);
         ionization_operator.evaluate(grid(), eedf, mixture);
+        spatial_growth_operator.evaluate(grid(), eedf, mixture.collision_data().totalCrossSection(), m_workingConditions->reducedFieldSI());
 
         boltzmannMatrix = baseMatrix
                           + inelastic_operator.inelasticMatrix
