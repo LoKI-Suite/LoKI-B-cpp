@@ -251,7 +251,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         const json_type &el_cnf = ser_cnf.at("electronic");
         if (el_cnf.is_array())
         {
-            for (auto i = 0; i < el_cnf.size(); i++) {
+            for (nlohmann::json::size_type i = 0; i < el_cnf.size(); i++) {
                 e.append(el_cnf[i].at("summary").get<std::string>());
                 if (i < el_cnf.size() - 1) e.append("|");
             }
@@ -348,7 +348,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     }
                     v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
                 } else {
-                    for (auto i = 0; i < vib_cnf.size(); i++) {
+                    for (nlohmann::json::size_type i = 0; i < vib_cnf.size(); i++) {
                         v.append(vib_cnf[i].at("summary").get<std::string>());
                         if (i < vib_cnf.size() - 1) v.append("|");
                     }
