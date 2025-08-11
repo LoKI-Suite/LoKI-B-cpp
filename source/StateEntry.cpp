@@ -294,7 +294,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                             {
                                 Log<Message>::Error(
                                     "Invalid J entry ", J_str,
-                                    " in compound rotational state. LoKI-B only supports compound vibrational and "
+                                    " in compound rotational state. LoKI-B only supports compound "
                                     "rotational states for species types with a single rotational quanta.");
                             }
 
