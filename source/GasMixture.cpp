@@ -135,7 +135,7 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
 void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-    std::cout << "loadStatePropertyEntry: handling states " << state_id << ":\n" << propEntry.dump(2) << std::endl;
+    Log<Message>::Notify("loadStatePropertyEntry: handling states ", state_id, ":\n", propEntry.dump(2));
     // 1. Find the state(s) for which the property must be set.
     const StateEntry entry = propertyStateFromString(state_id);
     /** \todo Should this be part of propertyStateFromString?
