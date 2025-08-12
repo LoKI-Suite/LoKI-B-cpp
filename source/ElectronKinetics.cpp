@@ -1285,6 +1285,14 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     swarmParameters.redAttCoeff = totalAttRateCoeff / swarmParameters.driftVelocity;
 
     swarmParameters.meanEnergy = getMeanEnergy(eedf,grid());
+
+    if (swarmParameters.meanEnergy < 0)
+    {
+        Log<Message>::Warning("Negative mean electron energy ", swarmParameters.meanEnergy,
+                              "eV encountered at E/N = ", m_workingConditions->reducedField(),
+                              "Td. Make sure to use an appropriate grid resolution and maximum energy.");
+    }
+
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
 
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
