@@ -1290,7 +1290,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     {
         Log<Message>::Warning("Negative mean electron energy ", swarmParameters.meanEnergy,
                               "eV encountered at E/N = ", m_workingConditions->reducedField(),
-                              "Td. Make sure to correctly configure the grid and maximum energy.");
+                              "Td. Make sure to use an appropriate grid resolution and maximum energy.");
     }
 
     swarmParameters.characEnergy = swarmParameters.redDiffCoeff / swarmParameters.redMobCoeff;
