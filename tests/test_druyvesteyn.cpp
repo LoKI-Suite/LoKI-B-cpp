@@ -27,7 +27,9 @@ auto json = R"json(
             "states": {
                 "e": {
                     "detailed": {
-                        "type": "Electron"  
+                        "type": "Electron", 
+                        "composition": "e",
+                        "charge": -1
                     },
                     "serialized": {
                         "composition": { "summary": "e^-" }
@@ -35,7 +37,10 @@ auto json = R"json(
                 },
                 "X(0)": {
                     "detailed": {
-                        "type": "AtomLS"  
+                        "type": "AtomUnspecified",  
+                        "composition": [["X", 1]],
+                        "charge": 0,
+                        "electronic": "0"
                     },
                     "serialized": {
                         "composition": { "summary": "X" },
@@ -44,7 +49,10 @@ auto json = R"json(
                 },
                 "X(*)": {
                     "detailed": {
-                        "type": "AtomLS"  
+                        "type": "AtomUnspecified",  
+                        "composition": [["X", 1]],
+                        "charge": 0,
+                        "electronic": "*"
                     },
                     "serialized": {
                         "composition": { "summary": "X" },
@@ -53,7 +61,9 @@ auto json = R"json(
                 },
                 "X(+)": {
                     "detailed": {
-                        "type": "AtomLS"  
+                        "type": "Atom",
+                        "composition": [["X", 1]],
+                        "charge": 0
                     },
                     "serialized": {
                         "composition": { "summary": "X^+" }
