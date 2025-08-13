@@ -135,7 +135,7 @@ Gas::State::ChildContainer GasMixture::findStates(const StateEntry &entry)
 void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_type& propEntry,
                                    StatePropertyType propertyType, const WorkingConditions *workingConditions)
 {
-    std::cout << "loadStatePropertyEntry: handling states " << state_id << ":\n" << propEntry.dump(2) << std::endl;
+    Log<Message>::Notify("loadStatePropertyEntry: handling states ", state_id, ":\n", propEntry.dump(2));
     // 1. Find the state(s) for which the property must be set.
     const StateEntry entry = propertyStateFromString(state_id);
     /** \todo Should this be part of propertyStateFromString?
@@ -143,14 +143,13 @@ void GasMixture::loadStatePropertyEntry(const std::string& state_id, const json_
      */
     if (entry.m_level == none)
     {
-        throw std::runtime_error("loadStateProperty: illegal "
-                        "state identifier '" + propEntry.at("states").get<std::string>() + "'.");
+        Log<Message>::Error("loadStateProperty: illegal state identifier '" + state_id + "'.");
     }
     Gas::State::ChildContainer states = findStates(entry);
     if (states.empty())
     {
-        throw std::runtime_error("loadStateProperty: could not find "
-                        "state or state group '" + propEntry.at("states").get<std::string>() + "'.");
+        Log<Message>::Error("loadStateProperty: could not find state or state group '"
+                            + state_id + "'.");
     }
 
     // 2. Now apply the expression.
