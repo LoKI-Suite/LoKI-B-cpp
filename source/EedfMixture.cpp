@@ -97,27 +97,29 @@ void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath
     {
         for (const auto& e : effPop.at("states").items())
         {
-            /// \todo How to handle wildcards?
-            /// \todo Add a constant overload of GasMixture::findStateById
-            const Gas::State* state = const_cast<GasMixture&>(composition()).findStateById(e.key());
-            if (effectivePopulations.count(state))
-            {
-                throw std::runtime_error("Duplicate specification for state '"
-                    + e.key() + "' found.");
+            const StateEntry entry = propertyStateFromString(e.key());
+            Gas::State::ChildContainer states = const_cast<GasMixture&>(composition()).findStates(entry);
+
+            for (const auto &state : states) {
+                if (effectivePopulations.count(state))
+                {
+                    throw std::runtime_error("Duplicate specification for state '"
+                        + e.key() + "' found.");
+                }
+                if (e.value().at("type")=="constant")
+                {
+                    effectivePopulations[state] = e.value().at("value");
+                    std::cout << "readEffectivePopulations: setting effective cross section "
+                                 "population of state '" << e.key() << " to "
+                              << e.value().at("value").dump(2) << "'." << std::endl;
+                }
+                else
+                {
+                    /// \todo Should we also support functions here?
+                    throw std::runtime_error("readEffectivePopulations for state '"
+                        + e.key() + "': only type 'Constant' is supported.");
+                }
             }
-            if (e.value().at("type")=="constant")
-            {
-                effectivePopulations[state] = e.value().at("value");
-                std::cout << "readEffectivePopulations: setting effective cross section "
-        		"population of state '" << e.key() << " to "
-                        << e.value().at("value").dump(2) << "'." << std::endl;
-            }
-            else
-            {
-                throw std::runtime_error("readEffectivePopulations for state '"
-                    + e.key() + "': only type 'Constant' is supported.");
-            }
-            /// \todo Should we also support functions here?
         }
     }
     if (effPop.contains("files"))

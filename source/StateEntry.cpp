@@ -1,6 +1,5 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Log.h"
-#include <fstream>
 #include <regex>
 #include <stdexcept>
 
@@ -231,57 +230,75 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
 
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
-    const std::string gasName = cnf.at("particle");
-    // this is how it is now done for the electron for legacy input
-    if (gasName == "e")
+    const json_type &ser_cnf = cnf.at("serialized");
+    const auto species_type = cnf.at("detailed").at("type").get<std::string_view>();
+
+    std::string gas_name = ser_cnf.at("composition").at("summary");
+    std::string charge_str = "";
+
+    // Split the charge from the gas name.
+    const auto pos = gas_name.find("^");
+    if (pos != std::string::npos)
     {
-        Log<Message>::Warning("Ignoring state attributes for electrons.");
-        return StateEntry::electronEntry();
+        charge_str = gas_name.substr(pos + 1);
+        gas_name = gas_name.substr(0, pos);
     }
-    const int charge_int = cnf.at("charge").get<int>();
-    const std::string charge_str = charge_int ? std::to_string(charge_int) : std::string{};
+
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
-    if (cnf.contains("electronic"))
+    if (ser_cnf.contains("electronic"))
     {
-        const json_type &el_cnf = cnf.at("electronic");
-        if (el_cnf.size() != 1)
+        const json_type &el_cnf = ser_cnf.at("electronic");
+        if (el_cnf.is_array())
         {
-            throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
-        }
-        e = el_cnf[0].at("summary");
-        if (el_cnf[0].contains("vibrational"))
-        {
-            const json_type &vib_cnf = el_cnf[0].at("vibrational");
-            if (vib_cnf.size() == 0)
-            {
-                throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+            for (nlohmann::json::size_type i = 0; i < el_cnf.size(); i++) {
+                e.append(el_cnf[i].at("summary").get<std::string>());
+                if (i < el_cnf.size() - 1) e.append("|");
             }
-            else if (vib_cnf.size() == 1)
+        } else if (el_cnf.is_object())
+        {
+            e = el_cnf.at("summary");
+            // throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
+        }
+        if (el_cnf.contains("vibrational"))
+        {
+            const json_type &vib_cnf = el_cnf.at("vibrational");
+            if (vib_cnf.is_object())
             {
-                // we expect a number, but sometimes a string is encountered, like "10+"
-                v = vib_cnf[0].at("v").type() == json_type::value_t::string
-                        ? vib_cnf[0].at("v").get<std::string>()
-                        : std::to_string(vib_cnf[0].at("v").get<int>());
+                v = vib_cnf.at("summary").get<std::string>();
 
-                if (vib_cnf[0].contains("rotational"))
+                if (vib_cnf.contains("rotational"))
                 {
-                    const json_type &rot_cnf = vib_cnf[0].at("rotational");
-                    if (rot_cnf.size() == 0)
+                    const json_type &rot_cnf = vib_cnf.at("rotational");
+                    if (rot_cnf.is_object())
                     {
-                        throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
-                    }
-                    else if (rot_cnf.size() == 1)
-                    {
-                        J = std::to_string(rot_cnf[0].at("J").get<int>());
+                        J = rot_cnf.at("summary").get<std::string>();
                     }
                     else
                     {
+                        if (rot_cnf.size() == 0)
+                        {
+                            throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
+                        }
+
                         // For "v" and "J" we assume that the entries form a continuous value-range.
                         std::set<unsigned> J_vals;
                         for (const auto &Jentry : rot_cnf)
                         {
-                            J_vals.insert(Jentry.at("J").get<int>());
+                            // Avoid unexpected behavior for rotational states of molecules with multiple rotational
+                            // quanta (e.g. water).
+                            const auto &J_str = Jentry.at("summary").get<std::string>();
+
+                            if (!(species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom" ||
+                                  species_type == "LinearTriatomInversionCenter"))
+                            {
+                                Log<Message>::Error(
+                                    "Invalid J entry ", J_str,
+                                    " in compound rotational state. LoKI-B only supports compound "
+                                    "rotational states for species types with a single rotational quanta.");
+                            }
+
+                            J_vals.insert(std::stoi(J_str));
                         }
                         if (J_vals.size() != rot_cnf.size())
                         {
@@ -298,27 +315,44 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
             }
             else
             {
-                std::set<unsigned> v_vals;
-                for (const auto &ventry : vib_cnf)
+                if (vib_cnf.size() == 0)
                 {
-                    if (ventry.contains("rotational"))
+                    throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+                }
+
+                // Special case treatment for species types with a single
+                // vibrational quanta. Compound vibrational states can then be
+                // written as a range (e.g. "0-5").
+                if (species_type == "HomonuclearDiatom" || species_type == "HeteronuclearDiatom") {
+                    std::set<unsigned> v_vals;
+                    for (const auto &ventry : vib_cnf)
                     {
-                        throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                                 "multiple virbational states are specified.");
+                        if (ventry.contains("rotational"))
+                        {
+                            throw std::runtime_error("Rotational states identifiers are not allowed when "
+                                                     "multiple vibrational states are specified.");
+                        }
+                        const auto &v_str = ventry.at("summary").get<std::string>();
+                        v_vals.insert(std::stoi(v_str));
                     }
-                    v_vals.insert(ventry.at("v").get<int>());
+                
+                    // For "v" and "J" we assume that the entries form a continuous value-range.
+                    if (v_vals.size() != vib_cnf.size())
+                    {
+                        throw std::runtime_error("Duplicate v entries encountered.");
+                    }
+                    auto nv = *v_vals.rbegin() + 1 - *v_vals.begin();
+                    if (nv != v_vals.size())
+                    {
+                        throw std::runtime_error("Expected a contiguous v-range.");
+                    }
+                    v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
+                } else {
+                    for (nlohmann::json::size_type i = 0; i < vib_cnf.size(); i++) {
+                        v.append(vib_cnf[i].at("summary").get<std::string>());
+                        if (i < vib_cnf.size() - 1) v.append("|");
+                    }
                 }
-                // For "v" and "J" we assume that the entries form a continuous value-range.
-                if (v_vals.size() != vib_cnf.size())
-                {
-                    throw std::runtime_error("Duplicate v entries encountered.");
-                }
-                int nv = *v_vals.rbegin() + 1 - *v_vals.begin();
-                if (nv != int(v_vals.size()))
-                {
-                    throw std::runtime_error("Expected a contiguous v-range.");
-                }
-                v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
             }
         }
     }
@@ -326,13 +360,13 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                           : v.empty() == false ? vibrational
                           : e.empty() == false ? electronic
                                                : charge;
-    return StateEntry{id, stateType, gasName, charge_str, e, v, J};
+    return StateEntry{id, stateType, gas_name, charge_str, e, v, J};
 }
 
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_|\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
     std::smatch m;
 
     if (!std::regex_search(propertyString, m, reState))

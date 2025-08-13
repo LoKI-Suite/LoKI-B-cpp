@@ -1041,13 +1041,14 @@ void EedfCollisionDataMixture::loadCollisionsJSON(const json_type &mcnf, const G
                 rhsCoeffs.push_back(t.contains("count") ? t.at("count").get<int>() : 1);
             }
 
-            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("type_tags"));
+            const CollisionType type = getCollisionTypeFromTypeTagArray(rcnf.at("typeTags"));
             const bool reverseAlso = rcnf.at("reversible");
 
             Collision &coll = addCollision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso, isExtra);
             const bool isElasticOrEffective =
                 (coll.type() == CollisionType::effective || coll.type() == CollisionType::elastic);
-            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf));
+            // FIXME: Load all cross section info objects.
+            coll.crossSection.reset(new CrossSection(energyGrid, isElasticOrEffective, pcnf.at("info").at(0)));
         }
         catch (std::exception &exc)
         {
