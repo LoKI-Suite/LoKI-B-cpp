@@ -51,8 +51,13 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
     }
     os << entry.m_gasName << '(';
     if (!entry.m_charge.empty())
-        os << entry.m_charge << ',';
-    os << entry.m_e;
+        os << entry.m_charge;
+    if (!entry.m_e.empty())
+    {
+        if (!entry.m_charge.empty())
+            os << ',';
+        os << entry.m_e;
+    }
     if (!entry.m_v.empty())
         os << ",v=" << entry.m_v;
     if (!entry.m_J.empty())
@@ -228,21 +233,30 @@ void entriesFromString(const std::string stateString, std::vector<StateEntry> &e
     }
 }
 
+std::string serialize_charge(int charge) {
+    if (charge == 0) {
+        return "";
+    }
+
+    return std::string(std::abs(charge), charge > 0 ? '+' : '-');
+}
+
 StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 {
     const json_type &ser_cnf = cnf.at("serialized");
     const auto species_type = cnf.at("detailed").at("type").get<std::string_view>();
 
     std::string gas_name = ser_cnf.at("composition").at("summary");
-    std::string charge_str = "";
 
     // Split the charge from the gas name.
     const auto pos = gas_name.find("^");
     if (pos != std::string::npos)
     {
-        charge_str = gas_name.substr(pos + 1);
         gas_name = gas_name.substr(0, pos);
     }
+
+    const int charge_int = cnf.at("detailed").at("charge").get<int>();
+    const std::string charge_str = serialize_charge(charge_int);
 
     // e,v,J are the strings that are passed to the StateEntry constructor.
     std::string e, v, J;
