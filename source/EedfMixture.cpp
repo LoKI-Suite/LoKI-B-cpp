@@ -28,6 +28,7 @@
  */
 
 #include "LoKI-B/EedfMixture.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/GasProperties.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/LegacyToJSON.h"
@@ -64,6 +65,16 @@ EedfMixture::EedfMixture(const std::filesystem::path &basePath, const Grid *grid
     {
         throw std::runtime_error("No electron species has been found in the process list.");
     }
+
+    for (const auto &collisions : collision_data().data_per_gas())
+    {
+        if (collisions.collisions(CollisionType::effective).size() > 1)
+        {
+            Log<Message>::Error("More than one effective cross section detected for gas ",
+                                collisions.gas().name(), ".");
+        }
+    }
+
     /// \todo See the comments about the population in the other overload
     m_composition.loadStateProperties(basePath, cnf.at("stateProperties"), workingConditions);
     m_composition.evaluateReducedDensities();
