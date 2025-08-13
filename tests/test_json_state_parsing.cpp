@@ -32,9 +32,55 @@ bool test_invalid(const std::string_view expected_error, const nlohmann::json &s
 int main(int argc, char **argv)
 {
     // Tests that should pass.
+    test_expr(test_valid("N2()", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom",
+              "charge": 0
+            },
+            "serialized": {
+              "composition": { "summary": "N2" }
+            }
+          })json"_json));
+    test_expr(test_valid("N2(+)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom",
+              "charge": 1
+            },
+            "serialized": {
+              "composition": { "summary": "N2" }
+            }
+          })json"_json));
+    test_expr(test_valid("N2(++)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom",
+              "charge": 2
+            },
+            "serialized": {
+              "composition": { "summary": "N2" }
+            }
+          })json"_json));
+    test_expr(test_valid("N2(-)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom",
+              "charge": -1
+            },
+            "serialized": {
+              "composition": { "summary": "N2" }
+            }
+          })json"_json));
+    test_expr(test_valid("N2(--)", R"json({
+            "detailed": {
+              "type": "HomonuclearDiatom",
+              "charge": -2
+            },
+            "serialized": {
+              "composition": { "summary": "N2" }
+            }
+          })json"_json));
     test_expr(test_valid("N2(X)", R"json({
             "detailed": {
-              "type": "HomonuclearDiatom"
+              "type": "HomonuclearDiatom",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "N2" },
@@ -43,7 +89,8 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("Ar(^1S_0)", R"json({
             "detailed": {
-              "type": "AtomLS"
+              "type": "AtomLS",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "Ar" },
@@ -52,7 +99,8 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("N2(X|A)", R"json({
            "detailed": {
-             "type": "HomonuclearDiatom"
+             "type": "HomonuclearDiatom",
+             "charge": 0
            },
            "serialized": {
              "composition": { "summary": "N2" },
@@ -64,7 +112,8 @@ int main(int argc, char **argv)
          })json"_json));
     test_expr(test_valid("N2(X,v=0)", R"json({
             "detailed": {
-              "type": "HomonuclearDiatom"
+              "type": "HomonuclearDiatom",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "N2" },
@@ -76,7 +125,8 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("N2(X,v=0-4)", R"json({
             "detailed": {
-              "type": "HomonuclearDiatom"
+              "type": "HomonuclearDiatom",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "N2" },
@@ -94,7 +144,8 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("N2(X,v=0,J=0)", R"json({
             "detailed": {
-              "type": "HomonuclearDiatom"
+              "type": "HomonuclearDiatom",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "N2" },
@@ -111,7 +162,8 @@ int main(int argc, char **argv)
           })json"_json));
     test_expr(test_valid("N2(X,v=0,J=3-6)", R"json({
             "detailed": {
-              "type": "HomonuclearDiatom"
+              "type": "HomonuclearDiatom",
+              "charge": 0
             },
             "serialized": {
               "composition": { "summary": "N2" },
@@ -132,7 +184,8 @@ int main(int argc, char **argv)
     test_expr(test_valid("CO2(X,v=010,J=0)",
                          R"json({
                              "detailed": {
-                               "type": "LinearTriatomInversionCenter"
+                               "type": "LinearTriatomInversionCenter",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "CO2" },
@@ -148,7 +201,8 @@ int main(int argc, char **argv)
     test_expr(test_valid("CO2(X,v=010|011)",
                          R"json({
                              "detailed": {
-                               "type": "LinearTriatomInversionCenter"
+                               "type": "LinearTriatomInversionCenter",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "CO2" },
@@ -167,7 +221,8 @@ int main(int argc, char **argv)
         test_invalid("Rotational states identifiers are not allowed when multiple vibrational states are specified.",
                      R"json({
                        "detailed": {
-                         "type": "HomonuclearDiatom"
+                         "type": "HomonuclearDiatom",
+                         "charge": 0
                        },
                        "serialized": {
                          "composition": { "summary": "N2" },
@@ -183,7 +238,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("At least one vibrational state is expected by LoKI-B.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -196,7 +252,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("Expected a contiguous v-range.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -212,7 +269,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("Duplicate v entries encountered.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -228,7 +286,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("Expected a contiguous J-range.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -247,7 +306,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("Expected a contiguous J-range.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -266,7 +326,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("Duplicate J entries encountered.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -285,7 +346,8 @@ int main(int argc, char **argv)
     test_expr(test_invalid("At least one rotational state is expected by LoKI-B.",
                            R"json({
                              "detailed": {
-                               "type": "HomonuclearDiatom"
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "N2" },
@@ -302,7 +364,8 @@ int main(int argc, char **argv)
                            "rotational states for species types with a single rotational quanta.\n",
                            R"json({
                              "detailed": {
-                               "type": "TriatomC2v"
+                               "type": "TriatomC2v",
+                               "charge": 0
                              },
                              "serialized": {
                                "composition": { "summary": "H2O" },
