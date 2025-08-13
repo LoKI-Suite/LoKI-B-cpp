@@ -51,8 +51,13 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
     }
     os << entry.m_gasName << '(';
     if (!entry.m_charge.empty())
-        os << entry.m_charge << ',';
-    os << entry.m_e;
+        os << entry.m_charge;
+    if (!entry.m_e.empty())
+    {
+        if (!entry.m_charge.empty())
+            os << ',';
+        os << entry.m_e;
+    }
     if (!entry.m_v.empty())
         os << ",v=" << entry.m_v;
     if (!entry.m_J.empty())
