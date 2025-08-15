@@ -590,7 +590,7 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
             auto *collision =
                 new EedfCollision(CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
 
-            collision->crossSection.reset(elasticCS);
+            collision->crossSection.reset(new CrossSection(*elasticCS));
 
             this->addCollision(collision, false);
         }
