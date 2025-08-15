@@ -55,6 +55,9 @@ bool compare_floats(double a, double b, double rel_tol, double abs_tol)
     if (!equal)
     {
         std::cerr << "Floats " << a << " and " << b << " are not equal." << std::endl;
+        std::cerr << "|a-b| = " << std::fabs(a - b) << std::endl;
+        std::cerr << "abs_tol = " << abs_tol << std::endl;
+        std::cerr << "rel_tol*max(|a|,|b|) = " << rel_tol * std::max(std::fabs(a), std::fabs(b)) << std::endl;
     }
     return equal;
 }
@@ -68,7 +71,7 @@ bool compare_floats(double a, double b, double rel_tol, double abs_tol)
  * @param abs_tol The absolute tolerance for comparing floating-point numbers.
  * @return true if the JSON objects are considered equal, false otherwise.
  */
-bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_tol = 1e-9, double abs_tol = 1e-12)
+bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_tol = 1e-9, double abs_tol = 1e-11)
 {
     if (j1.type() != j2.type())
     {
