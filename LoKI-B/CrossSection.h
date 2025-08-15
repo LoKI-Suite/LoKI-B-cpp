@@ -36,7 +36,6 @@
 #include "LoKI-B/LookupTable.h"
 
 #include <iostream>
-#include <vector>
 
 namespace loki
 {
@@ -48,6 +47,9 @@ public:
     CrossSection(double threshold, const Grid *energyGrid, bool isElasticOrEffective, std::istream &in);
     CrossSection(double threshold, const Grid *energyGrid, bool isElasticOrEffective, Vector rawEnergyData,
                  Vector rawCrossSection);
+
+    // Custom copy constructor to register the event handler.
+    CrossSection(const CrossSection &other);
 
     void interpolate();
     void interpolate(const Vector &energies, Vector &result) const;

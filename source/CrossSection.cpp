@@ -28,8 +28,6 @@
  */
 
 #include "LoKI-B/CrossSection.h"
-#include "LoKI-B/Log.h"
-#include <utility>
 
 namespace loki
 {
@@ -64,6 +62,14 @@ CrossSection::CrossSection(double threshold, const Grid *energyGrid, bool isElas
     this->interpolate();
     energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
 }
+
+CrossSection::CrossSection(const CrossSection &other)
+    : Vector(other), m_threshold(other.m_threshold), m_energyGrid(other.m_energyGrid),
+      m_isElasticOrEffective(other.m_isElasticOrEffective), m_lut(other.m_lut.x(), other.m_lut.y())
+{
+    this->m_energyGrid->updatedMaxEnergy.addListener(&CrossSection::interpolate, this);
+}
+
 
 void CrossSection::interpolate()
 {
