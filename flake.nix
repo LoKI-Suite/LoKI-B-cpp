@@ -33,6 +33,14 @@
             ;
         });
 
+      python = pkgs.python312.withPackages (
+        ps: with ps; [
+          matplotlib
+          numpy
+          pandas
+        ]
+      );
+
       shellInputs = with pkgs; [
         # Build system
         ninja
@@ -69,6 +77,7 @@
 
               # Plotting
               gnuplot
+              python
 
               # Workflow testing
               act
