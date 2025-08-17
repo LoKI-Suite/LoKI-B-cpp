@@ -624,8 +624,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     const Vector coefsCI = SI::gamma * grid().duCells().transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     double CIEffNew = eedf.dot(coefsCI);
-    double CIEffOld = CIEffNew / 3.;
-    CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
+    double CIEffOld = 0;
 
     Vector eedfNew(grid().nCells());
 
