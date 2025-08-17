@@ -663,9 +663,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
-        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 10e-10) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-11) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
@@ -674,6 +673,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative temporal growth scheme did not converge.");
         }
+
+        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         ++iter;
     }
