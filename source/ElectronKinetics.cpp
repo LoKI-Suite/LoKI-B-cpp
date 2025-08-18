@@ -312,15 +312,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
 
     double CIEffNew = eedf.dot(coefsCI);
-    double CIEffOld = CIEffNew / 3;
-    /** \todo Where does the division by 3 come from? Without that, CIEff
-     *  is calculated below as a weighted average of old and new values
-     *  (underrelaxation). I cannot interpret the equation with the additional /3.
-     *  NOTE that this is just initialization; in the while(!converged) loop
-     *  we do not have such factor 1/3.
-     *  Why do we need an 'old' value on entry of that loop?
-     */
-    CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
     /** \todo DB: diffusion and mobility components of the spatial growth terms
      *  can be removed since this is already done in the directMixing function
@@ -543,10 +534,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         invertMatrix(boltzmannMatrix);
 
-        CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
-
-        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
         muE = - SI::gamma* fgPrimeEnergyIntegral(grid(),D0,eedf) * EoN;
@@ -583,7 +571,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     std::cerr << "Spatial growth routine converged in: " << iter << " iterations.\n";
 
     alphaRedEff = alphaRedEffOld;
-    CIEff = CIEffOld;
 }
 
 void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
