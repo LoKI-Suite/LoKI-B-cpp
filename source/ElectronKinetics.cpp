@@ -551,9 +551,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         alphaRedEffOld = alphaRedEffNew;
         alphaRedEffNew = (discriminant_new < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant_new)) / (2 * ND);
 
-        alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
-
-        if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
+        if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-9) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
@@ -565,6 +563,9 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
         }
+
+        alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
+
         ++iter;
     }
 
