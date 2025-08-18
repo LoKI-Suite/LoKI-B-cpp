@@ -77,7 +77,7 @@ void Simulation::initializeJobs(const json_type &cnf, bool useReducedFieldParame
         try
         {
             m_jobManager.addParameter(
-                "ReducedField",
+                "reducedField",
                 std::bind(&WorkingConditions::updateReducedField, std::ref(m_workingConditions), std::placeholders::_1),
                 Range::create(cnf.at("reducedField")));
         }

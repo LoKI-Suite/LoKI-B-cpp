@@ -126,9 +126,9 @@ void FileOutput::writeTerm(std::ostream &os, const std::string &name, const std:
 void FileOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
 {
     std::ofstream os(m_folder + "/" + m_subFolder + "/eedf.txt");
-    os << "Energy (eV)          EEDF (eV^-(3/2))";
+    os << "Energy(eV)           EEDF(eV^-(3/2))";
     if (firstAnisotropy)
-        os << "     First Anisotropy" << std::endl;
+        os << "      Anisotropy(eV^-(3/2))" << std::endl;
     for (Vector::Index i = 0; i < energies.size(); ++i)
     {
         os << std::scientific << std::setprecision(14) << energies[i];
