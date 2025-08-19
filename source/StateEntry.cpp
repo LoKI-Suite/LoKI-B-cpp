@@ -43,25 +43,32 @@ bool StateEntry::hasWildCard() const
 
 std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
 {
+    os << entry.m_gasName;
+
     // special handling of the electron. Just write "e".
     if (entry.m_gasName == "e")
     {
-        os << entry.m_gasName;
         return os;
     }
-    os << entry.m_gasName << '(';
+
+    os << '(';
+
     if (!entry.m_charge.empty())
         os << entry.m_charge;
+
     if (!entry.m_e.empty())
     {
         if (!entry.m_charge.empty())
             os << ',';
         os << entry.m_e;
     }
+
     if (!entry.m_v.empty())
         os << ",v=" << entry.m_v;
+
     if (!entry.m_J.empty())
         os << ",J=" << entry.m_J;
+
     os << ')';
 
     return os;

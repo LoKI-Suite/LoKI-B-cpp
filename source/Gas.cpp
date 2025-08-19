@@ -143,18 +143,8 @@ bool Gas::State::operator>=(const StateEntry &entry)
 std::ostream &operator<<(std::ostream &os, const Gas::State &state)
 {
     os << state.gas().name();
-#if 0
-    // write N2+(...) instead of N2(+,...) ?
-    /// \todo this does not work: when reading legacy input, the charge is smth. like '+', not a number.
-    if (!state.charge.empty())
-    {
-        const int c=std::stoi(state.charge);
-        os << std::string( std::abs(c), c > 0 ? '+' : '-');
-    }
-#endif
 
-    // the electron is handled specially. The logic here is the same as
-    // for in StateEntry's stream insertion operator.
+    // special handling of the electron. Just write "e".
     if (state.gas().name() == "e")
     {
         return os;
@@ -163,16 +153,19 @@ std::ostream &operator<<(std::ostream &os, const Gas::State &state)
     os << '(';
 
     if (!state.charge.empty())
+        os << state.charge;
+
+    if (!state.e.empty())
     {
-        os << state.charge << ',';
+        if (!state.charge.empty())
+            os << ',';
+        os << state.e;
     }
 
-    os << state.e;
-
-    if (state.type >= StateType::vibrational)
+    if (!state.v.empty())
         os << ",v=" << state.v;
 
-    if (state.type == StateType::rotational)
+    if (!state.J.empty())
         os << ",J=" << state.J;
 
     os << ')';
