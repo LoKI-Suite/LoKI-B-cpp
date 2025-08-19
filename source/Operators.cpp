@@ -258,7 +258,7 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        g[i] = (1. / 3) * grid.getNode(i) /
+        g[i] = (1. / 3.) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
