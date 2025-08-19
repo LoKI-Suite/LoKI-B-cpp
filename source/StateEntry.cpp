@@ -380,18 +380,22 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_|\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
     std::smatch m;
 
-    if (!std::regex_search(propertyString, m, reState))
+    if (!std::regex_match(propertyString, m, reState))
         return {};
 
-    if (m.str(1).empty() || m.str(3).empty())
+    if (m.str(1).empty())
         return {};
 
     StateType stateType;
 
-    if (m.str(4).empty())
+    if (m.str(3).empty())
+    {
+        stateType = charge;
+    }
+    else if (m.str(4).empty())
     {
         stateType = electronic;
     }
