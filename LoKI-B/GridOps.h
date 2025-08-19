@@ -216,6 +216,50 @@ namespace loki {
         }
     }
 
+    template <class VectorExpr>
+    double fNodegPrimeEnergyIntegral(const Grid& grid, const VectorExpr& f, const Vector& g)
+    {
+        const Grid::Index N = grid.nCells();
+        if (N<2)
+        {
+            throw std::runtime_error("fNodegPrimeEnergyIntegral: "
+                                     "grid must contain at least two cells.");
+        }
+        if (f.size()!=g.size() + 1 || g.size() != N)
+        {
+            throw std::runtime_error("fNodegPrimeEnergyIntegral: "
+                                     "multiplicands have wrong sizes.");
+        }
+        if (grid.isUniform())
+        {
+            // NOTE: N>=2 has been checked above
+            double res = 0.0;
+            res += (f[0] + f[1]) * (g[1] - g[0]) / 2.;
+            res += (f[N] + f[N-1]) * (g[N-1] - g[N-2]) / 2.;
+
+            for (Grid::Index k=1; k<=N-2; ++k)
+            {
+                res += (f[k+1]*g[k+1] - (f[k+1]-f[k])*g[k] - f[k]*g[k-1]) / 2.;
+            }
+            return res;
+        }
+        else
+        {
+            // NOTE: N>=2 has been checked above
+            double res = 0.0;
+            res += (f[0] + f[1]) * (g[1] - g[0]) / (2. * grid.duNode(1)) * grid.duCell(0);
+            res += (f[N] + f[N-1]) * (g[N-1] - g[N-2]) / (2. * grid.duNode(N - 1)) * grid.duCell(N-1);
+
+            for (Grid::Index k=1; k<=N-2; ++k)
+            {
+                res += 1. / 2. * (
+                       f[k] * (g[k] - g[k - 1]) / grid.duNode(k) +
+                       f[k + 1] * (g[k + 1] - g[k]) / grid.duNode(k + 1)
+                     ) * grid.duCell(k);
+            }
+            return res;
+        }
+    }
 } // namespace loki
 
 #endif // LOKI_CPP_GRIDOPS_H
