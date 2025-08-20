@@ -28,6 +28,7 @@
  */
 
 #include "LoKI-B/Gas.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
 #include <algorithm>
 #include <cassert>
@@ -145,7 +146,7 @@ std::ostream &operator<<(std::ostream &os, const Gas::State &state)
     os << state.gas().name();
 
     // special handling of the electron. Just write "e".
-    if (state.gas().name() == "e")
+    if (state.gas().name() == "e" || state.type == StateType::root)
     {
         return os;
     }

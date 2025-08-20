@@ -1,4 +1,5 @@
 #include "LoKI-B/StateEntry.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
 #include <regex>
 #include <set>
@@ -47,7 +48,7 @@ std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
     os << entry.m_gasName;
 
     // special handling of the electron. Just write "e".
-    if (entry.m_gasName == "e")
+    if (entry.m_gasName == "e" || entry.m_level == StateType::root)
     {
         return os;
     }
