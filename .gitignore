@@ -20,3 +20,6 @@ profiler/
 
 # Nix build output
 result
+
+# VCpkg
+vcpkg_installed/
