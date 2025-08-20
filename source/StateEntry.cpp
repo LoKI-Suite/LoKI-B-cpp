@@ -1,6 +1,7 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Log.h"
 #include <regex>
+#include <set>
 #include <stdexcept>
 
 namespace loki
