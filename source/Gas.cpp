@@ -206,7 +206,9 @@ void Gas::State::checkPopulations() const
     if (population() == 0)
     {
         if (totalPopulation != 0)
-            Log<ChildrenPopulationError>::Error(*this);
+            Log<Message>::Error("The population of ", *this,
+                    " is 0, but the total population of its children is >0 did you forget to set the population of ",
+                    *this, "?");
     }
     else
     {
