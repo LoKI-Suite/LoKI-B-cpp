@@ -29,7 +29,7 @@ void restore_output()
     std::cerr.clear();
 }
 
-std::string load_error(const std::string &error_file) {
+std::string load_error(const std::filesystem::path &error_file) {
     std::ifstream file(error_file);
     return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 }
