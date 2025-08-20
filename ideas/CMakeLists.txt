@@ -8,7 +8,7 @@ function (target_add_test target)
 endfunction (target_add_test)
 
 add_executable(json2lxcat json2lxcat.cpp)
-if(USE_BUILTIN_NLOHMANN_JSON)
+if(LOKIB_USE_BUILTIN_NLOHMANN_JSON)
 	target_include_directories(json2lxcat PRIVATE ${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0)
 else()
 	target_link_libraries(json2lxcat PRIVATE nlohmann_json::nlohmann_json)
