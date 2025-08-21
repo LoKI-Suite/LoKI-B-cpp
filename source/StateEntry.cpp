@@ -3,7 +3,9 @@
 #include "LoKI-B/Log.h"
 #include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 namespace loki
 {
@@ -386,37 +388,78 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
     return StateEntry{id, stateType, gas_name, charge_str, e, v, J};
 }
 
+std::vector<std::string> split_string(const std::string &str, char delimiter = ',') {
+    std::istringstream split(str);
+    std::vector<std::string> tokens;
+
+    for (std::string entry; std::getline(split, entry, delimiter); tokens.push_back(entry));
+
+    return tokens;
+};
+
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
-    static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
-    std::smatch m;
+    static const std::regex outer_regex(R"(([A-Za-z][A-Za-z0-9]*)(\(.*\))?)");
+    static const std::regex charge_regex(R"(([-\+]*))");
 
-    if (!std::regex_match(propertyString, m, reState))
-        return {};
+    std::smatch m_outer;
 
-    if (m.str(1).empty())
-        return {};
+    if (!std::regex_match(propertyString, m_outer, outer_regex)) {
+        Log<Message>::Error("State string ", propertyString, " could not be parsed.");
+    }
 
-    StateType stateType;
+    if (m_outer.str(2).empty()) {
+        return {m_outer.str(0), StateType::root, m_outer.str(1), "", "", "", ""};
+    }
 
-    if (m.str(3).empty())
-    {
-        stateType = charge;
+    const auto body = m_outer.str(2).substr(1, m_outer.str(2).length() - 2);
+
+    if (body.empty()) {
+        return {m_outer.str(0), StateType::charge, m_outer.str(1), "", "", "", ""};
     }
-    else if (m.str(4).empty())
-    {
-        stateType = electronic;
+
+    const auto tokens = split_string(body);
+    std::smatch m_charge;
+    
+    if (std::regex_match(tokens[0], m_charge, charge_regex)) {
+        return {m_outer.str(0), StateType::charge, m_outer.str(1), m_charge.str(0), "", "", ""};
     }
-    else if (m.str(5).empty())
-    {
-        stateType = vibrational;
-    }
-    else
-    {
-        stateType = rotational;
-    }
-    return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
+    
+    Log<Message>::Warning(body);
+
+    return {};
 }
+
+    
+//     static const std::regex reState(
+//         R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
+//     std::smatch m;
+
+//     if (!std::regex_match(propertyString, m, reState))
+//         return {};
+
+//     if (m.str(1).empty())
+//         return {};
+
+//     StateType stateType;
+
+//     if (m.str(3).empty())
+//     {
+//         stateType = charge;
+//     }
+//     else if (m.str(4).empty())
+//     {
+//         stateType = electronic;
+//     }
+//     else if (m.str(5).empty())
+//     {
+//         stateType = vibrational;
+//     }
+//     else
+//     {
+//         stateType = rotational;
+//     }
+//     return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
+// }
 
 } // namespace loki

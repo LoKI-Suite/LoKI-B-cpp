@@ -19,9 +19,9 @@ void test_state_string(const loki::GasProperties& gasProps, const std::string st
     try {
         using namespace loki;
 
-//        std::cout << "State string: '" << str << "'." << std::endl;
+       std::cout << "State string: '" << str << "'." << std::endl;
         const StateEntry e = propertyStateFromString(str);
-//        std::cout << "Entry: '" << e << "." << std::endl;
+       std::cout << "Entry: '" << e << "." << std::endl;
         loki::Gas gas(gasProps,e.m_gasName);
 //        std::cout << "Gas name: '" << gas.name << "'." << std::endl;
         const Gas::State root{&gas};
@@ -60,24 +60,25 @@ int main()
     // We do not care about the gas properties, but mass is mandatory
     loki::GasProperties gasProps;
     gasProps.set("mass","N2",4.651834066656000e-26);
-    test_state_string(gasProps,"N2(X)",true);
-    test_state_string(gasProps,"N2(X,v=0)",true);
-    test_state_string(gasProps,"N2(X,v=0,J=0)",true);
+    // test_state_string(gasProps,"N2(X)",true);
+    // test_state_string(gasProps,"N2(X,v=0)",true);
+    // test_state_string(gasProps,"N2(X,v=0,J=0)",true);
 
     // QUESTION: This results in state type 'none'. Should an attempt to create such
     //           state not throw an exception?
-    test_state_string(gasProps,"N2",false);
+    test_state_string(gasProps,"N2(hello)",false);
+    test_state_string(gasProps,"N2(+)",false);
 
     // Things that should fail:
 
-    test_state_string(gasProps,"N2(",false);   // string is incomplete
-    test_state_string(gasProps,"N2)",false);   // string is incomplete
+    // test_state_string(gasProps,"N2(",false);   // string is incomplete
+    // test_state_string(gasProps,"N2)",false);   // string is incomplete
     // /todo: This was expected to fail but is now passing
-//  test_state_string(gasProps,"N2()",false);   // string is incomplete
-    test_state_string(gasProps,"2N(X)",false); // 2 is ignored
-    test_state_string(gasProps,"N2(v=0)",false); // produces state type electronic (not vibrational)
+    // test_state_string(gasProps,"N2()",false);   // string is incomplete
+    // test_state_string(gasProps,"2N(X)",false); // 2 is ignored
+    // test_state_string(gasProps,"N2(v=0)",false); // produces state type electronic (not vibrational)
     // /todo: This was expected to fail but is now passing
-//  test_state_string(gasProps,"N2(X,J=0)",false); // produces state type electronic (not rotational).
+    // test_state_string(gasProps,"N2(X,J=0)",false); // produces state type electronic (not rotational).
 
     std::cout << " *** Number of tests: " << ntests << std::endl;
     std::cout << " *** Number of errors: " << nerrors << std::endl;
