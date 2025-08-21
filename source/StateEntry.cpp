@@ -1,6 +1,8 @@
 #include "LoKI-B/StateEntry.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
 #include <regex>
+#include <set>
 #include <stdexcept>
 
 namespace loki
@@ -43,25 +45,32 @@ bool StateEntry::hasWildCard() const
 
 std::ostream &operator<<(std::ostream &os, const StateEntry &entry)
 {
+    os << entry.m_gasName;
+
     // special handling of the electron. Just write "e".
-    if (entry.m_gasName == "e")
+    if (entry.m_gasName == "e" || entry.m_level == StateType::root)
     {
-        os << entry.m_gasName;
         return os;
     }
-    os << entry.m_gasName << '(';
+
+    os << '(';
+
     if (!entry.m_charge.empty())
         os << entry.m_charge;
+
     if (!entry.m_e.empty())
     {
         if (!entry.m_charge.empty())
             os << ',';
         os << entry.m_e;
     }
+
     if (!entry.m_v.empty())
         os << ",v=" << entry.m_v;
+
     if (!entry.m_J.empty())
         os << ",J=" << entry.m_J;
+
     os << ')';
 
     return os;
@@ -380,18 +389,22 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]?)\s*,?\s*([-\+'\[\]/\w\*_|\^]+)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*)");
+        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
     std::smatch m;
 
-    if (!std::regex_search(propertyString, m, reState))
+    if (!std::regex_match(propertyString, m, reState))
         return {};
 
-    if (m.str(1).empty() || m.str(3).empty())
+    if (m.str(1).empty())
         return {};
 
     StateType stateType;
 
-    if (m.str(4).empty())
+    if (m.str(3).empty())
+    {
+        stateType = charge;
+    }
+    else if (m.str(4).empty())
     {
         stateType = electronic;
     }

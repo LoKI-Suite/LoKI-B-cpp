@@ -28,6 +28,7 @@
  */
 
 #include "LoKI-B/Gas.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
 #include <algorithm>
 #include <cassert>
@@ -143,19 +144,9 @@ bool Gas::State::operator>=(const StateEntry &entry)
 std::ostream &operator<<(std::ostream &os, const Gas::State &state)
 {
     os << state.gas().name();
-#if 0
-    // write N2+(...) instead of N2(+,...) ?
-    /// \todo this does not work: when reading legacy input, the charge is smth. like '+', not a number.
-    if (!state.charge.empty())
-    {
-        const int c=std::stoi(state.charge);
-        os << std::string( std::abs(c), c > 0 ? '+' : '-');
-    }
-#endif
 
-    // the electron is handled specially. The logic here is the same as
-    // for in StateEntry's stream insertion operator.
-    if (state.gas().name() == "e")
+    // special handling of the electron. Just write "e".
+    if (state.gas().name() == "e" || state.type == StateType::root)
     {
         return os;
     }
@@ -163,16 +154,19 @@ std::ostream &operator<<(std::ostream &os, const Gas::State &state)
     os << '(';
 
     if (!state.charge.empty())
+        os << state.charge;
+
+    if (!state.e.empty())
     {
-        os << state.charge << ',';
+        if (!state.charge.empty())
+            os << ',';
+        os << state.e;
     }
 
-    os << state.e;
-
-    if (state.type >= StateType::vibrational)
+    if (!state.v.empty())
         os << ",v=" << state.v;
 
-    if (state.type == StateType::rotational)
+    if (!state.J.empty())
         os << ",J=" << state.J;
 
     os << ')';
@@ -213,7 +207,9 @@ void Gas::State::checkPopulations() const
     if (population() == 0)
     {
         if (totalPopulation != 0)
-            Log<ChildrenPopulationError>::Error(*this);
+            Log<Message>::Error("The population of ", *this,
+                    " is 0, but the total population of its children is >0 did you forget to set the population of ",
+                    *this, "?");
     }
     else
     {

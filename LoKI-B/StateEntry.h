@@ -31,9 +31,7 @@
 #ifndef LOKI_CPP_STATEENTRY_H
 #define LOKI_CPP_STATEENTRY_H
 
-#include <filesystem>
 #include <ostream>
-#include <set>
 #include <string>
 #include <vector>
 
