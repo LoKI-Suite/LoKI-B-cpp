@@ -33,6 +33,7 @@
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Exports.h"
 #include "LoKI-B/GasProperties.h"
+#include "LoKI-B/Log.h"
 #include "LoKI-B/StateEntry.h"
 #include <iostream>
 #include <memory>
@@ -186,6 +187,19 @@ class lokib_export Gas
     State *findState(const StateEntry &entry);
     State *ensureState(const StateEntry &entry)
     {
+        if (entry.m_level == StateType::root)
+        {
+            if (entry.m_gasName == m_name)
+            {
+                return m_root.get();
+            }
+            else
+            {
+                Log<Message>::Error("Trying to add root state ", entry, " to gas ", m_name,
+                                    ", but their names are incompatible.");
+            }
+        }
+
         auto *state = get_root().ensure_state(entry);
         // state is now a 'charge state' (container)
         for (uint8_t lvl = StateType::charge; lvl < entry.m_level; ++lvl)
