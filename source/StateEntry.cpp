@@ -1,6 +1,7 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
+#include <cstddef>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -399,67 +400,84 @@ std::vector<std::string> split_string(const std::string &str, char delimiter = '
 
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
-    static const std::regex outer_regex(R"(([A-Za-z][A-Za-z0-9]*)(\(.*\))?)");
-    static const std::regex charge_regex(R"(([-\+]*))");
+    static const std::regex outer_regex(R"(^([A-Za-z][A-Za-z0-9]*)(\(.*\))?$)");
+    static const std::regex charge_regex(R"(^\s*([-\+]*)\s*$)");
+    static const std::regex vib_regex(R"(^\s*v=(.+)\s*$)");
+    static const std::regex rot_regex(R"(^\s*J=(.+)\s*$)");
 
     std::smatch m_outer;
 
-    if (!std::regex_match(propertyString, m_outer, outer_regex)) {
+    if (!std::regex_match(propertyString, m_outer, outer_regex))
+    {
         Log<Message>::Error("State string ", propertyString, " could not be parsed.");
     }
 
-    if (m_outer.str(2).empty()) {
+    if (m_outer.str(2).empty())
+    {
         return {m_outer.str(0), StateType::root, m_outer.str(1), "", "", "", ""};
     }
 
     const auto body = m_outer.str(2).substr(1, m_outer.str(2).length() - 2);
 
-    if (body.empty()) {
+    if (body.empty())
+    {
         return {m_outer.str(0), StateType::charge, m_outer.str(1), "", "", "", ""};
     }
 
     const auto tokens = split_string(body);
     std::smatch m_charge;
-    
-    if (std::regex_match(tokens[0], m_charge, charge_regex)) {
-        return {m_outer.str(0), StateType::charge, m_outer.str(1), m_charge.str(0), "", "", ""};
+
+    std::string charge = "";
+    std::string ele = "";
+    std::size_t vib_index = 0;
+
+    if (std::regex_match(tokens[0], m_charge, charge_regex))
+    {
+        charge = m_charge.str(1);
+
+        if (tokens.size() > 1)
+        {
+            ele = tokens[1];
+
+            if (tokens.size() > 2)
+            {
+                vib_index = 2;
+            }
+        }
     }
-    
-    Log<Message>::Warning(body);
+    else
+    {
+        ele = tokens[0];
 
-    return {};
+        if (tokens.size() > 1)
+        {
+            vib_index = 1;
+        }
+    }
+
+    if (vib_index == 0)
+        return {
+            m_outer.str(0), ele == "" ? StateType::charge : StateType::electronic, m_outer.str(1), charge, ele, "", ""};
+
+    std::smatch m_vib;
+
+    if (!std::regex_match(tokens[vib_index], m_vib, vib_regex))
+    {
+        Log<Message>::Error("Cannot parse vibrational identifier of ", propertyString, ".");
+    }
+
+    if (tokens.size() == vib_index + 1)
+    {
+        return {m_outer.str(0), StateType::vibrational, m_outer.str(1), charge, ele, m_vib.str(1), ""};
+    }
+
+    std::smatch m_rot;
+
+    if (!std::regex_match(tokens[vib_index + 1], m_rot, rot_regex))
+    {
+        Log<Message>::Error("Cannot parse rotational identifier of ", propertyString, ".");
+    }
+
+    return {m_outer.str(0), StateType::rotational, m_outer.str(1), charge, ele, m_vib.str(1), m_rot.str(1)};
 }
-
-    
-//     static const std::regex reState(
-//         R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
-//     std::smatch m;
-
-//     if (!std::regex_match(propertyString, m, reState))
-//         return {};
-
-//     if (m.str(1).empty())
-//         return {};
-
-//     StateType stateType;
-
-//     if (m.str(3).empty())
-//     {
-//         stateType = charge;
-//     }
-//     else if (m.str(4).empty())
-//     {
-//         stateType = electronic;
-//     }
-//     else if (m.str(5).empty())
-//     {
-//         stateType = vibrational;
-//     }
-//     else
-//     {
-//         stateType = rotational;
-//     }
-//     return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
-// }
-
 } // namespace loki
