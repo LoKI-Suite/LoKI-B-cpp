@@ -1224,11 +1224,12 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
         cellCS.array() += (CIEff/SI::gamma) / grid().getCells().cwiseSqrt().array();
     }
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
+    const Vector D0Nodes = grid().getNodes().array() / (3. * mixture.collision_data().totalCrossSection()).array();
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
     swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
-    swarmParameters.redMobCoeff = -SI::gamma*fgPrimeEnergyIntegral(grid(),D0,eedf);
-    swarmParameters.redMobilityEnergy = -SI::gamma*fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
+    swarmParameters.redMobCoeff = -SI::gamma*fNodegPrimeEnergyIntegral(grid(),D0Nodes,eedf);
+    swarmParameters.redMobilityEnergy = -SI::gamma*fNodegPrimeEnergyIntegral(grid(),grid().getNodes().cwiseProduct(D0Nodes),eedf);
 
     /* If WoN !=0, we also calculate the HF mobility (real and imaginary parts).
      * Note that WoN implies the temporal growth case, so cellCS represents
