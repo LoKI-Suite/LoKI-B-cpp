@@ -1136,7 +1136,7 @@ void ElectronKineticsBoltzmann::evaluatePower()
             const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
             power.field -= SI::gamma * correction;
 
-            const double powerMobility = - fgPrimeEnergyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+            const double powerMobility = - fNodegPrimeEnergyIntegral(grid(), grid().getNodes().array().pow(2) / mixture.collision_data().totalCrossSection().array(), eedf);
             const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
             power.eDensGrowth = - alphaRedEff * SI::gamma / 3. *
                                 (powerMobility * m_workingConditions->reducedFieldSI() - powerDiffusion * alphaRedEff);
