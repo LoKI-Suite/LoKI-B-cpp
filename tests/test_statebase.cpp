@@ -9,6 +9,7 @@
 
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/GasProperties.h"
+#include "LoKI-B/Log.h"
 #include <sstream>
 
 unsigned ntests=0;
@@ -36,10 +37,10 @@ void test_state_string(const loki::GasProperties &gasProps, const std::string st
         state_stream << *s;
 
         if (entry_stream.str() != state_stream.str())
-            throw "Serialized entry and state are not equal.";
+            Log<Message>::Error("Serialized entry and state are not equal.");
 
         if (state_stream.str() != expected)
-            throw "Serialized entry is not equal to expected result.";
+            Log<Message>::Error("Serialized entry is not equal to expected result.");
 
         // std::cout << "State: " << *s << std::endl;
     }
@@ -52,8 +53,7 @@ void test_state_string(const loki::GasProperties &gasProps, const std::string st
         }
         else
         {
-            std::cout << " *** OK, passed test for '" << str << "' (expected failure)." << std::endl
-                      << "Received: " << exc.what() << std::endl;
+            std::cout << " *** OK, passed test for '" << str << "' (expected failure)." << std::endl;
         }
         return;
     }
