@@ -312,15 +312,6 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
 
     double CIEffNew = eedf.dot(coefsCI);
-    double CIEffOld = CIEffNew / 3;
-    /** \todo Where does the division by 3 come from? Without that, CIEff
-     *  is calculated below as a weighted average of old and new values
-     *  (underrelaxation). I cannot interpret the equation with the additional /3.
-     *  NOTE that this is just initialization; in the while(!converged) loop
-     *  we do not have such factor 1/3.
-     *  Why do we need an 'old' value on entry of that loop?
-     */
-    CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
     /** \todo DB: diffusion and mobility components of the spatial growth terms
      *  can be removed since this is already done in the directMixing function
@@ -543,10 +534,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         invertMatrix(boltzmannMatrix);
 
-        CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
-
-        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
         muE = - SI::gamma* fgPrimeEnergyIntegral(grid(),D0,eedf) * EoN;
@@ -563,9 +551,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         alphaRedEffOld = alphaRedEffNew;
         alphaRedEffNew = (discriminant_new < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant_new)) / (2 * ND);
 
-        alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
-
-        if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-10) &&
+        if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-9) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
@@ -577,13 +563,15 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
             if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
         }
+
+        alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
+
         ++iter;
     }
 
     std::cerr << "Spatial growth routine converged in: " << iter << " iterations.\n";
 
     alphaRedEff = alphaRedEffOld;
-    CIEff = CIEffOld;
 }
 
 void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
@@ -624,8 +612,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     const Vector coefsCI = SI::gamma * grid().duCells().transpose()
                     * (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
     double CIEffNew = eedf.dot(coefsCI);
-    double CIEffOld = CIEffNew / 3.;
-    CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
+    double CIEffOld = 0;
 
     Vector eedfNew(grid().nCells());
 
@@ -664,9 +651,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
-        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
-        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 10e-10) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-11) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
@@ -675,6 +661,8 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
             if (iter > 150 && !eeOperator)
                 Log<Message>::Warning("Iterative temporal growth scheme did not converge.");
         }
+
+        CIEffNew = mixingParameter * CIEffNew + (1 - mixingParameter) * CIEffOld;
 
         ++iter;
     }
