@@ -99,6 +99,15 @@ bool Gas::State::operator>=(const StateEntry &entry)
     if (type > entry.m_level)
         return false;
 
+    if (m_gas->m_name == entry.m_gasName)
+    {
+        if (type == StateType::root)
+            return true;
+    }
+    else
+    {
+        return false;
+    }
     if (charge == entry.m_charge)
     {
         if (type == StateType::charge)

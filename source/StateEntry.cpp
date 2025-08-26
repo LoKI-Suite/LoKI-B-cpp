@@ -1,9 +1,12 @@
 #include "LoKI-B/StateEntry.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Log.h"
+#include <cstddef>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 namespace loki
 {
@@ -386,37 +389,106 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
     return StateEntry{id, stateType, gas_name, charge_str, e, v, J};
 }
 
+std::vector<std::string> split_string(const std::string &str, char delimiter = ',') {
+    std::istringstream split(str);
+    std::vector<std::string> tokens;
+
+    for (std::string entry; std::getline(split, entry, delimiter); tokens.push_back(entry));
+
+    return tokens;
+};
+
 StateEntry propertyStateFromString(const std::string &propertyString)
 {
-    static const std::regex reState(
-        R"(([A-Za-z][A-Za-z0-9]*)\(([-\+]*)(?:\s*,)?\s*([-\+'\[\]/\w\*_|\^]*)\s*(?:,\s*v\s*=\s*([-\+\w\*]+))?\s*(?:,\s*J\s*=\s*([-\+\d\*]+))?\s*\))");
-    std::smatch m;
+    static const std::regex outer_regex(R"(^([A-Za-z][A-Za-z0-9]*)(\(.*\))?$)");
+    static const std::regex charge_regex(R"(^\s*([-\+]*)\s*$)");
+    static const std::regex ele_regex(R"(^\s*([^\s]+)\s*$)");
+    static const std::regex vib_regex(R"(^\s*v=([^\s]+)\s*$)");
+    static const std::regex rot_regex(R"(^\s*J=([^\s]+)\s*$)");
 
-    if (!std::regex_match(propertyString, m, reState))
-        return {};
+    std::smatch m_outer;
 
-    if (m.str(1).empty())
-        return {};
-
-    StateType stateType;
-
-    if (m.str(3).empty())
+    if (!std::regex_match(propertyString, m_outer, outer_regex))
     {
-        stateType = charge;
+        Log<Message>::Error("State string ", propertyString, " could not be parsed.");
     }
-    else if (m.str(4).empty())
+
+    if (m_outer.str(2).empty())
     {
-        stateType = electronic;
+        return {m_outer.str(0), StateType::root, m_outer.str(1), "", "", "", ""};
     }
-    else if (m.str(5).empty())
+
+    const auto body = m_outer.str(2).substr(1, m_outer.str(2).length() - 2);
+
+    if (body.empty())
     {
-        stateType = vibrational;
+        return {m_outer.str(0), StateType::charge, m_outer.str(1), "", "", "", ""};
+    }
+
+    const auto tokens = split_string(body);
+    std::smatch m_charge;
+
+    std::string charge = "";
+    std::string ele = "";
+    std::size_t vib_index = 0;
+
+    if (std::regex_match(tokens[0], m_charge, charge_regex))
+    {
+        charge = m_charge.str(1);
+
+        if (tokens.size() > 1)
+        {
+            std::smatch m_ele;
+
+            if (!std::regex_match(tokens[1], m_ele, ele_regex))
+                Log<Message>::Error("Cannot parse electronic identifier of ", propertyString, ".");
+
+            ele = m_ele.str(1);
+
+            if (tokens.size() > 2)
+            {
+                vib_index = 2;
+            }
+        }
     }
     else
     {
-        stateType = rotational;
-    }
-    return {m.str(0), stateType, m.str(1), m.str(2), m.str(3), m.str(4), m.str(5)};
-}
+        std::smatch m_ele;
 
+        if (!std::regex_match(tokens[0], m_ele, ele_regex))
+            Log<Message>::Error("Cannot parse electronic identifier of ", propertyString, ".");
+
+        ele = m_ele.str(1);
+
+        if (tokens.size() > 1)
+        {
+            vib_index = 1;
+        }
+    }
+
+    if (vib_index == 0)
+        return {
+            m_outer.str(0), ele == "" ? StateType::charge : StateType::electronic, m_outer.str(1), charge, ele, "", ""};
+
+    std::smatch m_vib;
+
+    if (!std::regex_match(tokens[vib_index], m_vib, vib_regex))
+    {
+        Log<Message>::Error("Cannot parse vibrational identifier of ", propertyString, ".");
+    }
+
+    if (tokens.size() == vib_index + 1)
+    {
+        return {m_outer.str(0), StateType::vibrational, m_outer.str(1), charge, ele, m_vib.str(1), ""};
+    }
+
+    std::smatch m_rot;
+
+    if (!std::regex_match(tokens[vib_index + 1], m_rot, rot_regex))
+    {
+        Log<Message>::Error("Cannot parse rotational identifier of ", propertyString, ".");
+    }
+
+    return {m_outer.str(0), StateType::rotational, m_outer.str(1), charge, ele, m_vib.str(1), m_rot.str(1)};
+}
 } // namespace loki

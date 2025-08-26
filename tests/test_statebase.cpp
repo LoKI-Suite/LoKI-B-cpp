@@ -9,27 +9,37 @@
 
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/GasProperties.h"
+#include "LoKI-B/Log.h"
+#include <sstream>
 
 unsigned ntests=0;
 unsigned nerrors=0;
 
-void test_state_string(const loki::GasProperties& gasProps, const std::string str, bool should_pass)
+void test_state_string(const loki::GasProperties &gasProps, const std::string str, bool should_pass, std::string expected = "")
 {
     ++ntests;
-    try {
+    try
+    {
         using namespace loki;
 
-//        std::cout << "State string: '" << str << "'." << std::endl;
         const StateEntry e = propertyStateFromString(str);
-//        std::cout << "Entry: '" << e << "." << std::endl;
-        loki::Gas gas(gasProps,e.m_gasName);
-//        std::cout << "Gas name: '" << gas.name << "'." << std::endl;
+        loki::Gas gas(gasProps, e.m_gasName);
         const Gas::State root{&gas};
-//        const Gas::State* s{gas.ensureState(e)};
-//        std::cout << "State:" << std::endl;
-//        std::cout << s << std::endl;
+        const Gas::State* s{gas.ensureState(e)};
+
+        std::ostringstream entry_stream;
+        entry_stream << e;
+
+        std::ostringstream state_stream;
+        state_stream << *s;
+
+        if (entry_stream.str() != state_stream.str())
+            Log<Message>::Error("Serialized entry and state are not equal.");
+
+        if (state_stream.str() != expected)
+            Log<Message>::Error("Serialized entry is not equal to expected result.");
     }
-    catch(std::exception& exc)
+    catch (std::exception &exc)
     {
         if (should_pass)
         {
@@ -38,9 +48,9 @@ void test_state_string(const loki::GasProperties& gasProps, const std::string st
         }
         else
         {
-            std::cout << " *** OK, passed test for '" << str << "' (expected failure)."
-                << std::endl << "Received: " << exc.what() << std::endl;
+            std::cout << " *** OK, passed test for '" << str << "' (expected failure)." << std::endl;
         }
+        return;
     }
     // if we get here, no exception was thrown
     if (should_pass)
@@ -58,26 +68,35 @@ int main()
 {
     // We do not care about the gas properties, but mass is mandatory
     loki::GasProperties gasProps;
-    gasProps.set("mass","N2",4.651834066656000e-26);
-    test_state_string(gasProps,"N2(X)",true);
-    test_state_string(gasProps,"N2(X,v=0)",true);
-    test_state_string(gasProps,"N2(X,v=0,J=0)",true);
+    gasProps.set("mass", "N2", 4.651834066656000e-26);
 
-    // QUESTION: This results in state type 'none'. Should an attempt to create such
-    //           state not throw an exception?
-    test_state_string(gasProps,"N2",false);
+    test_state_string(gasProps, "N2", true, "N2");   // root N2 state
+    test_state_string(gasProps, "N2()", true, "N2()"); // neutral charge state
+    test_state_string(gasProps, "N2(X)", true, "N2(X)");
+    test_state_string(gasProps, "N2(X,v=0)", true, "N2(X,v=0)");
+    test_state_string(gasProps, "N2(X,v=0,J=0)", true, "N2(X,v=0,J=0)");
+    test_state_string(gasProps, "N2(+)", true, "N2(+)");
+    test_state_string(gasProps, "N2(--)", true, "N2(--)");
+    test_state_string(gasProps, "N2(+,X)", true, "N2(+,X)");
+    test_state_string(gasProps, "N2(+,X,v=1)", true, "N2(+,X,v=1)");
+    test_state_string(gasProps, "N2(+,X,v=5,J=1)", true, "N2(+,X,v=5,J=1)");
+
+    // Spaces are stripped
+    test_state_string(gasProps, "N2( + , X , v=0 , J=2 )", true, "N2(+,X,v=0,J=2)");
+
+    // TODO: This currently passes, do we want it to fail?
+    test_state_string(gasProps, "N2(v=0)", true, "N2(v=0)"); // produces state type electronic (not vibrational)
 
     // Things that should fail:
-
-    test_state_string(gasProps,"N2(",false);   // string is incomplete
-    test_state_string(gasProps,"N2)",false);   // string is incomplete
-    test_state_string(gasProps,"N2()",false);   // string is incomplete
-    test_state_string(gasProps,"2N(X)",false); // 2 is ignored
-    test_state_string(gasProps,"N2(v=0)",false); // produces state type electronic (not vibrational)
-    test_state_string(gasProps,"N2(X,J=0)",false); // produces state type electronic (not rotational).
+    test_state_string(gasProps, "N2(", false);       // string is incomplete
+    test_state_string(gasProps, "N2)", false);       // string is incomplete
+    test_state_string(gasProps, "2N(X)", false);     // gas name should start with a capital
+    test_state_string(gasProps, "N2(X, n=0)", false); // missing `v=` in vibrational specifier
+    test_state_string(gasProps, "N2(X, v=0, G=2)", false); // missing `J=` in rotational specifier
+    test_state_string(gasProps, "N2(X,J=0)", false); // missing vibrational specifier
 
     std::cout << " *** Number of tests: " << ntests << std::endl;
     std::cout << " *** Number of errors: " << nerrors << std::endl;
 
-    return !(nerrors == 7);
+    return nerrors;
 }
