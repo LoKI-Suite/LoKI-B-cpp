@@ -22,11 +22,8 @@ void test_state_string(const loki::GasProperties &gasProps, const std::string st
     {
         using namespace loki;
 
-        // std::cout << "State string: '" << str << "'." << std::endl;
         const StateEntry e = propertyStateFromString(str);
-        // std::cout << "Entry: '" << e << " of type " << e.m_level << "." << std::endl;
         loki::Gas gas(gasProps, e.m_gasName);
-        // std::cout << "Gas name: '" << gas.name << "'." << std::endl;
         const Gas::State root{&gas};
         const Gas::State* s{gas.ensureState(e)};
 
@@ -41,8 +38,6 @@ void test_state_string(const loki::GasProperties &gasProps, const std::string st
 
         if (state_stream.str() != expected)
             Log<Message>::Error("Serialized entry is not equal to expected result.");
-
-        // std::cout << "State: " << *s << std::endl;
     }
     catch (std::exception &exc)
     {
