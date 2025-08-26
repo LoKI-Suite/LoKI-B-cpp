@@ -402,8 +402,9 @@ StateEntry propertyStateFromString(const std::string &propertyString)
 {
     static const std::regex outer_regex(R"(^([A-Za-z][A-Za-z0-9]*)(\(.*\))?$)");
     static const std::regex charge_regex(R"(^\s*([-\+]*)\s*$)");
-    static const std::regex vib_regex(R"(^\s*v=(.+)\s*$)");
-    static const std::regex rot_regex(R"(^\s*J=(.+)\s*$)");
+    static const std::regex ele_regex(R"(^\s*([^\s]+)\s*$)");
+    static const std::regex vib_regex(R"(^\s*v=([^\s]+)\s*$)");
+    static const std::regex rot_regex(R"(^\s*J=([^\s]+)\s*$)");
 
     std::smatch m_outer;
 
@@ -437,7 +438,12 @@ StateEntry propertyStateFromString(const std::string &propertyString)
 
         if (tokens.size() > 1)
         {
-            ele = tokens[1];
+            std::smatch m_ele;
+
+            if (!std::regex_match(tokens[1], m_ele, ele_regex))
+                Log<Message>::Error("Cannot parse electronic identifier of ", propertyString, ".");
+
+            ele = m_ele.str(1);
 
             if (tokens.size() > 2)
             {
@@ -447,7 +453,12 @@ StateEntry propertyStateFromString(const std::string &propertyString)
     }
     else
     {
-        ele = tokens[0];
+        std::smatch m_ele;
+
+        if (!std::regex_match(tokens[0], m_ele, ele_regex))
+            Log<Message>::Error("Cannot parse electronic identifier of ", propertyString, ".");
+
+        ele = m_ele.str(1);
 
         if (tokens.size() > 1)
         {
