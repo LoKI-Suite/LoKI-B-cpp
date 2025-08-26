@@ -1133,11 +1133,10 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
             const double correction = energyIntegral(grid(), interpolateNodalToCell(grid(), g_fieldSpatialGrowth), eedf);
-            const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
             power.field -= SI::gamma * correction;
 
             const double powerMobility = - fNodegPrimeEnergyIntegral(grid(), grid().getNodes().array().pow(2) / mixture.collision_data().totalCrossSection().array(), eedf);
-            const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+            const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseAbs2().cwiseQuotient(mixture.collision_data().totalCellCrossSection()), eedf);
             power.eDensGrowth = - alphaRedEff * SI::gamma / 3. *
                                 (powerMobility * m_workingConditions->reducedFieldSI() - powerDiffusion * alphaRedEff);
         }
