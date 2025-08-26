@@ -40,6 +40,7 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <stdexcept>
 
 namespace loki
@@ -583,6 +584,19 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
         CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid,effectivePopulation);
         std::vector<uint16_t> stoiCoeff{1, 1};
 
+        if (elasticCS == nullptr) {
+            bool first = true;
+            std::ostringstream ss;
+
+            for (const auto* state : statesToUpdate) {
+                if (!first) ss << ", ";
+                ss << *state;
+                first = false;
+            }
+
+            Log<Message>::Error("Missing elastic cross section for ", ss.str(), ".");
+        }
+
         for (const auto *state : statesToUpdate)
         {
             Log<Message>::Notify("Effective cross section: installing elastic cross section for state " + (std::stringstream{}<<*state).str());
@@ -603,7 +617,7 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
      *  is specified? Is that an input error? The code below only uses the first.
      */
     if (collisions(CollisionType::effective).empty())
-        Log<Message>::Error("Could not find effective cross section for gas " + m_gas.name() + ".");
+        return nullptr;
 
     EedfCollision *eff = collisions(CollisionType::effective)[0].get();
     const Vector &rawEnergies = eff->crossSection->lookupTable().x();

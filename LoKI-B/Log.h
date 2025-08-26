@@ -30,10 +30,8 @@
 #ifndef LOKI_CPP_LOG_H
 #define LOKI_CPP_LOG_H
 
-#include <cstdint>
 #include <iostream>
 #include <sstream>
-#include <string>
 
 #if 1 // def _MSVC
 
