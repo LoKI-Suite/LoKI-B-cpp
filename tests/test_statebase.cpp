@@ -14,7 +14,7 @@
 unsigned ntests=0;
 unsigned nerrors=0;
 
-void test_state_string(const loki::GasProperties &gasProps, const std::string str, bool should_pass)
+void test_state_string(const loki::GasProperties &gasProps, const std::string str, bool should_pass, std::string expected = "")
 {
     ++ntests;
     try
@@ -37,6 +37,9 @@ void test_state_string(const loki::GasProperties &gasProps, const std::string st
 
         if (entry_stream.str() != state_stream.str())
             throw "Serialized entry and state are not equal.";
+
+        if (state_stream.str() != expected)
+            throw "Serialized entry is not equal to expected result.";
 
         // std::cout << "State: " << *s << std::endl;
     }
