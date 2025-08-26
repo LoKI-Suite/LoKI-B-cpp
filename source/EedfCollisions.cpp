@@ -776,9 +776,12 @@ std::vector<const EedfCollisionDataGas::State *> EedfCollisionDataGas::findState
         return true;
     };
 
-    for (const auto *child : m_gas.get_root().children()) {
-        if (child->population() > 0 && !hasElasticRecursive(child)) {
-            statesToUpdate.emplace_back(child);
+    for (const auto *charge_state : m_gas.get_root().children()) {
+        if (charge_state->population() > 0 && !hasElasticRecursive(charge_state)) {
+            for (const auto *e_state : charge_state->children()) {
+                if (e_state->population() > 0 && !hasElasticRecursive(e_state))
+                    statesToUpdate.emplace_back(e_state);
+            }
         }
     }
 
