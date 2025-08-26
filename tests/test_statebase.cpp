@@ -75,21 +75,29 @@ int main()
     loki::GasProperties gasProps;
     gasProps.set("mass", "N2", 4.651834066656000e-26);
 
-    test_state_string(gasProps, "N2", true);   // root N2 state
-    test_state_string(gasProps, "N2()", true); // neutral charge state
-    test_state_string(gasProps, "N2(X)", true);
-    test_state_string(gasProps, "N2(X,v=0)", true);
-    test_state_string(gasProps, "N2(X,v=0,J=0)", true);
-    test_state_string(gasProps, "N2(+)", true);
-    test_state_string(gasProps, "N2(--)", true);
+    test_state_string(gasProps, "N2", true, "N2");   // root N2 state
+    test_state_string(gasProps, "N2()", true, "N2()"); // neutral charge state
+    test_state_string(gasProps, "N2(X)", true, "N2(X)");
+    test_state_string(gasProps, "N2(X,v=0)", true, "N2(X,v=0)");
+    test_state_string(gasProps, "N2(X,v=0,J=0)", true, "N2(X,v=0,J=0)");
+    test_state_string(gasProps, "N2(+)", true, "N2(+)");
+    test_state_string(gasProps, "N2(--)", true, "N2(--)");
+    test_state_string(gasProps, "N2(+,X)", true, "N2(+,X)");
+    test_state_string(gasProps, "N2(+,X,v=1)", true, "N2(+,X,v=1)");
+    test_state_string(gasProps, "N2(+,X,v=5,J=1)", true, "N2(+,X,v=5,J=1)");
+
+    // Spaces are stripped
+    test_state_string(gasProps, "N2( + , X , v=0 , J=2 )", true, "N2(+,X,v=0,J=2)");
 
     // TODO: This currently passes, do we want it to fail?
-    test_state_string(gasProps, "N2(v=0)", true); // produces state type electronic (not vibrational)
+    test_state_string(gasProps, "N2(v=0)", true, "N2(v=0)"); // produces state type electronic (not vibrational)
 
     // Things that should fail:
     test_state_string(gasProps, "N2(", false);       // string is incomplete
     test_state_string(gasProps, "N2)", false);       // string is incomplete
     test_state_string(gasProps, "2N(X)", false);     // gas name should start with a capital
+    test_state_string(gasProps, "N2(X, n=0)", false); // missing `v=` in vibrational specifier
+    test_state_string(gasProps, "N2(X, v=0, G=2)", false); // missing `J=` in rotational specifier
     test_state_string(gasProps, "N2(X,J=0)", false); // missing vibrational specifier
 
     std::cout << " *** Number of tests: " << ntests << std::endl;
