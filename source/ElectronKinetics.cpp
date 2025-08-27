@@ -331,9 +331,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
      * and mu_eE=-gamma*int_0^infty D0(u)[df/du]du (19b).
      */
     const Vector D0 = grid().getCells().array() / (3. * cellTotalCrossSection).array();
+    const Vector D0Nodes = grid().getNodes().array() / (3. * mixture.collision_data().totalCrossSection()).array();
+
     // This is 33a from \cite Manual_1_0_0
     double ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
-    double muE = - SI::gamma* fgPrimeEnergyIntegral(grid(),D0,eedf) * EoN;
+    double muE = - SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
 
     double alphaRedEffOld = 0.;
 
@@ -423,22 +425,24 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 */
                 if (k==0)
                 {
-                    ionSpatialGrowthU.coeffRef(k, k    ) = -alphaRedEffNew*EoN*D0[k] / (grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k    ) = -alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
                     boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
                     boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
                 }
                 else if (k==grid().nCells() - 1)
                 {
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*D0[k] / (grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
                     boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
                     boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
                 }
                 else
                 {
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k) = -alphaRedEffNew*EoN*(D0Nodes[k+1] - D0Nodes[k]) / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0Nodes[k] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
+                    boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k  );
                     boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
                     boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
                 }
@@ -536,8 +540,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         CIEffNew = eedf.dot(coefsCI);
 
-        ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
-        muE = - SI::gamma* fgPrimeEnergyIntegral(grid(),D0,eedf) * EoN;
+        ND = SI::gamma * energyIntegral(grid(), D0, eedf);
+        muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
 
 #if 0
         std::cout << "muE: " << muE << std::endl;
@@ -1129,11 +1133,10 @@ void ElectronKineticsBoltzmann::evaluatePower()
             // Note that field is calculated by fieldOperator.evaluatePower, which already
             // adds the factor SI::gamma.
             const double correction = energyIntegral(grid(), interpolateNodalToCell(grid(), g_fieldSpatialGrowth), eedf);
-            const Vector cellCrossSection = interpolateNodalToCell(grid(), mixture.collision_data().totalCrossSection());
             power.field -= SI::gamma * correction;
 
-            const double powerMobility = - fgPrimeEnergyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
-            const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseProduct(grid().getCells()).cwiseQuotient(cellCrossSection), eedf);
+            const double powerMobility = - fNodegPrimeEnergyIntegral(grid(), grid().getNodes().array().pow(2) / mixture.collision_data().totalCrossSection().array(), eedf);
+            const double powerDiffusion = energyIntegral(grid(), grid().getCells().cwiseAbs2().cwiseQuotient(mixture.collision_data().totalCellCrossSection()), eedf);
             power.eDensGrowth = - alphaRedEff * SI::gamma / 3. *
                                 (powerMobility * m_workingConditions->reducedFieldSI() - powerDiffusion * alphaRedEff);
         }
@@ -1221,11 +1224,12 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
         cellCS.array() += (CIEff/SI::gamma) / grid().getCells().cwiseSqrt().array();
     }
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
+    const Vector D0Nodes = grid().getNodes().array() / (3. * mixture.collision_data().totalCrossSection()).array();
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
     swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
-    swarmParameters.redMobCoeff = -SI::gamma*fgPrimeEnergyIntegral(grid(),D0,eedf);
-    swarmParameters.redMobilityEnergy = -SI::gamma*fgPrimeEnergyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
+    swarmParameters.redMobCoeff = -SI::gamma*fNodegPrimeEnergyIntegral(grid(),D0Nodes,eedf);
+    swarmParameters.redMobilityEnergy = -SI::gamma*fNodegPrimeEnergyIntegral(grid(),grid().getNodes().cwiseProduct(D0Nodes),eedf);
 
     /* If WoN !=0, we also calculate the HF mobility (real and imaginary parts).
      * Note that WoN implies the temporal growth case, so cellCS represents
