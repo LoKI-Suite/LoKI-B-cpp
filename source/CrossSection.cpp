@@ -28,6 +28,7 @@
  */
 
 #include "LoKI-B/CrossSection.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {
@@ -82,6 +83,14 @@ void CrossSection::interpolate(const Vector &energies, Vector &result) const
     result.resize(nEnergies);
     Index gridIndex = 0;
 
+    if (m_isElasticOrEffective && energies[energies.size() - 1] > m_lut.xMax())
+    {
+        Log<Message>::Warning("The maximum grid energy ", energies[energies.size() - 1],
+                              "eV exceeds the maximum energy of the lookup table ", m_lut.xMax(),
+                              "eV. Values beyond the maximum value of the lookup table will be "
+                              "clipped at 0.0. The simulation is not reliable under these conditions.");
+    }
+
     /** \todo Like in the old code, sigma is set to zero if the energy is
      *        exactly equal to the threshold. This choice should be documented.
      */
@@ -93,7 +102,7 @@ void CrossSection::interpolate(const Vector &energies, Vector &result) const
     // the cross section values for energies up to the threshold to zero.
     if (!m_isElasticOrEffective)
     {
-        for (; gridIndex!=nEnergies && energies[gridIndex]<=m_threshold; ++gridIndex)
+        for (; gridIndex != nEnergies && energies[gridIndex] <= m_threshold; ++gridIndex)
         {
             result[gridIndex] = 0.0;
         }
@@ -103,7 +112,7 @@ void CrossSection::interpolate(const Vector &energies, Vector &result) const
         /* 0.0, 0.0: these are the values that are assumed if the enery is
          * below or above the range of the table, respectively.
          */
-	result[gridIndex] = m_lut.interpolate_or_set(energies[gridIndex],0.0,0.0);
+        result[gridIndex] = m_lut.interpolate_or_set(energies[gridIndex], 0.0, 0.0);
     }
 }
 
