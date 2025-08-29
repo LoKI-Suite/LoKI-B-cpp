@@ -608,6 +608,9 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
 
             this->addCollision(collision, false);
         }
+
+        // FIXME: elasticCS is never destructed. However, doing so now leads to a crash as it cannot unregister itself to the
+        // `updatedMaxEnergy` listener.
     }
 }
 
