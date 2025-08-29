@@ -51,6 +51,9 @@ public:
     // Custom copy constructor to register the event handler.
     CrossSection(const CrossSection &other);
 
+    // FIXME: A destructor is missing that unregisters the cross section to the `updatedMaxEnergy` event. This operation is
+    // currently not supported by the `Event` class.
+
     void interpolate();
     void interpolate(const Vector &energies, Vector &result) const;
     const Grid *getGrid() const { return m_energyGrid; }
