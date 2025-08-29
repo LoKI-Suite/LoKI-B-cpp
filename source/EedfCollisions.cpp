@@ -628,11 +628,15 @@ CrossSection *EedfCollisionDataGas::elasticCrossSectionFromEffective(const Grid 
     EffectivePopulationsMap effectivePopulationsDefault;
     if (effectivePopulationsCustom.empty())
     {
+        Log<Message>::Warning("Missing effective population distribution. Setting effective populations for children of ",
+                              *eff->getTarget(), " to Boltzmann at 300K.");
+
         effectivePopulationsDefault.emplace(eff->getTarget(), 1.);
         setDefaultEffPop(eff->getTarget(),effectivePopulationsDefault);
     }
 
-    const EffectivePopulationsMap& effectivePopulations = effectivePopulationsCustom.empty() ? effectivePopulationsDefault : effectivePopulationsCustom;
+    const EffectivePopulationsMap &effectivePopulations =
+        effectivePopulationsCustom.empty() ? effectivePopulationsDefault : effectivePopulationsCustom;
     for (const auto &pair : effectivePopulations)
     {
         for (const auto &collision : m_state_collisions[pair.first])
