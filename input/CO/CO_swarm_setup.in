@@ -25,19 +25,19 @@ electronKinetics:
   growthModelType: spatial             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
-    - CO/CO_LXCat.txt
-    - CO/CO_rot_LXCat.txt
+    - CO_LXCat.txt
+    - CO_rot_LXCat.txt
 %   CARgases:                           % gases for which CAR is activated
 %     - CO
   gasProperties:                       % properties of the gases (S.I. Units)
-    mass: Databases/masses.txt
+    mass: ../Databases/masses.txt
     fraction:
       - CO = 1
-    harmonicFrequency: Databases/harmonicFrequencies.txt
-    anharmonicFrequency: Databases/anharmonicFrequencies.txt
-    rotationalConstant: Databases/rotationalConstants.txt
-    electricQuadrupoleMoment: Databases/quadrupoleMoment.txt
-    OPBParameter: Databases/OPBParameter.txt
+    harmonicFrequency: ../Databases/harmonicFrequencies.txt
+    anharmonicFrequency: ../Databases/anharmonicFrequencies.txt
+    rotationalConstant: ../Databases/rotationalConstants.txt
+    electricQuadrupoleMoment: ../Databases/quadrupoleMoment.txt
+    OPBParameter: ../Databases/OPBParameter.txt
   stateProperties:                     % properties of the states (S.I. Units except for the energy [eV])
     energy:
       - CO(X,v=*) = harmonicOscillatorEnergy

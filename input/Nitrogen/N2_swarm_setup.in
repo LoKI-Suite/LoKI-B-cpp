@@ -25,22 +25,22 @@ electronKinetics:
   growthModelType: spatial             % temporal or spatial
   includeEECollisions: false           % true or false (to include / remove e-e collisions)
   LXCatFiles:                          % cross section files
-    - Nitrogen/N2_LXCat.txt
-    - Nitrogen/N2_rot_LXCat.txt
+    - N2_LXCat.txt
+    - N2_rot_LXCat.txt
 %   LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
 %   effectiveCrossSectionPopulations:   % see doc
 %     - N2_effectivePop.txt
 %   CARgases:                           % gases for which CAR is activated
 %     - N2
   gasProperties:                       % properties of the gases (S.I. Units)
-    mass: Databases/masses.txt
+    mass: ../Databases/masses.txt
     fraction:
       - N2 = 1
-    harmonicFrequency: Databases/harmonicFrequencies.txt
-    anharmonicFrequency: Databases/anharmonicFrequencies.txt
-    rotationalConstant: Databases/rotationalConstants.txt
-    electricQuadrupoleMoment: Databases/quadrupoleMoment.txt
-    OPBParameter: Databases/OPBParameter.txt
+    harmonicFrequency: ../Databases/harmonicFrequencies.txt
+    anharmonicFrequency: ../Databases/anharmonicFrequencies.txt
+    rotationalConstant: ../Databases/rotationalConstants.txt
+    electricQuadrupoleMoment: ../Databases/quadrupoleMoment.txt
+    OPBParameter: ../Databases/OPBParameter.txt
   stateProperties:                     % properties of the states (S.I. Units except for the energy [eV])
     energy:
       - N2(X,v=*) = harmonicOscillatorEnergy
@@ -50,7 +50,7 @@ electronKinetics:
       - N2(X,v=0,J=*) = rotationalDegeneracy_N2  
     population:
       - N2(X) = 1.0
-      - Nitrogen/N2_vibpop.txt
+      - N2_vibpop.txt
       - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
