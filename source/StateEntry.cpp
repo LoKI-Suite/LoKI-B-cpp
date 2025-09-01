@@ -284,7 +284,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
         } else if (el_cnf.is_object())
         {
             e = el_cnf.at("summary");
-            // throw std::runtime_error("Exactly one electronic state is expected by LoKI-B.");
+            // Log<Message>::Error("Exactly one electronic state is expected by LoKI-B.");
         }
         if (el_cnf.contains("vibrational"))
         {
@@ -304,7 +304,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     {
                         if (rot_cnf.size() == 0)
                         {
-                            throw std::runtime_error("At least one rotational state is expected by LoKI-B.");
+                            Log<Message>::Error("Found empty rotational description for state ", id, ".");
                         }
 
                         // For "v" and "J" we assume that the entries form a continuous value-range.
@@ -320,7 +320,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                             {
                                 Log<Message>::Error(
                                     "Invalid J entry ", J_str,
-                                    " in compound rotational state. LoKI-B only supports compound "
+                                    " in compound rotational state ", id, ". LoKI-B only supports compound "
                                     "rotational states for species types with a single rotational quanta.");
                             }
 
@@ -328,12 +328,12 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                         }
                         if (J_vals.size() != rot_cnf.size())
                         {
-                            throw std::runtime_error("Duplicate J entries encountered.");
+                            Log<Message>::Error("Duplicate J entries encountered for state ", id, ".");
                         }
                         int nJ = *J_vals.rbegin() + 1 - *J_vals.begin();
                         if (nJ != int(J_vals.size()))
                         {
-                            throw std::runtime_error("Expected a contiguous J-range.");
+                            Log<Message>::Error("Expected a contiguous J-range for state ", id, ".");
                         }
                         J = std::to_string(*J_vals.begin()) + '-' + std::to_string(*J_vals.rbegin());
                     }
@@ -343,7 +343,7 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
             {
                 if (vib_cnf.size() == 0)
                 {
-                    throw std::runtime_error("At least one vibrational state is expected by LoKI-B.");
+                    Log<Message>::Error("Found empty vibrational description for state ", id, ".");
                 }
 
                 // Special case treatment for species types with a single
@@ -355,8 +355,9 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     {
                         if (ventry.contains("rotational"))
                         {
-                            throw std::runtime_error("Rotational states identifiers are not allowed when "
-                                                     "multiple vibrational states are specified.");
+                            Log<Message>::Error("Encountered invalid state with id ", id, ". "
+                                                "Rotational states identifiers are not allowed "
+                                                "when multiple vibrational states are specified.");
                         }
                         const auto &v_str = ventry.at("summary").get<std::string>();
                         v_vals.insert(std::stoi(v_str));
@@ -365,12 +366,12 @@ StateEntry entryFromJSON(const std::string &id, const json_type &cnf)
                     // For "v" and "J" we assume that the entries form a continuous value-range.
                     if (v_vals.size() != vib_cnf.size())
                     {
-                        throw std::runtime_error("Duplicate v entries encountered.");
+                        Log<Message>::Error("Duplicate vibrational entries encountered in state ", id, ".");
                     }
                     auto nv = *v_vals.rbegin() + 1 - *v_vals.begin();
                     if (nv != v_vals.size())
                     {
-                        throw std::runtime_error("Expected a contiguous v-range.");
+                        Log<Message>::Error("Expected a contiguous v-range for state ", id, ".");
                     }
                     v = std::to_string(*v_vals.begin()) + '-' + std::to_string(*v_vals.rbegin());
                 } else {
