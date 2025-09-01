@@ -1,8 +1,8 @@
 LXCat, www.lxcat.net
-Generated on 02 Apr 2018. All rights reserved.
+Generated on 23 Sep 2022. All rights reserved.
 
 RECOMMENDED REFERENCE FORMAT
-- IST-Lisbon database, www.lxcat.net, retrieved on April 2, 2018.
+- IST-Lisbon database, www.lxcat.net, retrieved on September 23, 2022.
 Be aware that some databases and solvers can additionally have instructions how to reference corresponding data.
 Please check below in the headers of databases.
 
@@ -21,14 +21,15 @@ the first name either by arrow "->" (dash + greater than) or by double-head arro
 greater than), e.g. "Ar -> Ar*" and "Ar <-> Ar*", respectively. In the later case BOLSIG+ will automatically
 define the inverse superelastic process, constructing the superelastic cross-section by detailed balancing, and
 considering the indicated excited state as the target. In this case, the ratio of statistical weights must be input in
-the 3rd line (see below).  Alternatively, superelastic collisions could be defined explicitly as excitation collisions
-with a negative electron energy loss with user input cross sections and species name, "Ar*", for example.
+the 3rd line (see below).
 3rd line
 For elastic and effective collisions, the ratio of the electron mass to the target particle mass. For excitation or
 ionization collisions, the electron energy loss (nominally the threshold energy) in eV. For attachment, the 3rd line is
 missing. In case of an excitation process where an excited state has been indicated on the 2nd line using double-head
 arrow "<->", the 3rd line must specify also ratio of the statistical weights of the final state to the initial state
-as the second parameter in 3rd line this is needed by BOLSIG+ to calculate the de-excitation cross-section.
+as the second parameter in 3rd line this is needed by BOLSIG+ to calculate the de-excitation cross-section. The
+statistical weight ratio, if given, will also be used by the automatic superelastics option in BOLSIG+. If this ratio is
+not provided then BOLSIG+ will assume it unity.
 from 4th line (optionally)
 User comments and reference information, maximum 100 lines. The only constraint on format is that these comment lines
 must not start with a number.
@@ -42,13 +43,13 @@ PERMLINK:         www.lxcat.net/IST-Lisbon
 DESCRIPTION:      IST-Lisbon database contains up-to-date electron-neutral scattering cross sections (together with the
                   measured swarm parameters used to validate these data), resulting from the research effort of the
                   Group N-Plasmas Reactive: Modelling and Engineering (N-PRiME) with IPFN/IST (Instituto de Plasmas e
-                  Fusao Nuclear / Instituto Superior Tecnico), Lisbon, Portugal. The data, compiled from the literature,
-                  correspond to contributions from different authors (see detailed references in the database). For each
-                  gas the database presents a COMPLETE SET of cross sections, validated against measured swarm
-                  parameters by solving the two-term homogeneous electron Boltzmann equation. In most cases, predictions
-                  are in agreement with measurements within 1-20%, for reduced electric fields E/N ~ 1e-4 - 500 Td. To
-                  improve predictions at low E/N, some sets need to be completed with rotational cross sections, also
-                  available in the database.
+                  Fusao Nuclear / Instituto Superior Tecnico), Lisbon, Portugal.  The data, compiled from the
+                  literature, correspond to contributions from different authors (see detailed references in the
+                  database). For each gas the database presents a COMPLETE SET of cross sections, validated against
+                  measured swarm parameters by solving the two-term homogeneous electron Boltzmann equation. In most
+                  cases, predictions are in agreement with measurements within 1-20%, for reduced electric fields E/N ~
+                  1e-4 - 500 Td. To improve predictions at low E/N, some sets need to be completed with rotational cross
+                  sections, also available in the database.
 CONTACT:          LL Alves and V Guerra
                   e-mail: llalves@@tecnico.ulisboa.pt
 HOW TO REFERENCE: L.L. Alves, ''The IST-Lisbon database on LXCat'' J. Phys. Conf. Series 2014, 565, 1
@@ -79,9 +80,9 @@ CO2 -> CO(X) + O(-,X)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> CO(X) + O(-,X), Attachment
 PARAM.:  complete set
-COMMENT: [e + CO2(X,v=000) -> CO(X) + O(-,X), Attachment]  Lowke, Phelps and Irwin 1973 J. Appl.
+COMMENT: [e + CO2(X,v=000) -> CO(X) + O(-,X), Attachment] Lowke, Phelps and Irwin 1973 J. Appl.
 COMMENT: Phys. 44 4664.
-UPDATED: 2017-05-09 13:30:38
+UPDATED: 2017-05-09 06:30:38
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  3.900000e+0	0.000000e+0
@@ -103,9 +104,9 @@ CO2
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2, Effective
 PARAM.:  m/M = 0.0000124677, complete set
-COMMENT: [e + CO2(X) -> e + CO2(X), Effective]  Lowke, Phelps and Irwin 1973 J. Appl. Phys. 44
+COMMENT: [e + CO2(X) -> e + CO2(X), Effective] Lowke, Phelps and Irwin 1973 J. Appl. Phys. 44
 COMMENT: 4664 (increased below 0.1eV adjusted above 100 eV).
-UPDATED: 2017-11-14 10:28:30
+UPDATED: 2017-11-14 03:28:30
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  0.000000e+0	6.000000e-18
@@ -622,9 +623,9 @@ CO2 <-> CO2(v=010)
 SPECIES: e / CO2
 PROCESS: E + CO2 <-> E + CO2(v=010), Excitation
 PARAM.:  E = 0.083 eV, g1/g0 = 2, complete set
-COMMENT: [e + CO2(X,v=000) <-> e + CO2(X,v=010), Vibrational]  Lowke, Phelps and Irwin 1973
-COMMENT: J. Appl. Phys. 44 4664.
-UPDATED: 2017-05-09 12:43:34
+COMMENT: [e + CO2(X,v=000) <-> e + CO2(X,v=010), Vibrational] Lowke, Phelps and Irwin 1973 J.
+COMMENT: Appl. Phys. 44 4664.
+UPDATED: 2017-05-09 05:43:34
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  8.300000e-2	0.000000e+0
@@ -671,10 +672,10 @@ CO2 -> CO2(v=020)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(v=020), Excitation
 PARAM.:  E = 0.167 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=020), Vibrational]  Lowke, Phelps and Irwin 1973 J.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=020), Vibrational] Lowke, Phelps and Irwin 1973 J.
 COMMENT: Appl. Phys. 44 4664 Celiberto et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016
 COMMENT: Plasma Sources Sci. Technol. 25 033004 (for deconvolution from (100)).
-UPDATED: 2017-05-09 12:39:17
+UPDATED: 2017-05-09 05:39:17
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  1.670000e-1	0.000000e+0
@@ -712,10 +713,10 @@ CO2 -> CO2(v=100)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(v=100), Excitation
 PARAM.:  E = 0.167 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=100), Vibrational]  Lowke, Phelps and Irwin 1973 J.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=100), Vibrational] Lowke, Phelps and Irwin 1973 J.
 COMMENT: Appl. Phys. 44 4664 Celiberto et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016
 COMMENT: Plasma Sources Sci. Technol. 25 033004 (for deconvolution from (020)).
-UPDATED: 2017-05-09 12:41:27
+UPDATED: 2017-05-09 05:41:27
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  1.670000e-1	0.000000e+0
@@ -752,9 +753,9 @@ CO2 -> CO2(v=030+110)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(v=030+110), Excitation
 PARAM.:  E = 0.252 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=030+110), Vibrational]  Lowke, Phelps and Irwin 1973
-COMMENT: J. Appl. Phys. 44 4664.
-UPDATED: 2017-05-09 12:48:06
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=030+110), Vibrational] Lowke, Phelps and Irwin 1973 J.
+COMMENT: Appl. Phys. 44 4664.
+UPDATED: 2017-05-09 05:48:06
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  2.520000e-1	0.000000e+0
@@ -774,9 +775,9 @@ CO2 -> CO2(v=001)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(v=001), Excitation
 PARAM.:  E = 0.291 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=001), Vibrational]  Lowke, Phelps and Irwin 1973 J.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=001), Vibrational] Lowke, Phelps and Irwin 1973 J.
 COMMENT: Appl. Phys. 44 4664.
-UPDATED: 2017-05-09 12:56:46
+UPDATED: 2017-05-09 05:56:46
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  2.910000e-1	0.000000e+0
@@ -811,11 +812,11 @@ CO2 -> CO2(v=040+120+011)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(v=040+120+011), Excitation
 PARAM.:  E = 0.339 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=040+120+011), Vibrational]  Lowke, Phelps and Irwin
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=040+120+011), Vibrational] Lowke, Phelps and Irwin
 COMMENT: 1973 J. Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press
 COMMENT: Celiberto et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016 Plasma Sources Sci.
 COMMENT: Technol. 25 033004 (for deconvolution).
-UPDATED: 2017-05-09 13:05:00
+UPDATED: 2017-05-09 06:05:00
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  3.390000e-1	0.000000e+0
@@ -836,11 +837,11 @@ CO2 -> CO2(X,v=200)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(X,v=200), Excitation
 PARAM.:  E = 0.339 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=200), Vibrational]  Lowke, Phelps and Irwin 1973 J.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=200), Vibrational] Lowke, Phelps and Irwin 1973 J.
 COMMENT: Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press Celiberto
 COMMENT: et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016 Plasma Sources Sci. Technol. 25
 COMMENT: 033004 (for deconvolution).
-UPDATED: 2017-05-09 12:56:46
+UPDATED: 2017-05-09 05:56:46
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  3.390000e-1	0.000000e+0
@@ -861,10 +862,10 @@ CO2 -> CO2(X,v=050+210+130+021+101)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(X,v=050+210+130+021+101), Excitation
 PARAM.:  E = 0.422 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=050+210+130+021+101), Vibrational]  Lowke, Phelps and
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=050+210+130+021+101), Vibrational] Lowke, Phelps and
 COMMENT: Irwin 1973 J. Appl. Phys. 44 4664 Celiberto et al 2014 Open Plasma Phys. J. 7 33
 COMMENT: Celiberto et al 2016 Plasma Sources Sci. Technol. 25 033004 (for deconvolution).
-UPDATED: 2017-05-09 13:05:00
+UPDATED: 2017-05-09 06:05:00
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  4.220000e-1	0.000000e+0
@@ -882,11 +883,11 @@ CO2 -> CO2(X,v=300)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(X,v=300), Excitation
 PARAM.:  E = 0.5 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=300), Vibrational]  Lowke, Phelps and Irwin 1973 J.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=300), Vibrational] Lowke, Phelps and Irwin 1973 J.
 COMMENT: Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press Celiberto
 COMMENT: et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016 Plasma Sources Sci. Technol. 25
 COMMENT: 033004 (for deconvolution).
-UPDATED: 2017-05-09 13:45:42
+UPDATED: 2017-05-09 06:45:42
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  5.000000e-1	0.000000e+0
@@ -1296,11 +1297,11 @@ CO2 -> CO2(X,v=060+220+140)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(X,v=060+220+140), Excitation
 PARAM.:  E = 0.505 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=060+220+140), Vibrational]  Lowke, Phelps and Irwin
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=060+220+140), Vibrational] Lowke, Phelps and Irwin
 COMMENT: 1973 J. Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press
 COMMENT: Celiberto et al 2014 Open Plasma Phys. J. 7 33 Celiberto et al 2016 Plasma Sources Sci.
 COMMENT: Technol. 25 033004 (for deconvolution).
-UPDATED: 2017-05-09 13:18:43
+UPDATED: 2017-05-09 06:18:43
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  5.050000e-1	0.000000e+0
@@ -1371,10 +1372,10 @@ CO2 -> CO2(X,v=0n0+n00)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(X,v=0n0+n00), Excitation
 PARAM.:  E = 2.5 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=0n0+n00), Vibrational]  Lowke, Phelps and Irwin 1973
-COMMENT: J. Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press (for
+COMMENT: [e + CO2(X,v=000) -> e + CO2(X,v=0n0+n00), Vibrational] Lowke, Phelps and Irwin 1973 J.
+COMMENT: Appl. Phys. 44 4664 Fridman 2012 Plasma Chemistry, Cambridge University Press (for
 COMMENT: deconvolution).
-UPDATED: 2017-05-09 13:26:06
+UPDATED: 2017-05-09 06:26:06
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  2.500000e+0	0.000000e+0
@@ -1391,9 +1392,9 @@ CO2 -> CO2(e1)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(e1), Excitation
 PARAM.:  E = 7 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(e1), Excitation]  Lowke, Phelps and Irwin 1973 J. Appl.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(e1), Excitation] Lowke, Phelps and Irwin 1973 J. Appl.
 COMMENT: Phys. 44 4664.
-UPDATED: 2017-05-09 12:06:01
+UPDATED: 2017-05-09 05:06:01
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  7.000000e+0	0.000000e+0
@@ -1409,10 +1410,10 @@ CO2 -> CO2(e2)
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + CO2(e2), Excitation
 PARAM.:  E = 10.5 eV, complete set
-COMMENT: [e + CO2(X,v=000) -> e + CO2(e2), Excitation]  Lowke, Phelps and Irwin 1973 J. Appl.
+COMMENT: [e + CO2(X,v=000) -> e + CO2(e2), Excitation] Lowke, Phelps and Irwin 1973 J. Appl.
 COMMENT: Phys. 44 4664 Itikawa 2002 J. Phys. Chem. Ref. Data 31 749 (cross section extended up to
 COMMENT: 1000 eV).
-UPDATED: 2017-05-09 12:11:41
+UPDATED: 2017-05-09 05:11:41
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  1.050000e+1	0.000000e+0
@@ -1440,10 +1441,10 @@ CO2 -> CO2(+,X)
  1.380000e+1
 SPECIES: e / CO2
 PROCESS: E + CO2 -> E + E + CO2(+,X), Ionization
-PARAM.:  E = 13.8 eV
-COMMENT: [e + CO2(X,v=000) -> e + CO2(+,X), Ionization]  Itikawa 2002 J. Phys. Chem. Ref. Data
-COMMENT: 31 749.
-UPDATED: 2017-05-09 13:26:06
+PARAM.:  E = 13.8 eV, complete set
+COMMENT: [e + CO2(X,v=000) -> e + e + CO2(+,X), Ionization] Itikawa 2002 J. Phys. Chem. Ref.
+COMMENT: Data 31 749.
+UPDATED: 2022-07-21 05:50:10
 COLUMNS: Energy (eV) | Cross section (m2)
 -----------------------------
  1.380000e+1	0.000000e+0

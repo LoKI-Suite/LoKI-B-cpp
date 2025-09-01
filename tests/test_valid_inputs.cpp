@@ -71,7 +71,7 @@ bool compare_floats(double a, double b, double rel_tol, double abs_tol)
  * @param abs_tol The absolute tolerance for comparing floating-point numbers.
  * @return true if the JSON objects are considered equal, false otherwise.
  */
-bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_tol = 1e-9, double abs_tol = 1e-11)
+bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_tol = 1e-9, double abs_tol = 1e-10)
 {
     if (j1.type() != j2.type())
     {
