@@ -625,14 +625,12 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
- //       Log<Message>::Notify("Iteration ", iter);
-
         // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
         fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,CIEffNew,fieldMatrixTempGrowth);
         const long double growthFactor = CIEffNew / SI::gamma;
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
-            // Manual 2.2.0, 7a (with an minus sign because all terms are negated):
+            // Manual 2.2.0, 7a (with a minus sign because all terms are negated):
             ionTemporalGrowth.coeffRef(k, k) = -growthFactor * std::sqrt(grid().getCell(k));
             boltzmannMatrix(k, k) = baseDiag[k] + fieldMatrixTempGrowth.coeff(k, k)*EoN*EoN +
                                                            ionTemporalGrowth.coeff(k, k);
