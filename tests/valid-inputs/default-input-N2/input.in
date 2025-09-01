@@ -5,8 +5,8 @@
 
 % --- configuration of the working conditions ---
 workingConditions:
-  reducedField: 50%linspace(10, 50, 5)           % in Td
-  electronTemperature: 0.03%linspace(0.03, 5, 300) % in eV
+  reducedField: logspace(-3,3,20)             % in Td
+  electronTemperature: linspace(0.03, 5, 300) % in eV
   excitationFrequency: 0                      % in Hz
   gasPressure: 133.32                         % in Pa
   gasTemperature: 300                         % in K
@@ -46,10 +46,10 @@ electronKinetics:
       - N2(X,v=0,J=*) = boltzmannPopulation@gasTemperature
   numerics:                            % configuration of numerical details of the simulation
     energyGrid:                        % properties of the energy grid (in eV)
-      maxEnergy: 20
+      maxEnergy: 1
       cellNumber: 1000
       smartGrid:                       % configuration of the smart grid
-        minEedfDecay: 10               % minimum number of decade-fall for the EEDF
+        minEedfDecay: 20               % minimum number of decade-fall for the EEDF
         maxEedfDecay: 25               % maximum number of decade-fall for the EEDF
         updateFactor: 0.05             % factor used to increase or decrease the maximum value of the energy grid
     maxPowerBalanceRelError: 1e-9      % threshold for the relative power balance warning message
@@ -58,19 +58,11 @@ electronKinetics:
       mixingParameter: 0.7             % mixingDirectSolutions mixing parameter from 0 to 1
       maxEedfRelError: 1e-9            % maximum rel. variation for EEDF between two iterations (stop criterion)
 
-% --- configuration of the graphical user interface ---
-gui: 
-  isOn: false
-  refreshFrequency: 1
-
 % ---  configuration of the output files ---
 output:
   isOn: true
-  writeText: false
   writeJSON: true
   JSONFile: output.json
-  writeHDF5: true
-  HDF5File: output.h5
   folder: simulation
   dataFiles:
     - eedf
