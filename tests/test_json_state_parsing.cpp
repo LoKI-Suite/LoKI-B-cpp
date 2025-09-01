@@ -217,25 +217,25 @@ int main(int argc, char **argv)
                            })json"_json));
 
     // Tests that should fail.
-    test_expr(
-        test_invalid("Rotational states identifiers are not allowed when multiple vibrational states are specified.",
-                     R"json({
-                       "detailed": {
-                         "type": "HomonuclearDiatom",
-                         "charge": 0
-                       },
-                       "serialized": {
-                         "composition": { "summary": "N2" },
-                         "electronic": {
-                           "summary": "X",
-                           "vibrational": [
-                             { "summary": "0", "rotational": { "summary": "0" } },
-                             { "summary": "1" }
-                           ]
-                         }
-                       }
-                     })json"_json));
-    test_expr(test_invalid("At least one vibrational state is expected by LoKI-B.",
+    test_expr(test_invalid("Encountered invalid state with id TestID. Rotational states identifiers are not "
+                           "allowed when multiple vibrational states are specified.\n",
+                           R"json({
+                             "detailed": {
+                               "type": "HomonuclearDiatom",
+                               "charge": 0
+                             },
+                             "serialized": {
+                               "composition": { "summary": "N2" },
+                               "electronic": {
+                                 "summary": "X",
+                                 "vibrational": [
+                                   { "summary": "0", "rotational": { "summary": "0" } },
+                                   { "summary": "1" }
+                                 ]
+                               }
+                             }
+                           })json"_json));
+    test_expr(test_invalid("Found empty vibrational description for state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("Expected a contiguous v-range.",
+    test_expr(test_invalid("Expected a contiguous v-range for state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("Duplicate v entries encountered.",
+    test_expr(test_invalid("Duplicate vibrational entries encountered in state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("Expected a contiguous J-range.",
+    test_expr(test_invalid("Expected a contiguous J-range for state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -303,27 +303,7 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("Expected a contiguous J-range.",
-                           R"json({
-                             "detailed": {
-                               "type": "HomonuclearDiatom",
-                               "charge": 0
-                             },
-                             "serialized": {
-                               "composition": { "summary": "N2" },
-                               "electronic": {
-                                 "summary": "X",
-                                 "vibrational": {
-                                   "summary": "0",
-                                   "rotational": [
-                                     { "summary": "0" },
-                                     { "summary": "2" }
-                                   ]
-                                 }
-                               }
-                             }
-                           })json"_json));
-    test_expr(test_invalid("Duplicate J entries encountered.",
+    test_expr(test_invalid("Duplicate J entries encountered for state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -343,7 +323,7 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("At least one rotational state is expected by LoKI-B.",
+    test_expr(test_invalid("Found empty rotational description for state TestID.\n",
                            R"json({
                              "detailed": {
                                "type": "HomonuclearDiatom",
@@ -360,8 +340,8 @@ int main(int argc, char **argv)
                                }
                              }
                            })json"_json));
-    test_expr(test_invalid("Invalid J entry 010 in compound rotational state. LoKI-B only supports compound "
-                           "rotational states for species types with a single rotational quanta.\n",
+    test_expr(test_invalid("Invalid J entry 010 in compound rotational state TestID. LoKI-B only supports "
+                           "compound rotational states for species types with a single rotational quanta.\n",
                            R"json({
                              "detailed": {
                                "type": "TriatomC2v",
@@ -375,7 +355,6 @@ int main(int argc, char **argv)
                                    "summary": "010",
                                    "rotational": [{ "summary": "010" }, { "summary": "100" }]
                                  }
-                                 
                                }
                              }
                            })json"_json));
