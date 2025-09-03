@@ -54,7 +54,7 @@ class Collision
     {
     }
 
-    IdType Id() const { return m_id; }
+    IdType id() const { return m_id; }
     CollisionType type() const { return m_type; }
     bool isReverse() const { return m_isReverse; }
 
