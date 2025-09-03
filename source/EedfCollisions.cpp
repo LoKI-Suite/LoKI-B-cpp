@@ -30,6 +30,7 @@
 
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
@@ -604,7 +605,7 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
 
             std::vector stateVector{electron, state};
             auto *collision =
-                new EedfCollision(-1, CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
+                new EedfCollision(collisions(CollisionType::effective)[0]->id(), CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
 
             collision->crossSection.reset(new CrossSection(*elasticCS));
 
