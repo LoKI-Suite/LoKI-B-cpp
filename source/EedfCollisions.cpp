@@ -599,7 +599,9 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
 
         for (const auto *state : statesToUpdate)
         {
-            Log<Message>::Notify("Effective cross section: installing elastic cross section for state " + (std::stringstream{}<<*state).str());
+            std::stringstream ss;
+            ss << *state;
+            Log<Message>::Notify("Effective cross section: installing elastic cross section for state " + ss.str());
             std::vector stateVector{electron, state};
             auto *collision =
                 new EedfCollision(CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
