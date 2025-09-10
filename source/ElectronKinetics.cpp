@@ -561,19 +561,23 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         {
             hasConverged = true;
 
+            if (iter <= 150)
+            {
+                Log<Message>::Notify("Spatial growth routine converged in: ", iter, " iterations.");
+            }
             /** There is no maximum number of iterations if ee collisions are enabled.
              *  Is there a reason for that? This is not very safe, it seems.
              */
-            if (iter > 150 && !eeOperator)
+            else if (!eeOperator)
+            {
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
+            }
         }
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
         ++iter;
     }
-
-    std::cerr << "Spatial growth routine converged in: " << iter << " iterations.\n";
 
     alphaRedEff = alphaRedEffOld;
 }
