@@ -366,12 +366,12 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         : (muE - std::sqrt(discriminant)) / (2 * ND);
 
     uint32_t iter = 0;
-    bool hasConverged = false;
+    bool iterating = true;
 
     // note: this g_fieldSpatialBase = (E/N)*D^0(u)
     const Vector g_fieldSpatialBase = (EoN / 3) * grid().getNodes().array() / mixture.collision_data().totalCrossSection().array();
 
-    while (!hasConverged)
+    while (iterating)
     {
         // note: this g_fieldSpatialGrowth = (alphaEffNew/N)*(E/N)*D^0(u)
         g_fieldSpatialGrowth = alphaRedEffNew * g_fieldSpatialBase;
@@ -559,21 +559,25 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
-            hasConverged = true;
+            iterating = false;
 
+            if (iter <= 150)
+            {
+                Log<Message>::Notify("Spatial growth routine converged in: ", iter, " iterations.");
+            }
             /** There is no maximum number of iterations if ee collisions are enabled.
              *  Is there a reason for that? This is not very safe, it seems.
              */
-            if (iter > 150 && !eeOperator)
+            else if (!eeOperator)
+            {
                 Log<Message>::Warning("Iterative spatial growth scheme did not converge.");
+            }
         }
 
         alphaRedEffNew = mixingParameter * alphaRedEffNew + (1 - mixingParameter) * alphaRedEffOld;
 
         ++iter;
     }
-
-    std::cerr << "Spatial growth routine converged in: " << iter << " iterations.\n";
 
     alphaRedEff = alphaRedEffOld;
 }
