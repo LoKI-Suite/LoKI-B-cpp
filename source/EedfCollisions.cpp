@@ -30,6 +30,7 @@
 
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/Parse.h"
@@ -68,9 +69,10 @@ VectorType remove_electron_entries(const Collision::StateVector &parts, const Ve
 
 } // namespace
 
-EedfCollision::EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+EedfCollision::EedfCollision(Collision::IdType id, CollisionType type,
+                             const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                              const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-    : Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
+    : Collision(id, type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, isReverse),
       m_lhsHeavyStates(remove_electron_entries(lhsStates, lhsStates)),
       m_lhsHeavyCoeffs(remove_electron_entries(lhsStates, lhsCoeffs)),
       m_rhsHeavyStates(remove_electron_entries(rhsStates, rhsStates)),
@@ -572,7 +574,8 @@ void EedfCollisionDataGas::addCollision(EedfCollision *collision, bool isExtra)
     }
 }
 
-void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const Grid *energyGrid, const EffectivePopulationsMap& effectivePopulation)
+void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const Grid *energyGrid,
+                                                  const EffectivePopulationsMap &effectivePopulation)
 {
     if (isDummy())
         return;
@@ -581,15 +584,18 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
 
     if (!statesToUpdate.empty())
     {
-        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid,effectivePopulation);
+        CrossSection *elasticCS = elasticCrossSectionFromEffective(energyGrid, effectivePopulation);
         std::vector<uint16_t> stoiCoeff{1, 1};
 
-        if (elasticCS == nullptr) {
+        if (elasticCS == nullptr)
+        {
             bool first = true;
             std::ostringstream ss;
 
-            for (const auto* state : statesToUpdate) {
-                if (!first) ss << ", ";
+            for (const auto *state : statesToUpdate)
+            {
+                if (!first)
+                    ss << ", ";
                 ss << *state;
                 first = false;
             }
@@ -602,16 +608,16 @@ void EedfCollisionDataGas::checkElasticCollisions(const State *electron, const G
             Log<Message>::Notify("Effective cross section: installing elastic cross section for state ", *state);
 
             std::vector stateVector{electron, state};
-            auto *collision =
-                new EedfCollision(CollisionType::elastic, stateVector, stoiCoeff, stateVector, stoiCoeff, false);
+            auto *collision = new EedfCollision(collisions(CollisionType::effective)[0]->id(), CollisionType::elastic,
+                                                stateVector, stoiCoeff, stateVector, stoiCoeff, false);
 
             collision->crossSection.reset(new CrossSection(*elasticCS));
 
             this->addCollision(collision, false);
         }
 
-        // FIXME: elasticCS is never destructed. However, doing so now leads to a crash as it cannot unregister itself to the
-        // `updatedMaxEnergy` listener.
+        // FIXME: elasticCS is never destructed. However, doing so now leads to a crash as it cannot unregister itself
+        // to the `updatedMaxEnergy` listener.
     }
 }
 
@@ -875,7 +881,7 @@ EedfCollision &EedfCollisionDataMixture::addCollision(CollisionType type, const 
     // 1. Create the collision object (but do not configure a CrossSection
     //    object yet).
     std::unique_ptr<EedfCollision> coll_uptr{
-        new Collision(type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
+        new Collision(m_collisions.size(), type, lhsStates, lhsCoeffs, rhsStates, rhsCoeffs, reverseAlso)};
     Log<Message>::Notify(*coll_uptr);
     // 2. See if we already have a collision of the same type with the same
     //    lhs and rhs. If we do, a runtime_error is thrown.

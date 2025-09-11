@@ -48,11 +48,13 @@ class Collision
     using State = Gas::State;
     using StateVector = std::vector<const State *>;
     using CoeffVector = std::vector<uint16_t>;
+    using IdType = std::size_t;
 
     virtual ~Collision()
     {
     }
 
+    IdType id() const { return m_id; }
     CollisionType type() const { return m_type; }
     bool isReverse() const { return m_isReverse; }
 
@@ -66,9 +68,11 @@ protected:
     /** Initializes the members of the Collision class, the vectors are initialized
      *  using move semantics.
      */
-    Collision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+    Collision(const IdType id, CollisionType type,
+              const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
               const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse)
-        : m_type(type), m_isReverse(isReverse), m_lhs(makeStoichMap(lhsStates, lhsCoeffs)),
+        : m_id(id), m_type(type), m_isReverse(isReverse),
+          m_lhs(makeStoichMap(lhsStates, lhsCoeffs)),
           m_rhs(makeStoichMap(rhsStates, rhsCoeffs))
     {
     }
@@ -84,6 +88,8 @@ private:
         }
         return sm;
     }
+    // Represents the order in the input data
+    const IdType m_id;
     const CollisionType m_type;
     const bool m_isReverse;
     // Left-hand side-map of State pointers and stoichiometric coefficients

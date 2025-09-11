@@ -57,7 +57,8 @@ class EedfCollision : public Collision
 public:
     using EedfState = Gas::State;
 
-    EedfCollision(CollisionType type, const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
+    EedfCollision(Collision::IdType id, CollisionType type,
+                  const StateVector &lhsStates, const CoeffVector &lhsCoeffs,
                   const StateVector &rhsStates, const CoeffVector &rhsCoeffs, bool isReverse);
     ~EedfCollision();
     const EedfState *getTarget() const;
