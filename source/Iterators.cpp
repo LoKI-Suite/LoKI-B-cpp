@@ -1,4 +1,5 @@
 #include "LoKI-B/Iterators.h"
+#include "LoKI-B/Grid.h"
 #include "LoKI-B/Log.h"
 
 #include <cassert>
@@ -7,6 +8,46 @@
 
 namespace loki
 {
+GridIterator::GridIterator(const Grid &grid, double u_start) : m_grid(grid), m_cell_index(0)
+{
+    advance_to(u_start);
+}
+
+void GridIterator::advance_to(double u_current)
+{
+    if (u_current >= m_grid.uMax())
+    {
+        Log<Message>::Error("GridIterator: given energy ", u_current, " is not in the simulation domain.");
+    }
+
+    while (u_current >= m_grid.getNode(m_cell_index))
+    {
+        ++m_cell_index;
+    }
+}
+
+GridIterator::index_t GridIterator::index() const noexcept
+{
+    return m_cell_index;
+}
+
+double GridIterator::x_cell() const noexcept
+{
+    // m_cell_index is guaranteed < cells.size() if faces = cells + 1
+    return m_grid.getCell(m_cell_index);
+}
+
+double GridIterator::x_low() const noexcept
+{
+    return m_grid.getNode(m_cell_index);
+}
+
+double GridIterator::x_high() const noexcept
+{
+    // Guard in advance_to ensures m_cell_index + 1 is valid
+    return m_grid.getNode(m_cell_index + 1);
+}
+
 InterpolatingIterator::InterpolatingIterator(const Eigen::VectorXd &x, const Eigen::VectorXd &y, double x_offset)
     : m_x(x), m_y(y), m_current_index(0), m_x_offset(x_offset), m_switch_on(0.0), m_x_low(0.0), m_x_high(0.0),
       m_y_low(0.0), m_y_high(0.0)

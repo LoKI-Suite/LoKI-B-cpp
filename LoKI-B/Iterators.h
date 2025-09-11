@@ -4,6 +4,31 @@
 
 namespace loki
 {
+struct Grid;
+
+class GridIterator
+{
+  public:
+    using index_t = Eigen::Index;
+
+    /// Construct with a non-owning reference to Grid.
+    /// Precondition: grid.faces.size() >= 2 && grid.cells.size() + 1 == grid.faces.size()
+    explicit GridIterator(const Grid &grid, double u_start);
+
+    /// Advance while u_current >= x_high() for the current cell.
+    void advance_to(double u_current);
+
+    // Accessors
+    [[nodiscard]] index_t index() const noexcept;
+    [[nodiscard]] double x_cell() const noexcept;
+    [[nodiscard]] double x_low() const noexcept;
+    [[nodiscard]] double x_high() const noexcept;
+
+  private:
+    const Grid &m_grid; // non-owning
+    index_t m_cell_index;
+};
+
 class InterpolatingIterator
 {
   public:
