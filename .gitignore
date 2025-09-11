@@ -1,3 +1,6 @@
+# loki-b text-based output
+output/
+
 # Clion specific
 cmake-build-*/
 .idea/
