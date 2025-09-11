@@ -30,8 +30,6 @@
 #ifndef LOKI_CPP_STANDARDPATHS_H
 #define LOKI_CPP_STANDARDPATHS_H
 
-#include <string>
-
-#define LOKIB_OUTPUT_DIR "Output"
+#define LOKIB_OUTPUT_DIR "output"
 
 #endif // LOKI_CPP_STANDARDPATHS_H
