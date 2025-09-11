@@ -366,12 +366,12 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         : (muE - std::sqrt(discriminant)) / (2 * ND);
 
     uint32_t iter = 0;
-    bool hasConverged = false;
+    bool iterating = true;
 
     // note: this g_fieldSpatialBase = (E/N)*D^0(u)
     const Vector g_fieldSpatialBase = (EoN / 3) * grid().getNodes().array() / mixture.collision_data().totalCrossSection().array();
 
-    while (!hasConverged)
+    while (iterating)
     {
         // note: this g_fieldSpatialGrowth = (alphaEffNew/N)*(E/N)*D^0(u)
         g_fieldSpatialGrowth = alphaRedEffNew * g_fieldSpatialBase;
@@ -559,7 +559,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
-            hasConverged = true;
+            iterating = true;
 
             if (iter <= 150)
             {
