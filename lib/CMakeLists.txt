@@ -12,6 +12,7 @@ target_sources(loki-b PRIVATE
    ../source/GasProperties.cpp
    ../source/Gnuplot.cpp
    ../source/Grid.cpp
+   ../source/Iterators.cpp
    ../source/JobSystem.cpp
    ../source/json.cpp
    ../source/LegacyToJSON.cpp
