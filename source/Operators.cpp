@@ -29,6 +29,8 @@
 
 #include "LoKI-B/Operators.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/Integrators.h"
+#include "LoKI-B/Iterators.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
 
@@ -639,7 +641,162 @@ void InelasticOperator::evaluateInelasticOperators(const Grid& grid, const EedfM
     }
 }
 
-ElectronElectronOperator::ElectronElectronOperator(const Grid& grid)
+template <typename I>
+void sink(const Grid &grid, const EedfCollision &coll, const Vector &eedf, Matrix &matrix)
+{
+    double u_start = 0.;
+
+    const double target_density = coll.getTarget()->delta();
+
+    if (target_density == 0. || coll.crossSection->threshold() >= grid.uMax())
+        return;
+    if (coll.crossSection->threshold() < grid.getNode(1))
+        return;
+    GridIterator grid_iter(grid, u_start);
+    InterpolatingIterator cs_iter(coll.crossSection->lookupTable().x(), coll.crossSection->lookupTable().y(), u_start);
+    InterpolatingIterator eedf_iter(grid.getCells(), eedf, u_start);
+
+    while (u_start < grid.uMax())
+    {
+        grid_iter.advance_to(u_start);
+        cs_iter.advance_to(u_start);
+        eedf_iter.advance_to(u_start);
+
+        const double u_end = std::min({grid_iter.x_high(), cs_iter.switch_on(), eedf_iter.switch_on()});
+        // Log<Message>::Notify("grid_iter.x_high(): ", grid_iter.x_high(), ", cs_iter.switch_on(): ",
+        // cs_iter.switch_on(),
+        //                      ", eedf_iter.switch_on(): ", eedf_iter.switch_on());
+
+        I::set_rows(Sign::Negative, target_density, u_start, u_end, 0., grid_iter, cs_iter, eedf_iter, matrix);
+
+        // Log<Message>::Notify("u_start: ", u_start, ", u_end: ", u_end);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void source(const Grid &grid, const EedfCollision &coll, const Vector &eedf, Matrix &matrix)
+{
+    double u_start = 0.;
+    double u_offset = coll.crossSection->threshold();
+
+    const double target_density = coll.getTarget()->delta();
+
+    if (target_density == 0. || u_offset >= grid.uMax())
+        return;
+    if (coll.crossSection->threshold() < grid.getNode(1))
+        return;
+
+    GridIterator grid_iter(grid, u_start);
+    InterpolatingIterator cs_iter(coll.crossSection->lookupTable().x(), coll.crossSection->lookupTable().y(),
+                                  u_start + u_offset);
+    InterpolatingIterator eedf_iter(grid.getCells(), eedf, u_start + u_offset);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        grid_iter.advance_to(u_start);
+        cs_iter.advance_to(u_start);
+        eedf_iter.advance_to(u_start);
+
+        const double u_end = std::min({grid_iter.x_high(), cs_iter.switch_on(), eedf_iter.switch_on()});
+
+        I::set_rows(Sign::Positive, target_density, u_start, u_end, u_offset, grid_iter, cs_iter, eedf_iter, matrix);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void superelastic_sink(const Grid &grid, const EedfCollision &coll, const Vector &eedf, Matrix &matrix)
+{
+    double u_start = 0.;
+    double u_offset = coll.crossSection->threshold();
+
+    const double sw_ratio = coll.getTarget()->statisticalWeight / coll.m_rhsHeavyStates[0]->statisticalWeight;
+    const double target_density = coll.m_rhsHeavyStates[0]->delta();
+
+    if (target_density == 0.)
+        return;
+
+    GridIterator grid_iter(grid, u_start);
+    InterpolatingIterator cs_iter(coll.crossSection->lookupTable().x(), coll.crossSection->lookupTable().y(),
+                                  u_start + u_offset);
+    InterpolatingIterator eedf_iter(grid.getCells(), eedf, u_start);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        grid_iter.advance_to(u_start);
+        cs_iter.advance_to(u_start);
+        eedf_iter.advance_to(u_start);
+
+        const double u_end = std::min({grid_iter.x_high(), cs_iter.switch_on(), eedf_iter.switch_on()});
+
+        I::set_rows(Sign::Negative, sw_ratio * target_density, u_start, u_end, u_offset, grid_iter, cs_iter, eedf_iter,
+                    matrix);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void superelastic_source(const Grid &grid, const EedfCollision &coll, const Vector &eedf, Matrix &matrix)
+{
+    double u_start = 0.;
+    double u_offset = coll.crossSection->threshold();
+
+    const double sw_ratio = coll.getTarget()->statisticalWeight / coll.m_rhsHeavyStates[0]->statisticalWeight;
+    const double target_density = coll.m_rhsHeavyStates[0]->delta();
+
+    if (target_density == 0.)
+        return;
+
+    GridIterator grid_iter(grid, u_start + u_offset);
+    InterpolatingIterator cs_iter(coll.crossSection->lookupTable().x(), coll.crossSection->lookupTable().y(),
+                                  u_start + u_offset);
+    InterpolatingIterator eedf_iter(grid.getCells(), eedf, u_start);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        grid_iter.advance_to(u_start + u_offset);
+        cs_iter.advance_to(u_start);
+        eedf_iter.advance_to(u_start);
+
+        const double u_end = std::min({grid_iter.x_high() - u_offset, cs_iter.switch_on(), eedf_iter.switch_on()});
+
+        I::set_rows(Sign::Negative, sw_ratio * target_density, u_start, u_end, u_offset, grid_iter, cs_iter, eedf_iter,
+                    matrix);
+
+        u_start = u_end;
+    }
+}
+
+void InelasticOperator::evaluateInelasticOperatorsNew(const Grid &grid, const EedfMixture &mixture, const Vector &eedf)
+{
+    using I = LinearIntegrator;
+
+    inelasticMatrix.setZero();
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (auto vecIndex : {CollisionType::excitation, CollisionType::vibrational, CollisionType::rotational})
+        {
+            for (const auto &collision : cd.collisions(vecIndex))
+            {
+                sink<I>(grid, *collision, eedf, inelasticMatrix);
+                source<I>(grid, *collision, eedf, inelasticMatrix);
+
+                // if (collision->isReverse())
+                // {
+                //     superelastic_sink<I>(grid, *collision, eedf, inelasticMatrix);
+                //     superelastic_source<I>(grid, *collision, eedf, inelasticMatrix);
+                // }
+            }
+        }
+    }
+}
+
+ElectronElectronOperator::ElectronElectronOperator(const Grid &grid)
 {
     initialize(grid);
 }
@@ -1053,6 +1210,24 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
             /// \todo Should this line not appear before the 'if (numThreshold == 0) continue;' test?
             if (ionizationOperatorType != IonizationOperatorType::conservative && hasValidCollisions)
                 includeNonConservativeIonization = true;
+        }
+    }
+}
+
+void IonizationOperator::evaluateIonizationOperatorNew(const Grid &grid, const EedfMixture &mixture, const Vector &eedf)
+{
+    using I = LinearIntegrator;
+
+    ionConservativeMatrix.setZero();
+
+    includeNonConservativeIonization = false;
+
+    for (const auto &cd : mixture.collision_data().data_per_gas())
+    {
+        for (const auto &collision : cd.collisions(CollisionType::ionization))
+        {
+            sink<I>(grid, *collision, eedf, ionConservativeMatrix);
+            source<I>(grid, *collision, eedf, ionConservativeMatrix);
         }
     }
 }

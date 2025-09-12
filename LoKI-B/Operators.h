@@ -120,6 +120,7 @@ namespace loki {
          *                 only electronic, or also vibrational, rotational?
          */
         void evaluateInelasticOperators(const Grid& grid, const EedfMixture& mixture);
+        void evaluateInelasticOperatorsNew(const Grid &grid, const EedfMixture &mixture, const Vector &Eedf);
         Matrix inelasticMatrix;
     };
 
@@ -161,6 +162,7 @@ namespace loki {
     public:
         IonizationOperator(IonizationOperatorType type);
         void evaluateIonizationOperator(const Grid& grid, const EedfMixture& mixture);
+        void evaluateIonizationOperatorNew(const Grid& grid, const EedfMixture& mixture, const Vector &eedf);
         const IonizationOperatorType ionizationOperatorType;
         /** \todo Document whre/when ionConservativeMatrix is used. It is also used
          *        to obtain an initial guess if iterations are done, it seems.
