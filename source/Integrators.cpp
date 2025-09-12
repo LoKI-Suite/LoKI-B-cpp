@@ -1,4 +1,5 @@
 #include "LoKI-B/Integrators.h"
+#include "LoKI-B/Log.h"
 
 namespace loki
 {
@@ -19,12 +20,13 @@ double LogIntegrator::value_at(double energy, double offset, const Interpolating
     return std::exp(f_slope * (energy - eedf.x_low())) * (first + second + third);
 }
 
-void LogIntegrator::set_rows(double x_low, double x_high, double x_offset, const GridIterator &grid_iter,
-                             const InterpolatingIterator &cs_iter, const InterpolatingIterator &eedf_iter,
-                             Matrix &matrix)
+void LogIntegrator::set_rows(Sign sign, double target_density, double x_low, double x_high, double x_offset,
+                             const GridIterator &grid_iter, const InterpolatingIterator &cs_iter,
+                             const InterpolatingIterator &eedf_iter, Matrix &matrix)
 {
     matrix(grid_iter.index(), eedf_iter.index()) +=
-        value_at(x_high, x_offset, cs_iter, eedf_iter) - value_at(x_low, x_offset, cs_iter, eedf_iter);
+        sign * target_density *
+        (value_at(x_high, x_offset, cs_iter, eedf_iter) - value_at(x_low, x_offset, cs_iter, eedf_iter));
 }
 
 double ConstIntegrator::value_at(double energy, double offset, const InterpolatingIterator &cs)
@@ -41,12 +43,12 @@ double ConstIntegrator::value_at(double energy, double offset, const Interpolati
     return first + second + third;
 }
 
-void ConstIntegrator::set_rows(double x_low, double x_high, double x_offset, const GridIterator &grid_iter,
-                               const InterpolatingIterator &cs_iter, const InterpolatingIterator &eedf_iter,
-                               Matrix &matrix)
+void ConstIntegrator::set_rows(Sign sign, double target_density, double x_low, double x_high, double x_offset,
+                               const GridIterator &grid_iter, const InterpolatingIterator &cs_iter,
+                               const InterpolatingIterator &eedf_iter, Matrix &matrix)
 {
     matrix(grid_iter.index(), eedf_iter.index()) +=
-        value_at(x_high, x_offset, cs_iter) - value_at(x_low, x_offset, cs_iter);
+        sign * target_density * (value_at(x_high, x_offset, cs_iter) - value_at(x_low, x_offset, cs_iter));
 }
 
 double LinearIntegrator::first_term_at(double energy, double offset, const InterpolatingIterator &cs,
@@ -89,16 +91,25 @@ double LinearIntegrator::second_term_at(double energy, double offset, const Inte
     return (first + second + third + fourth) / (eedf.x_high() - eedf.x_low());
 }
 
-void LinearIntegrator::set_rows(double x_low, double x_high, double x_offset, const GridIterator &grid_iter,
-                                const InterpolatingIterator &cs_iter, const InterpolatingIterator &eedf_iter,
-                                Matrix &matrix)
+void LinearIntegrator::set_rows(Sign sign, double target_density, double x_low, double x_high, double x_offset,
+                                const GridIterator &grid_iter, const InterpolatingIterator &cs_iter,
+                                const InterpolatingIterator &eedf_iter, Matrix &matrix)
 {
     const auto r = grid_iter.index();
     const auto c = eedf_iter.index();
 
+    Log<Message>::Notify("Setting (", r, ", ", c, ") to ",
+                         first_term_at(x_high, x_offset, cs_iter, eedf_iter) -
+                             first_term_at(x_low, x_offset, cs_iter, eedf_iter));
+    Log<Message>::Notify("Setting (", r, ", ", c + 1, ") to ",
+                         second_term_at(x_high, x_offset, cs_iter, eedf_iter) -
+                             second_term_at(x_low, x_offset, cs_iter, eedf_iter));
+
     matrix(r, c) +=
-        first_term_at(x_high, x_offset, cs_iter, eedf_iter) - first_term_at(x_low, x_offset, cs_iter, eedf_iter);
+        sign * target_density *
+        (first_term_at(x_high, x_offset, cs_iter, eedf_iter) - first_term_at(x_low, x_offset, cs_iter, eedf_iter));
     matrix(r, c + 1) +=
-        second_term_at(x_high, x_offset, cs_iter, eedf_iter) - second_term_at(x_low, x_offset, cs_iter, eedf_iter);
+        sign * target_density *
+        (second_term_at(x_high, x_offset, cs_iter, eedf_iter) - second_term_at(x_low, x_offset, cs_iter, eedf_iter));
 }
 } // namespace loki
