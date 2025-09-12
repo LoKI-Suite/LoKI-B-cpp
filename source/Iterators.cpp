@@ -20,7 +20,7 @@ void GridIterator::advance_to(double u_current)
         Log<Message>::Error("GridIterator: given energy ", u_current, " is not in the simulation domain.");
     }
 
-    while (u_current >= m_grid.getNode(m_cell_index))
+    while (u_current >= x_high())
     {
         ++m_cell_index;
     }
