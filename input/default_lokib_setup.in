@@ -25,9 +25,8 @@ electronKinetics:
   LXCatFiles:                          % cross section files
     - Nitrogen/N2_LXCat.txt
     - Nitrogen/N2_rot_LXCat.txt
-%   LXCatFilesExtra: extra_LXCat.txt    % extra cross section files
 %   effectiveCrossSectionPopulations:   % see doc
-%     - N2_effectivePop.txt
+%     - Nitrogen/N2_effectivePop.txt
 %   CARgases:                           % gases for which CAR is activated
 %     - N2
   gasProperties:                       % properties of the gases (S.I. Units)
@@ -63,23 +62,12 @@ electronKinetics:
       algorithm: mixingDirectSolutions % mixingDirectSolutions or temporalIntegration
       mixingParameter: 0.7             % mixingDirectSolutions mixing parameter from 0 to 1
       maxEedfRelError: 1e-9            % maximum rel. variation for EEDF between two iterations (stop criterion)
-%       odeSetParameters:                % optional parameters for the ode solver of the "temporalIntegration" algorithm	           
-%         AbsTol: 1e-300
-%         RelTol: 1e-6
-%         MaxStep: 1e-7
-          
-% --- configuration of the graphical user interface ---
-gui: 
-  isOn: false
-  refreshFrequency: 1
 
 % ---  configuration of the output files ---
 output: 
   isOn: true
-  dataFormat: txt % txt or hdf5 or hdf5+txt
-  folder: default-temporal
+  folder: N2-default
   dataFiles:
-%     - inputs
     - log
     - eedf
     - swarmParameters
