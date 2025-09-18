@@ -195,10 +195,10 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
         carOperator->evaluate(grid(),Tg,CARMatrix);
     }
 
-    inelasticOperator.evaluateInelasticOperators(grid(),mixture);
+    inelasticOperator.evaluateInelasticOperatorsNew(grid(), mixture, eedf);
 
     if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        ionizationOperator.evaluateIonizationOperator(grid(),mixture);
+        ionizationOperator.evaluateIonizationOperatorNew(grid(), mixture, eedf);
 
     if (mixture.collision_data().hasCollisions(CollisionType::attachment))
         attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
