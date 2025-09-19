@@ -658,7 +658,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
 
-        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-11) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-9) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
