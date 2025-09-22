@@ -658,7 +658,7 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
         CIEffOld = CIEffNew;
         CIEffNew = eedf.dot(coefsCI);
 
-        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-11) &&
+        if (((CIEffNew == 0 || std::abs(CIEffNew - CIEffOld) / CIEffOld < 1e-9) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
             iter > 150)
         {
@@ -1219,14 +1219,18 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
     /** \todo For spatial growth (or no growth), the copy is not needed; we
      *  could use totalCellCrossSection() directly.
      */
-    Vector cellCS(mixture.collision_data().totalCellCrossSection());
+    Vector totalCS(mixture.collision_data().totalCrossSection());
 
     if (growthModelType == GrowthModelType::temporal && nonConservative)
     {
-        cellCS.array() += (CIEff/SI::gamma) / grid().getCells().cwiseSqrt().array();
+        totalCS.array().tail(totalCS.size() - 1) +=
+            (CIEff / SI::gamma) / grid().getNodes().tail(totalCS.size() - 1).cwiseSqrt().array();
     }
+
+    const auto cellCS = (totalCS.head(totalCS.size() - 1) + totalCS.tail(totalCS.size() - 1)) / 2.;
+
     const Vector D0 = grid().getCells().array() / (3. * cellCS).array();
-    const Vector D0Nodes = grid().getNodes().array() / (3. * mixture.collision_data().totalCrossSection()).array();
+    const Vector D0Nodes = grid().getNodes().array() / (3. * totalCS).array();
 
     swarmParameters.redDiffCoeff = SI::gamma*energyIntegral(grid(),D0,eedf);
     swarmParameters.redDiffCoeffEnergy = SI::gamma*energyIntegral(grid(),grid().getCells().cwiseProduct(D0),eedf);
