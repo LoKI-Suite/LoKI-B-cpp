@@ -432,8 +432,11 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 }
                 else if (k==grid().nCells() - 1)
                 {
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
+                    // NOTE: For MATLAB compatibility, set D0 to 0 on upper boundary.
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0Nodes[k] / (2. * grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*D0Nodes[k] / (2. * grid().du());
+                    // ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
+                    // ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
                     boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
                     boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
                 }
