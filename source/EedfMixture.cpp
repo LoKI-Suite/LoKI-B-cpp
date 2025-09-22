@@ -114,21 +114,20 @@ void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath
             for (const auto &state : states) {
                 if (effectivePopulations.count(state))
                 {
-                    throw std::runtime_error("Duplicate specification for state '"
-                        + e.key() + "' found.");
+                    Log<Message>::Error("Duplicate specification for state '", e.key(), "' found.");
                 }
                 if (e.value().at("type")=="constant")
                 {
                     effectivePopulations[state] = e.value().at("value");
-                    std::cout << "readEffectivePopulations: setting effective cross section "
-                                 "population of state '" << e.key() << " to "
-                              << e.value().at("value").dump(2) << "'." << std::endl;
+                    Log<Message>::Notify("readEffectivePopulations: setting effective cross section "
+                                         "population of state '", e.key(), " to ",
+                                         e.value().at("value").dump(2), "'.");
                 }
                 else
                 {
                     /// \todo Should we also support functions here?
-                    throw std::runtime_error("readEffectivePopulations for state '"
-                        + e.key() + "': only type 'Constant' is supported.");
+                    Log<Message>::Error("readEffectivePopulations for state '", e.key(),
+                                        "': only type 'Constant' is supported.");
                 }
             }
         }
@@ -138,7 +137,7 @@ void EedfMixture::readEffectivePopulations(const std::filesystem::path &basePath
         for (const auto& f : effPop.at("files"))
         {
             try {
-                std::cout << "readEffectivePopulations: handling file '" + f.get<std::string>() + "'." << std::endl;
+                Log<Message>::Notify("readEffectivePopulations: handling file '", f.get<std::string>(), "'.");
                 readEffectivePopulations(basePath,f.get<std::string>(),effectivePopulations);
             }
             catch(std::exception& exc)
