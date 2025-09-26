@@ -316,9 +316,9 @@ if(with-hdf5)
     set(LOKIB_USE_HDF5 ON)
 endif()
 
-option(with-test "-Dwith-tests(=OFF|ON): Build the tests" ON)
-loki_constrain_configure_option(with-test ON OFF)
-set(LOKIB_USE_TEST ${with-test})
+option(with-tests "-Dwith-tests(=OFF|ON): Build the tests" ON)
+loki_constrain_configure_option(with-tests ON OFF)
+set(LOKIB_USE_TEST ${with-tests})
 
 add_subdirectory(lib)
 if(EMSCRIPTEN)
