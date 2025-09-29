@@ -30,6 +30,8 @@
             siunitx
             upquote
             cm-super
+            type1cm
+            dvipng
             ;
         });
 
