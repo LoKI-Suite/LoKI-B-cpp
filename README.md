@@ -14,8 +14,9 @@ The relevant documentation can be found
 A Clang format style file is present at the root of this repository
 (`.clang-format`). To format all the source files, you can issue the following
 command from the repository root.
-
-- `clang-format -i -style=file source/*.cpp LoKI-B/*.h app/*.cpp tests/*.cpp ideas/*.cpp web/bindings.cpp`
+```bash
+clang-format -i -style=file source/*.cpp LoKI-B/*.h app/*.cpp tests/*.cpp ideas/*.cpp web/bindings.cpp
+```
 
 ## Compilation instructions:
 
