@@ -32,7 +32,6 @@ command from the repository root.
 1. Clone the `LoKI-B-cpp` repository:
    `git clone git@github.com:LoKI-Suite/LoKI-B-cpp.git` and `cd` into the newly
    created `LoKI-B-cpp` folder.
-1. Create the build directory (`mkdir build`).
 
 ### Linux
 
