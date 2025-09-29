@@ -6,6 +6,8 @@
 LoKI-B++ is a numerical Boltzmann solver for the two-term approximation of the
 Boltzmann equation for electrons. It is based on the equivalent matlab version
 [LoKI-B MATLAB](https://github.com/LoKI-Suite/LoKI-B).
+The relevant documentation can be found
+[here](https://github.com/LoKI-Suite/LoKI-B/tree/master/Documentation).
 
 ## Clang format
 
