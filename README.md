@@ -40,7 +40,7 @@ command from the repository root.
      [OpenBLAS](http://www.openmathlib.org/OpenBLAS/) or
      [Intel MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html).
      This flag can also be omitted to build with pure Eigen.
-1. run: `make -j <NUM_JOBS>`
+1. run: `cmake --build build -j <NUM_JOBS>`
    - Where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when
      compiling; just use the number of physical cores in your system. Omit this
      flag to use the default settings.
@@ -89,22 +89,14 @@ command from the repository root.
 
 ### Windows
 
-1. run: `cmake -D<BACKEND_FLAG>=ON ..`
+1. run: `cmake -D<BACKEND_FLAG>=ON -B build`
    - where `<BACKEND_FLAG>=LOKIB_USE_MKL/LOKIB_USE_OPENBLAS`, specifying the
      backend to supply to Eigen
    - this flag can also be omitted to build with pure Eigen
-1. run: `cmake --build . --config Release -j <NUM_JOBS>`
+1. run: `cmake --build build --config Release -j <NUM_JOBS>`
    - where `<NUM_JOBS>` is the maximum number of jobs to run simultaneously when
      compiling; just use the number of physical cores in your system. Omit this
      flag to use the default settings.
-1. The loki exec executable should always run from the build directory (or any
-   directory that is a direct subdirectory of the main folder). When compiling
-   with MSVC the executable can be placed in the `build\Release` directory by
-   default, therefore it should be moved to `build` before executing.
-   Additionally, when compiling on Windows with the MKL, copy the
-   `libiomp5md.dll` file from the main folder or, preferably from its default
-   location in your MKL installation (see `${mkl_comp}` in CMakeLists.txt), to
-   the build directory.
 
 ## Running and Plotting
 
