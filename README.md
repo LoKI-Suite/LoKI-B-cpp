@@ -76,8 +76,9 @@ command from the repository root.
    nix shell github:loki-suite/loki-b
    ```
 
-   Additionally, the web version (using WebAssembly) can be built using the
-   `loki-web` package.
+   **Note**: the web version available in this repository is outdated, for an
+   updated version see [LoKI-Web](https://github.com/LoKI-Suite/LoKI-Web). The
+   web version (using WebAssembly) can be built using the `loki-web` package.
    ```bash
    nix build github:loki-suite/loki-b#loki-web
    ```
@@ -100,9 +101,9 @@ command from the repository root.
 
 ## Running and Plotting
 
-As of yet, LoKI-B++ is run from the command line. To plot the computed eedf you
-can install gnuplot. The execution on different operating systems is very
-similar.
+As of yet, LoKI-B++ is locally run from the command line. To plot the computed
+eedf you can install gnuplot. The execution on different operating systems is
+very similar.
 
 ### Linux
 
@@ -123,3 +124,10 @@ similar.
      working directory.
    - The output from LoKI-B++ is then piped into gnuplot, where the `--persist`
      flag avoids gnuplot from immediately closing after plotting.
+
+### Web
+
+Alternatively, LoKI-B++ runs natively in a web browser through compilation
+to [WebAssembly](https://webassembly.org/). The web deployment of LoKI-B++ is
+available at <https://loki-suite.github.io/LoKI-Web/>. The source code for the
+web app can be found in [LoKI-Web](https://github.com/LoKI-Suite/LoKI-Web).
