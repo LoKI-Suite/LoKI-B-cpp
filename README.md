@@ -69,19 +69,19 @@ command from the repository root.
 
    The LoKI-B binary can be built and run anywhere by issuing
    ```bash
-   nix run github:loki-suite/loki-b <input_file>
+   nix run github:loki-suite/loki-b-cpp <input_file>
    ```
 
    Similarly, a shell can be launched with access to the `loki` binary using
    ```bash
-   nix shell github:loki-suite/loki-b
+   nix shell github:loki-suite/loki-b-cpp
    ```
 
    **Note**: the web version available in this repository is outdated, for an
    updated version see [LoKI-Web](https://github.com/LoKI-Suite/LoKI-Web). The
    web version (using WebAssembly) can be built using the `loki-web` package.
    ```bash
-   nix build github:loki-suite/loki-b#loki-web
+   nix build github:loki-suite/loki-b-cpp#loki-web
    ```
 
    To serve the pages you can then e.g. use the python http server.
