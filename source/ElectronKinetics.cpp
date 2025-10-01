@@ -33,6 +33,7 @@
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
+#include <Eigen/src/Core/BandMatrix.h>
 #include <cmath>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
@@ -102,8 +103,7 @@ ElectronKineticsBoltzmann::ElectronKineticsBoltzmann(const std::filesystem::path
 
     /// \todo the following two tasks should probably be part of the IonizationOperator constructor
     ionizationOperator.ionConservativeMatrix.setZero(grid().nCells(), grid().nCells());
-    if (ionizationOperator.ionizationOperatorType != IonizationOperatorType::conservative &&
-        mixture.collision_data().hasCollisions(CollisionType::ionization))
+    if (ionizationOperator.ionizationOperatorType != IonizationOperatorType::conservative)
     {
         ionizationOperator.ionizationMatrix.setZero(grid().nCells(), grid().nCells());
     }
