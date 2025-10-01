@@ -19,6 +19,7 @@ target_sources(loki-b PRIVATE
    ../source/LookupTable.cpp
    ../source/OffSideToJSON.cpp
    ../source/Operators.cpp
+   ../source/OperatorsNew.cpp
    ../source/Output.cpp
    ../source/Parse.cpp
    ../source/Power.cpp

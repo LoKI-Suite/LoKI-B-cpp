@@ -31,9 +31,12 @@
 #include "LoKI-B/ElectronKinetics.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
+#include "LoKI-B/Enumeration.h"
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/OperatorsNew.h"
 #include <cmath>
+#include <limits>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -190,23 +193,23 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
 
     evaluateFieldOperator();
 
-    if (carOperator.get())
-    {
-        carOperator->evaluate(grid(),Tg,CARMatrix);
-    }
+    // if (carOperator.get())
+    // {
+    //     carOperator->evaluate(grid(),Tg,CARMatrix);
+    // }
 
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
 
-    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-        ionizationOperator.evaluateIonizationOperator(grid(),mixture);
+    // if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+    //     ionizationOperator.evaluateIonizationOperator(grid(),mixture);
 
-    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-        attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
+    // if (mixture.collision_data().hasCollisions(CollisionType::attachment))
+    //     attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
 
-    if (eeOperator)
-    {
-        eeOperator->initialize(grid());
-    }
+    // if (eeOperator)
+    // {
+    //     eeOperator->initialize(grid());
+    // }
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -245,6 +248,94 @@ void ElectronKineticsBoltzmann::doSolve()
 #endif
 }
 
+void ElectronKineticsBoltzmann::invertLinearMatrixNew()
+{
+    experimental::ElasticOperator elastic_operator(grid());
+    experimental::FieldOperator field_operator(grid());
+    experimental::InelasticOperator inelastic_operator(grid());
+    experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::equalSharing);
+    experimental::SpatialGrowthOperator spatial_growth_operator(grid());
+
+    elastic_operator.evaluate(
+        grid(),
+        mixture.collision_data().elasticCrossSection(),
+        m_workingConditions->gasTemperature()
+    );
+    field_operator.evaluate(
+        grid(),
+        mixture.collision_data().totalCrossSection(),
+        m_workingConditions->reducedFieldSI()
+    );
+
+    const auto drift_coeff = elastic_operator.drift_coefficient() + field_operator.drift_coefficient();
+    const auto diff_coeff = elastic_operator.diffusion_coefficient() + field_operator.diffusion_coefficient();
+
+    Vector peclet = drift_coeff.array() * grid().duNodes().array() / diff_coeff.array();
+
+    Matrix baseMatrix(grid().nCells(), grid().nCells());
+
+    baseMatrix.setZero();
+
+    // Apply the Scharfetter-Gummel discretization scheme with a zero-flux
+    // boundary condition on both boundaries.
+    for (Grid::Index i = 0; i < grid().nCells(); i++) {
+        if (i > 0) {
+            baseMatrix(i, i) -= drift_coeff[i] / (1. - std::exp(peclet[i]));
+            baseMatrix(i, i - 1) -= drift_coeff[i] / (1. - std::exp(-peclet[i]));
+        }
+
+        if (i < grid().nCells() - 1) {
+            baseMatrix(i, i) += drift_coeff[i + 1] / (1. - std::exp(-peclet[i + 1]));
+            baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
+        }
+    }
+    // Central difference scheme.
+    // for (Grid::Index i = 0; i < grid().nCells(); i++) {
+    //     if (i > 0) {
+    //         baseMatrix(i, i) -= drift_coeff[i] / 2. - diff_coeff[i] / grid().duNode(i);
+    //         baseMatrix(i, i - 1) -= drift_coeff[i] / 2. + diff_coeff[i] / grid().duNode(i);
+    //     }
+
+    //     if (i < grid().nCells() - 1) {
+    //         baseMatrix(i, i) += drift_coeff[i + 1] / 2. + diff_coeff[i + 1] / grid().duNode(i + 1);
+    //         baseMatrix(i, i + 1) += drift_coeff[i + 1] / 2. - diff_coeff[i + 1] / grid().duNode(i + 1);
+    //     }
+    // }
+
+    // TODO: Determine a suitable value for the electron temperature.
+    eedf = makePrescribedEDF(grid(), 1, 0.1, false);
+
+    Vector eedf_cur(eedf);
+
+    double error = std::numeric_limits<double>::max();
+
+    for (int i = 0; i < 100 && error > 1e-4; ++i) {
+        eedf_cur = eedf;
+
+        inelastic_operator.evaluate(grid(), eedf, mixture);
+        ionization_operator.evaluate(grid(), eedf, mixture);
+        spatial_growth_operator.evaluate(grid(), eedf, mixture.collision_data().totalCrossSection(), m_workingConditions->reducedFieldSI());
+
+        boltzmannMatrix = baseMatrix
+                          + inelastic_operator.inelasticMatrix
+                          + inelastic_operator.superelasticMatrix
+                          + ionization_operator.ionizationMatrix;
+
+        // Apply the constant logarithmic decay boundary condition.
+        // const auto N = grid().nCells() - 1;
+        // boltzmannMatrix.row(N).setZero();
+        // boltzmannMatrix(N, N) = 1;
+        // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N - 2));
+
+        invertMatrix(boltzmannMatrix);
+
+        error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().mean();
+        Log<Message>::Warning("EEDF rel error: ", error);
+    }
+
+    normalizeEDF(eedf, grid());
+}
+
 void ElectronKineticsBoltzmann::invertLinearMatrix()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
@@ -254,15 +345,16 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     boltzmannMatrix
         = elasticMatrix
         + fieldMatrix*(EoN*EoN)
-        + inelasticOperator.inelasticMatrix
-        + ionizationOperator.ionConservativeMatrix
-        + attachmentOperator.attachmentConservativeMatrix;
-    if (carOperator)
-    {
-        boltzmannMatrix += CARMatrix;
-    }
+        + inelasticOperator.inelasticMatrix;
+    //     + ionizationOperator.ionConservativeMatrix
+    //     + attachmentOperator.attachmentConservativeMatrix;
+    // if (carOperator)
+    // {
+    //     boltzmannMatrix += CARMatrix;
+    // }
 
     invertMatrix(boltzmannMatrix);
+    normalizeEDF(eedf, grid());
 }
 
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
@@ -830,7 +922,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
 void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
-    invertLinearMatrix();
+    // invertLinearMatrix();
+    invertLinearMatrixNew();
+    return;
 
     /* Maybe we are done. But we need to do more work if non-linear terms are
      * present:

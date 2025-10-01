@@ -28,11 +28,10 @@
  */
 
 #include "LoKI-B/Operators.h"
+#include "LoKI-B/Collision.h"
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
-
-#include <cassert>
 
 namespace loki {
 
