@@ -1,5 +1,6 @@
 #include "LoKI-B/Iterators.h"
 #include "LoKI-B/Grid.h"
+#include <limits>
 
 namespace loki
 {
@@ -86,7 +87,9 @@ GridIterator::GridIterator(const Grid &grid, double u_start) : grid_(grid), cell
 
 bool GridIterator::shouldAdvance(double x_current) const
 {
-    return x_current >= grid_.getNode(cell_index_ + 1);
+    // NOTE: Removing the the addition of epsilon will cause the simulation to hang when integrating the superelastic
+    // source term in some cases.
+    return x_current + std::numeric_limits<double>::epsilon() >= grid_.getNode(cell_index_ + 1);
 }
 
 void GridIterator::advance()
