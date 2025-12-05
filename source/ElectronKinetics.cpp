@@ -36,7 +36,6 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/OperatorsNew.h"
 #include <cmath>
-#include <limits>
 
 //#define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -254,6 +253,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
     experimental::IonizationOperator ionization_operator(grid(), IonizationOperatorType::equalSharing);
+    experimental::SpatialGrowthOperator spatial_growth_operator(grid());
 
     elastic_operator.evaluate(
         grid(),
@@ -332,6 +332,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     }
 
     normalizeEDF(eedf, grid());
+    spatial_growth_operator.evaluate(grid(), eedf, mixture.collision_data().totalCrossSection(), m_workingConditions->reducedFieldSI());
 }
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
