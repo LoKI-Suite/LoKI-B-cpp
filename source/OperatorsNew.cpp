@@ -461,13 +461,17 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
                 if (collision->crossSection->threshold() >= grid.uMax())
                     continue;
 
-                collision_integral_sink(grid, eedf, this->inelasticMatrix, *collision);
-                collision_integral_source(grid, eedf, this->inelasticMatrix, *collision);
+                // collision_integral_sink(grid, eedf, this->inelasticMatrix, *collision);
+                // collision_integral_source(grid, eedf, this->inelasticMatrix, *collision);
+                integrate_sink<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
+                integrate_source<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
 
                 if (collision->isReverse())
                 {
-                    collision_integral_sup_sink(grid, eedf, this->inelasticMatrix, *collision);
-                    collision_integral_sup_source(grid, eedf, this->inelasticMatrix, *collision);
+                    integrate_sup_sink<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
+                    integrate_sup_source<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
+                    // collision_integral_sup_sink(grid, eedf, this->inelasticMatrix, *collision);
+                    // collision_integral_sup_source(grid, eedf, this->inelasticMatrix, *collision);
                 }
             }
         }
@@ -572,7 +576,7 @@ IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType 
 {
 }
 
-// NOTE: For now this only implements conservative ionization.
+// NOTE: For now this only implements conservative ionization and equal sharing.
 void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
 {
     ionizationMatrix.setZero();
@@ -584,12 +588,14 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
             if (collision->crossSection->threshold() > grid.uMax())
                 continue;
 
-            collision_integral_sink(grid, eedf, ionizationMatrix, *collision);
+            // collision_integral_sink(grid, eedf, ionizationMatrix, *collision);
+            integrate_sink<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
 
             switch (operatorType)
             {
             case IonizationOperatorType::conservative:
-                collision_integral_source(grid, eedf, ionizationMatrix, *collision);
+                // collision_integral_source(grid, eedf, ionizationMatrix, *collision);
+                integrate_source<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
             case IonizationOperatorType::equalSharing:
                 equal_sharing_source(grid, eedf, ionizationMatrix, *collision);
             }

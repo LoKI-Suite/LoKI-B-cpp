@@ -301,35 +301,51 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     //     }
     // }
 
+    // NOTE: Solution requires iteration when using logarithmic for the EEDF in the inelastic
+    // operators.
     // TODO: Determine a suitable value for the electron temperature.
-    eedf = makePrescribedEDF(grid(), 1, 0.1, false);
+    // eedf = makePrescribedEDF(grid(), 1, 0.1, false);
 
-    Vector eedf_cur(eedf);
+    // Vector eedf_cur(eedf);
 
-    double error = std::numeric_limits<double>::max();
+    // double error = std::numeric_limits<double>::max();
 
-    for (int i = 0; i < 100 && error > 1e-4; ++i) {
-        eedf_cur = eedf;
+    // for (int i = 0; i < 100 && error > 1e-4; ++i) {
+    //     eedf_cur = eedf;
 
-        inelastic_operator.evaluate(grid(), eedf, mixture);
-        ionization_operator.evaluate(grid(), eedf, mixture);
+    //     inelastic_operator.evaluate(grid(), eedf, mixture);
+    //     ionization_operator.evaluate(grid(), eedf, mixture);
 
-        boltzmannMatrix = baseMatrix
-                          + inelastic_operator.inelasticMatrix
-                          + inelastic_operator.superelasticMatrix
-                          + ionization_operator.ionizationMatrix;
+    //     boltzmannMatrix = baseMatrix
+    //                       + inelastic_operator.inelasticMatrix
+    //                       + inelastic_operator.superelasticMatrix
+    //                       + ionization_operator.ionizationMatrix;
 
-        // Apply the constant logarithmic decay boundary condition.
-        // const auto N = grid().nCells() - 1;
-        // boltzmannMatrix.row(N).setZero();
-        // boltzmannMatrix(N, N) = 1;
-        // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N - 2));
+    //     // Apply the constant logarithmic decay boundary condition.
+    //     // const auto N = grid().nCells() - 1;
+    //     // boltzmannMatrix.row(N).setZero();
+    //     // boltzmannMatrix(N, N) = 1;
+    //     // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N - 2));
 
-        invertMatrix(boltzmannMatrix);
+    //     invertMatrix(boltzmannMatrix);
 
-        error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().mean();
-        Log<Message>::Warning("EEDF rel error: ", error);
-    }
+    //     error = (eedf - eedf_cur).cwiseQuotient(eedf).cwiseAbs().mean();
+    //     Log<Message>::Warning("EEDF rel error: ", error);
+    // }
+
+    // NOTE: No iteration is required when using linear interpolation of the EEDF in the inelastic
+    // operators (in the absence of growth and e-e collisions).
+    eedf = Vector::Zero(grid().nCells());
+
+    inelastic_operator.evaluate(grid(), eedf, mixture);
+    ionization_operator.evaluate(grid(), eedf, mixture);
+
+    boltzmannMatrix = baseMatrix
+                      + inelastic_operator.inelasticMatrix
+                      + inelastic_operator.superelasticMatrix
+                      + ionization_operator.ionizationMatrix;
+
+    invertMatrix(boltzmannMatrix);
 
     normalizeEDF(eedf, grid());
     spatial_growth_operator.evaluate(grid(), eedf, mixture.collision_data().totalCrossSection(), m_workingConditions->reducedFieldSI());
