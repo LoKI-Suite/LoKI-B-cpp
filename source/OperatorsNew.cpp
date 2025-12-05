@@ -4,6 +4,11 @@
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/GridOps.h"
+#include "LoKI-B/Integrators.h"
+#include "LoKI-B/Iterators.h"
+#include "LoKI-B/Log.h"
+#include <cmath>
 
 namespace loki
 {
@@ -427,6 +432,18 @@ void collision_integral_sup_source(const Grid &grid, const Vector &eedf, Matrix 
     }
 }
 
+template <typename I>
+void integrate_sink(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat);
+
+template <typename I>
+void integrate_source(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat);
+
+template <typename I>
+void integrate_sup_sink(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat);
+
+template <typename I>
+void integrate_sup_source(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat);
+
 InelasticOperator::InelasticOperator(const Grid &grid)
     : inelasticMatrix(grid.nCells(), grid.nCells()), superelasticMatrix(grid.nCells(), grid.nCells())
 {
@@ -681,6 +698,159 @@ void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const
     const Vector Dnodes = grid.getNodes().array() / (3. * total_cs.array());
     const Vector D = (Dnodes.head(Dnodes.size() - 1) + Dnodes.tail(Dnodes.size() - 1)) / 2.0;
     Log<Message>::Warning("Old: ", -SI::gamma * fNodegPrimeEnergyIntegral(grid, Dnodes, eedf));
+}
+
+template <typename I>
+void integrate_sink(const Grid &grid, const EedfCollision &col, const Eigen::VectorXd &eedf, Matrix &mat)
+{
+    const auto target_density = col.getTarget()->delta();
+
+    const auto &cs = *col.crossSection;
+
+    double u_start = 0.0;
+
+    GridIterator grid_iter(grid, 0.0);
+    InterpolatingIterator cs_int(cs.lookupTable().x(), cs.lookupTable().y(), u_start);
+    InterpolatingIterator eedf_int(grid.getCells(), eedf, u_start);
+
+    while (u_start < grid.uMax())
+    {
+        if (grid_iter.shouldAdvance(u_start))
+        {
+            grid_iter.advance();
+        }
+        if (cs_int.shouldAdvance(u_start))
+        {
+            cs_int.advance();
+        }
+        if (eedf_int.shouldAdvance(u_start))
+        {
+            eedf_int.advance();
+        }
+
+        double u_end = std::min({grid_iter.xHigh(), cs_int.switchOn(), eedf_int.switchOn()});
+
+        I::setRows(u_start, u_end, 0.0, -target_density, grid_iter, cs_int, eedf_int, mat);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void integrate_source(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat)
+{
+    const auto target_density = col.getTarget()->delta();
+    const auto &cs = *col.crossSection;
+
+    double u_start = 0.0;
+    const double u_offset = cs.threshold();
+
+    GridIterator grid_iter(grid, 0.0);
+    InterpolatingIterator cs_int(cs.lookupTable().x(), cs.lookupTable().y(), u_offset);
+    InterpolatingIterator eedf_int(grid.getCells(), eedf, u_offset);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        if (grid_iter.shouldAdvance(u_start))
+        {
+            grid_iter.advance();
+        }
+        if (cs_int.shouldAdvance(u_start))
+        {
+            cs_int.advance();
+        }
+        if (eedf_int.shouldAdvance(u_start))
+        {
+            eedf_int.advance();
+        }
+
+        double u_end = std::min({grid_iter.xHigh(), cs_int.switchOn(), eedf_int.switchOn()});
+
+        I::setRows(u_start, u_end, u_offset, target_density, grid_iter, cs_int, eedf_int, mat);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void integrate_sup_sink(const Grid &grid, const EedfCollision &col, const Eigen::VectorXd &eedf, Matrix &mat)
+{
+    const double product_density = col.m_rhsHeavyStates[0]->delta();
+    const double swRatio = col.getTarget()->statisticalWeight / col.m_rhsHeavyStates[0]->statisticalWeight;
+
+    const auto &cs = *col.crossSection;
+
+    double u_start = 0.0;
+    const double u_offset = cs.threshold();
+
+    GridIterator grid_iter(grid, 0.0);
+    InterpolatingIterator cs_int(cs.lookupTable().x(), cs.lookupTable().y(), u_offset);
+    InterpolatingIterator eedf_int(grid.getCells(), eedf, 0.0);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        if (grid_iter.shouldAdvance(u_start))
+        {
+            grid_iter.advance();
+        }
+        if (cs_int.shouldAdvance(u_start))
+        {
+            cs_int.advance();
+        }
+        if (eedf_int.shouldAdvance(u_start))
+        {
+            eedf_int.advance();
+        }
+
+        double u_end = std::min({grid_iter.xHigh(), cs_int.switchOn(), eedf_int.switchOn()});
+
+        I::setRows(u_start, u_end, u_offset, -product_density * swRatio, grid_iter, cs_int, eedf_int, mat);
+
+        u_start = u_end;
+    }
+}
+
+template <typename I>
+void integrate_sup_source(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat)
+{
+    const double product_density = col.m_rhsHeavyStates[0]->delta();
+    const double swRatio = col.getTarget()->statisticalWeight / col.m_rhsHeavyStates[0]->statisticalWeight;
+
+    const auto &cs = *col.crossSection;
+
+    double u_start = 0.0;
+    const double u_offset = cs.threshold();
+
+    GridIterator grid_iter(grid, u_offset);
+    InterpolatingIterator cs_int(cs.lookupTable().x(), cs.lookupTable().y(), u_offset);
+    InterpolatingIterator eedf_int(grid.getCells(), eedf, 0.0);
+
+    while (u_start + u_offset < grid.uMax())
+    {
+        if (grid_iter.shouldAdvance(u_start + u_offset))
+        {
+            grid_iter.advance();
+        }
+        if (cs_int.shouldAdvance(u_start))
+        {
+            cs_int.advance();
+        }
+        if (eedf_int.shouldAdvance(u_start))
+        {
+            eedf_int.advance();
+        }
+
+        double u_end = std::min({grid_iter.xHigh() - u_offset, cs_int.switchOn(), eedf_int.switchOn()});
+
+        if (u_start == u_end)
+        {
+            exit(1);
+        }
+
+        I::setRows(u_start, u_end, u_offset, product_density * swRatio, grid_iter, cs_int, eedf_int, mat);
+
+        u_start = u_end;
+    }
 }
 } // namespace experimental
 } // namespace loki
