@@ -56,7 +56,7 @@ class SpatialGrowthOperator : public DriftDiffusionOperator
 {
   public:
     SpatialGrowthOperator(const Grid &grid);
-    void evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN);
+    void evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN, const Matrix &ionizationMatrix, const Matrix &attachmentMatrix);
 };
 
 } // namespace experimental
