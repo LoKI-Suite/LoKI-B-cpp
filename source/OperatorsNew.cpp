@@ -596,8 +596,10 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
             case IonizationOperatorType::conservative:
                 // collision_integral_source(grid, eedf, ionizationMatrix, *collision);
                 integrate_source<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
+                break;
             case IonizationOperatorType::equalSharing:
                 equal_sharing_source(grid, eedf, ionizationMatrix, *collision);
+                break;
             }
         }
     }
