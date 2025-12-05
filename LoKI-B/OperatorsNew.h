@@ -52,5 +52,12 @@ class IonizationOperator
     Matrix ionizationMatrix;
 };
 
+class SpatialGrowthOperator : public DriftDiffusionOperator
+{
+  public:
+    SpatialGrowthOperator(const Grid &grid);
+    void evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN);
+};
+
 } // namespace experimental
 } // namespace loki

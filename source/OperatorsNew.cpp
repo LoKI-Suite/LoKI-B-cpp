@@ -580,6 +580,10 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
     }
 }
 
+SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : DriftDiffusionOperator(grid)
+{
+}
+
 double mobility_integral(double u, double u_sig_start, double sig_start, double sig_slope, double u_f_start,
                          double u_f_end, double f_start, double f_div, double du)
 {
@@ -669,6 +673,14 @@ double integrate_mobility(const Grid &grid, const Vector &eedf, const Vector &to
     }
 
     return -mobility;
+}
+
+void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN)
+{
+    Log<Message>::Warning("New: ", SI::gamma * integrate_mobility(grid, eedf, total_cs));
+    const Vector Dnodes = grid.getNodes().array() / (3. * total_cs.array());
+    const Vector D = (Dnodes.head(Dnodes.size() - 1) + Dnodes.tail(Dnodes.size() - 1)) / 2.0;
+    Log<Message>::Warning("Old: ", -SI::gamma * fNodegPrimeEnergyIntegral(grid, Dnodes, eedf));
 }
 } // namespace experimental
 } // namespace loki
