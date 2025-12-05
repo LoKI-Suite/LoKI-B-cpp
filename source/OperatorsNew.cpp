@@ -365,8 +365,25 @@ SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : DriftDiffusionO
 void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
                                      const Matrix &ionizationMatrix, const Matrix &attachmentMatrix)
 {
+    const auto coefsCI = SI::gamma * grid.duCells().transpose() * (ionizationMatrix + attachmentMatrix);
+    const double nu_eff = eedf.dot(coefsCI);
+
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+
+    const Vector D0 = grid.getCells().array() / (3. * total_cs_cells).array();
     const Vector D0Nodes = grid.getNodes().array() / (3. * total_cs).array();
+
+    // This is 33a from \cite Manual_1_0_0
+    const double ND = SI::gamma * energyIntegral(grid, D0, eedf);
     const double muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid, D0Nodes, eedf) * EoN;
+
+    const double discriminant = muE * muE - 4 * nu_eff * ND;
+    const double alphaRedEff = (discriminant < 0.) ? nu_eff / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
+
+    const auto shared_term = D0Nodes.array() * EoN * alphaRedEff;
+
+    this->drift_coeff = -D0Nodes.array() * alphaRedEff * alphaRedEff - shared_term;
+    this->diff_coeff = -shared_term;
 
     Log<Message>::Warning("Mobility: ", muE / EoN);
 }
