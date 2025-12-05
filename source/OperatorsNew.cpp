@@ -580,5 +580,95 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
     }
 }
 
+double mobility_integral(double u, double u_sig_start, double sig_start, double sig_slope, double u_f_start,
+                         double u_f_end, double f_start, double f_div, double du)
+{
+    double value = 0.;
+    // Linear
+    if (sig_slope == 0.)
+    {
+        value = f_div * (1. / 6. * u * u / sig_start);
+    }
+    else
+    {
+        value = f_div / (3. * sig_slope * sig_slope) *
+                (sig_slope * u +
+                 (-sig_start + sig_slope * u_sig_start) * std::log(sig_start + sig_slope * (u - u_sig_start)));
+    }
+    // Logarithmic
+    // NOTE: This is unstable.
+    // if (sig_slope == 0.)
+    // {
+    //     value = std::exp((u - u_f_start) * f_div) * f_start * (f_div * u - 1.0) / (3 * f_div * sig_start);
+    // }
+    // else
+    // {
+    //     value = std::exp(-f_div * (sig_start / sig_slope + u_f_start)) * f_start / (3. * sig_slope * sig_slope) *
+    //             (std::exp(f_div * (sig_start / sig_slope + u)) * sig_slope -
+    //              std::exp(f_div * u_sig_start) * f_div * (sig_start - sig_slope * u_sig_start) *
+    //                  std::expint(f_div * (sig_start / sig_slope + u - u_sig_start)));
+    // }
+
+    return value;
+}
+
+double integrate_mobility(const Grid &grid, const Vector &eedf, const Vector &total_cs)
+{
+    // The grid iterator iterates over the cells of the grid.
+    Grid::Index i_grid = 0;
+
+    // Compute initial f_slope using forward differences.
+    double f_slope = (eedf[1] - eedf[0]) / (grid.getCell(1) - grid.getCell(0));
+    // double f_slope = (std::log(eedf[1]) - std::log(eedf[0])) / (grid.getCell(1) - grid.getCell(0));
+    double f_start = eedf[0];
+    double u_f_start = grid.getCell(0);
+    double u_f_end = grid.getCell(1);
+
+    double sig_slope = (total_cs[1] - total_cs[0]) / (grid.getNode(1) - grid.getNode(0));
+    double u_sig_start = 0.;
+    double sig_start = total_cs[0];
+
+    double u_start = 0;
+
+    double mobility = 0;
+
+    while (u_start < grid.uMax())
+    {
+        // If the current integration domain is outside the current grid cell,
+        // move to the next grid cell.
+        if (u_start >= grid.getNode(i_grid + 1))
+        {
+            i_grid++;
+            u_f_start = grid.getCell(i_grid);
+            u_f_end = grid.getCell(i_grid + 1);
+
+            sig_slope = (total_cs[i_grid + 1] - total_cs[i_grid]) / (grid.getNode(i_grid + 1) - grid.getNode(i_grid));
+            u_sig_start = grid.getNode(i_grid);
+            sig_start = total_cs[i_grid];
+        }
+        // If the current integration domain starts at the current cell center,
+        // recompute the slope of the eedf.
+        if (u_start == grid.getCell(i_grid) && i_grid < grid.nCells() - 1)
+        {
+            f_slope = (eedf[i_grid + 1] - eedf[i_grid]) / (grid.getCell(i_grid + 1) - grid.getCell(i_grid));
+            // f_slope = (std::log(eedf[i_grid + 1]) - std::log(eedf[i_grid])) /
+            //           (grid.getCell(i_grid + 1) - grid.getCell(i_grid));
+        }
+
+        // The end of the current integration domain is either the next cell
+        // center, the next cross section entry, or the grid boundary.
+        const double u_end =
+            std::min(u_start >= grid.getCell(i_grid) ? grid.getNode(i_grid + 1) : grid.getCell(i_grid), grid.uMax());
+
+        mobility += mobility_integral(u_end, u_sig_start, sig_start, sig_slope, u_f_start, u_f_end, f_start, f_slope,
+                                      u_end - u_start) -
+                    mobility_integral(u_start, u_sig_start, sig_start, sig_slope, u_f_start, u_f_end, f_start, f_slope,
+                                      u_end - u_start);
+
+        u_start = u_end;
+    }
+
+    return -mobility;
+}
 } // namespace experimental
 } // namespace loki
