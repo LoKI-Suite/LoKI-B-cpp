@@ -1,5 +1,5 @@
-#This custom target_add_test function also handles target relocation 
-#by the CMAKE_RUNTIME_OUTPUT_DIRECTORY directive. see also: 
+#This custom target_add_test function also handles target relocation
+#by the CMAKE_RUNTIME_OUTPUT_DIRECTORY directive. see also:
 #https://stackoverflow.com/questions/21394768/cmake-cannot-find-test-if-cmake-runtime-output-directory-is-changed
 function (target_add_test target)
   add_test (NAME ${target} COMMAND $<TARGET_FILE:${target}>)
@@ -22,94 +22,94 @@ if(LOKIB_COVERAGE)
 endif()
 
 add_executable(bolsig_extract bolsig_extract.cpp)
-target_link_libraries(bolsig_extract PRIVATE loki-b)
+target_link_libraries(bolsig_extract PRIVATE loki_cpp::loki-b)
 
 add_executable(compare_tables compare_tables.cpp)
-target_link_libraries(compare_tables PRIVATE loki-b)
+target_link_libraries(compare_tables PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_derivatives test_derivatives.cpp)
-target_link_libraries(loki_test_derivatives PRIVATE loki-b)
+target_link_libraries(loki_test_derivatives PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_eedf_utilities test_eedf_utilities.cpp)
-target_link_libraries(loki_test_eedf_utilities PRIVATE loki-b)
+target_link_libraries(loki_test_eedf_utilities PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_gas_properties test_gas_properties.cpp)
-target_link_libraries(loki_test_gas_properties PRIVATE loki-b)
+target_link_libraries(loki_test_gas_properties PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_interpolation test_interpolation.cpp)
-target_link_libraries(loki_test_interpolation PRIVATE loki-b)
+target_link_libraries(loki_test_interpolation PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_offside_to_json test_offside_to_json.cpp)
-target_link_libraries(loki_test_offside_to_json PRIVATE loki-b)
+target_link_libraries(loki_test_offside_to_json PRIVATE loki_cpp::loki-b)
 
 add_executable(test_druyvesteyn test_druyvesteyn.cpp)
-target_link_libraries(test_druyvesteyn PRIVATE loki-b)
+target_link_libraries(test_druyvesteyn PRIVATE loki_cpp::loki-b)
 
 add_executable(test_ee test_ee.cpp)
-target_link_libraries(test_ee PRIVATE loki-b)
+target_link_libraries(test_ee PRIVATE loki_cpp::loki-b)
 
 add_executable(test_ee_relaxation test_ee_relaxation.cpp)
-target_link_libraries(test_ee_relaxation PRIVATE loki-b)
+target_link_libraries(test_ee_relaxation PRIVATE loki_cpp::loki-b)
 
 add_executable(test_events test_events.cpp)
-target_link_libraries(test_events PRIVATE loki-b)
+target_link_libraries(test_events PRIVATE loki_cpp::loki-b)
 
 add_executable(test_grid test_grid.cpp)
-target_link_libraries(test_grid PRIVATE loki-b)
+target_link_libraries(test_grid PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_integrals test_integrals.cpp)
-target_link_libraries(loki_test_integrals PRIVATE loki-b)
+target_link_libraries(loki_test_integrals PRIVATE loki_cpp::loki-b)
 
 add_executable(test_linalg test_linalg.cpp)
-target_link_libraries(test_linalg PRIVATE loki-b)
+target_link_libraries(test_linalg PRIVATE loki_cpp::loki-b)
 
 add_executable(test_lut test_lut.cpp)
-target_link_libraries(test_lut PRIVATE loki-b)
+target_link_libraries(test_lut PRIVATE loki_cpp::loki-b)
 
 add_executable(test_parser test_parser.cpp)
-target_link_libraries(test_parser PRIVATE loki-b)
+target_link_libraries(test_parser PRIVATE loki_cpp::loki-b)
 
 add_executable(test_json_state_parsing test_json_state_parsing.cpp)
-target_link_libraries(test_json_state_parsing PRIVATE loki-b)
+target_link_libraries(test_json_state_parsing PRIVATE loki_cpp::loki-b)
 
 add_executable(loki_test_range test_range.cpp)
-target_link_libraries(loki_test_range PRIVATE loki-b)
+target_link_libraries(loki_test_range PRIVATE loki_cpp::loki-b)
 
 add_executable(test_reaction_format test_reaction_format.cpp)
-target_link_libraries(test_reaction_format PRIVATE loki-b)
+target_link_libraries(test_reaction_format PRIVATE loki_cpp::loki-b)
 
 add_executable(test_statebase test_statebase.cpp)
-target_link_libraries(test_statebase PRIVATE loki-b)
+target_link_libraries(test_statebase PRIVATE loki_cpp::loki-b)
 
 add_executable(test_trans_coefs test_trans_coefs.cpp)
-target_link_libraries(test_trans_coefs PRIVATE loki-b)
+target_link_libraries(test_trans_coefs PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_elastic test_nonuniform_elastic.cpp)
-target_link_libraries(test_nonuniform_elastic PRIVATE loki-b)
+target_link_libraries(test_nonuniform_elastic PRIVATE loki_cpp::loki-b)
 
 add_executable(test_maxwell test_maxwell.cpp)
-target_link_libraries(test_maxwell PRIVATE loki-b)
+target_link_libraries(test_maxwell PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_field test_nonuniform_field.cpp)
-target_link_libraries(test_nonuniform_field PRIVATE loki-b)
+target_link_libraries(test_nonuniform_field PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_druyvesteyn test_nonuniform_druyvesteyn.cpp)
-target_link_libraries(test_nonuniform_druyvesteyn PRIVATE loki-b)
+target_link_libraries(test_nonuniform_druyvesteyn PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_CAR test_nonuniform_CAR.cpp)
-target_link_libraries(test_nonuniform_CAR PRIVATE loki-b)
+target_link_libraries(test_nonuniform_CAR PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_inelastic test_nonuniform_inelastic.cpp)
-target_link_libraries(test_nonuniform_inelastic PRIVATE loki-b)
+target_link_libraries(test_nonuniform_inelastic PRIVATE loki_cpp::loki-b)
 
 add_executable(test_nonuniform_operator_distribution test_nonuniform_operator_distribution.cpp)
-target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki-b)
+target_link_libraries(test_nonuniform_operator_distribution PRIVATE loki_cpp::loki-b)
 
 add_executable(test_invalid_inputs test_invalid_inputs.cpp)
-target_link_libraries(test_invalid_inputs PRIVATE loki-b)
+target_link_libraries(test_invalid_inputs PRIVATE loki_cpp::loki-b)
 
 add_executable(test_valid_inputs test_valid_inputs.cpp)
-target_link_libraries(test_valid_inputs PRIVATE loki-b)
+target_link_libraries(test_valid_inputs PRIVATE loki_cpp::loki-b)
 
 target_add_test(loki_test_offside_to_json)
 target_add_test(loki_test_derivatives)
@@ -146,8 +146,8 @@ target_add_test(test_valid_inputs)
 
 if (LOKIB_COVERAGE)
   setup_target_for_coverage_gcovr_xml(
-    NAME coverage 
-    EXECUTABLE ctest --test-dir tests 
+    NAME coverage
+    EXECUTABLE ctest --test-dir tests
     BASE_DIRECTORY "${PROJECT_SOURCE_DIR}"
     DEPENDENCIES ${LOKIB_COVERAGE_TESTS}
   )

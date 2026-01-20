@@ -30,13 +30,13 @@ target_sources(loki-b PRIVATE
 
 target_include_directories(loki-b  PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:.>  
+  $<INSTALL_INTERFACE:.>
 )
 
 target_compile_definitions(loki-b PUBLIC LOKIB_BUILDING_LIBLOKIB)
 
 if(LOKIB_USE_BUILTIN_NLOHMANN_JSON)
-  target_include_directories(loki-b PUBLIC 
+  target_include_directories(loki-b PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/nlohmann-3.7.0>
   )
 else()
@@ -44,7 +44,7 @@ else()
 endif()
 
 if(LOKIB_USE_BUILTIN_EIGEN)
-  target_include_directories(loki-b PUBLIC 
+  target_include_directories(loki-b PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/eigen-3.4.0>
   )
 else()
@@ -53,7 +53,7 @@ endif()
 
 if(LOKIB_USE_MKL)
   target_link_libraries(loki-b PUBLIC MKL::MKL)
-  target_compile_definitions(loki-b PUBLIC EIGEN_USE_MKL_ALL)  
+  target_compile_definitions(loki-b PUBLIC EIGEN_USE_MKL_ALL)
 endif()
 
 if(LOKIB_USE_OPENBLAS)
@@ -61,7 +61,7 @@ if(LOKIB_USE_OPENBLAS)
   #may be replaced with a more prefered:
   #target_link_libaries(loki-b INTERFACE BLAS::BLAS LAPACK::LAPACK)
   target_link_libraries(loki-b PUBLIC ${LAPACK_LINKER_FLAGS} ${BLAS_LIBRARIES}   )
-  target_link_options(loki-b  PUBLIC ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})  
+  target_link_options(loki-b  PUBLIC ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
   target_compile_definitions(loki-b  PUBLIC EIGEN_USE_LAPACKE EIGEN_USE_BLAS)
 endif()
 
@@ -75,6 +75,8 @@ if(LOKIB_USE_HDF5)
         target_link_libraries(loki-b PUBLIC HighFive)
 endif()
 
+#Create alias for the loki-b target. This is the preferred target to link against
+add_library(loki_cpp::loki-b ALIAS loki-b)
 
 install(
    TARGETS loki-b

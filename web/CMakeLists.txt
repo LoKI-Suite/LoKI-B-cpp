@@ -3,7 +3,7 @@ message(STATUS "Compiling to WebAssembly.")
 add_executable(loki_bindings bindings.cpp)
 
 target_include_directories(loki_bindings PRIVATE loki-b /usr/lib/emscripten/system/include)
-target_link_libraries(loki_bindings PRIVATE loki-b)
+target_link_libraries(loki_bindings PRIVATE loki_cpp::loki-b)
 
 set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
   -s ASSERTIONS=1 \
@@ -27,8 +27,8 @@ set_target_properties(loki_bindings PROPERTIES LINK_FLAGS "\
 # FIXME: The generated files should be placed in `web/wasm`. However, this is
 # currently not possible due to a bug in emscripten
 # (https://github.com/emscripten-core/emscripten/issues/16240).
-set_target_properties(loki_bindings 
-  PROPERTIES 
+set_target_properties(loki_bindings
+  PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
   LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
   RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/web"
