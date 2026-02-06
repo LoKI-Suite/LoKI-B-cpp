@@ -1298,7 +1298,7 @@ void ElectronKineticsBoltzmann::evaluateSwarmParameters()
 
     swarmParameters.Te = 2. / 3. * swarmParameters.meanEnergy;
 
-    // TODO: is this correct? (simulations after the first will have a different value for Te).
+    /// \todo is this correct? (simulations after the first will have a different value for Te).
     m_workingConditions->updateElectronTemperature(swarmParameters.Te);
 }
 

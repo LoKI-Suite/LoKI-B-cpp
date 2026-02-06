@@ -52,7 +52,7 @@ inline void reduceRowToHess(double *A, const uint32_t a, const uint32_t b, const
     }
 }
 
-/* TODO: [Optional] Update Hessenberg reduction such that it also alters the b vector.
+/** \todo [Optional] Update Hessenberg reduction such that it also alters the b vector.
  *
  * Idea: Use the 'bandgap' between superelastic diagonals to optimize the algorithm.
  *
@@ -148,7 +148,7 @@ inline void hessenbergReductionOptimal(double *A, const uint32_t *c, uint32_t n,
                 }
             }
 
-            // TODO: CHECK BOUNDS
+            /// \todo CHECK BOUNDS
             for (uint32_t j = optRows; j < g[i]; ++j)
             {
                 //                        std::cerr << "optRows: " << optRows << std::endl;

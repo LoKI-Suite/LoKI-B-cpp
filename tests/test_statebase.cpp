@@ -84,7 +84,7 @@ int main()
     // Spaces are stripped
     test_state_string(gasProps, "N2( + , X , v=0 , J=2 )", true, "N2(+,X,v=0,J=2)");
 
-    // TODO: This currently passes, do we want it to fail?
+    /// \todo This currently passes, do we want it to fail?
     test_state_string(gasProps, "N2(v=0)", true, "N2(v=0)"); // produces state type electronic (not vibrational)
 
     // Things that should fail:

@@ -304,7 +304,7 @@ if(with-hdf5)
         # "H5Oget_info_vers" is not defined, evaluates to 0 [-Werror=undef]
         #       if (H5Oget_info_vers < 3)
         #
-	#TODO: create issue on the HighFive Github page
+	# TODO: create issue on the HighFive Github page
 	#  target_compile_definitions(HighFive INTERFACE H5Oget_info_vers=3)
     endif()
     #Allow direct dumping of Eigen objects

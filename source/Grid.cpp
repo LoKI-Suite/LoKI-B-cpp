@@ -154,7 +154,7 @@ void Grid::updateMaxEnergy(double uMax)
 
 void Grid::updateMaxEnergyNonuniform(double uMax, const EedfMixture &mixture)
 {
-    // TODO: Build new nonuniform energy grid.
+    /// \todo Build new nonuniform energy grid.
     Log<Message>::Warning("Combining the smart grid feature with a nonuniform grid is not yet handled correctly.");
 
     updateMaxEnergy(uMax);

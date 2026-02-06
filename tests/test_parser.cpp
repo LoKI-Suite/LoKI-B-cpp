@@ -1,7 +1,5 @@
 /** \file
  *  Unit tests for Parse.h
- *  \todo Add more tests, use a testing framework that can be reused for other
- *  test file as well
  *
  *  \author Jan van Dijk
  *  \date   November 2020
