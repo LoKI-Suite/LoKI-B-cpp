@@ -7,6 +7,7 @@
 #include "LoKI-B/GridOps.h"
 #include "LoKI-B/Integrators.h"
 #include "LoKI-B/Iterators.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include <cmath>
 #include <stdexcept>
@@ -362,6 +363,137 @@ SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : DriftDiffusionO
 {
 }
 
+double compute_alpha_eff(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0, const Vector &D0Faces, double EoN) {
+    const double nu_eff = eedf.dot(coefsCI);
+
+    // This is 33a from \cite Manual_1_0_0
+    const double ND = SI::gamma * energyIntegral(grid, D0, eedf);
+    // const double muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid, D0Faces, eedf) * EoN;
+    const double muE = -SI::gamma * fgPrimeEnergyIntegral(grid, D0, eedf) * EoN;
+
+    const double discriminant = muE * muE - 4 * nu_eff * ND;
+    const double alphaRedEff = (discriminant < 0.) ? nu_eff / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
+    
+    return alphaRedEff;
+}
+
+Vector alpha_eff_jacobian_analytical(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0,
+                                     const Vector &D0Faces, double EoN)
+{
+    const double nu_eff = eedf.dot(coefsCI);
+
+    // This is 33a from \cite Manual_1_0_0
+    const double ND = SI::gamma * energyIntegral(grid, D0, eedf);
+    // const double muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid, D0Faces, eedf) * EoN;
+    const double muE = -SI::gamma * fgPrimeEnergyIntegral(grid, D0, eedf) * EoN;
+
+    const double discriminant = muE * muE - 4 * nu_eff * ND;
+    const double alpha_eff = (discriminant < 0.) ? nu_eff / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
+
+    Matrix df_du_cells_jac = Matrix::Zero(grid.nCells(), grid.nCells());
+    Matrix f_faces_jac = Matrix::Zero(grid.nCells() + 1, grid.nCells());
+
+    for (Vector::Index i = 1; i < grid.nCells() - 1; ++i)
+    {
+        df_du_cells_jac(i, i - 1) = -1. / (grid.duNode(i) + grid.duNode(i + 1));
+        df_du_cells_jac(i, i + 1) = 1. / (grid.duNode(i) + grid.duNode(i + 1));
+    }
+    df_du_cells_jac(0, 0) = -1. / grid.duNode(1);
+    df_du_cells_jac(0, 1) = 1. / grid.duNode(1);
+    df_du_cells_jac(grid.nCells() - 1, grid.nCells() - 1) = 1. / grid.duNode(grid.nCells() - 1);
+    df_du_cells_jac(grid.nCells() - 1, grid.nCells() - 2) = -1. / grid.duNode(grid.nCells() - 1);
+
+    const Vector mobility_jacobian = -SI::gamma * D0.cwiseProduct(grid.duCells()).transpose() * df_du_cells_jac;
+    const Vector diffusion_jacobian = SI::gamma * D0.cwiseProduct(grid.duCells());
+
+    Log<Message>::Notify("Based on Jacobian: ", EoN * mobility_jacobian.transpose() * eedf);
+    Log<Message>::Notify("Normal: ", muE);
+    // Log<Message>::Notify("Based on Jacobian: ", diffusion_jacobian.transpose() * eedf);
+    // Log<Message>::Notify("Normal: ", ND);
+    // Log<Message>::Notify("CoefsCI: ", coefsCI.transpose());
+
+    if (discriminant < 0.)
+    {
+        return coefsCI.transpose() / muE - (nu_eff * EoN * mobility_jacobian.transpose()) / (muE * muE);
+    }
+    else
+    {
+        return -diffusion_jacobian.transpose() * alpha_eff / ND +
+               (EoN * mobility_jacobian.transpose() -
+                (muE * EoN * mobility_jacobian.transpose() -
+                 2 * (nu_eff * diffusion_jacobian.transpose() + ND * coefsCI.transpose())) /
+                    std::sqrt(muE * muE - 4. * ND * nu_eff)) /
+                   (2. * ND);
+    }
+}
+
+Vector alpha_eff_jacobian(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0, const Vector &D0Faces, double EoN) {
+    Vector eedf_tmp = eedf;
+
+    const double zeta = 1e-3;
+
+    Vector jacobian(eedf.size());
+
+    for (Vector::Index i = 0; i < eedf.size(); ++i) {
+        eedf_tmp[i] -= eedf[i] * zeta;
+        const auto alpha_min = compute_alpha_eff(grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
+        eedf_tmp[i] = eedf[i];
+
+        eedf_tmp[i] += eedf[i] * zeta;
+        const auto alpha_plus = compute_alpha_eff(grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
+        eedf_tmp[i] = eedf[i];
+
+        jacobian[i] = (alpha_plus - alpha_min) / (2. * eedf[i] * zeta);
+    }
+
+    return jacobian;
+}
+
+void compute_spatial_growth_vector(Vector &vector, const Grid &grid, const Vector &eedf, const Vector &coefsCI,
+                                   const Vector &D0, const Vector &D0Faces, double EoN)
+{
+    const double alpha_eff = compute_alpha_eff(grid, eedf, coefsCI, D0, D0Faces, EoN);
+
+    Vector df_du(grid.nCells() + 1);
+
+    df_du.segment(1, grid.nCells() - 1) = (eedf.tail(grid.nCells() - 1) - eedf.head(grid.nCells() - 1))
+                                              .cwiseQuotient(grid.duNodes().segment(1, grid.nCells() - 1));
+    df_du[0] = df_du[1];
+    df_du[grid.nCells()] = df_du[grid.nCells() - 1];
+
+    Vector f_faces(grid.nCells() + 1);
+
+    f_faces.segment(1, grid.nCells() - 1) = grid.duCells()
+                                                .tail(grid.nCells() - 1)
+                                                .cwiseQuotient(2. * grid.duNodes().segment(1, grid.nCells() - 1))
+                                                .cwiseProduct(eedf.head(grid.nCells() - 1)) +
+                                            grid.duCells()
+                                                .head(grid.nCells() - 1)
+                                                .cwiseQuotient(2. * grid.duNodes().segment(1, grid.nCells() - 1))
+                                                .cwiseProduct(eedf.tail(grid.nCells() - 1));
+    // Forward
+    f_faces[0] =
+        (1 + grid.duCell(0) / (2. * grid.duNode(1))) * eedf[0] - grid.duCell(0) / (2. * grid.duNode(1)) * eedf[1];
+    // Backward
+    f_faces[grid.nCells()] =
+        (1 + grid.duCell(grid.nCells() - 1) / (2. * grid.duNode(grid.nCells() - 1))) * eedf[grid.nCells() - 1] -
+        grid.duCell(grid.nCells() - 1) / (2. * grid.duNode(grid.nCells() - 1)) * eedf[grid.nCells() - 2];
+
+    Vector df_du_cells = (f_faces.tail(grid.nCells()) - f_faces.head(grid.nCells())).cwiseQuotient(grid.duCells());
+
+    // FIRST TERM
+    vector = -alpha_eff * alpha_eff * D0.cwiseProduct(eedf);
+
+    // SECOND TERM
+    vector -= alpha_eff * EoN * D0.cwiseProduct(df_du_cells);
+
+    // THIRD TERM
+    vector -= alpha_eff * EoN *
+              (D0Faces.tail(grid.nCells()).cwiseProduct(f_faces.tail(grid.nCells())) -
+               D0Faces.head(grid.nCells()).cwiseProduct(f_faces.head(grid.nCells())))
+                  .cwiseQuotient(grid.duCells());
+}
+
 void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
                                      const Matrix &ionizationMatrix, const Matrix &attachmentMatrix)
 {
@@ -385,7 +517,149 @@ void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const
     this->drift_coeff = -D0Nodes.array() * alphaRedEff * alphaRedEff - shared_term;
     this->diff_coeff = -shared_term;
 
+    Matrix spatial_growth_jacobian(eedf.size(), eedf.size());
+
+    // Semi-analytical Jacobian using the numerical reduced Townsend Jacobian.
+    
+
+    // Numerical computation of the spatial growth jacobian
+    Matrix spat_growth_min(eedf.size(), eedf.size());
+    Matrix spat_growth_plus(eedf.size(), eedf.size());
+
+    // FIRST TERM
+    
+
+    
+
     Log<Message>::Warning("Mobility: ", muE / EoN);
+}
+
+void SpatialGrowthOperator::compute_vector(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                         const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Vector &storage) {
+    const auto coefsCI = SI::gamma * grid.duCells().transpose() * (ionizationMatrix + attachmentMatrix);
+
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+
+    const Vector D0 = grid.getCells().array() / (3. * total_cs_cells).array();
+    const Vector D0Faces = grid.getNodes().array() / (3. * total_cs).array();
+
+    compute_spatial_growth_vector(storage, grid, eedf, coefsCI, D0, D0Faces, EoN);
+}
+
+void SpatialGrowthOperator::jacobian(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                                     const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Matrix &storage)
+{
+    Vector eedf_tmp = eedf;
+    const double zeta = 1e-3;
+
+    Vector spat_growth_min = eedf;
+    Vector spat_growth_plus = eedf;
+
+    const auto coefsCI = SI::gamma * grid.duCells().transpose() * (ionizationMatrix + attachmentMatrix);
+
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+
+    const Vector D0 = grid.getCells().array() / (3. * total_cs_cells).array();
+    const Vector D0Faces = grid.getNodes().array() / (3. * total_cs).array();
+
+    for (Vector::Index i = 0; i < grid.nCells(); ++i) {
+        eedf_tmp[i] -= eedf[i] * zeta;
+        compute_spatial_growth_vector(spat_growth_min, grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
+        eedf_tmp[i] = eedf[i];
+
+        eedf_tmp[i] += eedf[i] * zeta;
+        compute_spatial_growth_vector(spat_growth_plus, grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
+        eedf_tmp[i] = eedf[i];
+
+        storage.col(i) = (spat_growth_plus - spat_growth_min) / (2. * eedf[i] * zeta);
+    }
+}
+
+void SpatialGrowthOperator::analytical_jacobian(const Grid &grid, const Vector &eedf, const Vector &total_cs,
+                                                double EoN, const Matrix &ionizationMatrix,
+                                                const Matrix &attachmentMatrix, Matrix &storage)
+{
+    const auto coefsCI = SI::gamma * grid.duCells().transpose() * (ionizationMatrix + attachmentMatrix);
+
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+
+    const Vector D0 = grid.getCells().array() / (3. * total_cs_cells).array();
+    const Vector D0Faces = grid.getNodes().array() / (3. * total_cs).array();
+
+    // Vector df_du(grid.nCells() + 1);
+
+    // df_du.segment(1, grid.nCells() - 1) = (eedf.tail(grid.nCells() - 1) - eedf.head(grid.nCells() - 1))
+    //                                           .cwiseQuotient(grid.duNodes().segment(1, grid.nCells() - 1));
+    // df_du[0] = df_du[1];
+    // df_du[grid.nCells()] = df_du[grid.nCells() - 1];
+
+    Vector f_faces = Vector::Zero(grid.nCells() + 1);
+    Matrix f_faces_jac = Matrix::Zero(grid.nCells() + 1, grid.nCells());
+
+    for (Vector::Index i = 0; i < grid.nCells() + 1; ++i)
+    {
+        if (i == 0)
+        {
+            f_faces_jac(i, i) = 1. + grid.duCell(i) / (2. * grid.duNode(i + 1));
+            f_faces_jac(i, i + 1) = -grid.duCell(i) / (2. * grid.duNode(i + 1));
+        }
+        else if (i == grid.nCells())
+        {
+            f_faces_jac(i, i - 1) = 1. + grid.duCell(i - 1) / (2. * grid.duNode(i - 1));
+            f_faces_jac(i, i - 2) = -grid.duCell(i - 1) / (2. * grid.duNode(i - 1));
+        }
+        else
+        {
+            f_faces_jac(i, i - 1) = grid.duCell(i) / (2. * grid.duNode(i));
+            f_faces_jac(i, i) = grid.duCell(i - 1) / (2. * grid.duNode(i));
+        }
+    }
+
+    f_faces.segment(1, grid.nCells() - 1) = grid.duCells()
+                                                .tail(grid.nCells() - 1)
+                                                .cwiseQuotient(2. * grid.duNodes().segment(1, grid.nCells() - 1))
+                                                .cwiseProduct(eedf.head(grid.nCells() - 1)) +
+                                            grid.duCells()
+                                                .head(grid.nCells() - 1)
+                                                .cwiseQuotient(2. * grid.duNodes().segment(1, grid.nCells() - 1))
+                                                .cwiseProduct(eedf.tail(grid.nCells() - 1));
+    // Forward
+    f_faces[0] =
+        (1 + grid.duCell(0) / (2. * grid.duNode(1))) * eedf[0] - grid.duCell(0) / (2. * grid.duNode(1)) * eedf[1];
+    // Backward
+    f_faces[grid.nCells()] =
+        (1 + grid.duCell(grid.nCells() - 1) / (2. * grid.duNode(grid.nCells() - 1))) * eedf[grid.nCells() - 1] -
+        grid.duCell(grid.nCells() - 1) / (2. * grid.duNode(grid.nCells() - 1)) * eedf[grid.nCells() - 2];
+
+    Matrix df_du_cells_jac = Matrix::Zero(grid.nCells(), grid.nCells());
+    for (Vector::Index i = 1; i < grid.nCells() - 1; ++i)
+    {
+        df_du_cells_jac(i, i - 1) = -1. / (grid.duNode(i) + grid.duNode(i + 1));
+        df_du_cells_jac(i, i + 1) = 1. / (grid.duNode(i) + grid.duNode(i + 1));
+    }
+    df_du_cells_jac(0, 0) = -1. / grid.duNode(1);
+    df_du_cells_jac(0, 1) = 1. / grid.duNode(1);
+    df_du_cells_jac(grid.nCells() - 1, grid.nCells() - 1) = 1. / grid.duNode(grid.nCells() - 1);
+    df_du_cells_jac(grid.nCells() - 1, grid.nCells() - 2) = -1. / grid.duNode(grid.nCells() - 1);
+
+    Vector df_du_cells = df_du_cells_jac * eedf;
+
+    storage.setZero();
+
+    const Vector alpha_eff_jac = alpha_eff_jacobian_analytical(grid, eedf, coefsCI, D0, D0Faces, EoN);
+    const double alpha_eff = compute_alpha_eff(grid, eedf, coefsCI, D0, D0Faces, EoN);
+
+    storage -= D0.asDiagonal() * alpha_eff *
+               (alpha_eff * Matrix::Identity(grid.nCells(), grid.nCells()) + 2 * eedf * alpha_eff_jac.transpose());
+    storage -= EoN * D0.asDiagonal() * (alpha_eff * df_du_cells_jac + df_du_cells * alpha_eff_jac.transpose());
+    storage -= EoN * grid.duCells().cwiseInverse().asDiagonal() *
+               ((D0Faces.tail(grid.nCells()).asDiagonal() * f_faces.tail(grid.nCells()) -
+                 D0Faces.head(grid.nCells()).asDiagonal() * f_faces.head(grid.nCells())) *
+                    alpha_eff_jac.transpose() +
+                alpha_eff * (D0Faces.tail(grid.nCells()).asDiagonal() * f_faces_jac.bottomRows(grid.nCells()) -
+                             D0Faces.head(grid.nCells()).asDiagonal() * f_faces_jac.topRows(grid.nCells())));
+
+    // Log<Message>::Notify(storage);
 }
 } // namespace experimental
 } // namespace loki

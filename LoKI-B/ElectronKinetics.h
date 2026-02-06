@@ -152,6 +152,8 @@ private:
     /** calls function solveEEDF, passing the eedf and grid member data and \a matrix.
      */
     void invertMatrix(Matrix &matrix);
+    void solveSpatialGrowthMatrixPicard();
+    void solveSpatialGrowthMatrixNewton();
     void solveSpatialGrowthMatrix();
     void solveTemporalGrowthMatrix();
     /** Solve the EE collision matrix while other terms are fixed.

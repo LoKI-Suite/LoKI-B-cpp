@@ -195,23 +195,23 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
 
     evaluateFieldOperator();
 
-    // if (carOperator.get())
-    // {
-    //     carOperator->evaluate(grid(),Tg,CARMatrix);
-    // }
+    if (carOperator.get())
+    {
+        carOperator->evaluate(grid(),Tg,CARMatrix);
+    }
 
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
 
-    // if (mixture.collision_data().hasCollisions(CollisionType::ionization))
-    //     ionizationOperator.evaluateIonizationOperator(grid(),mixture);
+    if (mixture.collision_data().hasCollisions(CollisionType::ionization))
+        ionizationOperator.evaluateIonizationOperator(grid(),mixture);
 
-    // if (mixture.collision_data().hasCollisions(CollisionType::attachment))
-    //     attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
+    if (mixture.collision_data().hasCollisions(CollisionType::attachment))
+        attachmentOperator.evaluateAttachmentOperator(grid(),mixture);
 
-    // if (eeOperator)
-    // {
-    //     eeOperator->initialize(grid());
-    // }
+    if (eeOperator)
+    {
+        eeOperator->initialize(grid());
+    }
 }
 
 void ElectronKineticsBoltzmann::doSolve()
@@ -229,7 +229,7 @@ void ElectronKineticsBoltzmann::doSolve()
     {
         solveSingle();
     }
-    evaluatePower();
+    // evaluatePower();
     // we finished the solution procedure. If the power balance is
     // still not good, issue a warning.
     if (power.relativeBalance > maxPowerBalanceRelError)
@@ -252,22 +252,17 @@ void ElectronKineticsBoltzmann::doSolve()
 
 void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 {
+    const double EoN = m_workingConditions->reducedFieldSI();
+
     experimental::ElasticOperator elastic_operator(grid());
     experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
     experimental::IonizationOperator ionization_operator(grid(), this->ionizationOperator.ionizationOperatorType);
     experimental::SpatialGrowthOperator spatial_growth_operator(grid());
 
-    elastic_operator.evaluate(
-        grid(),
-        mixture.collision_data().elasticCrossSection(),
-        m_workingConditions->gasTemperature()
-    );
-    field_operator.evaluate(
-        grid(),
-        mixture.collision_data().totalCrossSection(),
-        m_workingConditions->reducedFieldSI()
-    );
+    elastic_operator.evaluate(grid(), mixture.collision_data().elasticCrossSection(),
+                              m_workingConditions->gasTemperature());
+    field_operator.evaluate(grid(), mixture.collision_data().totalCrossSection(), EoN);
 
     const auto drift_coeff = elastic_operator.drift_coefficient() + field_operator.drift_coefficient();
     const auto diff_coeff = elastic_operator.diffusion_coefficient() + field_operator.diffusion_coefficient();
@@ -280,29 +275,35 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 
     // Apply the Scharfetter-Gummel discretization scheme with a zero-flux
     // boundary condition on both boundaries.
-    for (Grid::Index i = 0; i < grid().nCells(); i++) {
-        if (i > 0) {
-            baseMatrix(i, i) -= drift_coeff[i] / (1. - std::exp(peclet[i]));
-            baseMatrix(i, i - 1) -= drift_coeff[i] / (1. - std::exp(-peclet[i]));
-        }
-
-        if (i < grid().nCells() - 1) {
-            baseMatrix(i, i) += drift_coeff[i + 1] / (1. - std::exp(-peclet[i + 1]));
-            baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
-        }
-    }
-    // Central difference scheme.
-    // for (Grid::Index i = 0; i < grid().nCells(); i++) {
-    //     if (i > 0) {
-    //         baseMatrix(i, i) -= drift_coeff[i] / 2. - diff_coeff[i] / grid().duNode(i);
-    //         baseMatrix(i, i - 1) -= drift_coeff[i] / 2. + diff_coeff[i] / grid().duNode(i);
+    // for (Grid::Index i = 0; i < grid().nCells(); i++)
+    // {
+    //     if (i > 0)
+    //     {
+    //         baseMatrix(i, i) -= drift_coeff[i] / (1. - std::exp(peclet[i]));
+    //         baseMatrix(i, i - 1) -= drift_coeff[i] / (1. - std::exp(-peclet[i]));
     //     }
 
-    //     if (i < grid().nCells() - 1) {
-    //         baseMatrix(i, i) += drift_coeff[i + 1] / 2. + diff_coeff[i + 1] / grid().duNode(i + 1);
-    //         baseMatrix(i, i + 1) += drift_coeff[i + 1] / 2. - diff_coeff[i + 1] / grid().duNode(i + 1);
+    //     if (i < grid().nCells() - 1)
+    //     {
+    //         baseMatrix(i, i) += drift_coeff[i + 1] / (1. - std::exp(-peclet[i + 1]));
+    //         baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
     //     }
     // }
+    // Central difference scheme.
+    for (Grid::Index i = 0; i < grid().nCells(); i++)
+    {
+        if (i > 0)
+        {
+            baseMatrix(i, i) -= drift_coeff[i] / 2. - diff_coeff[i] / grid().duNode(i);
+            baseMatrix(i, i - 1) -= drift_coeff[i] / 2. + diff_coeff[i] / grid().duNode(i);
+        }
+
+        if (i < grid().nCells() - 1)
+        {
+            baseMatrix(i, i) += drift_coeff[i + 1] / 2. + diff_coeff[i + 1] / grid().duNode(i + 1);
+            baseMatrix(i, i + 1) += drift_coeff[i + 1] / 2. - diff_coeff[i + 1] / grid().duNode(i + 1);
+        }
+    }
 
     // NOTE: Solution requires iteration when using logarithmic for the EEDF in the inelastic
     // operators.
@@ -328,7 +329,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     //     // const auto N = grid().nCells() - 1;
     //     // boltzmannMatrix.row(N).setZero();
     //     // boltzmannMatrix(N, N) = 1;
-    //     // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N - 2));
+    //     // boltzmannMatrix(N, N - 1) = -std::pow(eedf[N - 1] / eedf[N - 2], grid().duNode(N - 1) / grid().duNode(N -
+    //     2));
 
     //     invertMatrix(boltzmannMatrix);
 
@@ -343,15 +345,60 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     inelastic_operator.evaluate(grid(), eedf, mixture);
     ionization_operator.evaluate(grid(), eedf, mixture);
 
-    boltzmannMatrix = baseMatrix
-                      + inelastic_operator.inelasticMatrix
-                      + inelastic_operator.superelasticMatrix
-                      + ionization_operator.ionizationMatrix;
+    boltzmannMatrix = baseMatrix + inelastic_operator.inelasticMatrix + inelastic_operator.superelasticMatrix +
+                      ionization_operator.ionizationMatrix;
 
     invertMatrix(boltzmannMatrix);
-
     normalizeEDF(eedf, grid());
-    spatial_growth_operator.evaluate(grid(), eedf, mixture.collision_data().totalCrossSection(), m_workingConditions->reducedFieldSI());
+
+    // NOTE: Include spatial growth operator through b vector. Iteration is required.
+    Vector eedf_cur(eedf);
+    Vector b(eedf);
+
+    double error = std::numeric_limits<double>::max();
+    double alpha_error = std::numeric_limits<double>::max();
+
+    const auto coefsCI = SI::gamma * grid().duCells().transpose() *
+                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+
+    const auto &total_cs = mixture.collision_data().totalCrossSection();
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+
+    const Vector D0 = grid().getCells().array() / (3. * total_cs_cells).array();
+    const Vector D0Faces = grid().getNodes().array() / (3. * total_cs).array();
+
+    // NOTE: Include spatial growth operator through its Jacobian. Iteration is required.
+    double alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+    double alpha_red_old;
+
+    // Apply normalization condition
+    boltzmannMatrix.row(0).setZero();
+    boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
+
+    const auto decomp = boltzmannMatrix.partialPivLu();
+
+    for (int i = 0; i < 100 && (error > maxEedfRelError || alpha_error > 1e-8); ++i)
+    {
+        eedf_cur = eedf;
+        alpha_red_old = alpha_red;
+
+        experimental::SpatialGrowthOperator::compute_vector(
+            grid(), eedf, total_cs, EoN, ionizationOperator.ionizationMatrix, attachmentOperator.attachmentMatrix, b);
+
+        // Apply normalization condition.
+        b[0] = boltzmannMatrix(1, 1);
+
+        eedf = decomp.solve(b);
+        normalizeEDF(eedf, grid());
+
+        alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+
+        error = maxRelDiff(eedf, eedf_cur);
+        Log<Message>::Warning("EEDF rel error: ", error);
+        alpha_error = std::abs(alpha_red - alpha_red_old) / alpha_red_old;
+        Log<Message>::Warning("alpha rel error: ", alpha_error);
+        Log<Message>::Warning("alpha: ", alpha_red);
+    }
 }
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
@@ -360,16 +407,12 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
     // Here the Conservative ionization and attachment matrices are added.
     // Otherwise, the sum is the same as in solveSpatialGrowthMatrix
     // (note that in solveTemporalGrowthMatrix fieldMatrix is not added).
-    boltzmannMatrix
-        = elasticMatrix
-        + fieldMatrix*(EoN*EoN)
-        + inelasticOperator.inelasticMatrix;
-    //     + ionizationOperator.ionConservativeMatrix
-    //     + attachmentOperator.attachmentConservativeMatrix;
-    // if (carOperator)
-    // {
-    //     boltzmannMatrix += CARMatrix;
-    // }
+    boltzmannMatrix = elasticMatrix + fieldMatrix * (EoN * EoN) + inelasticOperator.inelasticMatrix +
+                      ionizationOperator.ionConservativeMatrix + attachmentOperator.attachmentConservativeMatrix;
+    if (carOperator)
+    {
+        boltzmannMatrix += CARMatrix;
+    }
 
     invertMatrix(boltzmannMatrix);
     normalizeEDF(eedf, grid());
@@ -378,6 +421,166 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 {
     solveEEDF(eedf,matrix,grid());
+}
+
+void ElectronKineticsBoltzmann::solveSpatialGrowthMatrixPicard()
+{
+    const double EoN = m_workingConditions->reducedFieldSI();
+
+    boltzmannMatrix = elasticMatrix + fieldMatrix * (EoN * EoN) + inelasticOperator.inelasticMatrix +
+                      ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
+
+    // NOTE: Include spatial growth operator through b vector. Iteration is required.
+    Vector eedf_cur(eedf);
+    Vector b(eedf);
+
+    double error = std::numeric_limits<double>::max();
+    double alpha_error = std::numeric_limits<double>::max();
+
+    const auto coefsCI = SI::gamma * grid().duCells().transpose() *
+                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+
+    const auto &total_cs = mixture.collision_data().totalCrossSection();
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+    ;
+    const Vector D0 = grid().getCells().array() / (3. * total_cs_cells).array();
+    const Vector D0Faces = grid().getNodes().array() / (3. * total_cs).array();
+
+    // NOTE: Include spatial growth operator through its Jacobian. Iteration is required.
+    double alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+    Log<Message>::Notify("first alpha_eff: ", alpha_red);
+    double alpha_red_old;
+
+    // Apply normalization condition
+    // boltzmannMatrix.row(0).setZero();
+    // boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
+
+    const auto decomp = boltzmannMatrix.partialPivLu();
+
+    unsigned iter = 0;
+    const unsigned max_iter = 100;
+
+    for (; iter < max_iter && (error > maxEedfRelError || alpha_error > 1e-9); ++iter)
+    {
+        eedf_cur = eedf;
+        alpha_red_old = alpha_red;
+
+        experimental::SpatialGrowthOperator::compute_vector(
+            grid(), eedf, total_cs, EoN, ionizationOperator.ionizationMatrix, attachmentOperator.attachmentMatrix, b);
+
+        // Apply normalization condition.
+        // b[0] = boltzmannMatrix(1, 1);
+
+        eedf = decomp.solve(b);
+        // normalizeEDF(eedf, grid());
+
+        alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+
+        error = maxRelDiff(eedf, eedf_cur);
+        alpha_error = std::abs(alpha_red - alpha_red_old) / alpha_red_old;
+        Log<Message>::Warning("EEDF rel error: ", error);
+        Log<Message>::Warning("alpha rel error: ", alpha_error);
+        Log<Message>::Warning("alpha: ", alpha_red);
+    }
+
+    normalizeEDF(eedf, grid());
+
+    if (iter == max_iter)
+    {
+        Log<Message>::Warning("Spatial growth routine failed to converge in ", iter, " iterations.");
+    }
+    else
+    {
+        Log<Message>::Notify("Spatial growth routine converged in ", iter, " iterations.");
+    }
+}
+
+void ElectronKineticsBoltzmann::solveSpatialGrowthMatrixNewton()
+{
+    const double EoN = m_workingConditions->reducedFieldSI();
+
+    boltzmannMatrix = elasticMatrix + fieldMatrix * (EoN * EoN) + inelasticOperator.inelasticMatrix +
+                      ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix;
+
+    // invertMatrix(boltzmannMatrix);
+    // normalizeEDF(eedf, grid());
+
+    // NOTE: Include spatial growth operator through b vector. Iteration is required.
+    Vector eedf_cur(eedf);
+    Vector residual(eedf);
+
+    double error = std::numeric_limits<double>::max();
+    double alpha_error = std::numeric_limits<double>::max();
+
+    const auto coefsCI = SI::gamma * grid().duCells().transpose() *
+                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+
+    const auto &total_cs = mixture.collision_data().totalCrossSection();
+    const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
+    Vector D0 = grid().getCells().array() / (3. * total_cs_cells).array();
+    Vector D0Faces = grid().getNodes().array() / (3. * total_cs).array();
+
+    // NOTE: Include spatial growth operator through its Jacobian. Iteration is required.
+    double alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+    Log<Message>::Notify("first alpha_eff: ", alpha_red);
+    double alpha_red_old;
+
+    // Apply normalization condition
+    boltzmannMatrix.row(0).setZero();
+    boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
+
+    Matrix jacobian(grid().nCells(), grid().nCells());
+
+    unsigned iter = 0;
+    const unsigned max_iter = 100;
+
+    for (; iter < max_iter && (error > maxEedfRelError || alpha_error > 1e-9); ++iter)
+    {
+        eedf_cur = eedf;
+        alpha_red_old = alpha_red;
+
+        experimental::SpatialGrowthOperator::compute_vector(grid(), eedf, total_cs, EoN,
+                                                            ionizationOperator.ionizationMatrix,
+                                                            attachmentOperator.attachmentMatrix, residual);
+        // experimental::SpatialGrowthOperator::jacobian(
+        //     grid(), eedf, total_cs, EoN, ionizationOperator.ionizationMatrix, attachmentOperator.attachmentMatrix,
+        //     jacobian);
+        experimental::SpatialGrowthOperator::analytical_jacobian(grid(), eedf, total_cs, EoN,
+                                                                 ionizationOperator.ionizationMatrix,
+                                                                 attachmentOperator.attachmentMatrix, jacobian);
+
+        // At this point the residual contains the b vector.
+        residual = boltzmannMatrix * eedf - residual;
+        // At this point the Jacobian only contains the b Jacobian.
+        jacobian = boltzmannMatrix - jacobian;
+
+        // Apply normalization condition.
+        residual[0] = 0.;
+        jacobian.row(0).setZero();
+        jacobian(0, 0) = boltzmannMatrix(0, 0);
+
+        eedf += jacobian.partialPivLu().solve(-residual);
+        // normalizeEDF(eedf, grid());
+
+        alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
+
+        error = maxRelDiff(eedf, eedf_cur);
+        alpha_error = std::abs(alpha_red - alpha_red_old) / alpha_red_old;
+        Log<Message>::Warning("EEDF rel error: ", error);
+        Log<Message>::Warning("alpha rel error: ", alpha_error);
+        Log<Message>::Warning("alpha: ", alpha_red);
+    }
+
+    normalizeEDF(eedf, grid());
+
+    if (iter == max_iter)
+    {
+        Log<Message>::Warning("Spatial growth routine failed to converge in ", iter, " iterations.");
+    }
+    else
+    {
+        Log<Message>::Notify("Spatial growth routine converged in ", iter, " iterations.");
+    }
 }
 
 void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
@@ -445,7 +648,8 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
     // This is 33a from \cite Manual_1_0_0
     double ND  =   SI::gamma* energyIntegral(grid(),D0,eedf);
-    double muE = - SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
+    // double muE = - SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
+    double muE = -SI::gamma * fgPrimeEnergyIntegral(grid(), D0, eedf) * EoN;
 
     double alphaRedEffOld = 0.;
 
@@ -474,6 +678,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     double alphaRedEffNew = (discriminant < 0.)
         ? CIEffNew / muE
         : (muE - std::sqrt(discriminant)) / (2 * ND);
+    Log<Message>::Notify("first alpha_eff: ", alphaRedEffNew);
 
     uint32_t iter = 0;
     bool iterating = true;
@@ -528,54 +733,70 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
                 * (This only has a diagonal element.)
                 */
                 ionSpatialGrowthD.coeffRef(k, k) = alphaRedEffNew * alphaRedEffNew * D0[k];
-                boltzmannMatrix(k, k) += ionSpatialGrowthD.coeff(k, k);
+                // boltzmannMatrix(k, k) += ionSpatialGrowthD.coeff(k, k);
 
                 /* Handle ionSpatialGrowthU, which is defined such that
                 * [ionSpatialGrowthU*eedf]_k = (alpha/N)*(E/N)*[D0*df/du]_k.
                 */
                 if (k==0)
                 {
-                    ionSpatialGrowthU.coeffRef(k, k    ) = -alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
-                    boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
-                    boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
+                    // ionSpatialGrowthU.coeffRef(k, k    ) = -alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
+                    // ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k    ) = -alphaRedEffNew*EoN*D0[k] / grid().du();
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / grid().du();
+                    // boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
+                    // boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
                 }
                 else if (k==grid().nCells() - 1)
                 {
                     // NOTE: For MATLAB compatibility, set D0 to 0 on upper boundary.
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0Nodes[k] / (2. * grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*D0Nodes[k] / (2. * grid().du());
                     // ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
                     // ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*(D0Nodes[k] + D0Nodes[k+1]) / (2. * grid().du());
-                    boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
-                    boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / grid().du();
+                    ionSpatialGrowthU.coeffRef(k, k    ) = +alphaRedEffNew*EoN*D0[k] / grid().du();
+                    // boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
+                    // boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k);
                 }
                 else
                 {
-                    ionSpatialGrowthU.coeffRef(k, k) = -alphaRedEffNew*EoN*(D0Nodes[k+1] - D0Nodes[k]) / (2.*grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0Nodes[k] / (2.*grid().du());
-                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
-                    boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k  );
-                    boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
-                    boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
+                    // ionSpatialGrowthU.coeffRef(k, k) = -alphaRedEffNew*EoN*(D0Nodes[k+1] - D0Nodes[k]) / (2.*grid().du());
+                    // ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0Nodes[k] / (2.*grid().du());
+                    // ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0Nodes[k+1] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k - 1) = -alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+                    ionSpatialGrowthU.coeffRef(k, k + 1) = +alphaRedEffNew*EoN*D0[k] / (2.*grid().du());
+                    // boltzmannMatrix(k,k  ) += ionSpatialGrowthU.coeff(k,k  );
+                    // boltzmannMatrix(k,k-1) += ionSpatialGrowthU.coeff(k,k-1);
+                    // boltzmannMatrix(k,k+1) += ionSpatialGrowthU.coeff(k,k+1);
                 }
 
                 /* Handle fieldMatrixSpatGrowth, which is defined such that
                 * [fieldMatrixSpatGrowth*eedf]_k = (alphaEffNew/N)*(E/N)*[d(D^0*f0)/du]_k.
                 */
                 fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - g_fieldSpatialGrowth[k]) / (2*grid().du());
-                boltzmannMatrix(k, k) += fieldMatrixSpatGrowth.coeff(k, k);
+                // boltzmannMatrix(k, k) += fieldMatrixSpatGrowth.coeff(k, k);
+                
                 if (k > 0)
                 {
                     fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
-                    boltzmannMatrix(k, k - 1) += fieldMatrixSpatGrowth.coeff(k, k - 1);
+                    // boltzmannMatrix(k, k - 1) += fieldMatrixSpatGrowth.coeff(k, k - 1);
                 }
 
                 if (k < grid().nCells() - 1)
                 {
                     fieldMatrixSpatGrowth.coeffRef(k, k + 1) = g_fieldSpatialGrowth[k + 1] / (2*grid().du());
-                    boltzmannMatrix(k, k + 1) += fieldMatrixSpatGrowth.coeff(k, k + 1);
+                    // boltzmannMatrix(k, k + 1) += fieldMatrixSpatGrowth.coeff(k, k + 1);
                 }
+
+                // if (k == 0) {
+                //     fieldMatrixSpatGrowth.coeffRef(k, k) = (g_fieldSpatialGrowth[k + 1] - 3 * g_fieldSpatialGrowth[k]) / (2 * grid().du());
+                //     fieldMatrixSpatGrowth.coeffRef(k, k + 1) = (g_fieldSpatialGrowth[k + 1] + g_fieldSpatialGrowth[k]) / (2 * grid().du());
+                //     boltzmannMatrix(k, k) += fieldMatrixSpatGrowth.coeff(k, k);
+                //     boltzmannMatrix(k, k + 1) += fieldMatrixSpatGrowth.coeff(k, k + 1);
+                // } else {
+                //     fieldMatrixSpatGrowth.coeffRef(k, k - 1) = -g_fieldSpatialGrowth[k] / (2*grid().du());
+                //     fieldMatrixSpatGrowth.coeffRef(k, k) = (D0Nodes[k + 1] - 3 * D0Nodes[k]) / (2 * grid().du());
+                //     fieldMatrixSpatGrowth.coeffRef(k, k + 1) = (D0Nodes[k + 1] + D0Nodes[k]) / (2 * grid().du());
+                // }
             }
         } else
         {
@@ -649,12 +870,24 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         }
         Vector eedfNew = eedf;
 
+        boltzmannMatrix += fieldMatrixSpatGrowth + ionSpatialGrowthD + ionSpatialGrowthU;
         invertMatrix(boltzmannMatrix);
+        normalizeEDF(eedf, grid());
+         
+        // boltzmannMatrix.row(0).setZero();
+        // boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
+        // Vector b = -(ionSpatialGrowthD + ionSpatialGrowthU + fieldMatrixSpatGrowth) * eedf;
+        // b[0] = boltzmannMatrix(0, 0);
+
+
+        // eedf = boltzmannMatrix.partialPivLu().solve(b);
+        // normalizeEDF(eedf, grid());
 
         CIEffNew = eedf.dot(coefsCI);
 
         ND = SI::gamma * energyIntegral(grid(), D0, eedf);
-        muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
+        // muE = -SI::gamma * fNodegPrimeEnergyIntegral(grid(), D0Nodes, eedf) * EoN;
+        muE = -SI::gamma * fgPrimeEnergyIntegral(grid(), D0, eedf) * EoN;
 
 #if 0
         std::cout << "muE: " << muE << std::endl;
@@ -667,6 +900,10 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 
         alphaRedEffOld = alphaRedEffNew;
         alphaRedEffNew = (discriminant_new < 0) ? CIEffNew / muE : (muE - std::sqrt(discriminant_new)) / (2 * ND);
+        Log<Message>::Notify("alpha_eff: ", alphaRedEffNew);
+
+        Log<Message>::Notify("EEDF rel error: ", maxRelDiff(eedfNew, eedf));
+        Log<Message>::Notify("alpha rel error: ", std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld);
 
         if (((alphaRedEffNew == 0 || std::abs(alphaRedEffNew - alphaRedEffOld) / alphaRedEffOld < 1.e-9) &&
              maxRelDiff(eedfNew,eedf) < maxEedfRelError) ||
@@ -693,6 +930,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
     }
 
     alphaRedEff = alphaRedEffOld;
+    Log<Message>::Notify("alpha_eff: ", alphaRedEff);
 }
 
 void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
@@ -944,9 +1182,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
 void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
-    // invertLinearMatrix();
-    invertLinearMatrixNew();
-    return;
+    invertLinearMatrix();
+    // invertLinearMatrixNew();
+    // return;
 
     /* Maybe we are done. But we need to do more work if non-linear terms are
      * present:
@@ -966,6 +1204,8 @@ void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
             fieldMatrixSpatGrowth.setZero();
 
             growthFunc = &ElectronKineticsBoltzmann::solveSpatialGrowthMatrix;
+            // growthFunc = &ElectronKineticsBoltzmann::solveSpatialGrowthMatrixNewton;
+            // growthFunc = &ElectronKineticsBoltzmann::solveSpatialGrowthMatrixPicard;
             break;
 
         case GrowthModelType::temporal:

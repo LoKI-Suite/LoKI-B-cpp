@@ -52,11 +52,20 @@ class IonizationOperator
     Matrix ionizationMatrix;
 };
 
+double compute_alpha_eff(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0, const Vector &D0Faces, double EoN);
+
 class SpatialGrowthOperator : public DriftDiffusionOperator
 {
   public:
     SpatialGrowthOperator(const Grid &grid);
-    void evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN, const Matrix &ionizationMatrix, const Matrix &attachmentMatrix);
+    void evaluate(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                  const Matrix &ionizationMatrix, const Matrix &attachmentMatrix);
+    static void jacobian(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                         const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Matrix &storage);
+    static void analytical_jacobian(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                                    const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Matrix &storage);
+    static void compute_vector(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
+                               const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Vector &storage);
 };
 
 } // namespace experimental
