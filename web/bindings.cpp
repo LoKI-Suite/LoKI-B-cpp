@@ -36,7 +36,9 @@ int run(std::string file_contents, emscripten::val callback, emscripten::val out
         std::unique_ptr<Simulation> simulation(new Simulation("", cnf));
         std::unique_ptr<Output> output(new JsonOutput(data_out, cnf, &simulation->workingConditions()));
         /** \todo Perhaps the above should be controlled by
-         * cnf.at("output").at("isOn"). \todo Now that JsonOutput works, we have
+         * cnf.at("output").at("isOn").
+         */
+        /** \todo Now that JsonOutput works, we have
          * two ouput mechanisms in place: handleResults and handleJSONOutput. I
          * think we need only one. It may be useful to send
          * intermediate/incremental output to JS, and let that concatenate the

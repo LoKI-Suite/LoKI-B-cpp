@@ -389,7 +389,7 @@ std::vector<std::tuple<Grid::Index, double>> distributeNCells(const Grid& grid, 
     alpha.push_back(std::make_tuple(targetBegin, alphaMin[0]));
     for (Grid::Index i = targetBegin + 1; i < targetEnd - 1; i++)
     {
-        // TODO: This is the same as `grid.duCell(i) / grid.duCell(origin)`?
+        /// \todo Is this the same as grid.duCell(i) / grid.duCell(origin) ?
         alpha.push_back(std::make_tuple(i, grid.duCell(i)/(grid.getNode(targetEnd - 1) - grid.getNode(targetBegin + 1)) * alphaMiddle));
     }
     alpha.push_back(std::make_tuple(targetEnd - 1, alphaPlus[1]));
@@ -817,8 +817,10 @@ void IonizationOperator::evaluateIonizationOperator(const Grid& grid, const Eedf
                 {
                     for (Grid::Index k = 0; k < grid.nCells(); ++k)
                     {
-                        // Manual_2_2_0 eq. 15. TODO: Note that newborns are
-                        // inserted in the first cell, so at du/2, not at zero.
+                        // Manual_2_2_0 eq. 15.
+                        /** \todo Note that newborns are inserted in the first cell,
+                         *  so at du/2, not at zero.
+                         */
                         if (k < grid.nCells() - numThreshold)
                             ionizationMatrix(k, k + numThreshold) +=
                                 delta * grid.getCell(k + numThreshold) * cellCrossSection[k + numThreshold];
