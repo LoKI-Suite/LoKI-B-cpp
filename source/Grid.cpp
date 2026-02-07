@@ -55,7 +55,7 @@ void Grid::SmartGridParameters::checkConfiguration() const
     }
 }
 
-Grid::Grid(unsigned nCells, double maxEnergy, SmartGridParameters *smartGridParameters)
+Grid::Grid(unsigned nCells, double maxEnergy, const SmartGridParameters *smartGridParameters)
    : Grid(Vector::LinSpaced(nCells + 1, 0.0, 1.0), maxEnergy, true)
 {
     if (smartGridParameters != nullptr) {
@@ -63,12 +63,12 @@ Grid::Grid(unsigned nCells, double maxEnergy, SmartGridParameters *smartGridPara
     }
 }
 
-Grid::Grid(const Vector& nodeDistribution, double maxEnergy, SmartGridParameters *smartGridParameters)
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy, const SmartGridParameters *smartGridParameters)
    : Grid(nodeDistribution, maxEnergy, false, smartGridParameters)
 {
 }
 
-Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform, SmartGridParameters *smartGridParameters)
+Grid::Grid(const Vector& nodeDistribution, double maxEnergy, bool isUniform, const SmartGridParameters *smartGridParameters)
  : m_nCells(nodeDistribution.size()-1),
    m_du(isUniform ? maxEnergy/(nodeDistribution.size()-1) : 0.0),
    m_nodes(nodeDistribution*maxEnergy),
@@ -112,7 +112,7 @@ Grid Grid::fromConfig(const json_type &cnf)
             nodeDistribution = Eigen::Map<Vector, Eigen::Unaligned>(nodes.data(), nodes.size());
         }
 
-        SmartGridParameters *parameters = nullptr;
+        const SmartGridParameters *parameters = nullptr;
         if (cnf.contains("smartGrid")) {
             parameters = new SmartGridParameters(cnf.at("smartGrid"));
         }
