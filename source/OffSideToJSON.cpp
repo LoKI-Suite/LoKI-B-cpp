@@ -204,7 +204,6 @@ Lines::Lines(std::istream& is)
  *  as long as it!=end and the indentation level of the line is equal to that
  *  of the initial line that is read. A line is characterized by its key and value
  *  members, at least one of which is nonempty. The three possible cases are:
- *  must be considered are then:
  *
  *   - When the key and value are both non-empty, a simple member of the form
  *       'key': value
@@ -233,18 +232,18 @@ void readSection(json_type& parent, Lines::const_iterator& it, Lines::const_iter
 			{
 				it->throw_line_exception("Duplicate key '" + it->key() + "' found.");
 			}
+			// initially, this new sec will be a nil value.
 			json_type& sec = parent[it->key()];
 			auto old = it++;
 			if (it==end || it->indent()==old->indent())
 			{
-				/** \todo If a section is empty, we cannot decide if it should
-				 *  become an empty object or an empty array. We leave it a nil
-				 *  value. This should be documented.
+				/* If a section is empty, we cannot decide if sec should
+				 * become an empty object or an empty array. We leave it
+				 * a nil value.
 				 */
-				// sec = json_type(R"([])");
 				continue;
 			}
-			readSection( sec, it, end);
+			readSection(sec, it, end);
 		}
 		else if (it->key().empty())
 		{
