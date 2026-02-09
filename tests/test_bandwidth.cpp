@@ -56,8 +56,8 @@ void test_uhessenberg()
 void test_null()
 {
     loki::Matrix M(2,3);
-    M << 0.0,  0.0,
-         0.0,  0.0;
+    M << 0.0,  0.0, 0.0,
+         0.0,  0.0, 0.0;
     const loki::Bandwidth bw = loki::calculateBandwidth(M);
     test_expr(bw.first==+3);
     test_expr(bw.second==-3);

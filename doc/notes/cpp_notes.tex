@@ -3665,6 +3665,32 @@ Note that the expression for the source in the BOLSIG+ paper \cite[eq. 29]{Hagel
 erroneously contains a factor 2 instead of 4. This is pointed out in a footnote on page 23
 of \cite{Hagelaar2008}.
 
+\chapter{Normalization}
+
+Consider a constant $f_0=C$ for $0\leq u\leq u_{\mbox{max}}$. The normalization
+condition results in $\int_0^{u_{\mbox{max}}}\sqrt{u}C\dd{u} = \frac{2}{3}u_{\mbox{max}}^{3/2}C=1$,
+or
+\begin{equation}
+	C = (3/2)u_{\mbox{max}}^{-3/2}.
+\end{equation}
+Numerically, the result is
+\begin{equation}
+	\sum\limits_{c=0}^{{\cal N}-1}C_{{\cal N}}\sqrt{u_c}(\Delta u)_c = 1
+	\implies
+	C_{{\cal N}} = \frac{1}{\sum\limits_{c=0}^{{\cal N}-1}\sqrt{u_c}(\Delta u)_c}.
+\end{equation}
+For a uniform grid we have $(\Delta u)_c:=\Delta u = u_{\mbox{max}}/{\cal N}$
+and $u_c = (c+\frachalf)\Delta u$, or
+\begin{equation}
+	C_{{\cal N}} = \frac{{\cal N}^{3/2}(2/3)}{\sum\limits_{c=0}^{{\cal N}-1}\sqrt{c+\frachalf}}(3/2)u_{\mbox{max}}^{-3/2}.
+\end{equation}
+The relative difference is given by
+\begin{equation}
+	\epsilon_{{\cal N}}
+	:= \frac{C_{{\cal N}}-C}{C}
+	= \frac{{\cal N}^{3/2}(2/3)}{\sum\limits_{c=0}^{{\cal N}-1}\sqrt{c+\frachalf}}-1.
+\end{equation}
+
 \chapter{Old Notes on LoKI-B 1.0.0}
 
 This chapter contains comments on the 1.0.0 version of LoKI-B. Some parts of
