@@ -67,7 +67,7 @@ double maxRelDiff(const Vector& v1, const Vector& v2)
     return res;
 }
 
-std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m)
+Bandwidth calculateBandwidth(const Matrix& m)
 {
     /** \todo In principle, this can be optimized, since for each row the
      *  columns that are within bands that are in [min,max] do not need to
@@ -79,6 +79,7 @@ std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m)
      */
     Matrix::Index min=+std::max(m.rows(),m.cols());
     Matrix::Index max=-std::max(m.rows(),m.cols());
+
     for (Matrix::Index r=0; r!=m.rows(); ++r)
     for (Matrix::Index c=0; c!=m.cols(); ++c)
     {

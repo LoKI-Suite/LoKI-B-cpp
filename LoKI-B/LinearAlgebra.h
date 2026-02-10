@@ -79,11 +79,12 @@ double maxRelDiff(const Vector& v1, const Vector& v2);
  *  superdiagonal. The members first and second of the return value of this
  *  function return the (signed) lower and upper bandwidths, which are defined
  *  as the lowest and highest values of d such that diagonal d contains at least
- *  one non-zero element.
+ *  one non-zero element. For the special case of a zero matrix, the lower and
+ *  upper bandwidths are taken to be zero.
  *
  *  As an example, for a diagonal matrix the return value is {0,0}, for a
  *  tridiagonal matrix it is {-1,1}. For an strictly lower triangular matrix
- *  with R rows and C columns we get {-(R-1),01} and for an upper Hessenberg
+ *  with R rows and C columns we get {-(R-1),-1} and for an upper Hessenberg
  *  matrix the return value is {-1,C-1}. These cases have been visualized
  *  below.
   \verbatim
@@ -97,7 +98,7 @@ double maxRelDiff(const Vector& v1, const Vector& v2);
     00XX
   
     000000
-    X00000 {-3,0}
+    X00000 {-3,-1}
     XX0000
     XXX000
   
@@ -111,7 +112,8 @@ double maxRelDiff(const Vector& v1, const Vector& v2);
  *  \author Jan van Dijk
  *  \date   May 2024
  */
-std::pair<Matrix::Index,Matrix::Index> calculateBandwidth(const Matrix& m);
+using Bandwidth = std::pair<Matrix::Index,Matrix::Index>;
+Bandwidth calculateBandwidth(const Matrix& m);
 
 } // namespace loki
 
