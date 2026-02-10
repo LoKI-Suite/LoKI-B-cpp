@@ -79,7 +79,7 @@ int main()
 
     test1(grid1);
     test1(grid2);
-    test1(grid1);
+    test2(grid1);
     test2(grid2);
     test_report; 
     return nerrors; 
