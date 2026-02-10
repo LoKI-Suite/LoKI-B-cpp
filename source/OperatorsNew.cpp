@@ -11,6 +11,7 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace loki
@@ -84,6 +85,45 @@ void integrate_source(const Grid &grid, const EedfCollision &col, const Vector &
         double u_end = std::min({grid_iter.xHigh(), cs_int.switchOn(), eedf_int.switchOn()});
 
         I::setRows(u_start, u_end, u_offset, target_density, grid_iter, cs_int, eedf_int, mat);
+
+        u_start = u_end;
+    }
+}
+
+// NOTE: this function implements the equal sharing source term using a variable substitution of `u' = 2*u + u_th`.
+template <typename I>
+void integrate_source_equal_sharing(const Grid &grid, const EedfCollision &col, const Vector &eedf, Matrix &mat)
+{
+    const auto target_density = col.getTarget()->delta();
+    const auto &cs = *col.crossSection;
+
+    const double u_offset = cs.threshold();
+    // This is `u' = 2 * u + u_th`.
+    double u_start = u_offset;
+
+    GridIterator grid_iter(grid, 0.0);
+    InterpolatingIterator cs_int(cs.lookupTable().x(), cs.lookupTable().y(), 0.0);
+    InterpolatingIterator eedf_int(grid.getCells(), eedf, 0.0);
+
+    while (u_start < grid.uMax())
+    {
+        while (grid_iter.shouldAdvance((u_start - u_offset) / 2.0) + 3. * std::numeric_limits<double>::epsilon())
+        {
+            grid_iter.advance();
+        }
+        while (cs_int.shouldAdvance(u_start))
+        {
+            cs_int.advance();
+        }
+        while (eedf_int.shouldAdvance(u_start))
+        {
+            eedf_int.advance();
+        }
+
+        double u_end = std::min({2. * grid_iter.xHigh() + u_offset, cs_int.switchOn(), eedf_int.switchOn()});
+
+        // The additional factor 2.0 originates from the variable substitution.
+        I::setRows(u_start, u_end, 0., 8. * target_density, grid_iter, cs_int, eedf_int, mat);
 
         u_start = u_end;
     }
@@ -204,97 +244,6 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
     inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
-// TODO: Write equal sharing source integral using the new iterator/integrator classes.
-// void equal_sharing_source(const Grid &grid, const Vector &eedf, Matrix &matrix, const EedfCollision &col)
-// {
-//     const double threshold = col.crossSection->threshold();
-//     const double target_density = col.getTarget()->delta();
-
-//     double u_start = grid.getNode(0) + threshold;
-
-//     // The grid iterator iterates over the source cells of the grid.
-//     Grid::Index i_grid = 0;
-
-//     // Find the target cell in which the left face of the first source cell lands.
-//     Grid::Index j_grid =
-//         std::upper_bound(grid.getNodes().begin(), grid.getNodes().end(), u_start) - grid.getNodes().begin() - 1;
-
-//     // Compute initial f_slope.
-//     double f_slope = u_start >= grid.getCell(j_grid) || j_grid == 0
-//                          ? std::log(eedf[j_grid + 1] / eedf[j_grid]) / grid.duNode(j_grid + 1)
-//                          : std::log(eedf[j_grid] / eedf[j_grid - 1]) / grid.duNode(j_grid);
-//     double u_f_start = u_start >= grid.getCell(j_grid) || j_grid == 0 ? grid.getCell(j_grid) : grid.getCell(j_grid -
-//     1);
-
-//     // Get the raw cross section data.
-//     const auto &cs = col.crossSection->lookupTable().y();
-//     const auto &cs_energy = col.crossSection->lookupTable().x();
-
-//     Grid::Index j_cs = std::upper_bound(cs_energy.begin(), cs_energy.end(), u_start) - cs_energy.begin() - 1;
-
-//     double sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
-//     double u_sig_start = cs_energy[j_cs];
-//     double u_sig_next = cs_energy[j_cs + 1];
-//     double sig_start = cs[j_cs];
-
-//     while (u_start < grid.uMax())
-//     {
-//         // If the current integration domain is outside the current cross
-//         // section cell, move to the next cell.
-//         if (u_start >= u_sig_next)
-//         {
-//             j_cs++;
-
-//             if (j_cs == cs.size() - 1)
-//             {
-//                 sig_slope = 0.;
-//                 u_sig_start = 0.;
-//                 u_sig_next = std::numeric_limits<double>::max();
-//                 sig_start = 0.;
-//             }
-//             else
-//             {
-//                 sig_slope = (cs[j_cs + 1] - cs[j_cs]) / (cs_energy[j_cs + 1] - cs_energy[j_cs]);
-//                 u_sig_start = cs_energy[j_cs];
-//                 u_sig_next = cs_energy[j_cs + 1];
-//                 sig_start = cs[j_cs];
-//             }
-//         }
-//         // If the current integration domain is outside the current source cell,
-//         // move to the next grid cell.
-//         if (u_start >= 2.0 * grid.getNode(i_grid + 1) + threshold)
-//         {
-//             i_grid++;
-//         }
-//         // If the current integration domain is outside the current target cell,
-//         // move to the next grid cell.
-//         if (u_start >= grid.getNode(j_grid + 1))
-//         {
-//             j_grid++;
-//             u_f_start = grid.getCell(j_grid);
-//         }
-//         // If the current integration domain starts at the current target cell
-//         // center, recompute the slope of the eedf.
-//         if (u_start == grid.getCell(j_grid) && j_grid < grid.nCells() - 1)
-//         {
-//             f_slope = std::log(eedf[j_grid + 1] / eedf[j_grid]) / grid.duNode(j_grid + 1);
-//         }
-//         // The end of the current integration domain is either the next source
-//         // cell center, the next cross section entry, the next target cell face,
-//         // or the grid boundary.
-//         const double u_end =
-//             std::min(std::min(u_sig_next, 2.0 * grid.getNode(i_grid + 1) + threshold),
-//                      u_start >= grid.getCell(j_grid) ? grid.getNode(j_grid + 1) : grid.getCell(j_grid));
-
-//         double integral_start = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_start);
-//         double integral_end = collision_integral(u_sig_start, sig_start, sig_slope, u_f_start, f_slope, u_end);
-
-//         matrix(i_grid, j_grid) += 4.0 * target_density * (integral_end - integral_start);
-
-//         u_start = u_end;
-//     }
-// }
-
 IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
     : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells())
 {
@@ -319,11 +268,12 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
             case IonizationOperatorType::conservative:
                 integrate_source<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
                 break;
+            case IonizationOperatorType::equalSharing:
+                integrate_source_equal_sharing<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
+                break;
             default:
-                throw std::runtime_error("For now only conservative ionization is supported.");
-                // case IonizationOperatorType::equalSharing:
-                //     equal_sharing_source(grid, eedf, ionizationMatrix, *collision);
-                //     break;
+                throw std::runtime_error(
+                    "For now only conservative, and equal-sharing ionization modes are supported.");
             }
         }
     }
@@ -334,7 +284,9 @@ SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : ConvectionDiffu
 {
 }
 
-double compute_alpha_eff(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0, const Vector &D0Faces, double EoN) {
+double compute_alpha_eff(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0,
+                         const Vector &D0Faces, double EoN)
+{
     const double nu_eff = eedf.dot(coefsCI);
 
     // This is 33a from \cite Manual_1_0_0
@@ -344,7 +296,7 @@ double compute_alpha_eff(const Grid &grid, const Vector &eedf, const Vector &coe
 
     const double discriminant = muE * muE - 4 * nu_eff * ND;
     const double alphaRedEff = (discriminant < 0.) ? nu_eff / muE : (muE - std::sqrt(discriminant)) / (2 * ND);
-    
+
     return alphaRedEff;
 }
 
@@ -398,14 +350,17 @@ Vector alpha_eff_jacobian_analytical(const Grid &grid, const Vector &eedf, const
     }
 }
 
-Vector alpha_eff_jacobian(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0, const Vector &D0Faces, double EoN) {
+Vector alpha_eff_jacobian(const Grid &grid, const Vector &eedf, const Vector &coefsCI, const Vector &D0,
+                          const Vector &D0Faces, double EoN)
+{
     Vector eedf_tmp = eedf;
 
     const double zeta = 1e-3;
 
     Vector jacobian(eedf.size());
 
-    for (Vector::Index i = 0; i < eedf.size(); ++i) {
+    for (Vector::Index i = 0; i < eedf.size(); ++i)
+    {
         eedf_tmp[i] -= eedf[i] * zeta;
         const auto alpha_min = compute_alpha_eff(grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
         eedf_tmp[i] = eedf[i];
@@ -491,22 +446,20 @@ void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const
     Matrix spatial_growth_jacobian(eedf.size(), eedf.size());
 
     // Semi-analytical Jacobian using the numerical reduced Townsend Jacobian.
-    
 
     // Numerical computation of the spatial growth jacobian
     Matrix spat_growth_min(eedf.size(), eedf.size());
     Matrix spat_growth_plus(eedf.size(), eedf.size());
 
     // FIRST TERM
-    
-
-    
 
     Log<Message>::Warning("Mobility: ", muE / EoN);
 }
 
 void SpatialGrowthOperator::compute_vector(const Grid &grid, const Vector &eedf, const Vector &total_cs, double EoN,
-                         const Matrix &ionizationMatrix, const Matrix &attachmentMatrix, Vector &storage) {
+                                           const Matrix &ionizationMatrix, const Matrix &attachmentMatrix,
+                                           Vector &storage)
+{
     const auto coefsCI = SI::gamma * grid.duCells().transpose() * (ionizationMatrix + attachmentMatrix);
 
     const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
@@ -533,7 +486,8 @@ void SpatialGrowthOperator::jacobian(const Grid &grid, const Vector &eedf, const
     const Vector D0 = grid.getCells().array() / (3. * total_cs_cells).array();
     const Vector D0Faces = grid.getNodes().array() / (3. * total_cs).array();
 
-    for (Vector::Index i = 0; i < grid.nCells(); ++i) {
+    for (Vector::Index i = 0; i < grid.nCells(); ++i)
+    {
         eedf_tmp[i] -= eedf[i] * zeta;
         compute_spatial_growth_vector(spat_growth_min, grid, eedf_tmp, coefsCI, D0, D0Faces, EoN);
         eedf_tmp[i] = eedf[i];
