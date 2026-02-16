@@ -1,3 +1,6 @@
+#ifndef LOKIB_CPP_OPERATORSNEW_H
+#define LOKIB_CPP_OPERATORSNEW_H
+
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/LinearAlgebra.h"
@@ -70,3 +73,5 @@ class SpatialGrowthOperator : public DriftDiffusionOperator
 
 } // namespace experimental
 } // namespace loki
+
+#endif // LOKIB_CPP_ITERATORS_H

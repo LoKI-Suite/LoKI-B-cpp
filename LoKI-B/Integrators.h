@@ -1,6 +1,5 @@
-
-#ifndef INTEGRATORS_H
-#define INTEGRATORS_H
+#ifndef LOKIB_CPP_INTEGRATORS_H
+#define LOKIB_CPP_INTEGRATORS_H
 
 #include "LoKI-B/LinearAlgebra.h"
 
@@ -49,4 +48,4 @@ class ConstIntegrator
 };
 } // namespace loki
 
-#endif // INTEGRATORS_H
+#endif // LOKIB_CPP_INTEGRATORS_H

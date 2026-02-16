@@ -1,5 +1,5 @@
-#ifndef ITERATORS_H
-#define ITERATORS_H
+#ifndef LOKIB_CPP_ITERATORS_H
+#define LOKIB_CPP_ITERATORS_H
 
 #include "LoKI-B/LinearAlgebra.h"
 #include <cmath>
@@ -56,4 +56,4 @@ class GridIterator
 };
 } // namespace loki
 
-#endif // ITERATORS_H
+#endif // LOKIB_CPP_ITERATORS_H
