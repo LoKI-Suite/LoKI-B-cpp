@@ -44,7 +44,7 @@ CAROperator::CAROperator(const CARGases& cg)
      */
 }
 
-void CAROperator::evaluate(const Grid& grid)
+void CAROperator::evaluate(const Grid& grid, double Tg)
 {
     constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;
     m_sigma0B = 0.;
@@ -64,7 +64,7 @@ void CAROperator::evaluate(const Grid& grid)
 void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid);
+    evaluate(grid,Tg);
     const double c_CAR = Constant::kBeV * Tg;
 
     if (grid.isUniform())
@@ -154,7 +154,7 @@ ElasticOperator::ElasticOperator()
 {
 }
 
-void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection)
+void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg)
 {
     g = grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
     g[0] = 0.;
@@ -164,7 +164,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,elasticCrossSection);
+    evaluate(grid,elasticCrossSection,Tg);
 
     const double c_el = Constant::kBeV * Tg;
     
@@ -251,23 +251,23 @@ FieldOperator::FieldOperator(const Grid& grid)
 {
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
 {
     assert(g.size()==grid.getNodes().size());
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        g[i] = (1. / 3.) * grid.getNode(i) /
+        g[i] = EoN*EoN * (1. / 3.) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff, SparseMatrix& mat)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,WoN,CIEff);
+    evaluate(grid,totalCS,EoN,WoN,CIEff);
 
     if (grid.isUniform())
     {

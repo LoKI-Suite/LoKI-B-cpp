@@ -178,7 +178,11 @@ void ElectronKineticsBoltzmann::evaluateFieldOperator()
     const double WoN = m_workingConditions->reducedExcFreqSI();
     /// \todo Should we use the real value (CIEff) here? That will be 0 for DC or spatial growth
     const double dummyCIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff,fieldMatrix);
+    /* The fieldMatrix is proportional to (E/N)^2. Here we calculate fieldMatrix for E/N=1;
+     * the scaling factor (E/N)^2 is applied at the location where it is used.
+     */
+    const double EoN = 1.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff,fieldMatrix);
 }
 
 void ElectronKineticsBoltzmann::evaluateMatrix()
@@ -632,8 +636,12 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
 
     while (!hasConverged)
     {
-        // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma)
-        fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,CIEffNew,fieldMatrixTempGrowth);
+        // CIEff is <nu_eff>/N, so growthFactor = <nu_eff>/(N*gamma).
+        /* fieldMatrixTempGrowth is proportional to (E/N)^2. Here we calculate
+         * it for E/N=1; the scaling factor (E/N)^2 is applied at the location
+         * where it is used.
+         */
+        fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),1.0,WoN,CIEffNew,fieldMatrixTempGrowth);
         const long double growthFactor = CIEffNew / SI::gamma;
         for (Grid::Index k = 0; k < grid().nCells(); ++k)
         {
@@ -1322,14 +1330,19 @@ void ElectronKineticsPrescribed::evaluateFieldOperator()
 {
     const double WoN = m_workingConditions->reducedExcFreqSI();
     const double dummyCIEff = 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff);
+    /* The fieldMatrix is proportional to (E/N)^2. Here we calculate fieldMatrix for E/N=1;
+     * the scaling factor (E/N)^2 is applied at the location where it is used.
+     */
+    const double EoN = 1.0;
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),EoN,WoN,dummyCIEff);
 }
 
 void ElectronKineticsPrescribed::evaluateMatrix()
 {
     mixture.collision_data().evaluateTotalAndElasticCS(grid());
 
-    elasticOperator.evaluate(grid(),mixture.collision_data().elasticCrossSection());
+    const double Tg = m_workingConditions->gasTemperature();
+    elasticOperator.evaluate(grid(),mixture.collision_data().elasticCrossSection(),Tg);
 
     /** This is most probably not correct. For the Prescribed EEDF mode, an equivalent
      *  field must be determined from the enery balance, whereas evaluateFieldOperator()
@@ -1339,7 +1352,7 @@ void ElectronKineticsPrescribed::evaluateMatrix()
 
     if (carOperator.get())
     {
-        carOperator->evaluate(grid());
+        carOperator->evaluate(grid(),Tg);
     }
 
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
@@ -1436,7 +1449,12 @@ void ElectronKineticsPrescribed::evaluatePower()
     const double EoN = m_workingConditions->reducedFieldSI();
     const double WoN = m_workingConditions->reducedExcFreqSI();
     const double dummyCIEff= 0.0;
-    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),WoN,dummyCIEff);
+    /** \todo The following three lines are confusing, which is the result of
+     *  the way the FieldOperator has been implemented: member evaluatePower
+     *  takes an E/N value as argument, and assumes that member g has previously
+     *  been calculated with E/N=1 (so the factor (E/N)^2 is missing from g).
+     */
+    fieldOperator.evaluate(grid(),mixture.collision_data().totalCrossSection(),1.0,WoN,dummyCIEff);
     double P_1;
     fieldOperator.evaluatePower(grid(),eedf,EoN,P_1);
     // 2. we calculate P_E such that the power balance will be satisfied

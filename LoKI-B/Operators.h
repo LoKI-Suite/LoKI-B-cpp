@@ -72,12 +72,13 @@ namespace loki {
         using CARGases = std::vector<const Gas*>;
         CAROperator(const CARGases& cg);
         /// updates member g
-        void evaluate(const Grid& grid);
+        void evaluate(const Grid& grid, double Tg);
         /// updates member g, then the CAR matrix \a mat
         void evaluate(const Grid& grid, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
         const CARGases carGases;
         double m_sigma0B;
+    private:
         Vector g;
     };
 
@@ -86,10 +87,11 @@ namespace loki {
     public:
         ElasticOperator();
         /// updates member g
-        void evaluate(const Grid& grid, const Vector& elasticCrossSection);
+        void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg);
         /// updates member g, then the elastic matrix \a mat
         void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
+    private:
         Vector g;
     };
 
@@ -98,9 +100,9 @@ namespace loki {
     public:
         FieldOperator(const Grid& grid);
         /// updates member g
-        void evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g, then the field matrix \a mat
-        void evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff, SparseMatrix& mat);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat);
         /** \todo This expression returns the power that is absorbed from the field
          *  in the case that no temporal or spatial growth terms are present. We have
          *  to see where/when to handle the various growth scenarios.
