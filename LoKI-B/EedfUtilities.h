@@ -68,13 +68,13 @@ lokib_export void normalizeEDF(Vector& edf, const Grid& grid);
  *
  *  \todo The risk of underflows should be investigated. (And diagnosed?)
  */
-lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double g, double T_eV, bool normalize=true);
+lokib_export void makePrescribedEDF(Vector& edf, const Grid& grid, double s, double T_eV, bool normalize=true);
 
 /** See the overload of this function that accepts an edf parameter. The present
  *  function creates an edf vector, calls that overload to set the values and
  *  returns the result.
  */
-lokib_export Vector makePrescribedEDF(const Grid& grid, double g, double T_eV, bool normalize=true);
+lokib_export Vector makePrescribedEDF(const Grid& grid, double s, double T_eV, bool normalize=true);
 
 /** This function solves the system \a matrix * \a eedf = b, with b=[0],
  *  subject to the normalization constraint for \a eedf (see function
