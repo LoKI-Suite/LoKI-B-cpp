@@ -154,6 +154,13 @@ ElasticOperator::ElasticOperator()
 {
 }
 
+void ElasticOperator::updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg)
+{
+    // conv_coeff is negative, diff_coeff is positive
+    this->m_conv_coeff = -grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
+    this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
+}
+
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg)
 {
     g = grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
@@ -249,6 +256,20 @@ void ElasticOperator::evaluatePower(const Grid& grid, const Vector& eedf, double
 FieldOperator::FieldOperator(const Grid& grid)
  : g(grid.getNodes().size())
 {
+}
+
+void FieldOperator::updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
+{
+    this->m_conv_coeff.resize(grid.getNodes().size());
+    this->m_conv_coeff.fill(0.0);
+    this->m_diff_coeff.resize(grid.getNodes().size());
+    this->m_diff_coeff[0] = 0.;
+    for (Grid::Index i=1; i!= g.size(); ++i)
+    {
+        const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
+        this->m_diff_coeff[i] = EoN*EoN * (1. / 3.) * grid.getNode(i) /
+          (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
+    }
 }
 
 void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)

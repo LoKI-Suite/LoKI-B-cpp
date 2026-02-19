@@ -37,6 +37,17 @@
 
 namespace loki {
 
+    class ConvectionDiffusionOperator
+    {
+      public:
+        const Vector &conv_coeff() const { return m_conv_coeff; }
+        const Vector &diff_coeff() const { return m_diff_coeff; }
+
+      protected:
+        Vector m_conv_coeff;
+        Vector m_diff_coeff;
+    };
+
     /** When comparing this with \cite Tejero2019, realize that in that paper,
      * equation 6c, the following symbols are used for a gas k:
      *
@@ -71,6 +82,8 @@ namespace loki {
     public:
         using CARGases = std::vector<const Gas*>;
         CAROperator(const CARGases& cg);
+        /// updates base members members C and D
+        void updateCD(const Grid& grid, double Tg);
         /// updates member g
         void evaluate(const Grid& grid, double Tg);
         /// updates member g, then the CAR matrix \a mat
@@ -82,10 +95,12 @@ namespace loki {
         Vector g;
     };
 
-    class ElasticOperator
+    class ElasticOperator : public ConvectionDiffusionOperator
     {
     public:
         ElasticOperator();
+        /// updates base members members C and D
+        void updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg);
         /// updates member g
         void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg);
         /// updates member g, then the elastic matrix \a mat
@@ -95,10 +110,12 @@ namespace loki {
         Vector g;
     };
 
-    class FieldOperator
+    class FieldOperator : public ConvectionDiffusionOperator
     {
     public:
         FieldOperator(const Grid& grid);
+        /// updates base members members C and D
+        void updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g
         void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g, then the field matrix \a mat
