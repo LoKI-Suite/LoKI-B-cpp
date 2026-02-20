@@ -352,4 +352,20 @@ int main()
 
     mat = mat_elast + mat_field;
     const auto eedf = solveCase(grid,mat,"sg_sep");
+
+    /* NOTE: at this point, the first rows of the matrices are modified to
+     * incorporate the normalization constraint. But we do not care, since
+     * the row is multiplied with a zero energy value in the calculation of
+     * the power terms using the expressions below.
+     *
+     * This statement of the power terms is explained in the cpp_notes document.
+     */
+    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
+    const double P_elast = gamma_u_du.dot(mat_elast*eedf);
+    const double P_field = gamma_u_du.dot(mat_field*eedf);
+
+    std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
+    std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
+    std::cout << " Field:   " << std::showpos << P_field << std::endl;
+    std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
 }
