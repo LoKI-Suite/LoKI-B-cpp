@@ -11,6 +11,7 @@
 #include "LoKI-B/Operators.h"
 #include <cmath>
 #include <fstream>
+#include <ios>
 
 #include "tests/TestUtilities.h"
 
@@ -53,16 +54,14 @@ namespace loki {
 class ConvectionDiffusionDiscretizer
 {
 public:
+    using Contributions = std::vector<const ConvectionDiffusionOperator*>;
     ConvectionDiffusionDiscretizer(const Grid& grid)
     : m_grid(grid)
     {
     }
-    using Contributions = std::vector<const ConvectionDiffusionOperator*>;
     const Vector& C() const { return m_C; }
     const Vector& D() const { return m_D; }
-    Vector& C() { return m_C; }
-    Vector& D() { return m_D; }
-    Vector& Pe() { return m_Pe; }
+    const Vector& Pe() const { return m_Pe; }
     void update()
     {
         if (m_contribs.empty())
@@ -98,10 +97,6 @@ public:
     /** \a k is a face index
      *  NOTE: this requires that update has been called, so the members
      *  m_C and m_D are up-to-date.
-     *
-     *  \todo The discretize_XXX functions in this class only differ in which
-     *  calc_coefs_xxx member they call for retrieving the local coefficients
-     *  A and B.
      */
     FluxCoefs calc_coefs_cd(const Vector& C, const Vector& D, Grid::Index k) const
     {
@@ -112,6 +107,10 @@ public:
         const double B = D[k]/du_WP + C[k]*(1-cf);
         return { A, B };
     }
+    /** \todo The discretize_XXX functions in this class only differ in which
+     *  calc_coefs_xxx member they call for retrieving the local coefficients
+     *  A and B.
+     */
     void discretize_cd(const Vector& C, const Vector& D, Matrix& mat) const
     {
         mat.fill(0.0);
@@ -135,7 +134,8 @@ public:
             }
         }
     }
-    // total flux, Central Difference (CD) scheme
+    /** Discretize the total flux, using the central difference (CD) scheme.
+     */
     void discretize_cd(Matrix& mat) const
     {
         discretize_cd(m_C,m_D,mat);
@@ -155,7 +155,11 @@ public:
         const double cf = du_Lf / du_LH;
         const double Pe = m_Pe(k);
         const double ber = bernoulli(Pe);
-        const double A = D[k]/du_LH*ber*std::exp(Pe*cf) - C[k]*(std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe));
+        /* NOTE: for small P we use the approximation
+         * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
+         */
+	const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
+        const double A = D[k]/du_LH*ber*std::exp(Pe*cf) - C[k]*expm1_ratio;
         const double B = A + C[k];
         return { A, B };
     }
@@ -189,6 +193,8 @@ public:
     /** \a k is a face index
      *  NOTE: this requires that update has been called, so the members
      *  m_C, m_D and m_Pe are up-to-date.
+     *  This has the same effect as calling the three-argument overload with
+     *  members m_C and m_D, but this special case allows some simplifications.
      */
     FluxCoefs calc_coefs_sg(Grid::Index k) const
     {
@@ -198,7 +204,9 @@ public:
         const double B = m_D[k]/du_WP*(ber+m_Pe(k));
         return { A, B };
     }
-    // total flux, Scharfetter-Gummel (exponential) scheme
+    /** Discretize the total flux, using the Scharfetter-Gummel (exponential)
+     *  scheme.
+     */
     void discretize_sg(Matrix& mat) const
     {
         mat.fill(0.0);
@@ -237,7 +245,7 @@ private:
  * for this mean energy (this is the analytical solution in case Tg=0).
  * Write the energies, eedf and Druyvesteyn eedfs to file f_<suffix>.dat
  */
-void solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::string& suffix)
+loki::Vector solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::string& suffix)
 {
     std::cout << "Running case '" << suffix << "'." << std::endl;
     std::cout << " * Mold: " << std::endl << mat << std::endl;
@@ -257,6 +265,7 @@ void solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::string& suf
     {
         osf << grid.getCells()[k] << '\t' << eedf[k] << '\t' << eedf_an[k] << std::endl;
     }
+    return eedf;
 }
 
 int main()
@@ -276,20 +285,20 @@ int main()
     Vector sigma_f(grid.getNodes().size());
     sigma_f.fill(1e-19);
 
-    ElasticOperator op_elas;
+    ElasticOperator op_elast;
     FieldOperator op_field(grid);
 
     {
         /* 1. The traditional solution method: call evaluate on the operators
          * to discretize the matrix contributions.
          */
-        SparseMatrix mat_elas(grid.nCells(),grid.nCells());
+        SparseMatrix mat_elast(grid.nCells(),grid.nCells());
         SparseMatrix mat_field(grid.nCells(),grid.nCells());
 
-        op_elas.evaluate(grid,sigma_f,Tg,mat_elas);
+        op_elast.evaluate(grid,sigma_f,Tg,mat_elast);
         op_field.evaluate(grid,sigma_f,EoN,WoN,CIEff,mat_field);
 
-        Matrix mat = mat_elas + mat_field;
+        Matrix mat = mat_elast + mat_field;
 
         solveCase(grid,mat,"old");
     }
@@ -303,10 +312,10 @@ int main()
      */
 
     ConvectionDiffusionDiscretizer disc(grid);
-    disc.register_term(op_elas);
+    disc.register_term(op_elast);
     disc.register_term(op_field);
 
-    op_elas.updateCD(grid,sigma_f,Tg);
+    op_elast.updateCD(grid,sigma_f,Tg);
     op_field.updateCD(grid,sigma_f,EoN,WoN,CIEff);
     disc.update();
 
@@ -333,15 +342,14 @@ int main()
      *    the results afterwards.
      */
 
-    Matrix mat_elas(grid.nCells(),grid.nCells());
-    mat_elas.fill(0.0);
-    disc.discretize_sg(op_elas.conv_coeff(),op_elas.diff_coeff(),mat_elas);
+    Matrix mat_elast(grid.nCells(),grid.nCells());
+    mat_elast.fill(0.0);
+    disc.discretize_sg(op_elast.conv_coeff(),op_elast.diff_coeff(),mat_elast);
 
     Matrix mat_field(grid.nCells(),grid.nCells());
     mat_field.fill(0.0);
     disc.discretize_sg(op_field.conv_coeff(),op_field.diff_coeff(),mat_field);
 
-    mat = mat_elas + mat_field;
-
-    solveCase(grid,mat,"sg_sep");
+    mat = mat_elast + mat_field;
+    const auto eedf = solveCase(grid,mat,"sg_sep");
 }
