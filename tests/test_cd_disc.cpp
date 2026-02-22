@@ -9,6 +9,7 @@
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/Operators.h"
+#include <cassert>
 #include <cmath>
 #include <fstream>
 #include <ios>
@@ -17,7 +18,54 @@
 
 namespace loki {
 
-/** Grid layout:
+/** This convective-diffusive operator manages a std::vector of pointers to
+ *  external convective-diffusive operators. It calculates the base class'
+ *  convection and diffusive coefficients as the sums of the contributions.
+ *  These sums are re-calculated when member update() is called. Terms can
+ *  be added with member register_term.
+ *
+ *  \author Jan van Dijk
+ *  \date February 2026
+ */
+class ConvectionDiffusionTerms : public ConvectionDiffusionOperator
+{
+public:
+    using Terms = std::vector<const ConvectionDiffusionOperator*>;
+    using size_type = Terms::size_type;
+    const Terms& terms() const { return m_terms; }
+    void register_term(ConvectionDiffusionOperator& op)
+    {
+        m_terms.push_back(&op);
+    }
+    void update()
+    {
+        if (m_terms.empty())
+        {
+            this->m_conv_coeff.resize(0);
+            this->m_diff_coeff.resize(0);
+            return;
+        }
+        auto c = m_terms.begin();
+        this->m_conv_coeff = (*c)->conv_coeff();
+        this->m_diff_coeff = (*c)->diff_coeff();
+        assert(this->m_conv_coeff.size()==this->m_diff_coeff.size());
+        for ( ++c ; c != m_terms.end(); ++c)
+        {
+            assert(c->m_conv_coeff.size()==this->m_conv_coeff.size());
+            assert(c->m_diff_coeff.size()==this->m_diff_coeff.size());
+            this->m_conv_coeff += (*c)->conv_coeff();
+            this->m_diff_coeff += (*c)->diff_coeff();
+        }
+    }
+private:
+    Terms m_terms;
+};
+
+/** This namespace contains various functions for discretizing energy-space
+ *  fluxes that are represented by ConvectionDiffusionOperator objects, and
+ *  their energy-derivatives.
+ *
+ *  Grid layout:
  *
  *  x  |  x  |  x
  *  W  w  P  e  E
@@ -39,206 +87,196 @@ namespace loki {
  *                  = -B_wf_W + A_w*f_P + B_e*f_P - A_e*f_E.
  *
  *  At the eastern interface, we can introduce a ghost point f_E at
- *  position u_max + du_ew[n-1]. The flux is then given by
+ *  position u_max. The flux is then given by
  *
  *         Gamma_bnd = B_bnd*f_P - A_bnd*f_E,
  *
  *  and setting this to 0 results in f_E = f_P*B_f/A_f. Here f_P is
  *  the value in the last real cell. With this choice for the ghost
- *  point energy, c_f=1/2 and du_f = 2*du_Pe = du_we.
+ *  point energy, c_f=1 and du_f = du_Pe = du_we/2.
  *
  *  Below we discretize -(Gamma_e-Gamma_w)/du_we --- note the extra
  *  minus sign.
+ *
  *  \todo Note that this renders the matrix NEGATIVE semi-definite.
+ *
+ *  \todo Check the upper boundary flux discretization (ghost point location,
+ *  in particular, see if that is used consistently).
+ *
+ *  \author Jan van Dijk
+ *  \date February 2026
  */
-class ConvectionDiffusionDiscretizer
+namespace Discretizers
 {
-public:
-    using Contributions = std::vector<const ConvectionDiffusionOperator*>;
-    ConvectionDiffusionDiscretizer(const Grid& grid)
-    : m_grid(grid)
-    {
-    }
-    const Vector& C() const { return m_C; }
-    const Vector& D() const { return m_D; }
-    const Vector& Pe() const { return m_Pe; }
-    void update()
-    {
-        if (m_contribs.empty())
-        {
-            m_C.resize(0);
-            m_D.resize(0);
-            m_Pe.resize(0);
-            return;
-        }
-        auto c = m_contribs.begin();
-        m_C = (*c)->conv_coeff();
-        m_D = (*c)->diff_coeff();
-        for ( ++c ; c != m_contribs.end(); ++c)
-        {
-            m_C += (*c)->conv_coeff();
-            m_D += (*c)->diff_coeff();
-        }
-        m_Pe = m_C.array()*m_grid.duNodes().array()/m_D.array();
-    }
-    void register_term(ConvectionDiffusionOperator& op)
-    {
-        m_contribs.push_back(&op);
-    }
     /** The meaning of these coefficients for some face index f is that
      *  Gamma_f = B*f_B - A*f_A, where f_B and f_A are the field values
      *  before and after the face.
      */
-    struct FluxCoefs
+    struct LocalFluxCoefficients
     {
         double A;
         double B;
     };
-    /** \a k is a face index
-     *  NOTE: this requires that update has been called, so the members
-     *  m_C and m_D are up-to-date.
-     */
-    FluxCoefs calc_coefs_cd(const Vector& C, const Vector& D, Grid::Index k) const
+    struct CD
     {
-        const double du_Ww = m_grid.duCell(k-1) / 2;
-        const double du_WP = m_grid.duNode(k);
-        const double cf = du_Ww / du_WP;
-        const double A = D[k]/du_WP - C[k]*cf;
-        const double B = D[k]/du_WP + C[k]*(1-cf);
-        return { A, B };
-    }
-    /** \todo The discretize_XXX functions in this class only differ in which
-     *  calc_coefs_xxx member they call for retrieving the local coefficients
-     *  A and B.
-     */
-    void discretize_cd(const Vector& C, const Vector& D, Matrix& mat) const
-    {
-        mat.fill(0.0);
-        for (Grid::Index k = 1; k < m_grid.nCells(); ++k)
-        {
-            mat.coeffRef(k, k) = 0;
-
-            const double du_we = m_grid.duCell(k);
-            if (k > 0)
-            {
-                const auto coefs = calc_coefs_cd(C,D,k);
-                mat.coeffRef(k, k - 1)  = +coefs.B / du_we;
-                mat.coeffRef(k, k)     += -coefs.A / du_we;
-            }
-
-            if (k < m_grid.nCells() - 1)
-            {
-                const auto coefs = calc_coefs_cd(C,D,k+1);
-                mat.coeffRef(k, k)     += -coefs.B / du_we;
-                mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
-            }
-        }
-    }
-    /** Discretize the total flux, using the central difference (CD) scheme.
-     */
-    void discretize_cd(Matrix& mat) const
-    {
-        discretize_cd(m_C,m_D,mat);
-    }
-    static constexpr double bernoulli(double x)
-    {
-        return std::abs(x) < 1e-9 ? 1-x/2 : x/std::expm1(x);
-    }
-    /** \a k is a face index
-     *  NOTE: this requires that update has been called, so the Peclet number
-     *  is up-to-date.
-     */
-    FluxCoefs calc_coefs_sg_contrib(const Vector& C, const Vector& D, Grid::Index k) const
-    {
-        const double du_Lf = m_grid.duCell(k-1) / 2;
-        const double du_LH = m_grid.duNode(k);
-        const double cf = du_Lf / du_LH;
-        const double Pe = m_Pe(k);
-        const double ber = bernoulli(Pe);
-        /* NOTE: for small P we use the approximation
-         * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
+        /** For the central difference scheme, the partial flux does not depend
+         *  on the total flux. This means that the resulting coefficients do not
+         *  depend on \a sum.
          */
-	const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
-        const double A = D[k]/du_LH*ber*std::exp(Pe*cf) - C[k]*expm1_ratio;
-        const double B = A + C[k];
-        return { A, B };
-    }
-    /** Flux contribution, using the Scharfetter-Gummel (exponential) scheme.
-     *  This uses the contribution's C and D, and the Peclet number that is
-     *  based on the sums of the convective and diffusive contributions.
+        static LocalFluxCoefficients calc_coefs(
+            const Grid& grid,
+            const ConvectionDiffusionOperator& term,
+            const ConvectionDiffusionOperator& sum,
+            Grid::Index k)
+        {
+            const double du_Lf = grid.duCell(k-1) / 2;
+            const double du_LH = grid.duNode(k);
+            const double cf = du_Lf / du_LH;
+            const double A = term.diff_coeff()[k]/du_LH - term.conv_coeff()[k]*cf;
+            // todo: (?) rewrite as const double B = A + term.conv_coeff()[k];
+            const double B = term.diff_coeff()[k]/du_LH + term.conv_coeff()[k]*(1-cf);
+            if (k == grid.getNodes().size() - 1)
+            {
+                /* At the upper boundary, the total flux (represented by 'sum')
+                 * is given by Bsum*f_B - Asum*f_g = 0. Then
+                 * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
+                 */
+                const double sum_A = sum.diff_coeff()[k]/du_LH - sum.conv_coeff()[k]*cf;
+                // todo (?) rewrite as const double sum_B = sum_A + sum.conv_coeff()[k];
+                const double sum_B = sum.diff_coeff()[k]/du_LH + sum.conv_coeff()[k]*(1-cf);
+                return { std::numeric_limits<double>::quiet_NaN(), B - A*sum_B/sum_A };
+            }
+            return { A, B };
+        }
+    };
+    struct SG
+    {
+        static constexpr double bernoulli(double x)
+        {
+            return std::abs(x) < 1e-9 ? 1-x/2 : x/std::expm1(x);
+        }
+        /** \a k is a face index.
+         */
+        static LocalFluxCoefficients calc_coefs(
+            const Grid& grid,
+            const ConvectionDiffusionOperator& term,
+            const ConvectionDiffusionOperator& sum,
+            Grid::Index k)
+        {
+            const double du_LH = grid.duNode(k);
+            const double Pe = sum.conv_coeff()[k]*du_LH/sum.diff_coeff()[k];
+            const double ber = bernoulli(Pe);
+            if (&term==&sum)
+            {
+                /* This means that we are discretizing the total flux. This
+                 * allows some simplifications of the evaluation, but the result
+                 * is the same as (barring round-off errors).
+                 */
+                if (k == grid.getNodes().size() - 1)
+                {
+                    return { std::numeric_limits<double>::quiet_NaN(), 0.0 };
+                }
+                const double A = term.diff_coeff()[k]/du_LH*ber;
+                const double B = term.diff_coeff()[k]/du_LH*(ber+Pe);
+                return { A, B };
+            }
+            // Handle the general case: term is a partial flux.
+            const double du_Lf = grid.duCell(k-1) / 2;
+            const double cf = du_Lf / du_LH;
+            /* NOTE: for small P we use the approximation
+             * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
+             */
+            const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
+            const double A = term.diff_coeff()[k]/du_LH*ber*std::exp(Pe*cf) - term.conv_coeff()[k]*expm1_ratio;
+            const double B = A + term.conv_coeff()[k];
+            if (k == grid.getNodes().size() - 1)
+            {
+                /* At the upper boundary, the total flux (represented by 'sum')
+                 * is given by Bsum*f_B - Asum*f_g = 0. Then
+                 * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
+                 */
+                const double sum_A = sum.diff_coeff()[k]/du_LH*ber;
+                const double sum_B = sum.diff_coeff()[k]/du_LH*(ber+Pe);
+                return { std::numeric_limits<double>::quiet_NaN(), B - A*sum_B/sum_A };
+            }
+            return { A, B };
+        }
+    };
+    /** Flux contribution, using the SchemeTraits.
+     *  This uses the contribution's convection and diffusion coefficients,
+     *  and the Peclet number that is based on the sums of the convective and
+     *  diffusive contributions.
      */
-    void discretize_sg(const Vector& C, const Vector& D, Matrix& mat) const
+    template <class SchemeTraits>
+    void discretize(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum)
     {
         mat.fill(0.0);
-        for (Grid::Index k = 1; k < m_grid.nCells(); ++k)
+        /** \todo We calculate every face twice. This can be fixed by changing
+         *  this in a loop over the faces, and handle the contributions to the
+         *  equations in both the lower and upper adjacent cells.
+         */
+        for (Grid::Index k = 1; k < grid.nCells(); ++k)
         {
             mat.coeffRef(k, k) = 0;
 
-            const double du_we = m_grid.duCell(k);
+            const double du_we = grid.duCell(k);
+            // The flux is 0 at the lower boundary.
             if (k > 0)
             {
-                const auto coefs = calc_coefs_sg_contrib(C,D,k);
+                const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
                 mat.coeffRef(k, k - 1)  = +coefs.B / du_we;
                 mat.coeffRef(k, k)     += -coefs.A / du_we;
             }
-
-            if (k < m_grid.nCells() - 1)
+#define LOKI_DISCRETIZE_BOUNDARY_FLUX 1
+#if LOKI_DISCRETIZE_BOUNDARY_FLUX
+            /* In general, the flux is given by Gamma = B*f_B - A*f_A. At the
+             * upper boundary, Gamma = B*f_B instead. (calc_coefs modifies
+             * coefs.B by eliminating value f_A in the ghost point outide of the grid).
+             */
+            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
+            mat.coeffRef(k, k)     += -coefs.B / du_we;
+            if (k<grid.nCells()-1)
             {
-                const auto coefs = calc_coefs_sg_contrib(C,D,k+1);
+                mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
+            }
+#else
+            if (k < grid.nCells() - 1)
+            {
+                const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
                 mat.coeffRef(k, k)     += -coefs.B / du_we;
                 mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
             }
+#endif
         }
     }
-    /** \a k is a face index
-     *  NOTE: this requires that update has been called, so the members
-     *  m_C, m_D and m_Pe are up-to-date.
-     *  This has the same effect as calling the three-argument overload with
-     *  members m_C and m_D, but this special case allows some simplifications.
+    /** Discretize the total flux, using the SchemeTraits.
      */
-    FluxCoefs calc_coefs_sg(Grid::Index k) const
+    template <class SchemeTraits>
+    void discretize(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& term)
     {
-        const double du_WP = m_grid.duNode(k);
-        const double ber = bernoulli(m_Pe(k));
-        const double A = m_D[k]/du_WP*ber;
-        const double B = m_D[k]/du_WP*(ber+m_Pe(k));
-        return { A, B };
+        discretize<SchemeTraits>(mat,grid,term,term);
     }
-    /** Discretize the total flux, using the Scharfetter-Gummel (exponential)
-     *  scheme.
-     */
-    void discretize_sg(Matrix& mat) const
+    template <class SchemeTraits>
+    void evaluate_flux(Vector& flux, const Grid& grid, const Vector& eedf, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum)
     {
-        mat.fill(0.0);
-        for (Grid::Index k = 1; k < m_grid.nCells(); ++k)
+        flux[0] = 0.0;
+        for (Grid::Index k = 1; k < grid.getNodes().size()-1; ++k)
         {
-            mat.coeffRef(k, k) = 0;
-
-            const double du_we = m_grid.duCell(k);
-            if (k > 0)
-            {
-                const auto coefs = calc_coefs_sg(k);
-                mat.coeffRef(k, k - 1)  = +coefs.B / du_we;
-                mat.coeffRef(k, k)     += -coefs.A / du_we;
-            }
-
-            if (k < m_grid.nCells() - 1)
-            {
-                const auto coefs = calc_coefs_sg(k+1);
-                mat.coeffRef(k, k)     += -coefs.B / du_we;
-                mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
-            }
+                const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+                flux[k] = coefs.B*eedf[k-1] - coefs.A*eedf[k];
         }
+        const Grid::Index k = grid.getNodes().size()-1;
+#if LOKI_DISCRETIZE_BOUNDARY_FLUX
+        const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+        flux[k] = coefs.B*eedf[k-1];
+        assert(coefs.A==std::numeric_limits<double>::quiet_NaN());
+#else
+        flux[k] = 0.0;
+#endif
     }
-private:
-    const Grid& m_grid;
-    Contributions m_contribs;
-    Vector m_C;
-    Vector m_D;
-    Vector m_Pe;
 };
 
-} // name loki
+} // namespace loki
 
 /* Call solveEEDF to solve the 'Boltzmann matrix' mat, calculate the mean
  * energy of the resulting EEDF and calculate the Druyvesteyn distribution
@@ -252,7 +290,6 @@ loki::Vector solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::str
     loki::Vector eedf(grid.nCells());
     loki::solveEEDF(eedf,mat,grid);
 
-
     const double eps = loki::getMeanEnergy(eedf,grid);
     const double T_eV = eps*2.0/3.0;
     // 2: Druyvesteyn
@@ -260,10 +297,10 @@ loki::Vector solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::str
 
     std::cout << " * T = " << T_eV << " eV" << std::endl;
 
-    std::ofstream osf("f_" + suffix + ".dat");
+    std::ofstream ofs("f_" + suffix + ".dat");
     for (loki::Grid::Index k = 0; k < grid.nCells(); ++k)
     {
-        osf << grid.getCells()[k] << '\t' << eedf[k] << '\t' << eedf_an[k] << std::endl;
+        ofs << grid.getCells()[k] << '\t' << eedf[k] << '\t' << eedf_an[k] << std::endl;
     }
     return eedf;
 }
@@ -274,7 +311,7 @@ int main()
     //const double eps = std::numeric_limits<double>::epsilon();
 
     constexpr Grid::Index Nc = 1001;
-    constexpr double u_max = 2e-19/Constant::electronCharge;
+    constexpr double u_max = 0.3; // eV
     const Grid grid(Nc,u_max);
 
     const double Tg = 0; // K
@@ -300,7 +337,22 @@ int main()
 
         Matrix mat = mat_elast + mat_field;
 
-        solveCase(grid,mat,"old");
+        const auto eedf = solveCase(grid,mat,"old");
+
+        double P_elast, P_field;
+        double dummy;
+        op_elast.evaluatePower(grid,eedf,Tg,P_elast,dummy,dummy);
+        /* Here we pass E/N=1. This is a result of the awkward scaling of the
+         * field term: when evaluate is called with 1, we need to apply the
+         * factor (E/N)^2 here; when that is called with the actual E/N value,
+         * we pass 1 here to prevent a second scaling with (E/N)^2.
+         */
+        op_field.evaluatePower(grid,eedf,1.0,P_field);
+        std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
+        std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
+        std::cout << " Field:   " << std::showpos << P_field << std::endl;
+        std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
+
     }
 
     /* the following calculations solve the same problem, but using the
@@ -310,14 +362,14 @@ int main()
      * on the discretizer object, which will update the summed convection
      * and diffusion coefficients and the grid Peclet number.
      */
-
-    ConvectionDiffusionDiscretizer disc(grid);
-    disc.register_term(op_elast);
-    disc.register_term(op_field);
+    ConvectionDiffusionTerms conv_diff_terms;
+    conv_diff_terms.register_term(op_elast);
+    conv_diff_terms.register_term(op_field);
 
     op_elast.updateCD(grid,sigma_f,Tg);
     op_field.updateCD(grid,sigma_f,EoN,WoN,CIEff);
-    disc.update();
+
+    conv_diff_terms.update();
 
     Matrix mat(grid.nCells(),grid.nCells());
 
@@ -326,7 +378,7 @@ int main()
      */
 
     mat.fill(0.0);
-    disc.discretize_cd(mat);
+    Discretizers::discretize<Discretizers::CD>(mat,grid,conv_diff_terms);
     solveCase(grid,mat,"cd");
 
     /* 3. Use ConvectionDiffusionDiscretizer to do the Scharfetter-Gummel
@@ -334,24 +386,36 @@ int main()
      */
 
     mat.fill(0.0);
-    disc.discretize_sg(mat);
+    Discretizers::discretize<Discretizers::SG>(mat,grid,conv_diff_terms);
     solveCase(grid,mat,"sg");
 
-    /* 4. Use ConvectionDiffusionDiscretizer to do the Scharfetter-Gummel
+    /* 4. Use ConvectionDiffusionDiscretizer to do the central difference
      *    discretization of the individual flux contributions. Aggregate
      *    the results afterwards.
      */
+    {
 
     Matrix mat_elast(grid.nCells(),grid.nCells());
     mat_elast.fill(0.0);
-    disc.discretize_sg(op_elast.conv_coeff(),op_elast.diff_coeff(),mat_elast);
+    Discretizers::discretize<Discretizers::CD>(mat_elast,grid,op_elast,conv_diff_terms);
 
     Matrix mat_field(grid.nCells(),grid.nCells());
     mat_field.fill(0.0);
-    disc.discretize_sg(op_field.conv_coeff(),op_field.diff_coeff(),mat_field);
+    Discretizers::discretize<Discretizers::CD>(mat_field,grid,op_field,conv_diff_terms);
 
     mat = mat_elast + mat_field;
-    const auto eedf = solveCase(grid,mat,"sg_sep");
+    const auto eedf = solveCase(grid,mat,"cd_sep");
+    Vector flux_elast(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::CD>(flux_elast,grid,eedf,op_elast,conv_diff_terms);
+    Vector flux_field(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::CD>(flux_field,grid,eedf,op_field,conv_diff_terms);
+    Vector flux_total(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::CD>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
+    std::ofstream ofs("flux_cd_sep.dat");
+    for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
+    {
+        ofs << grid.getNodes()[k] << '\t' << flux_elast[k] << '\t' << flux_field[k] << '\t' << flux_total[k] << std::endl;
+    }
 
     /* NOTE: at this point, the first rows of the matrices are modified to
      * incorporate the normalization constraint. But we do not care, since
@@ -368,4 +432,54 @@ int main()
     std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
     std::cout << " Field:   " << std::showpos << P_field << std::endl;
     std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
+
+    }
+
+    /* 5. Use ConvectionDiffusionDiscretizer to do the Scharfetter-Gummel
+     *    discretization of the individual flux contributions. Aggregate
+     *    the results afterwards.
+     */
+    {
+
+    Matrix mat_elast(grid.nCells(),grid.nCells());
+    mat_elast.fill(0.0);
+    Discretizers::discretize<Discretizers::SG>(mat_elast,grid,op_elast,conv_diff_terms);
+
+    Matrix mat_field(grid.nCells(),grid.nCells());
+    mat_field.fill(0.0);
+    Discretizers::discretize<Discretizers::SG>(mat_field,grid,op_field,conv_diff_terms);
+
+    mat = mat_elast + mat_field;
+    const auto eedf = solveCase(grid,mat,"sg_sep");
+    Vector flux_elast(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::SG>(flux_elast,grid,eedf,op_elast,conv_diff_terms);
+    Vector flux_field(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::SG>(flux_field,grid,eedf,op_field,conv_diff_terms);
+    Vector flux_total(grid.getNodes().size());
+    Discretizers::evaluate_flux<Discretizers::SG>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
+    std::ofstream ofs("flux_sg_sep.dat");
+    for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
+    {
+        ofs << grid.getNodes()[k] << '\t' << flux_elast[k] << '\t' << flux_field[k] << '\t' << flux_total[k] << std::endl;
+    }
+
+    /* NOTE: at this point, the first rows of the matrices are modified to
+     * incorporate the normalization constraint. But we do not care, since
+     * the row is multiplied with a zero energy value in the calculation of
+     * the power terms using the expressions below.
+     *
+     * This statement of the power terms is explained in the cpp_notes document.
+     */
+    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
+    const double P_elast = gamma_u_du.dot(mat_elast*eedf);
+    const double P_field = gamma_u_du.dot(mat_field*eedf);
+
+    std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
+    std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
+    std::cout << " Field:   " << std::showpos << P_field << std::endl;
+    std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
+
+    }
+
+    return 0;
 }

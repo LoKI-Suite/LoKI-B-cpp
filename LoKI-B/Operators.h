@@ -42,7 +42,6 @@ namespace loki {
       public:
         const Vector &conv_coeff() const { return m_conv_coeff; }
         const Vector &diff_coeff() const { return m_diff_coeff; }
-
       protected:
         Vector m_conv_coeff;
         Vector m_diff_coeff;
