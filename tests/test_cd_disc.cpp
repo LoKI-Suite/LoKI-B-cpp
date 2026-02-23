@@ -51,8 +51,8 @@ public:
         assert(this->m_conv_coeff.size()==this->m_diff_coeff.size());
         for ( ++c ; c != m_terms.end(); ++c)
         {
-            assert(c->m_conv_coeff.size()==this->m_conv_coeff.size());
-            assert(c->m_diff_coeff.size()==this->m_diff_coeff.size());
+            assert((*c)->conv_coeff().size()==this->m_conv_coeff.size());
+            assert((*c)->diff_coeff().size()==this->m_diff_coeff.size());
             this->m_conv_coeff += (*c)->conv_coeff();
             this->m_diff_coeff += (*c)->diff_coeff();
         }
@@ -310,6 +310,80 @@ loki::Vector solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::str
     return eedf;
 }
 
+template <class SchemeT>
+void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& conv_diff_terms, const std::string& scheme_name)
+{
+    using namespace loki;
+
+    Matrix mat(grid.nCells(),grid.nCells());
+
+    /* 1. Do the discretization of the total flux.
+     */
+
+    mat.fill(0.0);
+    discretize_dflux_du<SchemeT>(mat,grid,conv_diff_terms);
+    solveCase(grid,mat,scheme_name);
+
+    /* 2. Do the discretization of the individual flux contributions, store the
+     * matrices. Aggregate the results afterwards to discretize the total flux,
+     * then evaluate the individual power terms.
+     */
+    {
+
+    std::vector<Matrix> mats(conv_diff_terms.terms().size());
+    Matrix mat_term(grid.nCells(),grid.nCells());
+    for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
+    {
+        mats[t].resize(grid.nCells(),grid.nCells());
+        mats[t].fill(0.0);
+        discretize_dflux_du<SchemeT>(mats[t],grid,*conv_diff_terms.terms()[t],conv_diff_terms);
+        mat += mats[t];
+    }
+    const auto eedf = solveCase(grid,mat,scheme_name+"_sep");
+
+    std::vector<Vector> fluxes(conv_diff_terms.terms().size());
+    Vector flux_sum(grid.getNodes().size());
+    flux_sum.fill(0.0);
+    for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
+    {
+        fluxes[t].resize(grid.getNodes().size());
+        evaluate_flux<SchemeT>(fluxes[t],grid,eedf,*conv_diff_terms.terms()[t],conv_diff_terms);
+        flux_sum += fluxes[t];
+    }
+    Vector flux_total(grid.getNodes().size());
+    evaluate_flux<SchemeT>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
+    std::ofstream ofs("flux_"+scheme_name+"_sep.dat");
+    for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
+    {
+        ofs << grid.getNodes()[k];
+        for (const auto& f : fluxes)
+        {
+            ofs << '\t' << f[k];
+        }
+        ofs << '\t' << flux_sum[k] << '\t' << flux_total[k] << std::endl;
+    }
+
+    /* NOTE: at this point, the first rows of the matrices are modified to
+     * incorporate the normalization constraint. But we do not care, since
+     * the row is multiplied with a zero energy value in the calculation of
+     * the power terms using the expressions below.
+     *
+     * This statement of the power terms is explained in the cpp_notes document.
+     */
+    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
+    std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
+    double P_sum=0;
+    for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
+    {
+        const double P_term = gamma_u_du.dot(mats[t]*eedf);
+        std::cout << "Term #" << t << ": " << std::showpos << P_term << std::endl;
+        P_sum += P_term;
+    }
+    std::cout << "    Sum: " << std::showpos << P_sum << std::endl;
+
+    }
+}
+
 int main()
 {
     using namespace loki;
@@ -376,115 +450,8 @@ int main()
 
     conv_diff_terms.update();
 
-    Matrix mat(grid.nCells(),grid.nCells());
-
-    /* 2. Use ConvectionDiffusionDiscretizer to do the central difference
-     *    discretization of the total flux.
-     */
-
-    mat.fill(0.0);
-    discretize_dflux_du<Schemes::CD>(mat,grid,conv_diff_terms);
-    solveCase(grid,mat,"cd");
-
-    /* 3. Use ConvectionDiffusionDiscretizer to do the Scharfetter-Gummel
-     *    discretization of the total flux.
-     */
-
-    mat.fill(0.0);
-    discretize_dflux_du<Schemes::SG>(mat,grid,conv_diff_terms);
-    solveCase(grid,mat,"sg");
-
-    /* 4. Use ConvectionDiffusionDiscretizer to do the central difference
-     *    discretization of the individual flux contributions. Aggregate
-     *    the results afterwards.
-     */
-    {
-
-    Matrix mat_elast(grid.nCells(),grid.nCells());
-    mat_elast.fill(0.0);
-    discretize_dflux_du<Schemes::CD>(mat_elast,grid,op_elast,conv_diff_terms);
-
-    Matrix mat_field(grid.nCells(),grid.nCells());
-    mat_field.fill(0.0);
-    discretize_dflux_du<Schemes::CD>(mat_field,grid,op_field,conv_diff_terms);
-
-    mat = mat_elast + mat_field;
-    const auto eedf = solveCase(grid,mat,"cd_sep");
-    Vector flux_elast(grid.getNodes().size());
-    evaluate_flux<Schemes::CD>(flux_elast,grid,eedf,op_elast,conv_diff_terms);
-    Vector flux_field(grid.getNodes().size());
-    evaluate_flux<Schemes::CD>(flux_field,grid,eedf,op_field,conv_diff_terms);
-    Vector flux_total(grid.getNodes().size());
-    evaluate_flux<Schemes::CD>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
-    std::ofstream ofs("flux_cd_sep.dat");
-    for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
-    {
-        ofs << grid.getNodes()[k] << '\t' << flux_elast[k] << '\t' << flux_field[k] << '\t' << flux_total[k] << std::endl;
-    }
-
-    /* NOTE: at this point, the first rows of the matrices are modified to
-     * incorporate the normalization constraint. But we do not care, since
-     * the row is multiplied with a zero energy value in the calculation of
-     * the power terms using the expressions below.
-     *
-     * This statement of the power terms is explained in the cpp_notes document.
-     */
-    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
-    const double P_elast = gamma_u_du.dot(mat_elast*eedf);
-    const double P_field = gamma_u_du.dot(mat_field*eedf);
-
-    std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
-    std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
-    std::cout << " Field:   " << std::showpos << P_field << std::endl;
-    std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
-
-    }
-
-    /* 5. Use ConvectionDiffusionDiscretizer to do the Scharfetter-Gummel
-     *    discretization of the individual flux contributions. Aggregate
-     *    the results afterwards.
-     */
-    {
-
-    Matrix mat_elast(grid.nCells(),grid.nCells());
-    mat_elast.fill(0.0);
-    discretize_dflux_du<Schemes::SG>(mat_elast,grid,op_elast,conv_diff_terms);
-
-    Matrix mat_field(grid.nCells(),grid.nCells());
-    mat_field.fill(0.0);
-    discretize_dflux_du<Schemes::SG>(mat_field,grid,op_field,conv_diff_terms);
-
-    mat = mat_elast + mat_field;
-    const auto eedf = solveCase(grid,mat,"sg_sep");
-    Vector flux_elast(grid.getNodes().size());
-    evaluate_flux<Schemes::SG>(flux_elast,grid,eedf,op_elast,conv_diff_terms);
-    Vector flux_field(grid.getNodes().size());
-    evaluate_flux<Schemes::SG>(flux_field,grid,eedf,op_field,conv_diff_terms);
-    Vector flux_total(grid.getNodes().size());
-    evaluate_flux<Schemes::SG>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
-    std::ofstream ofs("flux_sg_sep.dat");
-    for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
-    {
-        ofs << grid.getNodes()[k] << '\t' << flux_elast[k] << '\t' << flux_field[k] << '\t' << flux_total[k] << std::endl;
-    }
-
-    /* NOTE: at this point, the first rows of the matrices are modified to
-     * incorporate the normalization constraint. But we do not care, since
-     * the row is multiplied with a zero energy value in the calculation of
-     * the power terms using the expressions below.
-     *
-     * This statement of the power terms is explained in the cpp_notes document.
-     */
-    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
-    const double P_elast = gamma_u_du.dot(mat_elast*eedf);
-    const double P_field = gamma_u_du.dot(mat_field*eedf);
-
-    std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
-    std::cout << " Elastic: " << std::showpos << P_elast << std::endl;
-    std::cout << " Field:   " << std::showpos << P_field << std::endl;
-    std::cout << " Net:     " << std::showpos << (P_elast+P_field) << std::endl;
-
-    }
+    test_scheme<Schemes::CD>(grid, conv_diff_terms, "cd");
+    test_scheme<Schemes::SG>(grid, conv_diff_terms, "sg");
 
     return 0;
 }
