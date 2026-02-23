@@ -317,7 +317,8 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
 
     Matrix mat(grid.nCells(),grid.nCells());
 
-    /* 1. Do the discretization of the total flux.
+    /* 1. Do the discretization of the total flux, solve the equation and
+     * print the results.
      */
 
     mat.fill(0.0);
@@ -326,29 +327,30 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
 
     /* 2. Do the discretization of the individual flux contributions, store the
      * matrices. Aggregate the results afterwards to discretize the total flux,
-     * then evaluate the individual power terms.
+     * solve the equation, then evaluate and print the individual flux contributions
+     * and the power terms.
      */
     {
 
-    std::vector<Matrix> mats(conv_diff_terms.terms().size());
+    std::vector<Matrix> mat_contribs(conv_diff_terms.terms().size());
     Matrix mat_term(grid.nCells(),grid.nCells());
     for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
     {
-        mats[t].resize(grid.nCells(),grid.nCells());
-        mats[t].fill(0.0);
-        discretize_dflux_du<SchemeT>(mats[t],grid,*conv_diff_terms.terms()[t],conv_diff_terms);
-        mat += mats[t];
+        mat_contribs[t].resize(grid.nCells(),grid.nCells());
+        mat_contribs[t].fill(0.0);
+        discretize_dflux_du<SchemeT>(mat_contribs[t],grid,*conv_diff_terms.terms()[t],conv_diff_terms);
+        mat += mat_contribs[t];
     }
     const auto eedf = solveCase(grid,mat,scheme_name+"_sep");
 
-    std::vector<Vector> fluxes(conv_diff_terms.terms().size());
+    std::vector<Vector> flux_contribs(conv_diff_terms.terms().size());
     Vector flux_sum(grid.getNodes().size());
     flux_sum.fill(0.0);
     for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
     {
-        fluxes[t].resize(grid.getNodes().size());
-        evaluate_flux<SchemeT>(fluxes[t],grid,eedf,*conv_diff_terms.terms()[t],conv_diff_terms);
-        flux_sum += fluxes[t];
+        flux_contribs[t].resize(grid.getNodes().size());
+        evaluate_flux<SchemeT>(flux_contribs[t],grid,eedf,*conv_diff_terms.terms()[t],conv_diff_terms);
+        flux_sum += flux_contribs[t];
     }
     Vector flux_total(grid.getNodes().size());
     evaluate_flux<SchemeT>(flux_total,grid,eedf,conv_diff_terms,conv_diff_terms);
@@ -356,7 +358,7 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
     for (loki::Grid::Index k = 0; k < grid.getNodes().size(); ++k)
     {
         ofs << grid.getNodes()[k];
-        for (const auto& f : fluxes)
+        for (const auto& f : flux_contribs)
         {
             ofs << '\t' << f[k];
         }
@@ -375,7 +377,7 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
     double P_sum=0;
     for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
     {
-        const double P_term = gamma_u_du.dot(mats[t]*eedf);
+        const double P_term = gamma_u_du.dot(mat_contribs[t]*eedf);
         std::cout << "Term #" << t << ": " << std::showpos << P_term << std::endl;
         P_sum += P_term;
     }
