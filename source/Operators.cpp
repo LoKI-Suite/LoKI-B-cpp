@@ -44,6 +44,22 @@ CAROperator::CAROperator(const CARGases& cg)
      */
 }
 
+void CAROperator::updateCD(const Grid& grid, double Tg)
+{
+    constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;
+    m_sigma0B = 0.;
+    for (const auto &gas : carGases)
+    {
+        const double Qau = gas->electricQuadrupoleMoment/(Constant::electronCharge*a02);
+        m_sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
+    }
+    m_sigma0B *= (8.*Constant::pi*a02/15.);
+
+    // conv_coeff is negative, diff_coeff is positive
+    this->m_conv_coeff = -grid.getNodes() * (4. * m_sigma0B);
+    this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
+}
+
 void CAROperator::evaluate(const Grid& grid, double Tg)
 {
     constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;

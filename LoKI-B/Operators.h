@@ -76,7 +76,7 @@ namespace loki {
      *  in the paper. All in all, CARmatrix seems to be defined such that
      *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
      */
-    class CAROperator
+    class CAROperator : public ConvectionDiffusionOperator
     {
     public:
         using CARGases = std::vector<const Gas*>;
