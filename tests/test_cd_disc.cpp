@@ -406,7 +406,6 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
      * solve the equation, then evaluate and print the individual flux contributions
      * and the power terms.
      */
-    {
 
     std::vector<Matrix> mat_contribs(conv_diff_terms.terms().size());
     Matrix mat_term(grid.nCells(),grid.nCells());
@@ -441,10 +440,10 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
         ofs << '\t' << flux_sum[k] << '\t' << flux_total[k] << std::endl;
     }
 
-    /* NOTE: at this point, the first rows of the matrices are modified to
-     * incorporate the normalization constraint. But we do not care, since
-     * the row is multiplied with a zero energy value in the calculation of
-     * the power terms using the expressions below.
+    /* NOTE: the first rows of the matrices are not set up by the discretizers
+     * at present. We do not care, since this row is multiplied with a zero
+     * energy value in the calculation of the power terms using the expressions
+     * below.
      *
      * This statement of the power terms is explained in the cpp_notes document.
      */
@@ -459,7 +458,6 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
     }
     std::cout << "    Sum: " << std::showpos << P_sum << std::endl;
 
-    }
 }
 
 int main()
