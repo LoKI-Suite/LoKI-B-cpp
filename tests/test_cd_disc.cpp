@@ -30,13 +30,27 @@ namespace loki {
 class ConvectionDiffusionTerms : public ConvectionDiffusionOperator
 {
 public:
+    /// Type of the container of pointers to the drift-diffusive terms
     using Terms = std::vector<const ConvectionDiffusionOperator*>;
+    /// Type of the size of the Terms contains
     using size_type = Terms::size_type;
+    /// returns a constant reference to the drift-diffusive terms
     const Terms& terms() const { return m_terms; }
-    void register_term(ConvectionDiffusionOperator& op)
+    /** Register the pointer to \a term with the term container.
+     *  The lifetime of \a term should exceed that of the present class.
+     */
+    void register_term(const ConvectionDiffusionOperator& term)
     {
-        m_terms.push_back(&op);
+        m_terms.push_back(&term);
     }
+    /** Re-calculate the sum of the convection and diffusion coefficients of
+     *  the terms and store the results in the inherited members m_conv_coeff
+     *  and m_diff_coeff. Those are resized, if necessary. The coefficient
+     *  vectors of the contributions must be all the same, otherwise the
+     *  bahaviour is undefined (in debug mode, an assert will be triggered).
+     *  If the term container is empty, members m_conv_coeff and m_diff_coeff
+     *  will be resized to size 0.
+     */
     void update()
     {
         if (m_terms.empty())
@@ -58,6 +72,7 @@ public:
         }
     }
 private:
+    /// The container of pointers to the drift-diffusive terms.
     Terms m_terms;
 };
 
@@ -109,20 +124,35 @@ private:
 namespace Schemes
 {
     /** The meaning of these coefficients for some face index f is that
-     *  Gamma_f = B*f_B - A*f_A, where f_B and f_A are the field values
-     *  before and after the face.
+     *  Gamma_f = B*f_B - A*f_A, where f_B and f_A are the field values before
+     *  and after the face. For a face with index n, the flux expression is
+     *  Gamma[n] = B*f[n-1]+A*F[n] (see the Grid class for an explanation of the
+     *  layout and numbering of faces and cells). If either field value does not
+     *  exist (coefficient A or B at the upper and lower energy grid boundary,
+     *  respectively), the corresponding coefficient is set to a (quiet) NaN by
+     *  the functions in this namespace.
      */
     struct LocalFluxCoefficients
     {
+        /// coefficient of the field value in the cell after the face
         double A;
+        /// coefficient of the field value in the cell before the face
         double B;
     };
+    /** This structure provides member calc_coefs for the central difference
+     *  scheme.
+     */
     struct CD
     {
-        /** For the central difference scheme, the partial flux does not depend
-         *  on the total flux. This means that the resulting coefficients do not
-         *  depend on \a sum, except at the upper boundary, where the field value
-         *  follows from the requirement that the *total* flux is zero.
+        /** Calculate the flux coefficients A and B for the flux at face \a k
+         *  using the central difference scheme.
+         *  At the upper grid boundary, a ghost cell point is introduced
+         *  at u=u_max, and the requirement that the *total* flux (calculated
+         *  from \a sum, and using the central difference scheme as well) is
+         *  zero is used to eliminate the ghost point contribution, using a
+         *  modified coefficient B. (Coefficient A should not be used, is value
+         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
+	 *  and B=0.0: there the flux is zero.
          */
         static LocalFluxCoefficients calc_coefs(
             const Grid& grid,
@@ -130,33 +160,68 @@ namespace Schemes
             const ConvectionDiffusionOperator& sum,
             Grid::Index k)
         {
+            if (k==0)
+            {
+                return { 0.0, std::numeric_limits<double>::quiet_NaN() };
+            }
+            /* note: at u=u_max (the upper boundary face) this results in
+             * du_LF==du_LH, which amounts to placing the ghost point (see
+             * below) at location u=u_max.
+             */
             const double du_Lf = grid.duCell(k-1) / 2;
             const double du_LH = grid.duNode(k);
             const double cf = du_Lf / du_LH;
-            const double A = term.diff_coeff()[k]/du_LH - term.conv_coeff()[k]*cf;
-            // todo: (?) rewrite as const double B = A + term.conv_coeff()[k];
-            const double B = term.diff_coeff()[k]/du_LH + term.conv_coeff()[k]*(1-cf);
+            const double D = term.diff_coeff()[k];
+            const double C = term.conv_coeff()[k];
+            const double A = D/du_LH - C*cf;
+            const double B = A + C;
             if (k == grid.getNodes().size() - 1)
             {
                 /* At the upper boundary, the total flux (represented by 'sum')
-                 * is given by Bsum*f_B - Asum*f_g = 0. Then
+                 * is given by Bsum*f_B - Asum*f_g = 0, where f_g is the value
+                 * in the ghost point, which is located on the grid boundary.
+                 * Then
                  * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
                  */
-                const double sum_A = sum.diff_coeff()[k]/du_LH - sum.conv_coeff()[k]*cf;
-                // todo (?) rewrite as const double sum_B = sum_A + sum.conv_coeff()[k];
-                const double sum_B = sum.diff_coeff()[k]/du_LH + sum.conv_coeff()[k]*(1-cf);
-                return { std::numeric_limits<double>::quiet_NaN(), B - A*sum_B/sum_A };
+                const double Dsum = sum.diff_coeff()[k];
+                const double Csum = sum.conv_coeff()[k];
+                const double Asum = Dsum/du_LH - Csum*cf;
+                const double Bsum = Asum + Csum;
+                return { std::numeric_limits<double>::quiet_NaN(), B - A*Bsum/Asum };
             }
             return { A, B };
         }
     };
+    /** This structure provides member calc_coefs for the Scharfetter-Gummel
+     *  ('exponential') scheme.
+     */
     struct SG
     {
+        /** Calculate and return the bernoulli function for argument value \a x.
+         *  This is defined as B(x)=x/(exp(x)-1) for x not equal to 0, and
+         *  special value B(0)=lim_{x->0} B(x)=1. For small argument values
+         *  (|x|<1e-9), the approximation 1-x/2 of the Taylor expansion
+         *  x/(1+x+x^2/2+... -1) is used, for larger values of |x|, std::expm1
+         *  is used for the numerator exp(x)-1.
+         */
         static constexpr double bernoulli(double x)
         {
             return std::abs(x) < 1e-9 ? 1-x/2 : x/std::expm1(x);
         }
-        /** \a k is a face index.
+        /** Calculate the flux coefficients A and B for the flux at face \a k
+         *  using the Scharfetter-Gummel scheme.
+         *  At the upper grid boundary, a ghost cell point is introduced
+         *  at u=u_max, and the requirement that the *total* flux (calculated
+         *  from \a sum, and using theScharfetter-Gummel scheme as well) is
+         *  zero is used to eliminate the ghost point contribution, using a
+         *  modified coefficient B. (Coefficient A should not be used, is value
+         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
+	 *  and B=0.0: there the flux is zero.
+         *
+         *  The function is optimized for the case that \a term and \a sum are
+         *  identical (more precisely: that they refer to the same object). In
+         *  that case, the usual exponential scheme can be used, and the
+         *  boundary fluxes are zero.
          */
         static LocalFluxCoefficients calc_coefs(
             const Grid& grid,
@@ -164,21 +229,28 @@ namespace Schemes
             const ConvectionDiffusionOperator& sum,
             Grid::Index k)
         {
+            if (k==0)
+            {
+                return { 0.0, std::numeric_limits<double>::quiet_NaN() };
+            }
             const double du_LH = grid.duNode(k);
-            const double Pe = sum.conv_coeff()[k]*du_LH/sum.diff_coeff()[k];
+            const double Dsum = sum.diff_coeff()[k];
+            const double Csum = sum.conv_coeff()[k];
+            const double Pe = Csum*du_LH/Dsum;
             const double ber = bernoulli(Pe);
             if (&term==&sum)
             {
                 /* This means that we are discretizing the total flux. This
                  * allows some simplifications of the evaluation, but the result
-                 * is the same as (barring round-off errors).
+                 * should be the same as when the general code is used (barring
+		 * round-off errors).
                  */
                 if (k == grid.getNodes().size() - 1)
                 {
                     return { std::numeric_limits<double>::quiet_NaN(), 0.0 };
                 }
-                const double A = term.diff_coeff()[k]/du_LH*ber;
-                const double B = term.diff_coeff()[k]/du_LH*(ber+Pe);
+                const double A = Dsum/du_LH*ber;
+                const double B = A + Csum;
                 return { A, B };
             }
             // Handle the general case: term is a partial flux.
@@ -188,17 +260,21 @@ namespace Schemes
              * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
              */
             const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
-            const double A = term.diff_coeff()[k]/du_LH*ber*std::exp(Pe*cf) - term.conv_coeff()[k]*expm1_ratio;
-            const double B = A + term.conv_coeff()[k];
+            const double D = term.diff_coeff()[k];
+            const double C = term.conv_coeff()[k];
+            const double A = D/du_LH*ber*std::exp(Pe*cf) - C*expm1_ratio;
+            const double B = A + C;
             if (k == grid.getNodes().size() - 1)
             {
                 /* At the upper boundary, the total flux (represented by 'sum')
-                 * is given by Bsum*f_B - Asum*f_g = 0. Then
+                 * is given by Bsum*f_B - Asum*f_g = 0, where f_g is the value
+                 * in the ghost point, which is located on the grid boundary.
+                 * Then
                  * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
                  */
-                const double sum_A = sum.diff_coeff()[k]/du_LH*ber;
-                const double sum_B = sum.diff_coeff()[k]/du_LH*(ber+Pe);
-                return { std::numeric_limits<double>::quiet_NaN(), B - A*sum_B/sum_A };
+                const double Asum = Dsum/du_LH*ber;
+                const double Bsum = Asum + Csum;
+                return { std::numeric_limits<double>::quiet_NaN(), B - A*Bsum/Asum };
             }
             return { A, B };
         }
