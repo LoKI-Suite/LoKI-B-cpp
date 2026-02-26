@@ -152,7 +152,7 @@ namespace Schemes
          *  zero is used to eliminate the ghost point contribution, using a
          *  modified coefficient B. (Coefficient A should not be used, is value
          *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
-	 *  and B=0.0: there the flux is zero.
+         *  and B=0.0: there the flux is zero.
          */
         static LocalFluxCoefficients calc_coefs(
             const Grid& grid,
@@ -216,7 +216,7 @@ namespace Schemes
          *  zero is used to eliminate the ghost point contribution, using a
          *  modified coefficient B. (Coefficient A should not be used, is value
          *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
-	 *  and B=0.0: there the flux is zero.
+         *  and B=0.0: there the flux is zero.
          *
          *  The function is optimized for the case that \a term and \a sum are
          *  identical (more precisely: that they refer to the same object). In
@@ -243,7 +243,7 @@ namespace Schemes
                 /* This means that we are discretizing the total flux. This
                  * allows some simplifications of the evaluation, but the result
                  * should be the same as when the general code is used (barring
-		 * round-off errors).
+                 * round-off errors).
                  */
                 if (k == grid.getNodes().size() - 1)
                 {
@@ -310,7 +310,7 @@ void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusio
 #define LOKI_DISCRETIZE_BOUNDARY_FLUX 1
 #if LOKI_DISCRETIZE_BOUNDARY_FLUX
         /* In general, the flux is given by Gamma = B*f_B - A*f_A. At the
-         * upper boundary, Gamma = B*f_B instead. (calc_coefs modifies
+         * upper boundary, Gamma = B*f_B instead (calc_coefs modifies
          * coefs.B by eliminating value f_A in the ghost point outide of the grid).
          */
         const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
