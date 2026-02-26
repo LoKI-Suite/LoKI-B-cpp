@@ -351,7 +351,7 @@ void evaluate_flux(Vector& flux, const Grid& grid, const Vector& eedf, const Con
 #if LOKI_DISCRETIZE_BOUNDARY_FLUX
     const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
     flux[k] = coefs.B*eedf[k-1];
-    assert(coefs.A==std::numeric_limits<double>::quiet_NaN());
+    assert(std::isnan(coefs.A));
 #else
     flux[k] = 0.0;
 #endif
