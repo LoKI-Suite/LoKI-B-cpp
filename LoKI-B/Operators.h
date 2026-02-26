@@ -30,22 +30,13 @@
 #ifndef LOKI_CPP_OPERATORS_H
 #define LOKI_CPP_OPERATORS_H
 
+#include "LoKI-B/ConvDiff.h"
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfMixture.h"
 #include <vector>
 
 namespace loki {
-
-    class ConvectionDiffusionOperator
-    {
-      public:
-        const Vector &conv_coeff() const { return m_conv_coeff; }
-        const Vector &diff_coeff() const { return m_diff_coeff; }
-      protected:
-        Vector m_conv_coeff;
-        Vector m_diff_coeff;
-    };
 
     /** When comparing this with \cite Tejero2019, realize that in that paper,
      * equation 6c, the following symbols are used for a gas k:
