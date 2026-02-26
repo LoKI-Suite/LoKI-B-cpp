@@ -29,6 +29,8 @@
  */
 
 #include "LoKI-B/ConvDiff.h"
+#include <cassert>
+#include <limits>
 
 namespace loki {
 
@@ -158,10 +160,10 @@ LocalFluxCoefficients SG::calc_coefs(
 
 template <class SchemeTraits>
 void discretize_dflux_du(
-                        Matrix& mat,
-                        const Grid& grid,
-                        const ConvectionDiffusionOperator& term,
-                        const ConvectionDiffusionOperator& sum)
+    Matrix& mat,
+    const Grid& grid,
+    const ConvectionDiffusionOperator& term,
+    const ConvectionDiffusionOperator& sum)
 {
     mat.fill(0.0);
     /** \todo We calculate every face twice. This can be fixed by changing
@@ -204,12 +206,21 @@ void discretize_dflux_du(
 }
 
 template <class SchemeTraits>
+void discretize_dflux_du(
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& sum)
+{
+    discretize_dflux_du<SchemeTraits>(mat,grid,sum,sum);
+}
+
+template <class SchemeTraits>
 void evaluate_flux_density(
-                        Vector& flux,
-                        const Grid& grid,
-                        const Vector& eedf,
-                        const ConvectionDiffusionOperator& term,
-                        const ConvectionDiffusionOperator& sum)
+    Vector& flux,
+    const Grid& grid,
+    const Vector& eedf,
+    const ConvectionDiffusionOperator& term,
+    const ConvectionDiffusionOperator& sum)
 {
     flux[0] = 0.0;
     for (Grid::Index k = 1; k < grid.getNodes().size()-1; ++k)
@@ -227,34 +238,67 @@ void evaluate_flux_density(
 #endif
 }
 
-// explicit instantiation for Schemes::CD:
+template <class SchemeTraits>
+void evaluate_flux_density(
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& sum)
+{
+    evaluate_flux_density<SchemeTraits>(flux,grid,eedf,sum,sum);
+}
+
+
+// explicit instantiations for Schemes::CD:
 
 template void discretize_dflux_du<Schemes::CD>(
-                        Matrix& mat, 
-                        const Grid& grid, 
-                        const ConvectionDiffusionOperator& term, 
-                        const ConvectionDiffusionOperator& sum);
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
+
+template void discretize_dflux_du<Schemes::CD>(
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& sum);
 
 template void evaluate_flux_density<Schemes::CD>(
-                        Vector& flux, 
-                        const Grid& grid, 
-                        const Vector& eedf, 
-                        const ConvectionDiffusionOperator& term, 
-                        const ConvectionDiffusionOperator& sum);
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
+
+template void evaluate_flux_density<Schemes::CD>(
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& sum);
 
 // explicit instantiations for Schemes::SG:
 
 template void discretize_dflux_du<Schemes::SG>(
-                        Matrix& mat, 
-                        const Grid& grid, 
-                        const ConvectionDiffusionOperator& term, 
-                        const ConvectionDiffusionOperator& sum);
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
+
+template void discretize_dflux_du<Schemes::SG>(
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& sum);
 
 template void evaluate_flux_density<Schemes::SG>(
-                        Vector& flux, 
-                        const Grid& grid, 
-                        const Vector& eedf, 
-                        const ConvectionDiffusionOperator& term, 
-                        const ConvectionDiffusionOperator& sum);
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
+
+template void evaluate_flux_density<Schemes::SG>(
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& sum);
 
 } // namespace loki

@@ -32,9 +32,7 @@
 #define LOKI_CPP_CONVDIFF_H
 
 #include "LoKI-B/Grid.h"
-#include <cassert>
 #include <cmath>
-#include <limits>
 #include <vector>
 
 namespace loki {
@@ -164,6 +162,7 @@ namespace Schemes
         /// coefficient of the field value in the cell before the face
         double B;
     };
+
     /** This structure provides member calc_coefs for the central difference
      *  scheme.
      */
@@ -235,7 +234,11 @@ namespace Schemes
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum);
+void discretize_dflux_du(
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
 
 /** Discretize the divergence of the (total) flux \a sum, using the SchemeTraits.
  *
@@ -243,10 +246,10 @@ void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusio
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& sum)
-{
-    discretize_dflux_du<SchemeTraits>(mat,grid,sum,sum);
-}
+void discretize_dflux_du(
+    Matrix& mat, 
+    const Grid& grid, 
+    const ConvectionDiffusionOperator& sum);
 
 /** Evaluate flux contribution \a term, flux, using the SchemeTraits.
  *
@@ -254,7 +257,12 @@ void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusio
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void evaluate_flux_density(Vector& flux, const Grid& grid, const Vector& eedf, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum);
+void evaluate_flux_density(
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& term, 
+    const ConvectionDiffusionOperator& sum);
 
 /** Evaluate (total) flux \a sum, flux, using the SchemeTraits.
  *
@@ -262,10 +270,11 @@ void evaluate_flux_density(Vector& flux, const Grid& grid, const Vector& eedf, c
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void evaluate_flux_density(Vector& flux, const Grid& grid, const Vector& eedf, const ConvectionDiffusionOperator& sum)
-{
-    evaluate_flux_density<SchemeTraits>(flux,grid,eedf,sum,sum);
-}
+void evaluate_flux_density(
+    Vector& flux, 
+    const Grid& grid, 
+    const Vector& eedf, 
+    const ConvectionDiffusionOperator& sum);
 
 } // namespace loki
 
