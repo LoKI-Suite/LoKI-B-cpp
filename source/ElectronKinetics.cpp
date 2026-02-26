@@ -1,6 +1,6 @@
 /** \file
  *
- *  Interfaces of classes that produce the EEDF and calculate swarm
+ *  Implementations of classes that produce the EEDF and calculate swarm
  *  parameters and power terms.
  *
  *  LoKI-B solves a time and space independent form of the two-term

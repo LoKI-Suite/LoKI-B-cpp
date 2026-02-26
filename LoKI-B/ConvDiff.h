@@ -86,10 +86,7 @@ public:
     /** Register the pointer to \a term with the term container.
      *  The lifetime of \a term should exceed that of the present class.
      */
-    void register_term(const ConvectionDiffusionOperator& term)
-    {
-        m_terms.push_back(&term);
-    }
+    void register_term(const ConvectionDiffusionOperator& term);
     /** Re-calculate the sum of the convection and diffusion coefficients of
      *  the terms and store the results in the inherited members m_conv_coeff
      *  and m_diff_coeff. Those are resized, if necessary. The coefficient
@@ -98,26 +95,7 @@ public:
      *  If the term container is empty, members m_conv_coeff and m_diff_coeff
      *  will be resized to size 0.
      */
-    void update()
-    {
-        if (m_terms.empty())
-        {
-            this->m_conv_coeff.resize(0);
-            this->m_diff_coeff.resize(0);
-            return;
-        }
-        auto c = m_terms.begin();
-        this->m_conv_coeff = (*c)->conv_coeff();
-        this->m_diff_coeff = (*c)->diff_coeff();
-        assert(this->m_conv_coeff.size()==this->m_diff_coeff.size());
-        for ( ++c ; c != m_terms.end(); ++c)
-        {
-            assert((*c)->conv_coeff().size()==this->m_conv_coeff.size());
-            assert((*c)->diff_coeff().size()==this->m_diff_coeff.size());
-            this->m_conv_coeff += (*c)->conv_coeff();
-            this->m_diff_coeff += (*c)->diff_coeff();
-        }
-    }
+    void update();
 private:
     /// The container of pointers to the drift-diffusive terms.
     Terms m_terms;
@@ -205,40 +183,9 @@ namespace Schemes
             const Grid& grid,
             const ConvectionDiffusionOperator& term,
             const ConvectionDiffusionOperator& sum,
-            Grid::Index k)
-        {
-            if (k==0)
-            {
-                return { 0.0, std::numeric_limits<double>::quiet_NaN() };
-            }
-            /* note: at u=u_max (the upper boundary face) this results in
-             * du_LF==du_LH, which amounts to placing the ghost point (see
-             * below) at location u=u_max.
-             */
-            const double du_Lf = grid.duCell(k-1) / 2;
-            const double du_LH = grid.duNode(k);
-            const double cf = du_Lf / du_LH;
-            const double D = term.diff_coeff()[k];
-            const double C = term.conv_coeff()[k];
-            const double A = D/du_LH - C*cf;
-            const double B = A + C;
-            if (k == grid.getNodes().size() - 1)
-            {
-                /* At the upper boundary, the total flux (represented by 'sum')
-                 * is given by Bsum*f_B - Asum*f_g = 0, where f_g is the value
-                 * in the ghost point, which is located on the grid boundary.
-                 * Then
-                 * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
-                 */
-                const double Dsum = sum.diff_coeff()[k];
-                const double Csum = sum.conv_coeff()[k];
-                const double Asum = Dsum/du_LH - Csum*cf;
-                const double Bsum = Asum + Csum;
-                return { std::numeric_limits<double>::quiet_NaN(), B - A*Bsum/Asum };
-            }
-            return { A, B };
-        }
+            Grid::Index k);
     };
+
     /** This structure provides member calc_coefs for the Scharfetter-Gummel
      *  ('exponential') scheme.
      */
@@ -274,57 +221,7 @@ namespace Schemes
             const Grid& grid,
             const ConvectionDiffusionOperator& term,
             const ConvectionDiffusionOperator& sum,
-            Grid::Index k)
-        {
-            if (k==0)
-            {
-                return { 0.0, std::numeric_limits<double>::quiet_NaN() };
-            }
-            const double du_LH = grid.duNode(k);
-            const double Dsum = sum.diff_coeff()[k];
-            const double Csum = sum.conv_coeff()[k];
-            const double Pe = Csum*du_LH/Dsum;
-            const double ber = bernoulli(Pe);
-            if (&term==&sum)
-            {
-                /* This means that we are discretizing the total flux. This
-                 * allows some simplifications of the evaluation, but the result
-                 * should be the same as when the general code is used (barring
-                 * round-off errors).
-                 */
-                if (k == grid.getNodes().size() - 1)
-                {
-                    return { std::numeric_limits<double>::quiet_NaN(), 0.0 };
-                }
-                const double A = Dsum/du_LH*ber;
-                const double B = A + Csum;
-                return { A, B };
-            }
-            // Handle the general case: term is a partial flux.
-            const double du_Lf = grid.duCell(k-1) / 2;
-            const double cf = du_Lf / du_LH;
-            /* NOTE: for small P we use the approximation
-             * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
-             */
-            const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
-            const double D = term.diff_coeff()[k];
-            const double C = term.conv_coeff()[k];
-            const double A = D/du_LH*ber*std::exp(Pe*cf) - C*expm1_ratio;
-            const double B = A + C;
-            if (k == grid.getNodes().size() - 1)
-            {
-                /* At the upper boundary, the total flux (represented by 'sum')
-                 * is given by Bsum*f_B - Asum*f_g = 0, where f_g is the value
-                 * in the ghost point, which is located on the grid boundary.
-                 * Then
-                 * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
-                 */
-                const double Asum = Dsum/du_LH*ber;
-                const double Bsum = Asum + Csum;
-                return { std::numeric_limits<double>::quiet_NaN(), B - A*Bsum/Asum };
-            }
-            return { A, B };
-        }
+            Grid::Index k);
     };
 
 } // namespace Schemes
@@ -338,47 +235,7 @@ namespace Schemes
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum)
-{
-    mat.fill(0.0);
-    /** \todo We calculate every face twice. This can be fixed by changing
-     *  this in a loop over the faces, and handle the contributions to the
-     *  equations in both the lower and upper adjacent cells.
-     */
-    for (Grid::Index k = 1; k < grid.nCells(); ++k)
-    {
-        mat.coeffRef(k, k) = 0;
-
-        const double du_we = grid.duCell(k);
-        // The flux is 0 at the lower boundary.
-        if (k > 0)
-        {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
-            mat.coeffRef(k, k - 1)  = +coefs.B / du_we;
-            mat.coeffRef(k, k)     += -coefs.A / du_we;
-        }
-#define LOKI_DISCRETIZE_BOUNDARY_FLUX 1
-#if LOKI_DISCRETIZE_BOUNDARY_FLUX
-        /* In general, the flux is given by Gamma = B*f_B - A*f_A. At the
-         * upper boundary, Gamma = B*f_B instead (calc_coefs modifies
-         * coefs.B by eliminating value f_A in the ghost point outide of the grid).
-         */
-        const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
-        mat.coeffRef(k, k)     += -coefs.B / du_we;
-        if (k<grid.nCells()-1)
-        {
-            mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
-        }
-#else
-        if (k < grid.nCells() - 1)
-        {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
-            mat.coeffRef(k, k)     += -coefs.B / du_we;
-            mat.coeffRef(k, k + 1)  = +coefs.A / du_we;
-        }
-#endif
-    }
-}
+void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum);
 
 /** Discretize the divergence of the (total) flux \a sum, using the SchemeTraits.
  *
@@ -397,23 +254,7 @@ void discretize_dflux_du(Matrix& mat, const Grid& grid, const ConvectionDiffusio
  *  \date   February 2026
  */
 template <class SchemeTraits>
-void evaluate_flux_density(Vector& flux, const Grid& grid, const Vector& eedf, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum)
-{
-    flux[0] = 0.0;
-    for (Grid::Index k = 1; k < grid.getNodes().size()-1; ++k)
-    {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
-            flux[k] = coefs.B*eedf[k-1] - coefs.A*eedf[k];
-    }
-    const Grid::Index k = grid.getNodes().size()-1;
-#if LOKI_DISCRETIZE_BOUNDARY_FLUX
-    const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
-    flux[k] = coefs.B*eedf[k-1];
-    assert(std::isnan(coefs.A));
-#else
-    flux[k] = 0.0;
-#endif
-}
+void evaluate_flux_density(Vector& flux, const Grid& grid, const Vector& eedf, const ConvectionDiffusionOperator& term, const ConvectionDiffusionOperator& sum);
 
 /** Evaluate (total) flux \a sum, flux, using the SchemeTraits.
  *

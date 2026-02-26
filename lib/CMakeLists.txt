@@ -1,5 +1,6 @@
 add_library(loki-b SHARED)
 target_sources(loki-b PRIVATE
+   ../source/ConvDiff.cpp
    ../source/CrossSection.cpp
    ../source/EedfCollisions.cpp
    ../source/EedfMixture.cpp
