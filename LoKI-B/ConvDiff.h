@@ -175,8 +175,8 @@ namespace Schemes
          *  from \a sum, and using the central difference scheme as well) is
          *  zero is used to eliminate the ghost point contribution, using a
          *  modified coefficient B. (Coefficient A should not be used, is value
-         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
-         *  and B=0.0: there the flux is zero.
+         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan
+         *  and A=0: there the flux is zero.
          */
         static LocalFluxCoefficients calc_coefs(
             const Grid& grid,
@@ -208,8 +208,8 @@ namespace Schemes
          *  from \a sum, and using theScharfetter-Gummel scheme as well) is
          *  zero is used to eliminate the ghost point contribution, using a
          *  modified coefficient B. (Coefficient A should not be used, is value
-         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan,
-         *  and B=0.0: there the flux is zero.
+         *  is set to NaN.) At the lower boundary, coefficient B is set to Nan
+         *  and A=0: there the flux is zero.
          *
          *  The function is optimized for the case that \a term and \a sum are
          *  identical (more precisely: that they refer to the same object). In
