@@ -56,7 +56,7 @@ void CAROperator::updateCD(const Grid& grid, double Tg)
     m_sigma0B *= (8.*Constant::pi*a02/15.);
 
     // conv_coeff is negative, diff_coeff is positive
-    this->m_conv_coeff = -grid.getNodes() * (4. * m_sigma0B);
+    this->m_conv_coeff = -grid.getNodes() * (4. * SI::gamma * m_sigma0B);
     this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
 }
 
@@ -173,7 +173,7 @@ ElasticOperator::ElasticOperator()
 void ElasticOperator::updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg)
 {
     // conv_coeff is negative, diff_coeff is positive
-    this->m_conv_coeff = -grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
+    this->m_conv_coeff = -SI::gamma * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
     this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
 }
 
@@ -283,7 +283,7 @@ void FieldOperator::updateCD(const Grid& grid, const Vector& totalCS, double EoN
     for (Grid::Index i=1; i!= g.size(); ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        this->m_diff_coeff[i] = EoN*EoN * (1. / 3.) * grid.getNode(i) /
+        this->m_diff_coeff[i] = SI::gamma* EoN*EoN * (1. / 3.) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
 }

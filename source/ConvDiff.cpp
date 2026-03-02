@@ -197,9 +197,9 @@ void discretize_dflux_du(
             const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
             if (k > 0)
             {
-                mat.coeffRef(k, k - 1) = +coefs.B / du_we;
+                mat.coeffRef(k, k - 1) = -coefs.B / du_we;
             }
-            mat.coeffRef(k, k) += -coefs.A / du_we;
+            mat.coeffRef(k, k) += +coefs.A / du_we;
         }
 
         // contribution from the flux at the upper face of k:
@@ -207,9 +207,9 @@ void discretize_dflux_du(
             const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
             if (k < grid.nCells()-1)
             {
-                mat.coeffRef(k, k + 1) = +coefs.A / du_we;
+                mat.coeffRef(k, k + 1) = -coefs.A / du_we;
             }
-            mat.coeffRef(k, k) += -coefs.B / du_we;
+            mat.coeffRef(k, k) += +coefs.B / du_we;
         }
     }
 }

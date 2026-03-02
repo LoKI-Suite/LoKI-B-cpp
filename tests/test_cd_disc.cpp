@@ -102,12 +102,12 @@ void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& c
      *
      * This statement of the power terms is explained in the cpp_notes document.
      */
-    const Vector gamma_u_du = SI::gamma*grid.duCells().array()*grid.getCells().array();
+    const Vector u_du = grid.duCells().array()*grid.getCells().array();
     std::cout << "Power balance --- volumetric power/(n_e*N) in eV*m^3/s:" << std::endl;
     double P_sum=0;
     for (typename ConvectionDiffusionTerms::size_type t=0; t!=conv_diff_terms.terms().size(); ++t)
     {
-        const double P_term = gamma_u_du.dot(mat_contribs[t]*eedf);
+        const double P_term = u_du.dot(mat_contribs[t]*eedf);
         std::cout << "Term #" << t << ": " << std::showpos << P_term << std::endl;
         P_sum += P_term;
     }

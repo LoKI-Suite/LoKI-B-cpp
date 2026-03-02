@@ -72,9 +72,12 @@ namespace loki {
     public:
         using CARGases = std::vector<const Gas*>;
         CAROperator(const CARGases& cg);
-        /// updates base members members C and D
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
         void updateCD(const Grid& grid, double Tg);
-        /// updates member g
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
         void evaluate(const Grid& grid, double Tg);
         /// updates member g, then the CAR matrix \a mat
         void evaluate(const Grid& grid, double Tg, SparseMatrix& mat);
@@ -89,9 +92,12 @@ namespace loki {
     {
     public:
         ElasticOperator();
-        /// updates base members members C and D
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
         void updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg);
-        /// updates member g
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
         void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg);
         /// updates member g, then the elastic matrix \a mat
         void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat);
@@ -104,9 +110,12 @@ namespace loki {
     {
     public:
         FieldOperator(const Grid& grid);
-        /// updates base members members C and D
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
         void updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
-        /// updates member g
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
         void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g, then the field matrix \a mat
         void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat);
@@ -145,6 +154,8 @@ namespace loki {
          *  a good state, consistent with the \a grid. That matrix, which
          *  depends only on the grid, must be updated separately (once after
          *  each update of the grid).
+         *  Note that member g_ee contains a scaling factor 1/gamma, which will
+	 *  also be present in the discretization matrix.
          */
         void update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0);
         /** Adds the coefficients coming from the discretization of the term

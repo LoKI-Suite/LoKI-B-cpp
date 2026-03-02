@@ -133,13 +133,11 @@ private:
  *  the value in the last real cell. With this choice for the ghost
  *  point energy, c_f=1 and du_f = du_Pe = du_we/2.
  *
- *  Below we discretize -(Gamma_e-Gamma_w)/du_we --- note the extra
- *  minus sign.
- *
- *  \todo Note that this renders the matrix NEGATIVE semi-definite.
- *
- *  \todo Check the upper boundary flux discretization (ghost point location,
- *  in particular, see if that is used consistently).
+ *  Note that in the MATLAB version of the code (and in the members evaluate of
+ *  the C++ version) an additional factor 1/gamma is present in the expression
+ *  for g, and in the overloads that take a matrix an additional -1 is applied,
+ *  so (-1/gamma)*(Gamma_e-Gamma_w)/du_we is discretized. Note that that renders
+ *  the matrix NEGATIVE semi-definite.
  *
  *  \author Jan van Dijk
  *  \date February 2026
