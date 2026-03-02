@@ -41,7 +41,7 @@
 
 namespace loki {
 
-void ConvectionDiffusionTerms::register_term(const ConvectionDiffusionOperator& term)
+void ConvectionDiffusionTerms::registerTerm(const ConvectionDiffusionOperator& term)
 {
     m_terms.push_back(&term);
 }
@@ -50,26 +50,26 @@ void ConvectionDiffusionTerms::update()
 {
     if (m_terms.empty())
     {
-        this->m_conv_coeff.resize(0);
-        this->m_diff_coeff.resize(0);
+        this->m_convCoeff.resize(0);
+        this->m_diffCoeff.resize(0);
         return;
     }
     auto c = m_terms.begin();
-    this->m_conv_coeff = (*c)->conv_coeff();
-    this->m_diff_coeff = (*c)->diff_coeff();
-    assert(this->m_conv_coeff.size()==this->m_diff_coeff.size());
+    this->m_convCoeff = (*c)->convCoeff();
+    this->m_diffCoeff = (*c)->diffCoeff();
+    assert(this->m_convCoeff.size()==this->m_diffCoeff.size());
     for ( ++c ; c != m_terms.end(); ++c)
     {
-        assert((*c)->conv_coeff().size()==this->m_conv_coeff.size());
-        assert((*c)->diff_coeff().size()==this->m_diff_coeff.size());
-        this->m_conv_coeff += (*c)->conv_coeff();
-        this->m_diff_coeff += (*c)->diff_coeff();
+        assert((*c)->convCoeff().size()==this->m_convCoeff.size());
+        assert((*c)->diffCoeff().size()==this->m_diffCoeff.size());
+        this->m_convCoeff += (*c)->convCoeff();
+        this->m_diffCoeff += (*c)->diffCoeff();
     }
 }
 
 namespace Schemes {
 
-LocalFluxCoefficients CD::calc_coefs(
+LocalFluxCoefficients CD::calcCoefs(
     const Grid& grid,
     const ConvectionDiffusionOperator& term,
     const ConvectionDiffusionOperator& sum,
@@ -86,8 +86,8 @@ LocalFluxCoefficients CD::calc_coefs(
     const double du_Lf = grid.duCell(k-1) / 2;
     const double du_LH = grid.duNode(k);
     const double cf = du_Lf / du_LH;
-    const double D = term.diff_coeff()[k];
-    const double C = term.conv_coeff()[k];
+    const double D = term.diffCoeff()[k];
+    const double C = term.convCoeff()[k];
     const double A = D/du_LH - C*cf;
     const double B = A + C;
     if (k == grid.getNodes().size() - 1)
@@ -102,8 +102,8 @@ LocalFluxCoefficients CD::calc_coefs(
          * in the ghost point, which is located on the grid boundary. Then
          * Gamma = B*f_B - A*f_g = B*f_B - A*f_B*(Bsum/Asum) = (B - A*(Bsum/Asum))*f_B.
          */
-        const double Dsum = sum.diff_coeff()[k];
-        const double Csum = sum.conv_coeff()[k];
+        const double Dsum = sum.diffCoeff()[k];
+        const double Csum = sum.convCoeff()[k];
         const double Asum = Dsum/du_LH - Csum*cf;
         const double Bsum = Asum + Csum;
         return { std::numeric_limits<double>::quiet_NaN(), B - A*Bsum/Asum };
@@ -114,7 +114,7 @@ LocalFluxCoefficients CD::calc_coefs(
     return { A, B };
 }
 
-LocalFluxCoefficients SG::calc_coefs(
+LocalFluxCoefficients SG::calcCoefs(
     const Grid& grid,
     const ConvectionDiffusionOperator& term,
     const ConvectionDiffusionOperator& sum,
@@ -125,8 +125,8 @@ LocalFluxCoefficients SG::calc_coefs(
         return { 0.0, std::numeric_limits<double>::quiet_NaN() };
     }
     const double du_LH = grid.duNode(k);
-    const double Dsum = sum.diff_coeff()[k];
-    const double Csum = sum.conv_coeff()[k];
+    const double Dsum = sum.diffCoeff()[k];
+    const double Csum = sum.convCoeff()[k];
     const double Pe = Csum*du_LH/Dsum;
     const double ber = bernoulli(Pe);
     if (&term==&sum)
@@ -151,8 +151,8 @@ LocalFluxCoefficients SG::calc_coefs(
      * expm1(Pc)/expm1(P) = (1 + Pc + ... -1)/(1 + P + ... -1) = c + ...
      */
     const double expm1_ratio = std::abs(Pe)<1e-9 ? cf : std::expm1(Pe*cf)/std::expm1(Pe);
-    const double D = term.diff_coeff()[k];
-    const double C = term.conv_coeff()[k];
+    const double D = term.diffCoeff()[k];
+    const double C = term.convCoeff()[k];
     const double A = D/du_LH*ber*std::exp(Pe*cf) - C*expm1_ratio;
     const double B = A + C;
     if (k == grid.getNodes().size() - 1)
@@ -194,7 +194,7 @@ void discretize_dflux_du(
 
         // contribution from the flux at the lower face of k:
         {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+            const auto coefs = SchemeTraits::calcCoefs(grid,term,sum,k);
             if (k > 0)
             {
                 mat.coeffRef(k, k - 1) = -coefs.B / du_we;
@@ -204,7 +204,7 @@ void discretize_dflux_du(
 
         // contribution from the flux at the upper face of k:
         {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k+1);
+            const auto coefs = SchemeTraits::calcCoefs(grid,term,sum,k+1);
             if (k < grid.nCells()-1)
             {
                 mat.coeffRef(k, k + 1) = -coefs.A / du_we;
@@ -234,7 +234,7 @@ void evaluate_flux_density(
     // first cell:
     {
         const Grid::Index k = 0;
-        const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+        const auto coefs = SchemeTraits::calcCoefs(grid,term,sum,k);
         flux[k] = coefs.A*eedf[k];
         assert(std::isnan(coefs.B));
     }
@@ -242,14 +242,14 @@ void evaluate_flux_density(
     // internal cells:
     for (Grid::Index k = 1; k < grid.getNodes().size()-1; ++k)
     {
-            const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+            const auto coefs = SchemeTraits::calcCoefs(grid,term,sum,k);
             flux[k] = coefs.B*eedf[k-1] - coefs.A*eedf[k];
     }
 
     // last cell:
     {
         const Grid::Index k = grid.getNodes().size()-1;
-        const auto coefs = SchemeTraits::calc_coefs(grid,term,sum,k);
+        const auto coefs = SchemeTraits::calcCoefs(grid,term,sum,k);
         flux[k] = coefs.B*eedf[k-1];
         assert(std::isnan(coefs.A));
     }

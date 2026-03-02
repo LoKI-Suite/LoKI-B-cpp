@@ -42,7 +42,7 @@ loki::Vector solveCase(const loki::Grid& grid, loki::Matrix& mat, const std::str
 }
 
 template <class SchemeT>
-void test_scheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& conv_diff_terms, const std::string& scheme_name)
+void testScheme(const loki::Grid& grid, const loki::ConvectionDiffusionTerms& conv_diff_terms, const std::string& scheme_name)
 {
     using namespace loki;
 
@@ -173,16 +173,16 @@ int main()
      * and diffusion coefficients and the grid Peclet number.
      */
     ConvectionDiffusionTerms conv_diff_terms;
-    conv_diff_terms.register_term(op_elast);
-    conv_diff_terms.register_term(op_field);
+    conv_diff_terms.registerTerm(op_elast);
+    conv_diff_terms.registerTerm(op_field);
 
     op_elast.updateCD(grid,sigma_f,Tg);
     op_field.updateCD(grid,sigma_f,EoN,WoN,CIEff);
 
     conv_diff_terms.update();
 
-    test_scheme<Schemes::CD>(grid, conv_diff_terms, "cd");
-    test_scheme<Schemes::SG>(grid, conv_diff_terms, "sg");
+    testScheme<Schemes::CD>(grid, conv_diff_terms, "cd");
+    testScheme<Schemes::SG>(grid, conv_diff_terms, "sg");
 
     return 0;
 }

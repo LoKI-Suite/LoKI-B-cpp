@@ -55,9 +55,9 @@ void CAROperator::updateCD(const Grid& grid, double Tg)
     }
     m_sigma0B *= (8.*Constant::pi*a02/15.);
 
-    // conv_coeff is negative, diff_coeff is positive
-    this->m_conv_coeff = -grid.getNodes() * (4. * SI::gamma * m_sigma0B);
-    this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
+    // convCoeff is negative, diffCoeff is positive
+    this->m_convCoeff = -grid.getNodes() * (4. * SI::gamma * m_sigma0B);
+    this->m_diffCoeff = -this->m_convCoeff*(Constant::kBeV*Tg);
 }
 
 void CAROperator::evaluate(const Grid& grid, double Tg)
@@ -172,9 +172,9 @@ ElasticOperator::ElasticOperator()
 
 void ElasticOperator::updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg)
 {
-    // conv_coeff is negative, diff_coeff is positive
-    this->m_conv_coeff = -SI::gamma * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
-    this->m_diff_coeff = -this->m_conv_coeff*(Constant::kBeV*Tg);
+    // convCoeff is negative, diffCoeff is positive
+    this->m_convCoeff = -SI::gamma * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
+    this->m_diffCoeff = -this->m_convCoeff*(Constant::kBeV*Tg);
 }
 
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg)
@@ -276,14 +276,14 @@ FieldOperator::FieldOperator(const Grid& grid)
 
 void FieldOperator::updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
 {
-    this->m_conv_coeff.resize(grid.getNodes().size());
-    this->m_conv_coeff.fill(0.0);
-    this->m_diff_coeff.resize(grid.getNodes().size());
-    this->m_diff_coeff[0] = 0.;
+    this->m_convCoeff.resize(grid.getNodes().size());
+    this->m_convCoeff.fill(0.0);
+    this->m_diffCoeff.resize(grid.getNodes().size());
+    this->m_diffCoeff[0] = 0.;
     for (Grid::Index i=1; i!= g.size(); ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        this->m_diff_coeff[i] = SI::gamma* EoN*EoN * (1. / 3.) * grid.getNode(i) /
+        this->m_diffCoeff[i] = SI::gamma* EoN*EoN * (1. / 3.) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
 }

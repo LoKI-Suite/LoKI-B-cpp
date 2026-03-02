@@ -39,12 +39,12 @@ namespace loki {
 
 /** Base class for convective-diffusive flux terms. For such terms, the flux
  *  (or flux contribution) is modelled as H = conv*eedf - diff*d eedf/du.
- *  Members conv_coeff and diff_coeff represent the face values of the
+ *  Members convCoeff and diffCoeff represent the face values of the
  *  convection and diffusion coefficients.
  *
  *  This class only provides read-only access to these coefficients. Derived
  *  classes that implement particular convective-diffusive terms can modify
- *  the (protected) members m_conv_coeff and m_diff_coeff.
+ *  the (protected) members m_convCoeff and m_diffCoeff.
  *
  *  \seealso ConvectionDiffusionTerms
  *
@@ -54,18 +54,18 @@ namespace loki {
 class ConvectionDiffusionOperator
 {
   public:
-    const Vector &conv_coeff() const { return m_conv_coeff; }
-    const Vector &diff_coeff() const { return m_diff_coeff; }
+    const Vector &convCoeff() const { return m_convCoeff; }
+    const Vector &diffCoeff() const { return m_diffCoeff; }
   protected:
-    Vector m_conv_coeff;
-    Vector m_diff_coeff;
+    Vector m_convCoeff;
+    Vector m_diffCoeff;
 };
 
 /** This convective-diffusive term manages a std::vector of pointers to
  *  external convective-diffusive operators. It calculates the base class'
  *  convection and diffusive coefficients as the sums of the contributions.
  *  These sums are re-calculated when member update() is called. Terms can
- *  be added with member register_term.
+ *  be added with member registerTerm.
  *
  *  \seealso ConvectionDiffusionOperator
  *
@@ -84,13 +84,13 @@ public:
     /** Register the pointer to \a term with the term container.
      *  The lifetime of \a term should exceed that of the present class.
      */
-    void register_term(const ConvectionDiffusionOperator& term);
+    void registerTerm(const ConvectionDiffusionOperator& term);
     /** Re-calculate the sum of the convection and diffusion coefficients of
-     *  the terms and store the results in the inherited members m_conv_coeff
-     *  and m_diff_coeff. Those are resized, if necessary. The coefficient
+     *  the terms and store the results in the inherited members m_convCoeff
+     *  and m_diffCoeff. Those are resized, if necessary. The coefficient
      *  vectors of the contributions must be all the same, otherwise the
      *  bahaviour is undefined (in debug mode, an assert will be triggered).
-     *  If the term container is empty, members m_conv_coeff and m_diff_coeff
+     *  If the term container is empty, members m_convCoeff and m_diffCoeff
      *  will be resized to size 0.
      */
     void update();
@@ -161,7 +161,7 @@ namespace Schemes
         double B;
     };
 
-    /** This structure provides member calc_coefs for the central difference
+    /** This structure provides member calcCoefs for the central difference
      *  scheme.
      */
     struct CD
@@ -176,14 +176,14 @@ namespace Schemes
          *  is set to NaN.) At the lower boundary, coefficient B is set to Nan
          *  and A=0: there the flux is zero.
          */
-        static LocalFluxCoefficients calc_coefs(
+        static LocalFluxCoefficients calcCoefs(
             const Grid& grid,
             const ConvectionDiffusionOperator& term,
             const ConvectionDiffusionOperator& sum,
             Grid::Index k);
     };
 
-    /** This structure provides member calc_coefs for the Scharfetter-Gummel
+    /** This structure provides member calcCoefs for the Scharfetter-Gummel
      *  ('exponential') scheme.
      */
     struct SG
@@ -214,7 +214,7 @@ namespace Schemes
          *  that case, the usual exponential scheme can be used, and the
          *  boundary fluxes are zero.
          */
-        static LocalFluxCoefficients calc_coefs(
+        static LocalFluxCoefficients calcCoefs(
             const Grid& grid,
             const ConvectionDiffusionOperator& term,
             const ConvectionDiffusionOperator& sum,
