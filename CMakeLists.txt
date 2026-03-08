@@ -228,8 +228,6 @@ else()
     message(STATUS "Using System-installed Eigen")
     find_package (Eigen3 REQUIRED NO_MODULE)
     #We require at least version 3.4.0
-    #See the discussion under https://git.plasimo.nl/plasimo/gum/-/merge_requests/1157
-    #For why we can not use a version range in the find_package call
     if(DEFINED Eigen3_VERSION AND Eigen3_VERSION VERSION_LESS "3.4.0")
         message(FATAL_ERROR "Eigen version ${Eigen3_VERSION} is too old, PLASIMO requires 3.4.0 or higher.")
     endif()
