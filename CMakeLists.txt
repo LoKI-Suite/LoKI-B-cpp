@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 project(loki_cpp)
 file(STRINGS "VERSION.txt" PROJECT_VERSION)
 
@@ -221,12 +221,16 @@ endif()
 option(LOKIB_USE_BUILTIN_EIGEN "Use builtin Eigen instead of system-installed" OFF)
 
 if(LOKIB_USE_BUILTIN_EIGEN)
-	#Use built-in Eigen from include/eigen-3.3.7/eigen3
-	message(STATUS "Using built-in Eigen")
+    #Use built-in Eigen from include/eigen-3.3.7/eigen3
+    message(STATUS "Using built-in Eigen")
 else()
-	#Use Eigen found on the system, or download from git
-	message(STATUS "Using System-installed Eigen")
-	find_package(Eigen3 3.3 NO_MODULE REQUIRED)
+    #Use Eigen found on the system, or download from git
+    message(STATUS "Using System-installed Eigen")
+    find_package (Eigen3 REQUIRED NO_MODULE)
+    #We require at least version 3.4.0
+    if(DEFINED Eigen3_VERSION AND Eigen3_VERSION VERSION_LESS "3.4.0")
+        message(FATAL_ERROR "Eigen version ${Eigen3_VERSION} is too old, PLASIMO requires 3.4.0 or higher.")
+    endif()
 endif()
 
 # --- OpenBLAS/MKL --- #
