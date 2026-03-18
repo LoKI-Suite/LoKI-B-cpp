@@ -217,6 +217,7 @@ InelasticOperator::InelasticOperator(const Grid &grid)
 void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
 {
     inelasticMatrix.setZero();
+    superelasticMatrix.setZero();
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
     {
@@ -232,8 +233,8 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
 
                 if (collision->isReverse())
                 {
-                    integrate_sup_sink<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
-                    integrate_sup_source<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
+                    integrate_sup_sink<LinIntegrator>(grid, *collision, eedf, this->superelasticMatrix);
+                    integrate_sup_source<LinIntegrator>(grid, *collision, eedf, this->superelasticMatrix);
                 }
             }
         }
