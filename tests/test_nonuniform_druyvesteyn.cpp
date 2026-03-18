@@ -42,10 +42,8 @@ int main()
     SparseMatrix M2(nCells,nCells);
 
     const double CIEff = 0.0;
-    fieldOperator1.evaluate(grid1, fieldCrossSection, won, CIEff, M1);
-    M1 *= eon*eon;
-    fieldOperator2.evaluate(grid2, fieldCrossSection, won, CIEff, M2);
-    M2 *= eon*eon;
+    fieldOperator1.evaluate(grid1, fieldCrossSection, eon, won, CIEff, M1);
+    fieldOperator2.evaluate(grid2, fieldCrossSection, eon, won, CIEff, M2);
 
     ElasticOperator elasticOperator;
     SparseMatrix Melastic1(nCells, nCells);

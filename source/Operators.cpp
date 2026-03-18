@@ -44,7 +44,23 @@ CAROperator::CAROperator(const CARGases& cg)
      */
 }
 
-void CAROperator::evaluate(const Grid& grid)
+void CAROperator::updateCD(const Grid& grid, double Tg)
+{
+    constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;
+    m_sigma0B = 0.;
+    for (const auto &gas : carGases)
+    {
+        const double Qau = gas->electricQuadrupoleMoment/(Constant::electronCharge*a02);
+        m_sigma0B += gas->fraction * Qau * Qau * gas->rotationalConstant;
+    }
+    m_sigma0B *= (8.*Constant::pi*a02/15.);
+
+    // convCoeff is negative, diffCoeff is positive
+    this->m_convCoeff = -grid.getNodes() * (4. * SI::gamma * m_sigma0B);
+    this->m_diffCoeff = -this->m_convCoeff*(Constant::kBeV*Tg);
+}
+
+void CAROperator::evaluate(const Grid& grid, double Tg)
 {
     constexpr const double a02 = Constant::bohrRadius*Constant::bohrRadius;
     m_sigma0B = 0.;
@@ -64,7 +80,7 @@ void CAROperator::evaluate(const Grid& grid)
 void CAROperator::evaluate(const Grid& grid, double Tg, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid);
+    evaluate(grid,Tg);
     const double c_CAR = Constant::kBeV * Tg;
 
     if (grid.isUniform())
@@ -154,7 +170,14 @@ ElasticOperator::ElasticOperator()
 {
 }
 
-void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection)
+void ElasticOperator::updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg)
+{
+    // convCoeff is negative, diffCoeff is positive
+    this->m_convCoeff = -SI::gamma * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
+    this->m_diffCoeff = -this->m_convCoeff*(Constant::kBeV*Tg);
+}
+
+void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg)
 {
     g = grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection) * 2;
     g[0] = 0.;
@@ -164,7 +187,7 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
 void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,elasticCrossSection);
+    evaluate(grid,elasticCrossSection,Tg);
 
     const double c_el = Constant::kBeV * Tg;
     
@@ -251,23 +274,37 @@ FieldOperator::FieldOperator(const Grid& grid)
 {
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff)
+void FieldOperator::updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
+{
+    this->m_convCoeff.resize(grid.getNodes().size());
+    this->m_convCoeff.fill(0.0);
+    this->m_diffCoeff.resize(grid.getNodes().size());
+    this->m_diffCoeff[0] = 0.;
+    for (Grid::Index i=1; i!= g.size(); ++i)
+    {
+        const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
+        this->m_diffCoeff[i] = SI::gamma* EoN*EoN * (1. / 3.) * grid.getNode(i) /
+          (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
+    }
+}
+
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff)
 {
     assert(g.size()==grid.getNodes().size());
     g[0] = 0.;
     for (Grid::Index i=1; i!= g.size()-1; ++i)
     {
         const double Omega_x = totalCS[i] + CIEff / (SI::gamma*std::sqrt(grid.getNode(i)));
-        g[i] = (1. / 3.) * grid.getNode(i) /
+        g[i] = EoN*EoN * (1. / 3.) * grid.getNode(i) /
           (Omega_x + ( WoN * WoN / (SI::gamma*SI::gamma)) / (grid.getNode(i)*Omega_x));
     }
     g[g.size() - 1] = 0.;
 }
 
-void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff, SparseMatrix& mat)
+void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat)
 {
     // update g
-    evaluate(grid,totalCS,WoN,CIEff);
+    evaluate(grid,totalCS,EoN,WoN,CIEff);
 
     if (grid.isUniform())
     {

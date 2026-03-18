@@ -30,6 +30,7 @@
 #ifndef LOKI_CPP_OPERATORS_H
 #define LOKI_CPP_OPERATORS_H
 
+#include "LoKI-B/ConvDiff.h"
 #include "LoKI-B/Gas.h"
 #include "LoKI-B/Grid.h"
 #include "LoKI-B/EedfMixture.h"
@@ -66,41 +67,58 @@ namespace loki {
      *  in the paper. All in all, CARmatrix seems to be defined such that
      *  [CARmatrix]*[f] is an approximation of -(1/(N*sqrt(2*e/m_e))dG_CAR/du.
      */
-    class CAROperator
+    class CAROperator : public ConvectionDiffusionOperator
     {
     public:
         using CARGases = std::vector<const Gas*>;
         CAROperator(const CARGases& cg);
-        /// updates member g
-        void evaluate(const Grid& grid);
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
+        void updateCD(const Grid& grid, double Tg);
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
+        void evaluate(const Grid& grid, double Tg);
         /// updates member g, then the CAR matrix \a mat
         void evaluate(const Grid& grid, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
         const CARGases carGases;
         double m_sigma0B;
+    private:
         Vector g;
     };
 
-    class ElasticOperator
+    class ElasticOperator : public ConvectionDiffusionOperator
     {
     public:
         ElasticOperator();
-        /// updates member g
-        void evaluate(const Grid& grid, const Vector& elasticCrossSection);
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
+        void updateCD(const Grid& grid, const Vector& elasticCrossSection, double Tg);
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
+        void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg);
         /// updates member g, then the elastic matrix \a mat
         void evaluate(const Grid& grid, const Vector& elasticCrossSection, double Tg, SparseMatrix& mat);
         void evaluatePower(const Grid& grid, const Vector& eedf, double Tg, double& net, double& gain, double& loss) const;
+    private:
         Vector g;
     };
 
-    class FieldOperator
+    class FieldOperator : public ConvectionDiffusionOperator
     {
     public:
         FieldOperator(const Grid& grid);
-        /// updates member g
-        void evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff);
+        /** updates base members members C and D.
+	 *  Note that, unlike members 'evaluate' of this class, does does
+         *  not apply a scaling fector 1/gamma to these factors.
+	 */
+        void updateCD(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
+        /// Update member g. Note that this contains a scaling factor 1/gamma.
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff);
         /// updates member g, then the field matrix \a mat
-        void evaluate(const Grid& grid, const Vector& totalCS, double WoN, double CIEff, SparseMatrix& mat);
+        void evaluate(const Grid& grid, const Vector& totalCS, double EoN, double WoN, double CIEff, SparseMatrix& mat);
         /** \todo This expression returns the power that is absorbed from the field
          *  in the case that no temporal or spatial growth terms are present. We have
          *  to see where/when to handle the various growth scenarios.
@@ -136,6 +154,8 @@ namespace loki {
          *  a good state, consistent with the \a grid. That matrix, which
          *  depends only on the grid, must be updated separately (once after
          *  each update of the grid).
+         *  Note that member g_ee contains a scaling factor 1/gamma, which will
+	 *  also be present in the discretization matrix.
          */
         void update_g_ee_AB(const Grid& grid, const Vector& eedf, double ne, double n0);
         /** Adds the coefficients coming from the discretization of the term

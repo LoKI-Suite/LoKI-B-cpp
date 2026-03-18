@@ -30,6 +30,9 @@ target_link_libraries(compare_tables PRIVATE loki_cpp::loki-b)
 add_executable(loki_test_bandwidth test_bandwidth.cpp)
 target_link_libraries(loki_test_bandwidth PRIVATE loki_cpp::loki-b)
 
+add_executable(loki_test_cd_disc test_cd_disc.cpp)
+target_link_libraries(loki_test_cd_disc PRIVATE loki_cpp::loki-b)
+
 add_executable(loki_test_derivatives test_derivatives.cpp)
 target_link_libraries(loki_test_derivatives PRIVATE loki_cpp::loki-b)
 
@@ -116,6 +119,7 @@ target_link_libraries(test_valid_inputs PRIVATE loki_cpp::loki-b)
 
 target_add_test(loki_test_offside_to_json)
 target_add_test(loki_test_bandwidth)
+target_add_test(loki_test_cd_disc)
 target_add_test(loki_test_derivatives)
 target_add_test(loki_test_eedf_utilities)
 target_add_test(test_druyvesteyn)
