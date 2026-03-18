@@ -122,8 +122,8 @@ void integrate_source_equal_sharing(const Grid &grid, const EedfCollision &col, 
 
         double u_end = std::min({2. * grid_iter.xHigh() + u_offset, cs_int.switchOn(), eedf_int.switchOn()});
 
-        // The additional factor 2.0 originates from the variable substitution.
-        I::setRows(u_start, u_end, 0., 8. * target_density, grid_iter, cs_int, eedf_int, mat);
+        // The additional division by `2` originates from the variable substitution.
+        I::setRows(u_start, u_end, 0., 2. * target_density, grid_iter, cs_int, eedf_int, mat);
 
         u_start = u_end;
     }
