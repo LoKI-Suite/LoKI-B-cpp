@@ -146,8 +146,8 @@ try
         }
         else
         {
-            std::cout << "Input file << '" << fileName << "' was converted. "
-                         "Result:\n" << cnf.dump(2) << std::endl;
+            // std::cout << "Input file << '" << fileName << "' was converted. "
+            //              "Result:\n" << cnf.dump(2) << std::endl;
         }
     }
     loki::Simulation simulation(fileName, cnf);
