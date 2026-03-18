@@ -308,6 +308,9 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     invertMatrix(boltzmannMatrix);
     normalizeEDF(eedf, grid());
 
+    boltzmannMatrix = baseMatrix + inelasticOperator.inelasticMatrix + inelastic_operator.superelasticMatrix +
+                      ionization_operator.ionizationMatrix;
+
     // NOTE: Include spatial growth operator through b vector. Iteration is required.
     Vector eedf_cur(eedf);
     Vector b(eedf);
@@ -329,8 +332,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     double alpha_red_old;
 
     // Apply normalization condition
-    boltzmannMatrix.row(0).setZero();
-    boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
+    // boltzmannMatrix.row(0).setZero();
+    // boltzmannMatrix(0, 0) = boltzmannMatrix(1, 1);
 
     const auto decomp = boltzmannMatrix.partialPivLu();
 
@@ -343,10 +346,10 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
             grid(), eedf, total_cs, EoN, ionizationOperator.ionizationMatrix, attachmentOperator.attachmentMatrix, b);
 
         // Apply normalization condition.
-        b[0] = boltzmannMatrix(1, 1);
+        // b[0] = boltzmannMatrix(1, 1);
 
         eedf = decomp.solve(b);
-        normalizeEDF(eedf, grid());
+        // normalizeEDF(eedf, grid());
 
         alpha_red = experimental::compute_alpha_eff(grid(), eedf, coefsCI, D0, D0Faces, EoN);
 
@@ -356,6 +359,8 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
         Log<Message>::Warning("alpha rel error: ", alpha_error);
         Log<Message>::Warning("alpha: ", alpha_red);
     }
+
+    normalizeEDF(eedf, grid());
 }
 
 void ElectronKineticsBoltzmann::invertLinearMatrix()
