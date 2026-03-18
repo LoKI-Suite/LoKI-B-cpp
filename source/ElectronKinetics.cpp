@@ -319,7 +319,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     double alpha_error = std::numeric_limits<double>::max();
 
     const auto coefsCI = SI::gamma * grid().duCells().transpose() *
-                         (ionizationOperator.ionizationMatrix + attachmentOperator.attachmentMatrix);
+                         (ionization_operator.ionizationMatrix + attachmentOperator.attachmentMatrix);
 
     const auto &total_cs = mixture.collision_data().totalCrossSection();
     const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
@@ -343,7 +343,7 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
         alpha_red_old = alpha_red;
 
         experimental::SpatialGrowthOperator::compute_vector(
-            grid(), eedf, total_cs, EoN, ionizationOperator.ionizationMatrix, attachmentOperator.attachmentMatrix, b);
+            grid(), eedf, total_cs, EoN, ionization_operator.ionizationMatrix, attachmentOperator.attachmentMatrix, b);
 
         // Apply normalization condition.
         // b[0] = boltzmannMatrix(1, 1);
