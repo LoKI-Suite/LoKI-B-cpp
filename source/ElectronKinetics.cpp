@@ -254,56 +254,13 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
 {
     const double EoN = m_workingConditions->reducedFieldSI();
 
-    experimental::ElasticOperator elastic_operator(grid());
-    experimental::FieldOperator field_operator(grid());
     experimental::InelasticOperator inelastic_operator(grid());
     experimental::IonizationOperator ionization_operator(grid(), this->ionizationOperator.ionizationOperatorType);
     experimental::SpatialGrowthOperator spatial_growth_operator(grid());
 
-    elastic_operator.evaluate(grid(), mixture.collision_data().elasticCrossSection(),
-                              m_workingConditions->gasTemperature());
-    field_operator.evaluate(grid(), mixture.collision_data().totalCrossSection(), EoN);
-
-    const auto drift_coeff = elastic_operator.drift_coefficient() + field_operator.drift_coefficient();
-    const auto diff_coeff = elastic_operator.diffusion_coefficient() + field_operator.diffusion_coefficient();
-
-    Vector peclet = drift_coeff.array() * grid().duNodes().array() / diff_coeff.array();
-
     Matrix baseMatrix(grid().nCells(), grid().nCells());
 
-    baseMatrix.setZero();
-
-    // Apply the Scharfetter-Gummel discretization scheme with a zero-flux
-    // boundary condition on both boundaries.
-    // for (Grid::Index i = 0; i < grid().nCells(); i++)
-    // {
-    //     if (i > 0)
-    //     {
-    //         baseMatrix(i, i) -= drift_coeff[i] / (1. - std::exp(peclet[i]));
-    //         baseMatrix(i, i - 1) -= drift_coeff[i] / (1. - std::exp(-peclet[i]));
-    //     }
-
-    //     if (i < grid().nCells() - 1)
-    //     {
-    //         baseMatrix(i, i) += drift_coeff[i + 1] / (1. - std::exp(-peclet[i + 1]));
-    //         baseMatrix(i, i + 1) += drift_coeff[i + 1] / (1. - std::exp(peclet[i + 1]));
-    //     }
-    // }
-    // Central difference scheme.
-    for (Grid::Index i = 0; i < grid().nCells(); i++)
-    {
-        if (i > 0)
-        {
-            baseMatrix(i, i) -= drift_coeff[i] / 2. - diff_coeff[i] / grid().duNode(i);
-            baseMatrix(i, i - 1) -= drift_coeff[i] / 2. + diff_coeff[i] / grid().duNode(i);
-        }
-
-        if (i < grid().nCells() - 1)
-        {
-            baseMatrix(i, i) += drift_coeff[i + 1] / 2. + diff_coeff[i + 1] / grid().duNode(i + 1);
-            baseMatrix(i, i + 1) += drift_coeff[i + 1] / 2. - diff_coeff[i + 1] / grid().duNode(i + 1);
-        }
-    }
+    baseMatrix = elasticMatrix + fieldMatrix * (EoN * EoN);
 
     // NOTE: Solution requires iteration when using logarithmic for the EEDF in the inelastic
     // operators.
@@ -442,7 +399,7 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrixPicard()
 
     const auto &total_cs = mixture.collision_data().totalCrossSection();
     const auto total_cs_cells = (total_cs.head(total_cs.size() - 1) + total_cs.tail(total_cs.size() - 1)) / 2.;
-    ;
+
     const Vector D0 = grid().getCells().array() / (3. * total_cs_cells).array();
     const Vector D0Faces = grid().getNodes().array() / (3. * total_cs).array();
 
@@ -1182,9 +1139,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
 
 void ElectronKineticsBoltzmann::obtainTimeIndependentSolution()
 {
-    invertLinearMatrix();
-    // invertLinearMatrixNew();
-    // return;
+    // invertLinearMatrix();
+    invertLinearMatrixNew();
+    return;
 
     /* Maybe we are done. But we need to do more work if non-linear terms are
      * present:

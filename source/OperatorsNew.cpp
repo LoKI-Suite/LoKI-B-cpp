@@ -1,5 +1,6 @@
 #include "LoKI-B/OperatorsNew.h"
 #include "LoKI-B/Constant.h"
+#include "LoKI-B/ConvDiff.h"
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Enumeration.h"
@@ -16,37 +17,6 @@ namespace loki
 {
 namespace experimental
 {
-DriftDiffusionOperator::DriftDiffusionOperator(const Grid &grid)
-    : drift_coeff(grid.getNodes().size()), diff_coeff(grid.getNodes().size())
-{
-}
-const Vector &DriftDiffusionOperator::drift_coefficient()
-{
-    return this->drift_coeff;
-}
-const Vector &DriftDiffusionOperator::diffusion_coefficient()
-{
-    return this->diff_coeff;
-}
-
-ElasticOperator::ElasticOperator(const Grid &grid) : DriftDiffusionOperator(grid)
-{
-}
-void ElasticOperator::evaluate(const Grid &grid, const Vector &elasticCrossSection, double T_gas)
-{
-    this->drift_coeff = 2. * grid.getNodes().cwiseAbs2().cwiseProduct(elasticCrossSection);
-    this->diff_coeff = -(Constant::kBeV * T_gas) * this->drift_coefficient();
-}
-
-FieldOperator::FieldOperator(const Grid &grid) : DriftDiffusionOperator(grid)
-{
-}
-void FieldOperator::evaluate(const Grid &grid, const Vector &total_cs, double EoN)
-{
-    this->drift_coeff.setZero();
-    this->diff_coeff = -1. / 3. * (EoN * EoN) * grid.getNodes().cwiseQuotient(total_cs);
-}
-
 template <typename I>
 void integrate_sink(const Grid &grid, const EedfCollision &col, const Eigen::VectorXd &eedf, Matrix &mat)
 {
@@ -231,7 +201,7 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
 
     // NOTE: This line is only required when the drift diffusion terms are also
     // divided by the cell width.
-    // inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
+    inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
 // TODO: Write equal sharing source integral using the new iterator/integrator classes.
@@ -357,9 +327,10 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
             }
         }
     }
+    ionizationMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
-SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : DriftDiffusionOperator(grid)
+SpatialGrowthOperator::SpatialGrowthOperator(const Grid &grid) : ConvectionDiffusionOperator()
 {
 }
 
@@ -514,8 +485,8 @@ void SpatialGrowthOperator::evaluate(const Grid &grid, const Vector &eedf, const
 
     const auto shared_term = D0Nodes.array() * EoN * alphaRedEff;
 
-    this->drift_coeff = -D0Nodes.array() * alphaRedEff * alphaRedEff - shared_term;
-    this->diff_coeff = -shared_term;
+    this->m_convCoeff = -D0Nodes.array() * alphaRedEff * alphaRedEff - shared_term;
+    this->m_diffCoeff = -shared_term;
 
     Matrix spatial_growth_jacobian(eedf.size(), eedf.size());
 
