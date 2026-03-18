@@ -11,7 +11,6 @@
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
 #include <cmath>
-#include <limits>
 #include <stdexcept>
 
 namespace loki
@@ -107,7 +106,7 @@ void integrate_source_equal_sharing(const Grid &grid, const EedfCollision &col, 
 
     while (u_start < grid.uMax())
     {
-        while (grid_iter.shouldAdvance((u_start - u_offset) / 2.0) + 3. * std::numeric_limits<double>::epsilon())
+        while (grid_iter.shouldAdvance((u_start - u_offset) / 2.0))
         {
             grid_iter.advance();
         }
