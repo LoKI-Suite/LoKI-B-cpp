@@ -308,6 +308,9 @@ void ElectronKineticsBoltzmann::invertLinearMatrixNew()
     invertMatrix(boltzmannMatrix);
     normalizeEDF(eedf, grid());
 
+    const bool includeGrowthModel = attachmentOperator.includeNonConservativeAttachment || ionizationOperator.includeNonConservativeIonization;
+    if (!includeGrowthModel) return;
+
     boltzmannMatrix = baseMatrix + inelasticOperator.inelasticMatrix + inelastic_operator.superelasticMatrix +
                       ionization_operator.ionizationMatrix;
 
