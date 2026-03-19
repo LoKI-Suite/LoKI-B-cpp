@@ -89,7 +89,7 @@ bool GridIterator::shouldAdvance(double x_current) const
 {
     // NOTE: Removing the the addition of epsilon will cause the simulation to hang when integrating the superelastic
     // source term in some cases.
-    return x_current + 5. * std::numeric_limits<double>::epsilon() >= grid_.getNode(cell_index_ + 1);
+    return x_current + 1e6 * x_current * std::numeric_limits<double>::epsilon() >= grid_.getNode(cell_index_ + 1);
 }
 
 void GridIterator::advance()
