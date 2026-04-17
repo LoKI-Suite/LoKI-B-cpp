@@ -123,9 +123,22 @@ very similar.
 1. Run the following command:
    `.\build\app\loki.exe <INPUT_FILE> | gnuplot --persist`.
    - Where `<INPUT_FILE>` is the path to the input file relative to the current
-     working directory.
+      working directory.
    - The output from LoKI-B++ is then piped into gnuplot, where the `--persist`
-     flag avoids gnuplot from immediately closing after plotting.
+      flag avoids gnuplot from immediately closing after plotting.
+
+## Python convergence utilities
+
+Two standalone Python helpers are available in `scripts/` for convergence studies.
+
+1. Run a study and write one JSON file per cell count:
+   `python3 scripts/run_convergence_study.py input/default_lokib_setup.json 200 2000 200 results/convergence --reference-cells 10000`
+2. Plot the absolute relative swarm-parameter error against the selected reference run:
+   `python3 scripts/plot_convergence_swarm_errors.py results/convergence`
+
+The runner accepts both `.in` and `.json` inputs, forces JSON output for each run,
+stores the results in the directory you choose, and writes a
+`convergence_manifest.json` file alongside the generated JSON files.
 
 ### Web
 

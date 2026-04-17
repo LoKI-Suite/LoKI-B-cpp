@@ -14,6 +14,15 @@
 
       gccEnv = pkgs.gcc11Stdenv;
 
+      python = (
+        pkgs.python3.withPackages (
+          ps: with ps; [
+            matplotlib
+            numpy
+          ]
+        )
+      );
+
       latex =
         with pkgs;
         (texlive.combine {
@@ -37,6 +46,9 @@
         # Build system
         ninja
         cmake
+
+        # Python
+        python
 
         # Dependencies
         eigen
