@@ -32,8 +32,6 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
 
-#include <cassert>
-
 namespace loki {
 
 CAROperator::CAROperator(const CARGases& cg)
@@ -461,12 +459,14 @@ std::vector<std::tuple<Grid::Index, double>> getOperatorDistribution(const Grid&
     int targetEnd;
     if (reverse)
     {
-        targetCell = frac * source + threshold;
+        // TODO: Check whether this min guard is correct or whether `frac *
+        // source + treshold <= grid.uMax()` should be guaranteed elsewhere.
+        targetCell = std::min(frac * source + threshold, grid.uMax());
         targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
         targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     } else
     {
-        targetCell = frac * source - threshold;
+        targetCell = std::min(frac * source - threshold, grid.uMax());
         targetBegin = getLowerBound(grid, targetCell - 0.5*grid.duCell(sourceidx));
         targetEnd = getUpperBound(grid, targetCell + 0.5*grid.duCell(sourceidx));
     }
