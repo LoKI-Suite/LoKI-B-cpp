@@ -28,6 +28,11 @@ class IonizationOperator
     const IonizationOperatorType operatorType;
 
     Matrix ionizationMatrix;
+    /* NOTE: the following is not a configuration parameter, but the
+     * result of introspection of the reaction lists. The results also depend
+     * on uMax.
+     */
+    bool includeNonConservativeIonization;
 };
 } // namespace experimental
 } // namespace loki

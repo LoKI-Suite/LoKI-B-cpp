@@ -1,15 +1,11 @@
 #include "LoKI-B/OperatorsNew.h"
-#include "LoKI-B/Constant.h"
-#include "LoKI-B/ConvDiff.h"
 #include "LoKI-B/EedfCollisions.h"
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Enumeration.h"
 #include "LoKI-B/Grid.h"
-#include "LoKI-B/GridOps.h"
 #include "LoKI-B/Integrators.h"
 #include "LoKI-B/Iterators.h"
 #include "LoKI-B/LinearAlgebra.h"
-#include "LoKI-B/Log.h"
 #include <cmath>
 #include <stdexcept>
 
@@ -246,13 +242,15 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
 }
 
 IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
-    : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells())
+    : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells()), includeNonConservativeIonization(false)
 {
 }
 
 // NOTE: For now this only implements conservative ionization and equal sharing.
 void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
 {
+    bool has_valid_collisions = false;
+
     ionizationMatrix.setZero();
 
     for (const auto &cd : mixture.collision_data().data_per_gas())
@@ -261,6 +259,8 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
         {
             if (collision->crossSection->threshold() > grid.uMax())
                 continue;
+
+            has_valid_collisions = true;
 
             integrate_sink<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
 
@@ -279,6 +279,9 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
         }
     }
     ionizationMatrix.array().rowwise() /= grid.duCells().array().transpose();
+
+    if (has_valid_collisions && operatorType != IonizationOperatorType::conservative)
+        includeNonConservativeIonization = true;
 }
 } // namespace experimental
 } // namespace loki
