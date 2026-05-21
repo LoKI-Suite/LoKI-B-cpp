@@ -41,6 +41,13 @@
 #include "LoKI-B/WorkingConditions.h"
 #include "LoKI-B/Operators.h"
 
+#define LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+#ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+
+#include "LoKI-B/OperatorsNew.h"
+
+#endif
+
 namespace loki
 {
 
@@ -121,7 +128,11 @@ protected:
      */
     FieldOperator fieldOperator;
 
+    #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+    experimental::InelasticOperator inelasticOperator;
+    #else
     InelasticOperator inelasticOperator;
+    #endif
 
     // support for CAR processes.
     std::unique_ptr<CAROperator> carOperator;

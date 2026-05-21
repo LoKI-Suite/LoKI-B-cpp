@@ -36,7 +36,7 @@
 #include <Eigen/src/Core/BandMatrix.h>
 #include <cmath>
 
-//#define LOKIB_CREATE_SPARSITY_PICTURE
+// #define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
 
 #include "LoKI-B/Matrix2Picture.h"
@@ -199,7 +199,11 @@ void ElectronKineticsBoltzmann::evaluateMatrix()
         carOperator->evaluate(grid(),Tg,CARMatrix);
     }
 
+    #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+    inelasticOperator.evaluate(grid(), eedf, mixture);
+    #else
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
+    #endif
 
     if (mixture.collision_data().hasCollisions(CollisionType::ionization))
         ionizationOperator.evaluateIonizationOperator(grid(),mixture);
@@ -259,6 +263,9 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
         = elasticMatrix
         + fieldMatrix*(EoN*EoN)
         + inelasticOperator.inelasticMatrix
+        #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+        + inelasticOperator.superelasticMatrix
+        #endif
         + ionizationOperator.ionConservativeMatrix
         + attachmentOperator.attachmentConservativeMatrix;
     if (carOperator)
@@ -283,6 +290,9 @@ void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
         = elasticMatrix
         + fieldMatrix*(EoN*EoN)
         + inelasticOperator.inelasticMatrix
+        #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+        + inelasticOperator.superelasticMatrix
+        #endif
         + ionizationOperator.ionizationMatrix
         + attachmentOperator.attachmentMatrix;
     if (carOperator)
@@ -595,6 +605,9 @@ void ElectronKineticsBoltzmann::solveTemporalGrowthMatrix()
     boltzmannMatrix
         = elasticMatrix
         + inelasticOperator.inelasticMatrix
+        #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+        + inelasticOperator.superelasticMatrix
+        #endif
         + ionizationOperator.ionizationMatrix
         + attachmentOperator.attachmentMatrix;
     if (carOperator)
@@ -710,6 +723,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + attachmentOperator.attachmentMatrix
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
+                #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+                + inelasticOperator.superelasticMatrix
+                #endif
                 + fieldMatrix*(EoN*EoN)
                 + ionSpatialGrowthD
                 + ionSpatialGrowthU
@@ -722,6 +738,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + attachmentOperator.attachmentMatrix
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
+                #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+                + inelasticOperator.superelasticMatrix
+                #endif
                 + ionTemporalGrowth
                 + fieldMatrixTempGrowth*(EoN*EoN);
         }
@@ -733,6 +752,9 @@ void ElectronKineticsBoltzmann::solveEEColl()
                 + attachmentOperator.attachmentConservativeMatrix
                 + elasticMatrix
                 + inelasticOperator.inelasticMatrix
+                #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+                + inelasticOperator.superelasticMatrix
+                #endif
                 + fieldMatrix*(EoN*EoN);
     }
     if (carOperator)
@@ -1355,7 +1377,11 @@ void ElectronKineticsPrescribed::evaluateMatrix()
         carOperator->evaluate(grid(),Tg);
     }
 
+    #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+    inelasticOperator.evaluate(grid(), eedf, mixture);
+    #else
     inelasticOperator.evaluateInelasticOperators(grid(),mixture);
+    #endif
 }
 
 void ElectronKineticsPrescribed::doSolve()
