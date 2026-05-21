@@ -649,66 +649,53 @@ void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture &
 {
     /// \todo Handle isSimulationHF()
     json_type &out = (*m_active)["power_balance"];
-    out.push_back(makeQuantity("Field", power.field, "eV*m^3/s"));
-    // out.push_back( { "Field", "eV*m^3/s", power.field });
-    out.push_back(makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s"));
-    out.push_back(makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s"));
-    out.push_back(makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s"));
-    out.push_back(makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s"));
-    out.push_back(makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Ionization collisions", power.ionization.forward, "eV*m^3/s")); // no recombination
-    out.push_back(makeQuantity("Attachment collisions", power.attachment.forward, "eV*m^3/s")); // no detachment
-    out.push_back(makeQuantity("Electron density growth", power.eDensGrowth, "eV*m^3/s"));
 
-    out.push_back(makeQuantity("Power Balance", power.balance, "eV*m^3/s"));
-    out.push_back(makeQuantity("Relative Power Balance", power.relativeBalance * 100, "%"));
-    out.push_back(makeQuantity("Elastic collisions (gain)", power.elasticGain, "eV*m^3/s"));
-    out.push_back(makeQuantity("Elastic collisions (loss)", power.elasticLoss, "eV*m^3/s"));
+    json_type &out_total = out["total"];
+    out_total["field"] = makeUnitValue(power.field, "eV*m^3/s");
+    out_total["elastic"] = {{"gain", makeUnitValue(power.elasticGain, "eV*m^3/s")},
+                            {"loss", makeUnitValue(power.elasticLoss, "eV*m^3/s")},
+                            {"net", makeUnitValue(power.elasticNet, "eV*m^3/s")}};
+    out_total["car"] = {{"gain", makeUnitValue(power.carGain, "eV*m^3/s")},
+                        {"loss", makeUnitValue(power.carLoss, "eV*m^3/s")},
+                        {"net", makeUnitValue(power.carNet, "eV*m^3/s")}};
+    out_total["electronic"] = {{"inelastic", makeUnitValue(power.excitation.forward, "eV*m^3/s")},
+                               {"superelastic", makeUnitValue(power.excitation.backward, "eV*m^3/s")},
+                               {"net", makeUnitValue(power.excitation.net(), "eV*m^3/s")}};
+    out_total["vibrational"] = {{"inelastic", makeUnitValue(power.vibrational.forward, "eV*m^3/s")},
+                                {"superelastic", makeUnitValue(power.vibrational.backward, "eV*m^3/s")},
+                                {"net", makeUnitValue(power.vibrational.net(), "eV*m^3/s")}};
+    out_total["rotational"] = {{"inelastic", makeUnitValue(power.rotational.forward, "eV*m^3/s")},
+                               {"superelastic", makeUnitValue(power.rotational.backward, "eV*m^3/s")},
+                               {"net", makeUnitValue(power.rotational.net(), "eV*m^3/s")}};
 
-    out.push_back(makeQuantity("Elastic collisions (net)", power.elasticNet, "eV*m^3/s"));
-    out.push_back(makeQuantity("CAR (gain)", power.carGain, "eV*m^3/s"));
-    out.push_back(makeQuantity("CAR (loss)", power.carLoss, "eV*m^3/s"));
+    out_total["ionization"] = makeUnitValue(power.ionization.forward, "eV*m^3/s"); // no recombination
+    out_total["attachment"] = makeUnitValue(power.attachment.forward, "eV*m^3/s"); // no detachment
+    out_total["electronDensityGrowth"] = makeUnitValue(power.eDensGrowth, "eV*m^3/s");
 
-    out.push_back(makeQuantity("CAR (net)", power.carNet, "eV*m^3/s"));
-    out.push_back(makeQuantity("Excitation inelastic collisions", power.excitation.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Excitation superelastic collisions", power.excitation.backward, "eV*m^3/s"));
+    out_total["balance"] = makeUnitValue(power.balance, "eV*m^3/s");
+    out_total["relativeBalance"] = makeUnitValue(power.relativeBalance * 100, "%");
 
-    out.push_back(makeQuantity("Excitation collisions (net)", power.excitation.net(), "eV*m^3/s"));
-    out.push_back(makeQuantity("Vibrational inelastic collisions", power.vibrational.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Vibrational superelastic collisions", power.vibrational.backward, "eV*m^3/s"));
-
-    out.push_back(makeQuantity("Vibrational collisions (net)", power.vibrational.net(), "eV*m^3/s"));
-    out.push_back(makeQuantity("Rotational inelastic collisions", power.rotational.forward, "eV*m^3/s"));
-    out.push_back(makeQuantity("Rotational superelastic collisions", power.rotational.backward, "eV*m^3/s"));
-
-    out.push_back(makeQuantity("Rotational collisions (net)", power.rotational.net(), "eV*m^3/s"));
+    json_type &out_per_gas = out["perGas"];
 
     for (const auto &cd : collData.data_per_gas())
     {
-        const GasPower &gasPower = cd.getPower();
-        json_type gas_out;
-        gas_out.push_back({{"name", cd.gas().name()}});
-        gas_out.push_back(makeQuantity("Excitation inelastic collisions", gasPower.excitation.forward, "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Excitation superelastic collisions", gasPower.excitation.backward, "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Excitation collisions (net)", gasPower.excitation.net(), "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Vibrational inelastic collisions", gasPower.vibrational.forward, "eV*m^3/s"));
-        gas_out.push_back(
-            makeQuantity("Vibrational superelastic collisions", gasPower.vibrational.backward, "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Vibrational collisions (net)", gasPower.vibrational.net(), "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Rotational inelastic collisions", gasPower.rotational.forward, "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Rotational superelastic collisions", gasPower.rotational.backward, "eV*m^3/s"));
-        gas_out.push_back(makeQuantity("Rotational collisions (net)", gasPower.rotational.net(), "eV*m^3/s"));
-        gas_out.push_back(
-            makeQuantity("Ionization collisions", gasPower.ionization.forward, "eV*m^3/s")); // no recombination
-        gas_out.push_back(
-            makeQuantity("Attachment collisions", gasPower.attachment.forward, "eV*m^3/s")); // no detachment
+        // Skip the electron "gas".
+        if (cd.gas().name() == "e")
+            continue;
 
-        out.push_back({"gas", gas_out});
+        json_type &out_gas = out_per_gas[cd.gas().name()];
+        const GasPower &gas_power = cd.getPower();
+        out_gas["electronic"] = {{"inelastic", makeUnitValue(gas_power.excitation.forward, "eV*m^3/s")},
+                                 {"superelastic", makeUnitValue(gas_power.excitation.backward, "eV*m^3/s")},
+                                 {"net", makeUnitValue(gas_power.excitation.net(), "eV*m^3/s")}};
+        out_gas["vibrational"] = {{"inelastic", makeUnitValue(gas_power.vibrational.forward, "eV*m^3/s")},
+                                  {"superelastic", makeUnitValue(gas_power.vibrational.backward, "eV*m^3/s")},
+                                  {"net", makeUnitValue(gas_power.vibrational.net(), "eV*m^3/s")}};
+        out_gas["rotational"] = {{"inelastic", makeUnitValue(gas_power.rotational.forward, "eV*m^3/s")},
+                                 {"superelastic", makeUnitValue(gas_power.rotational.backward, "eV*m^3/s")},
+                                 {"net", makeUnitValue(gas_power.rotational.net(), "eV*m^3/s")}};
+        out_gas["ionization"] = makeUnitValue(gas_power.ionization.forward, "eV*m^3/s"); // no recombination
+        out_gas["attachment"] = makeUnitValue(gas_power.attachment.forward, "eV*m^3/s"); // no detachment
     }
 }
 
