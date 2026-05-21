@@ -703,33 +703,31 @@ void JsonOutput::writeRateCoefficients(const std::vector<RateCoefficient> &rateC
                                        const std::vector<RateCoefficient> &extraRateCoefficients) const
 {
     /// \todo Handle isSimulationHF()
-    if (rateCoefficients.size())
+    if (!rateCoefficients.empty())
     {
-        json_type &out = (*m_active)["rate_coefficients"];
-        out["labels"] = {"Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
-        out["units"] = {"m^3/s", "m^3/s", ""};
-        json_type &data = out["data"];
+        json_type &out = (*m_active)["rateCoefficients"];
         for (const auto &rateCoeff : rateCoefficients)
         {
             std::stringstream ss;
             ss << *rateCoeff.collision;
-            data.push_back(json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str()});
+            out.push_back({{"description", ss.str()},
+                           {"inelastic", makeUnitValue(rateCoeff.inelastic, "m^3/s")},
+                           {"superelastic", makeUnitValue(rateCoeff.superelastic, "m^3/s")}});
         }
     }
     /** \todo See if we can merge this or re-use code: the code block is identical
      *        to that above, except for extraRateCoefficients instead of rateCoefficients.
      */
-    if (extraRateCoefficients.size())
+    if (!extraRateCoefficients.empty())
     {
-        json_type &out = (*m_active)["rate_coefficients_extra"];
-        out["labels"] = {"Ine.R.Coeff.", "Sup.R.Coeff.", "Description"};
-        out["units"] = {"m^3/s", "m^3/s", ""};
-        json_type &data = out["data"];
-        for (const auto &rateCoeff : extraRateCoefficients)
+        json_type &out = (*m_active)["rateCoefficientsExtra"];
+        for (const auto &rateCoeff : rateCoefficients)
         {
             std::stringstream ss;
             ss << *rateCoeff.collision;
-            data.push_back(json_type{rateCoeff.inelastic, rateCoeff.superelastic, ss.str()});
+            out.push_back({{"description", ss.str()},
+                           {"inelastic", makeUnitValue(rateCoeff.inelastic, "m^3/s")},
+                           {"superelastic", makeUnitValue(rateCoeff.superelastic, "m^3/s")}});
         }
     }
 }
