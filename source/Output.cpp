@@ -633,22 +633,22 @@ void JsonOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, co
 void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     /// \todo Handle isSimulationHF()
-    json_type &out = (*m_active)["swarm_parameters"];
-    out["reduced_electric_field"] = makeUnitValue(m_workingConditions->reducedField(), "Td");
-    out["reduced_diffusion_coefficient"] = makeUnitValue(swarmParameters.redDiffCoeff, "1/(m*s)");
-    out["reduced_mobility_coefficient"] = makeUnitValue(swarmParameters.redMobCoeff, "1/(m*s*V)");
-    out["reduced_townsend_coefficient"] = makeUnitValue(swarmParameters.redTownsendCoeff, "m^2");
-    out["reduced_attachment_coefficient"] = makeUnitValue(swarmParameters.redAttCoeff, "m^2");
-    out["mean_energy"] = makeUnitValue(swarmParameters.meanEnergy, "eV");
-    out["characteristic_energy"] = makeUnitValue(swarmParameters.characEnergy, "eV");
-    out["electron_temperature"] = makeUnitValue(swarmParameters.Te, "eV");
-    out["drift_velocity"] = makeUnitValue(swarmParameters.driftVelocity, "m/s");
+    json_type &out = (*m_active)["swarmParameters"];
+    out["reducedElectricField"] = makeUnitValue(m_workingConditions->reducedField(), "Td");
+    out["reducedDiffusionCoefficient"] = makeUnitValue(swarmParameters.redDiffCoeff, "1/(m*s)");
+    out["reducedMobilityCoefficient"] = makeUnitValue(swarmParameters.redMobCoeff, "1/(m*s*V)");
+    out["reducedTownsendCoefficient"] = makeUnitValue(swarmParameters.redTownsendCoeff, "m^2");
+    out["reducedAttachmentCoefficient"] = makeUnitValue(swarmParameters.redAttCoeff, "m^2");
+    out["meanEnergy"] = makeUnitValue(swarmParameters.meanEnergy, "eV");
+    out["characteristicEnergy"] = makeUnitValue(swarmParameters.characEnergy, "eV");
+    out["electronTemperature"] = makeUnitValue(swarmParameters.Te, "eV");
+    out["driftVelocity"] = makeUnitValue(swarmParameters.driftVelocity, "m/s");
 }
 
 void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture &collData) const
 {
     /// \todo Handle isSimulationHF()
-    json_type &out = (*m_active)["power_balance"];
+    json_type &out = (*m_active)["powerBalance"];
 
     json_type &out_total = out["total"];
     out_total["field"] = makeUnitValue(power.field, "eV*m^3/s");
