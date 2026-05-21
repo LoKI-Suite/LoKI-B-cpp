@@ -634,15 +634,15 @@ void JsonOutput::writeSwarm(const SwarmParameters &swarmParameters) const
 {
     /// \todo Handle isSimulationHF()
     json_type &out = (*m_active)["swarm_parameters"];
-    out.push_back(makeQuantity("Reduced electric field", m_workingConditions->reducedField(), "Td"));
-    out.push_back(makeQuantity("Reduced diffusion coefficient", swarmParameters.redDiffCoeff, "1/(m*s)"));
-    out.push_back(makeQuantity("Reduced mobility coefficient", swarmParameters.redMobCoeff, "1/(m*s*V)"));
-    out.push_back(makeQuantity("Reduced Townsend coefficient", swarmParameters.redTownsendCoeff, "m^2"));
-    out.push_back(makeQuantity("Reduced attachment coefficient", swarmParameters.redAttCoeff, "m^2"));
-    out.push_back(makeQuantity("Mean energy", swarmParameters.meanEnergy, "eV"));
-    out.push_back(makeQuantity("Characteristic energy", swarmParameters.characEnergy, "eV"));
-    out.push_back(makeQuantity("Electron temperature", swarmParameters.Te, "eV"));
-    out.push_back(makeQuantity("Drift velocity", swarmParameters.driftVelocity, "m/s"));
+    out["reduced_electric_field"] = makeUnitValue(m_workingConditions->reducedField(), "Td");
+    out["reduced_diffusion_coefficient"] = makeUnitValue(swarmParameters.redDiffCoeff, "1/(m*s)");
+    out["reduced_mobility_coefficient"] = makeUnitValue(swarmParameters.redMobCoeff, "1/(m*s*V)");
+    out["reduced_townsend_coefficient"] = makeUnitValue(swarmParameters.redTownsendCoeff, "m^2");
+    out["reduced_attachment_coefficient"] = makeUnitValue(swarmParameters.redAttCoeff, "m^2");
+    out["mean_energy"] = makeUnitValue(swarmParameters.meanEnergy, "eV");
+    out["characteristic_energy"] = makeUnitValue(swarmParameters.characEnergy, "eV");
+    out["electron_temperature"] = makeUnitValue(swarmParameters.Te, "eV");
+    out["drift_velocity"] = makeUnitValue(swarmParameters.driftVelocity, "m/s");
 }
 
 void JsonOutput::writePower(const Power &power, const EedfCollisionDataMixture &collData) const
