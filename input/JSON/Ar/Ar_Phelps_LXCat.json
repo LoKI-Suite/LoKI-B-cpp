@@ -93,6 +93,7 @@
             "labels": ["Energy", "Cross section"],
             "units": ["eV", "m^2"],
             "values": [
+              [0, 0],
               [15.8, 0],
               [16, 2.02e-22],
               [17, 1.34e-21],
@@ -152,6 +153,7 @@
             "labels": ["Energy", "Cross section"],
             "units": ["eV", "m^2"],
             "values": [
+              [0, 0],
               [11.5, 0],
               [12.7, 7e-22],
               [13.7, 1.41e-21],
