@@ -590,7 +590,9 @@ JsonOutput::JsonOutput(json_type &root, const json_type &cnf, const WorkingCondi
 
 void JsonOutput::setDestination(const std::string &subFolder)
 {
-    m_active = &m_root[subFolder];
+    auto &data = m_root["data"];
+    data.push_back(json_type::object());
+    m_active = &data[data.size() - 1];
 }
 
 json_type JsonOutput::makeQuantity(const std::string &name, double value, const std::string unit)
