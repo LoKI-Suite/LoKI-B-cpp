@@ -42,7 +42,8 @@
 #include "LoKI-B/Operators.h"
 
 #define LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
-#ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+#define LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS
+#if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
 
 #include "LoKI-B/OperatorsNew.h"
 
@@ -235,7 +236,11 @@ private:
 
     Matrix boltzmannMatrix;
     // Support for ionization.
+    #ifdef LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS
+    experimental::IonizationOperator ionizationOperator;
+    #else
     IonizationOperator ionizationOperator;
+    #endif
 
     const std::unique_ptr<ElectronElectronOperator> eeOperator;
 
