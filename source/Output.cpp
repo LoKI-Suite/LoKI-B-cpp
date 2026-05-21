@@ -598,6 +598,11 @@ json_type JsonOutput::makeQuantity(const std::string &name, double value, const 
     return {{name, {{"value", value}, {"unit", unit}}}};
 }
 
+json_type JsonOutput::makeUnitValue(double value, const std::string_view unit)
+{
+    return {{"value", value}, {"unit", unit}};
+}
+
 void JsonOutput::writeEedf(const Vector &eedf, const Vector *firstAnisotropy, const Vector &energies) const
 {
     json_type &out = (*m_active)["eedf"];
