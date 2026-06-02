@@ -39,7 +39,7 @@
         cmake
 
         # Dependencies
-        eigen
+        eigen_5
         nlohmann_json
         openblas
 
