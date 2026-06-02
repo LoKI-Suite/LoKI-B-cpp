@@ -13,6 +13,8 @@ target_sources(loki-b PRIVATE
    ../source/GasProperties.cpp
    ../source/Gnuplot.cpp
    ../source/Grid.cpp
+   ../source/Integrators.cpp
+   ../source/Iterators.cpp
    ../source/JobSystem.cpp
    ../source/json.cpp
    ../source/LegacyToJSON.cpp
@@ -20,6 +22,7 @@ target_sources(loki-b PRIVATE
    ../source/LookupTable.cpp
    ../source/OffSideToJSON.cpp
    ../source/Operators.cpp
+   ../source/OperatorsNew.cpp
    ../source/Output.cpp
    ../source/Parse.cpp
    ../source/Power.cpp
