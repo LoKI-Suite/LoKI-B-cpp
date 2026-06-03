@@ -74,7 +74,9 @@ void handleResults(const loki::Grid &grid, const loki::Vector &eedf, const loki:
 
 void handleExistingOutputPath(std::string &folder)
 {
-    std::cerr << "Please enter a new destination for the output files (keep empty for unaltered).\nOutput/";
+    loki::Log<loki::Message>::Notify("Please enter a new destination for the output files (keep empty for unaltered).");
+    std::cerr << "output/";
+
     std::getline(std::cin, folder);
 }
 
@@ -92,6 +94,9 @@ try
      */
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
+
+    using loki::Log;
+    using loki::Message;
 
     /* The target for JSON output. This will be initialized if JSON output
      * is asked for (see the cnf.at("output") bit below). In that case this
@@ -141,13 +146,11 @@ try
     {
         if (!input_is_json)
         {
-            std::cout << "Warning: option --convert is ignored: conversion is "
-                         "implicit for legacy ('.in') input files." << std::endl;
+            Log<Message>::Warning("Option --convert is ignored: conversion is implicit for legacy ('.in') input files.");
         }
         else
         {
-            std::cout << "Input file << '" << fileName << "' was converted. "
-                         "Result:\n" << cnf.dump(2) << std::endl;
+            Log<Message>::Notify("Input file << '", fileName, "' was converted. Result:\n", cnf.dump(2));
         }
     }
     loki::Simulation simulation(fileName, cnf);
@@ -204,9 +207,9 @@ try
 
     simulation.run();
     auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << "Simulation finished, elapsed time = "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-              << "mus" << std::endl;
+    Log<Message>::Notify("Simulation finished, elapsed time = ",
+                         std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count(),
+                         "mus");
 
     // If data were harvested (also) in JSON form, save the JSON output object to disk.
     if (json_output_data)
@@ -217,7 +220,7 @@ try
         {
             throw std::runtime_error("Error opening JSON output file '" + fname + "'.");
         }
-        std::cout << "Creating JSON output file '" << fname << "'." << std::endl;
+        Log<Message>::Notify("Creating JSON output file '", fname, "'.'");
         ofs << json_output_data->dump(2) << std::endl;
     }
 
