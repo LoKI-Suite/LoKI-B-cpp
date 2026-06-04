@@ -235,10 +235,6 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
             }
         }
     }
-
-    // NOTE: This line is only required when the drift diffusion terms are also
-    // divided by the cell width.
-    inelasticMatrix.array().rowwise() /= grid.duCells().array().transpose();
 }
 
 IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
@@ -278,7 +274,6 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
             }
         }
     }
-    ionizationMatrix.array().rowwise() /= grid.duCells().array().transpose();
 
     if (has_valid_collisions && operatorType != IonizationOperatorType::conservative)
         includeNonConservativeIonization = true;
