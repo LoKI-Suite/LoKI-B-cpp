@@ -32,6 +32,8 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
 
+#define LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+#define LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS
 namespace loki {
 
 CAROperator::CAROperator(const CARGases& cg)
