@@ -19,7 +19,8 @@
             "states": {
                 "e": {
                     "detailed": {
-                        "type": "Electron"
+                        "type": "Electron",
+                        "charge": -1
                     },
                     "serialized": {
                         "composition": { "summary": "e^-" }
@@ -27,7 +28,8 @@
                 },
                 "X(0)": {
                     "detailed": {
-                        "type": "AtomLS"
+                        "type": "AtomLS",
+                        "charge": 0
                     },
                     "serialized": {
                         "composition": { "summary": "X" },
@@ -36,7 +38,8 @@
                 },
                 "X(*)": {
                     "detailed": {
-                        "type": "AtomLS"
+                        "type": "AtomLS",
+                        "charge": 0
                     },
                     "serialized": {
                         "composition": { "summary": "X" },
@@ -45,7 +48,8 @@
                 },
                 "X(+)": {
                     "detailed": {
-                        "type": "AtomLS"
+                        "type": "AtomLS",
+                        "charge": 1
                     },
                     "serialized": {
                         "composition": { "summary": "X^+" }
