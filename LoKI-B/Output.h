@@ -134,6 +134,7 @@ private:
      *
      */
     static json_type makeQuantity(const std::string& name, double value, const std::string unit);
+    static json_type makeUnitValue(double value, const std::string_view unit);
     json_type& m_root;
     json_type* m_active;
 };
