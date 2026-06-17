@@ -22,9 +22,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
-#include <stdexcept>
 
 namespace fs = std::filesystem;
 
@@ -87,7 +85,7 @@ bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_t
         }
         for (const auto &item : j1.items())
         {
-            std::cerr << "Traversing key " << item.key() << std::endl;
+            // std::cerr << "Traversing key " << item.key() << std::endl;
             if (!j2.contains(item.key()) || !json_equal(item.value(), j2.at(item.key()), rel_tol, abs_tol))
             {
                 return false;
@@ -102,7 +100,7 @@ bool json_equal(const nlohmann::json &j1, const nlohmann::json &j2, double rel_t
         }
         for (size_t i = 0; i < j1.size(); ++i)
         {
-            std::cerr << "At index " << i << std::endl;
+            // std::cerr << "At index " << i << std::endl;
             if (!json_equal(j1[i], j2[i], rel_tol, abs_tol))
             {
                 return false;
