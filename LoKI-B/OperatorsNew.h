@@ -9,6 +9,7 @@ namespace loki
 {
 namespace experimental
 {
+template<typename Integrator>
 class InelasticOperator
 {
   public:
@@ -19,6 +20,7 @@ class InelasticOperator
     Matrix superelasticMatrix;
 };
 
+template<typename Integrator>
 class IonizationOperator
 {
   public:

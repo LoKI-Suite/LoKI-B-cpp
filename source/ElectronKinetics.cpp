@@ -32,9 +32,13 @@
 #include "LoKI-B/Constant.h"
 #include "LoKI-B/EedfUtilities.h"
 #include "LoKI-B/GridOps.h"
+#include "LoKI-B/Integrators.h"
+#include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/Log.h"
+#include "LoKI-B/OperatorsNew.h"
 #include <Eigen/src/Core/BandMatrix.h>
 #include <cmath>
+#include <limits>
 
 // #define LOKIB_CREATE_SPARSITY_PICTURE
 #ifdef LOKIB_CREATE_SPARSITY_PICTURE
@@ -292,8 +296,48 @@ void ElectronKineticsBoltzmann::invertLinearMatrix()
 
 void ElectronKineticsBoltzmann::invertMatrix(Matrix &matrix)
 {
-    solveEEDF(eedf,matrix,grid());
+    // solveEEDF(eedf,matrix,grid());
+    solveInelasticOperator();
 }
+
+#ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+void ElectronKineticsBoltzmann::solveInelasticOperator() {
+    const double EoN = m_workingConditions->reducedFieldSI();
+
+    const auto boltzmannBase = elasticMatrix + fieldMatrix*(EoN*EoN);
+
+    auto linear_inelastic_op = experimental::InelasticOperator<LinIntegrator>(grid());
+    auto linear_ionization_op = experimental::IonizationOperator<LinIntegrator>(grid(), ionizationOperator.operatorType);
+
+    linear_inelastic_op.evaluate(grid(), eedf, mixture);
+    linear_ionization_op.evaluate(grid(), eedf, mixture);
+
+    // TODO: Add attachment.
+    boltzmannMatrix = boltzmannBase  
+        + linear_inelastic_op.inelasticMatrix
+        + linear_inelastic_op.superelasticMatrix
+        + linear_ionization_op.ionizationMatrix;
+
+    solveEEDF(eedf, boltzmannMatrix, grid());
+
+    Vector eedf_prev = eedf;
+
+    do {
+        eedf_prev = eedf;
+
+        inelasticOperator.evaluate(grid(), eedf_prev, mixture);
+        ionizationOperator.evaluate(grid(), eedf_prev, mixture);
+
+        boltzmannMatrix = boltzmannBase  
+            + inelasticOperator.inelasticMatrix
+            + inelasticOperator.superelasticMatrix
+            + ionizationOperator.ionizationMatrix;
+
+        solveEEDF(eedf, boltzmannMatrix, grid());
+        Log<Message>::Notify(maxRelDiff(eedf_prev, eedf));
+    } while (maxRelDiff(eedf_prev, eedf) > maxEedfRelError);
+}
+#endif
 
 void ElectronKineticsBoltzmann::solveSpatialGrowthMatrix()
 {

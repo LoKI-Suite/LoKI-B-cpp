@@ -35,6 +35,7 @@
 #include "LoKI-B/EedfMixture.h"
 #include "LoKI-B/Event.h"
 #include "LoKI-B/Grid.h"
+#include "LoKI-B/Integrators.h"
 #include "LoKI-B/LinearAlgebra.h"
 #include "LoKI-B/MacroscopicQuantities.h"
 #include "LoKI-B/Power.h"
@@ -130,7 +131,7 @@ protected:
     FieldOperator fieldOperator;
 
     #ifdef LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
-    experimental::InelasticOperator inelasticOperator;
+    experimental::InelasticOperator<LogIntegrator> inelasticOperator;
     #else
     InelasticOperator inelasticOperator;
     #endif
@@ -165,6 +166,7 @@ private:
     void invertMatrix(Matrix &matrix);
     void solveSpatialGrowthMatrix();
     void solveTemporalGrowthMatrix();
+    void solveInelasticOperator();
     /** Solve the EE collision matrix while other terms are fixed.
      *  This requires that eeOperator has been set up.
      */
@@ -237,7 +239,7 @@ private:
     Matrix boltzmannMatrix;
     // Support for ionization.
     #ifdef LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS
-    experimental::IonizationOperator ionizationOperator;
+    experimental::IonizationOperator<LogIntegrator> ionizationOperator;
     #else
     IonizationOperator ionizationOperator;
     #endif

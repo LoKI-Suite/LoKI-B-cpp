@@ -206,11 +206,13 @@ void integrate_sup_source(const Grid &grid, const EedfCollision &col, const Vect
     }
 }
 
-InelasticOperator::InelasticOperator(const Grid &grid)
+template <typename I>
+InelasticOperator<I>::InelasticOperator(const Grid &grid)
     : inelasticMatrix(grid.nCells(), grid.nCells()), superelasticMatrix(grid.nCells(), grid.nCells())
 {
 }
-void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
+template <typename I>
+void InelasticOperator<I>::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
 {
     inelasticMatrix.setZero();
     superelasticMatrix.setZero();
@@ -224,26 +226,28 @@ void InelasticOperator::evaluate(const Grid &grid, const Vector &eedf, const Eed
                 if (collision->crossSection->threshold() >= grid.uMax())
                     continue;
 
-                integrate_sink<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
-                integrate_source<LinIntegrator>(grid, *collision, eedf, this->inelasticMatrix);
+                integrate_sink<I>(grid, *collision, eedf, this->inelasticMatrix);
+                integrate_source<I>(grid, *collision, eedf, this->inelasticMatrix);
 
                 if (collision->isReverse())
                 {
-                    integrate_sup_sink<LinIntegrator>(grid, *collision, eedf, this->superelasticMatrix);
-                    integrate_sup_source<LinIntegrator>(grid, *collision, eedf, this->superelasticMatrix);
+                    integrate_sup_sink<I>(grid, *collision, eedf, this->superelasticMatrix);
+                    integrate_sup_source<I>(grid, *collision, eedf, this->superelasticMatrix);
                 }
             }
         }
     }
 }
 
-IonizationOperator::IonizationOperator(const Grid &grid, IonizationOperatorType type)
+template <typename I>
+IonizationOperator<I>::IonizationOperator(const Grid &grid, IonizationOperatorType type)
     : operatorType(type), ionizationMatrix(grid.nCells(), grid.nCells()), includeNonConservativeIonization(false)
 {
 }
 
 // NOTE: For now this only implements conservative ionization and equal sharing.
-void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
+template <typename I>
+void IonizationOperator<I>::evaluate(const Grid &grid, const Vector &eedf, const EedfMixture &mixture)
 {
     bool has_valid_collisions = false;
 
@@ -258,15 +262,15 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
 
             has_valid_collisions = true;
 
-            integrate_sink<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
+            integrate_sink<I>(grid, *collision, eedf, ionizationMatrix);
 
             switch (operatorType)
             {
             case IonizationOperatorType::conservative:
-                integrate_source<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
+                integrate_source<I>(grid, *collision, eedf, ionizationMatrix);
                 break;
             case IonizationOperatorType::equalSharing:
-                integrate_source_equal_sharing<LinIntegrator>(grid, *collision, eedf, ionizationMatrix);
+                integrate_source_equal_sharing<I>(grid, *collision, eedf, ionizationMatrix);
                 break;
             default:
                 throw std::runtime_error(
@@ -278,5 +282,16 @@ void IonizationOperator::evaluate(const Grid &grid, const Vector &eedf, const Ee
     if (has_valid_collisions && operatorType != IonizationOperatorType::conservative)
         includeNonConservativeIonization = true;
 }
+
+// Explicit instantiations
+template class InelasticOperator<ConstIntegrator>;
+template class InelasticOperator<LinIntegrator>;
+template class InelasticOperator<LogIntegrator>;
+
+// Explicit instantiations
+template class IonizationOperator<ConstIntegrator>;
+template class IonizationOperator<LinIntegrator>;
+template class IonizationOperator<LogIntegrator>;
+
 } // namespace experimental
 } // namespace loki
