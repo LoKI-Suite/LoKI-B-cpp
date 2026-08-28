@@ -151,7 +151,17 @@ void solveEEDF(Vector &eedf, Matrix &matrix, const Grid &grid)
     {
         // at this point, eedf has been set up to contain b.
         Vector b(eedf);
+
+        // TODO: LU with partial pivoting leads to memory index out of bounds
+        // error when compiling to WASM. Therefore, we intead use BiCGSTAB.
+        // However, in some preliminary testing it seems that BiCGSTAB is faster
+        // than LU, at least for the default setup file. Should we just always
+        // use BiCGSTAB?
+        #ifdef __EMSCRIPTEN__
+        eedf = Eigen::BiCGSTAB<SparseMatrix, Eigen::IncompleteLUT<double>>(matrix.sparseView()).solve(b);
+        #else
         eedf = matrix.partialPivLu().solve(b);
+        #endif
     }
     /* 4. We have calculated the new EEDF, but eedf[0]==1 and the result is
      *    correct up to a multiplicative constant. Scale the EEDF to satisfy
