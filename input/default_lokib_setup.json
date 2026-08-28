@@ -1,6 +1,6 @@
 {
   "workingConditions": {
-    "reducedField": 50,
+    "reducedField": 100,
     "_reducedField": "linspace(50,100,6)",
     "electronTemperature": 0.03,
     "excitationFrequency": 0,
@@ -13,8 +13,8 @@
   "electronKinetics": {
     "isOn": true,
     "eedfType": "boltzmann",
-    "ionizationOperatorType": "usingSDCS",
-    "growthModelType": "temporal",
+    "ionizationOperatorType": "equalSharing",
+    "growthModelType": "spatial",
     "includeEECollisions": false,
     "LXCatFiles": ["JSON/N2/N2_LXCat.json", "JSON/N2/N2_rot_LXCat.json"],
     "_LXCatFiles": ["Nitrogen/N2_LXCat.txt", "Nitrogen/N2_rot_LXCat.txt"],
@@ -44,8 +44,8 @@
     },
     "numerics": {
       "energyGrid": {
-        "maxEnergy": 20,
-        "cellNumber": 1000,
+        "maxEnergy": 40,
+        "cellNumber": 2000,
         "smartGrid": {
           "minEedfDecay": 10,
           "maxEedfDecay": 25,
@@ -55,7 +55,7 @@
       "maxPowerBalanceRelError": 1e-9,
       "nonLinearRoutines": {
         "algorithm": "mixingDirectSolutions",
-        "mixingParameter": 0.7,
+        "mixingParameter": 1.0,
         "maxEedfRelError": 1e-9
       }
     }
@@ -65,7 +65,7 @@
     "refreshFrequency": 1
   },
   "output": {
-    "isOn": true,
+    "isOn": false,
     "folder": "simulation",
     "dataFiles": [
       "eedf",

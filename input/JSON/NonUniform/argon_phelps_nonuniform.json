@@ -1,6 +1,6 @@
 {
     "workingConditions": {
-      "reducedField": 10,
+      "reducedField": 100,
       "electronTemperature": 1,
       "excitationFrequency": 0,
       "gasPressure": 133.32,
@@ -38,11 +38,11 @@
       "numerics": {
         "energyGrid": {
             "nonuniformGrid": {
-                "maxEnergy":20.0,
+                "maxEnergy": 70,
                 "nodeDistribution": {
                   "max": 1,
                   "min": 0,
-                  "nvalues": 3001,
+                  "nvalues": 1001,
                   "range": "linspace"
                 }
             }  

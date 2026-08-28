@@ -32,6 +32,8 @@
 #include "LoKI-B/Log.h"
 #include "LoKI-B/GridOps.h"
 
+#define LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS
+#define LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS
 namespace loki {
 
 CAROperator::CAROperator(const CARGases& cg)
@@ -191,8 +193,13 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
     
     if (grid.isUniform())
     {
+        #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+        const double factor1 = c_el / grid.du() + 0.5;
+        const double factor2 = c_el / grid.du() - 0.5;
+        #else
         const double factor1 = (c_el / grid.du() + 0.5) / grid.du();
         const double factor2 = (c_el / grid.du() - 0.5) / grid.du();
+        #endif
 
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
@@ -215,8 +222,13 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
                 const double Bmin = -grid.duCell(k) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
                 const double Amin = grid.duCell(k-1) / grid.duNode(k) / 2 + c_el/grid.duNode(k);
 
+                #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+                mat.coeffRef(k, k - 1) = g[k] * Bmin;
+                mat.coeffRef(k, k) += -g[k] * Amin;
+                #else
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
+                #endif
             }
             
             if (k < grid.nCells() - 1)
@@ -224,8 +236,13 @@ void ElasticOperator::evaluate(const Grid& grid, const Vector& elasticCrossSecti
                 const double Bplus = -grid.duCell(k+1) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
                 const double Aplus = grid.duCell(k) / grid.duNode(k+1) / 2 + c_el/grid.duNode(k+1);
 
+                #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus;
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus;
+                #else
                 mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
+                #endif
             }
         }
     }
@@ -306,7 +323,11 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
 
     if (grid.isUniform())
     {
+        #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+        const double sqStep = grid.du();
+        #else
         const double sqStep = grid.du() * grid.du();
+        #endif
 
         for (Grid::Index k = 0; k < grid.nCells(); ++k)
         {
@@ -329,16 +350,26 @@ void FieldOperator::evaluate(const Grid& grid, const Vector& totalCS, double EoN
                 const double Amin = 1/grid.duNode(k);
                 const double Bmin = 1/grid.duNode(k);
 
+                #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+                mat.coeffRef(k, k - 1) = g[k] * Bmin;
+                mat.coeffRef(k, k) += -g[k] * Amin;
+                #else
                 mat.coeffRef(k, k - 1) = g[k] * Bmin / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k] * Amin / grid.duCell(k);
+                #endif
             }
             if (k < grid.nCells() - 1)
             {
                 const double Aplus = 1/grid.duNode(k+1);
                 const double Bplus = 1/grid.duNode(k+1);
 
+                #if defined(LOKIB_ANALYTICAL_INELASTIC_COLLISION_INTEGRALS) || defined(LOKIB_ANALYTICAL_IONIZATION_COLLISION_INTEGRALS)
+                mat.coeffRef(k, k + 1) = g[k + 1] * Aplus;
+                mat.coeffRef(k, k) += -g[k + 1] * Bplus;
+                #else
                 mat.coeffRef(k, k + 1) = g[k + 1] * Aplus / grid.duCell(k);
                 mat.coeffRef(k, k) += -g[k + 1] * Bplus / grid.duCell(k);
+                #endif
             }
         }
     }
