@@ -195,6 +195,25 @@ endif()
 option(LOKIB_USE_OPENMP "Use OpenMP parallelization" ON)
 loki_constrain_configure_option(LOKIB_USE_OPENMP ON OFF)
 if(LOKIB_USE_OPENMP)
+	# Apple Clang does not ship OpenMP; Homebrew's libomp is the usual provider.
+	if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		execute_process(
+			COMMAND brew --prefix libomp
+			RESULT_VARIABLE _loki_brew_libomp_result
+			OUTPUT_VARIABLE _loki_libomp_prefix
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_QUIET
+		)
+		if(_loki_brew_libomp_result EQUAL 0 AND EXISTS "${_loki_libomp_prefix}/lib/libomp.dylib")
+			message(STATUS "Using Homebrew libomp from ${_loki_libomp_prefix}")
+			set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${_loki_libomp_prefix}/include")
+			set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${_loki_libomp_prefix}/include")
+			set(OpenMP_C_LIB_NAMES omp)
+			set(OpenMP_CXX_LIB_NAMES omp)
+			set(OpenMP_omp_LIBRARY "${_loki_libomp_prefix}/lib/libomp.dylib")
+		endif()
+	endif()
+
 	find_package(OpenMP)
 	if(NOT OpenMP_CXX_FOUND)
 		message(FATAL_ERROR "OpenMP could not be found. Install the missing OpenMP package(s), or disable OpenMP support with -DLOKIB_USE_OPENMP=OFF")
